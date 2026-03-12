@@ -557,7 +557,6 @@ def _grid_line_plot_bokeh(
         A Bokeh gridplot object.
 
     """
-
     from bokeh.layouts import gridplot
     from bokeh.plotting import figure
 

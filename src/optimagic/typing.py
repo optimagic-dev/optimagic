@@ -41,9 +41,10 @@ class Direction(str, Enum):
 
 @dataclass(frozen=True)
 class DictLikeAccess:
-    """Useful base class for replacing string-based dictionaries with dataclass
+    r"""Useful base class for replacing string-based dictionaries with dataclass
     instances and keeping backward compatability regarding read access to the data
-    structure."""
+    structure.
+    """
 
     def __getitem__(self, key: str) -> Any:
         if key in self.__dict__:
@@ -69,8 +70,9 @@ class DictLikeAccess:
 
 @dataclass(frozen=True)
 class TupleLikeAccess:
-    """Useful base class for replacing tuples with dataclass instances and keeping
-    backward compatability regarding read access to the data structure."""
+    r"""Useful base class for replacing tuples with dataclass instances and keeping
+    backward compatability regarding read access to the data structure.
+    """
 
     def __getitem__(self, index: int | slice) -> Any:
         field_values = [getattr(self, field.name) for field in fields(self)]

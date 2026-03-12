@@ -157,7 +157,7 @@ def estimate_msm(
             step_size by a factor of 2 compared to the rule of thumb for optimal
             step sizes. This is because many msm criterion functions are slightly noisy.
 
-        Returns:
+    Returns:
             dict: The estimated parameters, standard errors and sensitivity measures
                 and covariance matrix of the parameters.
 

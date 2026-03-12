@@ -1,4 +1,4 @@
-"""Functions and derivatives thereof to transform external and internal params.
+r"""Functions and derivatives thereof to transform external and internal params.
 
 Remarks on the mathematical notation:
 -------------------------------------

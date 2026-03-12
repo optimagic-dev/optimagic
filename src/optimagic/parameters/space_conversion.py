@@ -367,7 +367,6 @@ def pre_replace(internal_values, fixed_values, pre_replacements):
 
 
     Examples:
-
         >>> internal_values = np.array([1., 2.])
         >>> fixed_values = np.array([np.nan, 0, np.nan])
         >>> pre_replacements = np.array([1, -1, 0])

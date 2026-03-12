@@ -306,7 +306,8 @@ def test_bug_from_copenhagen_presentation():
 
 def test_constraint_inheritance():
     """Test that probability constraint applies both sets of parameters in a pairwise
-    equality constraint, no matter to which set they were applied originally."""
+    equality constraint, no matter to which set they were applied originally.
+    """
     for loc in [[0, 1], [2, 3]]:
 
         def selector(x, loc=loc):

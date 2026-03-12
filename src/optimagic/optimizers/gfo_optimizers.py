@@ -610,7 +610,7 @@ class GFOPowellsMethod(Algorithm, GFOCommonOptions):
 )
 @dataclass(frozen=True)
 class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Particle Swarm Optimization algorithm.
+    r"""Minimize a scalar function using the Particle Swarm Optimization algorithm.
 
     This algorithm is a Python implementation of the Particle Swarm Optimization
     algorithm through the gradient_free_optimizers package.
@@ -694,7 +694,7 @@ class GFOParticleSwarmOptimization(Algorithm, GFOCommonOptions):
 )
 @dataclass(frozen=True)
 class GFOParallelTempering(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Parallel Tempering algorithm.
+    r"""Minimize a scalar function using the Parallel Tempering algorithm.
 
     This algorithm is a Python implementation of the Parallel Tempering
     algorithm through the gradient_free_optimizers package.
@@ -767,7 +767,7 @@ class GFOParallelTempering(Algorithm, GFOCommonOptions):
 )
 @dataclass(frozen=True)
 class GFOSpiralOptimization(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Spiral Optimization algorithm.
+    r"""Minimize a scalar function using the Spiral Optimization algorithm.
 
     This algorithm is a Python implementation of the Spiral Optimization
     algorithm through the gradient_free_optimizers package.
@@ -969,7 +969,7 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
 )
 @dataclass(frozen=True)
 class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Evolution Strategy algorithm.
+    r"""Minimize a scalar function using the Evolution Strategy algorithm.
 
     This algorithm is a Python implementation of the Evolution Strategy algorithm
     through the gradient_free_optimizers package.
@@ -1058,7 +1058,7 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
 )
 @dataclass(frozen=True)
 class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
-    """Minimize a scalar function using the Differential Evolution algorithm.
+    r"""Minimize a scalar function using the Differential Evolution algorithm.
 
     This algorithm is a Python implementation of the Differential Evolution
     algorithm through the gradient_free_optimizers package.

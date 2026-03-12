@@ -442,6 +442,7 @@ class ProblemStore(
     SQLAlchemyTableStore[ProblemInitialization, ProblemInitializationWithId]
 ):
     """Store for managing optimization problem initialization data in an SQLite
+
     database.
 
     Args:

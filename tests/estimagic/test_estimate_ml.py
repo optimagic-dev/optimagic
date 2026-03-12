@@ -150,8 +150,8 @@ def test_estimate_ml_with_logit_no_constraints(
     hessian,
 ):
     """Test that estimate_ml computes correct params and covariances under different
-    scenarios."""
-
+    scenarios.
+    """
     # ==================================================================================
     # estimate
     # ==================================================================================
@@ -254,7 +254,8 @@ def test_estimate_ml_with_logit_constraints(
     constraints,
 ):
     """Test that estimate_ml computes correct params and standard errors under different
-    scenarios with constraints."""
+    scenarios with constraints.
+    """
     seed = 1234
 
     # ==================================================================================

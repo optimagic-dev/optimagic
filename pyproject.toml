@@ -121,10 +121,25 @@ select = [
   "TID",
   # implicit string concatenation
   "ISC",
+  # pydocstyle
+  "D",
 ]
 
 extend-ignore = [
 
+  # Missing docstrings — not enforced for now
+  "D100",  # public module
+  "D101",  # public class
+  "D102",  # public method
+  "D103",  # public function
+  "D104",  # public package
+  "D105",  # magic method
+  "D107",  # __init__
+  # Docstring content/style rules — too noisy to enforce for now
+  "D205",  # blank line between summary and description
+  "D414",  # section has no body
+  "D415",  # first line punctuation
+  "D417",  # missing argument descriptions
   # allow module import not at top of file, important for notebooks
   "E402",
   # do not assign a lambda expression, use a def
@@ -423,6 +438,7 @@ iminuit = ">=2.25"
 cma = ">=3.3"
 pygad = ">=3.2"
 pytorch-cpu = ">=2.2"
+ruff = ">=0.15.5,<0.16"
 
 [tool.pixi.pypi-dependencies]
 optimagic = { path = ".", editable = true }

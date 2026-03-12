@@ -48,7 +48,6 @@ def process_constraints(
             good error messages.
 
     Returns:
-
         transformations (list): A processed version of those constraints
             that entail actual transformations and not just fixing parameters.
         constr_info (dict): Dict of 1d numpy arrays of length n_params (or None) with

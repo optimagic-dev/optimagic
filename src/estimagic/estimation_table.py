@@ -134,6 +134,7 @@ def estimation_table(
             proper compilation of  when working with siunitx package. Default True.
         escape_special_characters (bool): If True, replaces special characters
             in parameter and model names with LaTeX or HTML safe sequences.
+
     Returns:
         res_table (data frame, str or dictionary): depending on the rerturn type,
             data frame with formatted strings, a string for html or latex tables,
@@ -503,8 +504,9 @@ def render_html(
 def _process_model(model):
     """Check model validity, convert to dictionary.
 
-    Args
+    Args:
         model: Estimation result. See docstring of estimation_table for more info.
+
     Returns:
         processed_model: A dictionary with keys params, info and name.
 
@@ -805,7 +807,6 @@ def _get_cols_to_format(show_inference, confidence_intervals):
 
 def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_zeros):
     """Apply string formatter to specific columns of a list of DataFrames."""
-
     raw_formatted = [
         _apply_number_format(df[columns], number_format, format_integers=False)
         for df in dfs
@@ -1021,7 +1022,6 @@ def _convert_frame_to_string_series(
     """Return processed value series with significance stars and inference information.
 
     Args:
-
         df (DataFrame): params DataFrame of the model
         significance_levels (list): see main docstring
         number_format (int, str, iterable or callable): see main docstring

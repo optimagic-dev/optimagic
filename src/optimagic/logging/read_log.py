@@ -1,5 +1,4 @@
-"""
-Deprecated module:
+"""Deprecated module:
 
 Functions to read data from the database used for logging.
 

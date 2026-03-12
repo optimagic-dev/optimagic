@@ -1013,7 +1013,7 @@ class NevergradEDA(Algorithm):
 )
 @dataclass(frozen=True)
 class NevergradTBPSA(Algorithm):
-    """Minimize a scalar function using the Test-based Population Size Adaptation
+    r"""Minimize a scalar function using the Test-based Population Size Adaptation
     algorithm.
 
     TBPSA adapts population size based on fitness trend detection using linear
@@ -1531,7 +1531,6 @@ def _nevergrad_internal(
         InternalOptimizeResult: Internal optimization result
 
     """
-
     import nevergrad as ng
 
     param = ng.p.Array(

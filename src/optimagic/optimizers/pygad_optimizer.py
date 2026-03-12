@@ -884,7 +884,6 @@ def _validate_user_defined_functions(
     gene_constraint: list[GeneConstraintFunction | None] | None,
 ) -> None:
     """Validate user-provided functions for selection, crossover, and constraints."""
-
     if parent_selection_type is None:
         pass
     elif isinstance(parent_selection_type, str):
@@ -954,7 +953,6 @@ def _validate_protocol_function(
     func: Callable[..., Any], protocol: Any, name: str
 ) -> None:
     """Ensure a callable satisfies the expected protocol interface."""
-
     if not isinstance(func, protocol):
         raise TypeError(f"{name} must implement {protocol.__name__}.")
 
