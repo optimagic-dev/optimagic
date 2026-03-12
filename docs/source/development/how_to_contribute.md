@@ -51,7 +51,7 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
 
    ```{note}
    `prek` is not managed by pixi and must be installed globally. You can find
-   installation instructions at [github.com/janosg/prek](https://github.com/janosg/prek).
+   installation instructions at [github.com/j178/prek](https://github.com/j178/prek).
    ```
 
    You can then run the test suite with:
