@@ -37,20 +37,35 @@ contribution process (see Notes below).
 For regular contributors: **Clone** the [repository](https://github.com/optimagic-dev/optimagic/) to your local machine and create a new branch for implementing your changes. You can push your branch directly to the remote optimagic repository and open a PR from there.
 ```
 
-2. Clone your forked repository to your disk. This is where you'll make all your
+1. Clone your forked repository to your disk. This is where you'll make all your
    changes.
 
 1. Open your terminal and execute the following commands from the root directory of your
    local optimagic repository:
 
    ```console
-   $ conda env create -f environment.yml
-   $ conda activate optimagic
    $ pre-commit install
    ```
 
-   These commands install optimagic in editable mode and activate pre-commit hooks for
-   linting and style formatting.
+   This activates pre-commit hooks for linting and style formatting.
+
+   ```{note}
+   `pre-commit` is not managed by pixi and must be installed globally. We recommend
+   installing it globally using pixi or uv.
+   ```
+
+   You can then run the test suite with:
+
+   ```console
+   $ pixi run tests
+   ```
+
+   which installs the development dependencies and runs pytest. To see all available
+   pixi tasks, run:
+
+   ```console
+   $ pixi task list
+   ```
 
 1. Implement your fix or feature. Use git to add, commit, and push your changes to the
    remote repository. For more on git and how to stage and commit your work, refer to
@@ -60,18 +75,14 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
 1. Contributions are validated in two main ways. We run a comprehensive test suite to
    ensure compatibility with the existing codebase and employ
    [pre-commit hooks](https://effective-programming-practices.vercel.app/git/pre_commits/objectives_materials.html)
-   to maintain quality and adherence to our style guidelines. Opening a PR (see
-   paragraph 7 below) triggers optimagic's
+   to maintain quality and adherence to our style guidelines. Opening a PR (see below)
+   triggers optimagic's
    [Continuous Integration (CI)](https://docs.github.com/en/actions/automating-builds-and-tests/about-continuous-integration)
-   workflow, which runs the full `pytest` suite, pre-commit hooks, and other checks on a
+   workflow, which runs the full test suite, pre-commit hooks, and other checks on a
    remote server.
 
    You can also run the test suite locally for
-   [debugging](https://effective-programming-practices.vercel.app/debugging/pdbp/objectives_materials.html):
-
-   ```console
-   $ pytest
-   ```
+   [debugging](https://effective-programming-practices.vercel.app/debugging/pdbp/objectives_materials.html).
 
    With pre-commit installed, linters run before each commit. Commits are rejected if
    any checks fail. Note that some linters may automatically fix errors by modifying the
@@ -81,25 +92,16 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
 Skip the next paragraph if you haven't worked on the documentation.
 ```
 
-6. Assuming you have updated the documentation, verify that it builds correctly. From
-   the root directory of your local optimagic repo, navigate to the docs folder and set
-   up the optimagic-docs environment:
+1. Assuming you have updated the documentation, verify that it builds correctly. Run:
 
    ```console
-   $ conda env create -f rtd_environment.yml
-   $ conda activate optimagic-docs
+   $ pixi run build-docs
    ```
 
-   Inside the `docs` folder, run:
-
-   ```console
-   $ make html
-   ```
-
-   This command builds the HTML documentation, saving all files in the `build/html`
+   This command builds the HTML documentation, saving all files in the `docs/build/html`
    directory. You can view the documentation with your preferred web browser by opening
-   `build/html/index.html` or any other file. Similar to the online documentation, you
-   can navigate to different pages simply by clicking on the links.
+   `docs/build/html/index.html` or any other file. Similar to the online documentation,
+   you can navigate to different pages simply by clicking on the links.
 
 1. Once all tests and pre-commit hooks pass locally, push your changes to your forked
    repository and create a pull request through GitHub: Go to the Github repository of

@@ -799,7 +799,7 @@ def combine_plots(  # type: ignore[no-untyped-def]
                 )
 
     if shared_y and all_y:
-        y_range = compute_yaxis_range(np.concatenate(all_y), expand_yrange)
+        y_range = compute_yaxis_range(np.concatenate(all_y).tolist(), expand_yrange)
         fig.update_yaxes(range=y_range)
     if shared_x and all_x:
         x_all = np.concatenate(all_x)

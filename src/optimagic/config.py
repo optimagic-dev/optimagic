@@ -1,9 +1,7 @@
 import importlib.util
 from pathlib import Path
 
-import pandas as pd
 import plotly.express as px
-from packaging import version
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 OPTIMAGIC_ROOT = Path(__file__).parent
@@ -74,11 +72,3 @@ IS_PYSWARMS_INSTALLED = _is_installed("pyswarms")
 IS_MATPLOTLIB_INSTALLED = _is_installed("matplotlib")
 IS_BOKEH_INSTALLED = _is_installed("bokeh")
 IS_ALTAIR_INSTALLED = _is_installed("altair")
-
-# ======================================================================================
-# Check if pandas version is newer or equal to version 2.1.0
-# ======================================================================================
-
-IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0 = version.parse(
-    pd.__version__
-) >= version.parse("2.1.0")

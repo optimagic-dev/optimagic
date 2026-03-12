@@ -5,8 +5,6 @@ external libraries.
 
 """
 
-from optimagic.config import IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0
-
 
 def pd_df_map(df, func, na_action=None, **kwargs):
     """Apply a function to a Dataframe elementwise.
@@ -26,8 +24,4 @@ def pd_df_map(df, func, na_action=None, **kwargs):
         pd.DataFrame: Transformed DataFrame.
 
     """
-    if IS_PANDAS_VERSION_NEWER_OR_EQUAL_TO_2_1_0:
-        out = df.map(func, na_action=na_action, **kwargs)
-    else:
-        out = df.applymap(func, na_action=na_action, **kwargs)
-    return out
+    return df.map(func, na_action=na_action, **kwargs)

@@ -1,6 +1,5 @@
 ---
 name: main
-# Automatically cancel a previous run.
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -13,39 +12,34 @@ on:
       - '*'
 jobs:
   run-tests-linux:
-    name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: Run tests on ubuntu-latest py${{ matrix.python-version }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
         python-version:
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
+          - '312'
+          - '313'
+          - '314'
     steps:
       - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environment-file: ./.tools/envs/testenv-linux.yml
-          cache-environment: true
-          create-args: |
-            python=${{ matrix.python-version }}
-      - name: run pytest
-        shell: bash -l {0}
-        run: |
-          micromamba activate optimagic
-          pytest --cov-report=xml --cov=./
+          pixi-version: v0.65.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-linux-py${{ matrix.python-version }}
+      - name: Run pytest
+        shell: bash -el {0}
+        run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
       - name: Upload coverage report.
-        if: runner.os == 'Linux' && matrix.python-version == '3.10'
+        if: matrix.python-version == '312'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   run-tests-win-and-mac:
-    name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
+    name: Run tests on ${{ matrix.os }} py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -54,163 +48,89 @@ jobs:
           - macos-latest
           - windows-latest
         python-version:
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
+          - '312'
+          - '313'
+          - '314'
     steps:
       - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          micromamba-version: 1.5.6-0
-          environment-file: ./.tools/envs/testenv-others.yml
-          cache-environment: true
-          create-args: |
-            python=${{ matrix.python-version }}
-      - name: run pytest
-        shell: bash -l {0}
-        run: |
-          micromamba activate optimagic
-          pytest -m "not slow and not jax"
-  run-tests-with-old-pandas:
-    # This job is only for testing if optimagic works with pandas<2, as many pandas
-    # functions we use will be deprecated in pandas 3. optimagic's behavior for older
-    # verions is handled in src/optimagic/compat.py. For compatibility with we have to
-    # restrict numpy<2.
-    name: Run tests for ${{ matrix.os}} on ${{ matrix.python-version }} with pandas 1
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-        python-version:
-          - '3.10'
-    steps:
-      - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          environment-file: ./.tools/envs/testenv-pandas.yml
-          cache-environment: true
-          create-args: |
-            python=${{ matrix.python-version }}
-      - name: run pytest
-        shell: bash -l {0}
-        run: |
-          micromamba activate optimagic
-          pytest -m "not slow and not jax"
-  run-tests-with-old-numpy:
-    # This job is only for testing if optimagic works with numpy<2. Because we already
-    # test pandas<2 with numpy<2, in this environment we restrict pandas>=2.
-    name: Run tests for ${{ matrix.os}} on ${{ matrix.python-version }} with numpy 1
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-latest
-        python-version:
-          - '3.10'
-    steps:
-      - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          environment-file: ./.tools/envs/testenv-numpy.yml
-          cache-environment: true
-          create-args: |
-            python=${{ matrix.python-version }}
-      - name: run pytest
-        shell: bash -l {0}
-        run: |
-          micromamba activate optimagic
-          pytest -m "not slow and not jax"
+          pixi-version: v0.65.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-py${{ matrix.python-version }}
+      - name: Run pytest
+        shell: bash -el {0}
+        run: pixi run -e tests-py${{ matrix.python-version }} tests-fast
   run-tests-with-old-plotly:
-    name: Run tests for ubuntu-latest on 3.10 with plotly < 6 and kaleido < 0.3
+    name: Run tests on ubuntu-latest with plotly < 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          pixi-version: v0.65.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-old-plotly
+      - name: Run pytest
+        shell: bash -el {0}
+        run: pixi run -e tests-old-plotly tests-fast
+  run-tests-nevergrad:
+    name: Run nevergrad tests py${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          environment-file: ./.tools/envs/testenv-plotly.yml
-          cache-environment: true
-          create-args: |
-            python=3.10
-      - name: run pytest
-        shell: bash -l {0}
-        run: |
-          micromamba activate optimagic
-          pytest -m "not slow and not jax"
-  run-tests-nevergrad:
-    # This job is for running test related to nevergrad with pinned version of
-    # bayesian_optimization == 1.4.0
-    name: Run tests for ubuntu-latest on ${{ matrix.python-version }} bayes_opt==1.4.0
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
         python-version:
-          - '3.10'
-          - '3.11'
-          - '3.12'
-          - '3.13'
+          - '312'
+          - '313'
+          - '314'
     steps:
       - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environment-file: ./.tools/envs/testenv-nevergrad.yml
-          cache-environment: true
-          create-args: |
-            python=${{ matrix.python-version }}
-      - name: run pytest
-        shell: bash -l {0}
-        run: |
-          micromamba activate optimagic
+          pixi-version: v0.65.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-nevergrad-py${{ matrix.python-version }}
+      - name: Run pytest
+        shell: bash -el {0}
+        run: >-
+          pixi run -e tests-nevergrad-py${{ matrix.python-version }}
           pytest tests/optimagic/optimizers/test_nevergrad.py
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environment-file: ./.tools/envs/testenv-linux.yml
-          environment-name: optimagic
-          cache-environment: true
-          create-args: |
-            python=3.12
-      - name: run sphinx
-        shell: bash -l {0}
-        run: |-
-          micromamba activate optimagic
-          cd docs/source
-          python -m doctest -v how_to/how_to_constraints.md
+          pixi-version: v0.65.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-linux-py314
+      - name: Run doctest
+        shell: bash -el {0}
+        run: >-
+          pixi run -e tests-linux-py314
+          python -m doctest -v docs/source/how_to/how_to_constraints.md
   run-mypy:
     name: Run mypy
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - name: create build environment
-        uses: mamba-org/setup-micromamba@v1
+      - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          environment-file: ./.tools/envs/testenv-linux.yml
-          environment-name: optimagic
-          cache-environment: true
-          create-args: |
-            python=3.10
+          pixi-version: v0.65.0
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: type-checking
       - name: Run mypy
-        shell: bash -l {0}
-        run: |-
-          micromamba activate optimagic
-          mypy
+        shell: bash -el {0}
+        run: pixi run -e type-checking mypy
