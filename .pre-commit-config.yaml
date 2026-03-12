@@ -12,16 +12,6 @@ repos:
         exclude: tests/optimagic/optimizers/_pounders/fixtures
   - repo: local
     hooks:
-      - id: check-mypy-versions
-        name: verify that pre-commits and pixi use the same mypy version
-        entry: python .tools/check_mypy_versions.py
-        language: python
-        always_run: true
-        require_serial: true
-        additional_dependencies:
-          - pyyaml
-  - repo: local
-    hooks:
       - id: update-algo-selection-code
         name: update algo selection code
         entry: python .tools/update_algo_selection_hook.py
@@ -68,20 +58,8 @@ repos:
     hooks:
       - id: yamllint
         exclude: tests/optimagic/optimizers/_pounders/fixtures
-  - repo: https://github.com/PyCQA/docformatter
-    rev: v1.7.7
-    hooks:
-      - id: docformatter
-        args:
-          - --in-place
-          - --wrap-summaries
-          - '88'
-          - --wrap-descriptions
-          - '88'
-          - --blank
-        exclude: src/optimagic/optimization/algo_options.py
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.4
+    rev: v0.15.5
     hooks:
       # Run the linter.
       - id: ruff
@@ -132,26 +110,7 @@ repos:
           )$
         args:
           - --drop-empty-cells
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.1
-    hooks:
-      - id: mypy
-        files: src|tests
-        additional_dependencies:
-          - numpy >= 2
-          - packaging
-          - pandas-stubs
-          - sqlalchemy-stubs
-          - types-cffi
-          - types-openpyxl
-          - types-jinja2
-          - bokeh
 ci:
   autoupdate_schedule: monthly
   skip:
     - update-algo-selection-code
-    # Skip mypy stubtest on pre-commit.ci due to maximum size limitations. This is
-    # unlikely to get better in the future as dependencies keep growing. Local runs
-    # of pre-commit would still execute stubtest. For CI, we have a separate GitHub
-    # Action that runs stubtest.
-    - mypy

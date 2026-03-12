@@ -60,8 +60,14 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
    $ pixi run tests
    ```
 
-   which installs the development dependencies and runs pytest. To see all available
-   pixi tasks, run:
+   which installs the development dependencies and runs pytest. To run the type checker,
+   use:
+
+   ```console
+   $ pixi run mypy
+   ```
+
+   To see all available pixi tasks, run:
 
    ```console
    $ pixi task list
