@@ -426,6 +426,7 @@ pytorch-cpu = ">=2.2"
 
 [tool.pixi.pypi-dependencies]
 optimagic = { path = ".", editable = true }
+pdbp = "*"
 bayesian-optimization = ">=1.4"
 dfo-ls = ">=1.5.3"
 py-bobyqa = ">=1.3"
@@ -442,29 +443,29 @@ python = "~=3.13.0"
 [tool.pixi.feature.py314.dependencies]
 python = "~=3.14.0"
 
-# --- Feature: test (test infrastructure) ---------------------------------------------
-[tool.pixi.feature.test.dependencies]
+# --- Feature: tests (test infrastructure) --------------------------------------------
+[tool.pixi.feature.tests.dependencies]
 pytest = ">=7.2"
 pytest-cov = ">=4.0"
 pytest-xdist = ">=3.2"
 
-[tool.pixi.feature.test.tasks]
+[tool.pixi.feature.tests.tasks]
 tests = { cmd = "pytest", description = "Run the full test suite" }
 tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
 tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src", description = "Run tests with XML coverage report" }
 
-# --- Feature: typecheck (mypy + type stubs) ------------------------------------------
-[tool.pixi.feature.typecheck.dependencies]
+# --- Feature: type-checking (mypy + type stubs) --------------------------------------
+[tool.pixi.feature.type-checking.dependencies]
 mypy = "==1.19.1"
 
-[tool.pixi.feature.typecheck.pypi-dependencies]
+[tool.pixi.feature.type-checking.pypi-dependencies]
 pandas-stubs = "*"
 types-cffi = "*"
 types-openpyxl = "*"
 types-jinja2 = "*"
 sqlalchemy-stubs = "*"
 
-[tool.pixi.feature.typecheck.tasks]
+[tool.pixi.feature.type-checking.tasks]
 mypy = { cmd = "mypy", description = "Run mypy type checker" }
 
 # --- Feature: linux (Linux-only deps) ------------------------------------------------
@@ -510,22 +511,22 @@ nevergrad = "*"
 # --- Environments --------------------------------------------------------------------
 [tool.pixi.environments]
 # Default dev environment (Python 3.14, everything)
-default = { features = ["test", "py314"], solve-group = "py314" }
+default = { features = ["tests", "py314"], solve-group = "py314" }
 # Linux CI (with JAX + PETSc)
-test-linux-py312 = { features = ["test", "linux", "py312"], solve-group = "linux-py312" }
-test-linux-py313 = { features = ["test", "linux", "py313"], solve-group = "linux-py313" }
-test-linux-py314 = { features = ["test", "linux", "py314"], solve-group = "linux-py314" }
+tests-linux-py312 = { features = ["tests", "linux", "py312"], solve-group = "linux-py312" }
+tests-linux-py313 = { features = ["tests", "linux", "py313"], solve-group = "linux-py313" }
+tests-linux-py314 = { features = ["tests", "linux", "py314"], solve-group = "linux-py314" }
 # macOS/Windows CI
-test-py312 = { features = ["test", "py312"], solve-group = "py312" }
-test-py313 = { features = ["test", "py313"], solve-group = "py313" }
-test-py314 = { features = ["test", "py314"], solve-group = "py314" }
+tests-py312 = { features = ["tests", "py312"], solve-group = "py312" }
+tests-py313 = { features = ["tests", "py313"], solve-group = "py313" }
+tests-py314 = { features = ["tests", "py314"], solve-group = "py314" }
 # Backward-compat CI (Python 3.12, lowest supported)
-test-old-plotly = { features = ["test", "old-plotly", "py312"] }
+tests-old-plotly = { features = ["tests", "old-plotly", "py312"] }
 # Nevergrad CI (bayesian-optimization==1.4.0)
-test-nevergrad-py312 = { features = ["test", "nevergrad", "py312"] }
-test-nevergrad-py313 = { features = ["test", "nevergrad", "py313"] }
-test-nevergrad-py314 = { features = ["test", "nevergrad", "py314"] }
+tests-nevergrad-py312 = { features = ["tests", "nevergrad", "py312"] }
+tests-nevergrad-py313 = { features = ["tests", "nevergrad", "py313"] }
+tests-nevergrad-py314 = { features = ["tests", "nevergrad", "py314"] }
 # Type checking
-typecheck = { features = ["typecheck", "py314"], solve-group = "py314" }
+type-checking = { features = ["type-checking", "py314"], solve-group = "py314" }
 # Docs
 docs = { features = ["docs", "py314"], solve-group = "py314" }

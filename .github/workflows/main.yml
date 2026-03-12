@@ -29,10 +29,10 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: test-linux-py${{ matrix.python-version }}
+          environments: tests-linux-py${{ matrix.python-version }}
       - name: Run pytest
         shell: bash -el {0}
-        run: pixi run -e test-linux-py${{ matrix.python-version }} tests-with-cov
+        run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
       - name: Upload coverage report.
         if: matrix.python-version == '312'
         uses: codecov/codecov-action@v4
@@ -59,10 +59,10 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: test-py${{ matrix.python-version }}
+          environments: tests-py${{ matrix.python-version }}
       - name: Run pytest
         shell: bash -el {0}
-        run: pixi run -e test-py${{ matrix.python-version }} tests-fast
+        run: pixi run -e tests-py${{ matrix.python-version }} tests-fast
   run-tests-with-old-plotly:
     name: Run tests on ubuntu-latest with plotly < 6
     runs-on: ubuntu-latest
@@ -74,10 +74,10 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: test-old-plotly
+          environments: tests-old-plotly
       - name: Run pytest
         shell: bash -el {0}
-        run: pixi run -e test-old-plotly tests-fast
+        run: pixi run -e tests-old-plotly tests-fast
   run-tests-nevergrad:
     name: Run nevergrad tests py${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -96,11 +96,11 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: test-nevergrad-py${{ matrix.python-version }}
+          environments: tests-nevergrad-py${{ matrix.python-version }}
       - name: Run pytest
         shell: bash -el {0}
         run: >-
-          pixi run -e test-nevergrad-py${{ matrix.python-version }}
+          pixi run -e tests-nevergrad-py${{ matrix.python-version }}
           pytest tests/optimagic/optimizers/test_nevergrad.py
   code-in-docs:
     name: Run code snippets in documentation
@@ -113,11 +113,11 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: test-linux-py314
+          environments: tests-linux-py314
       - name: Run doctest
         shell: bash -el {0}
         run: >-
-          pixi run -e test-linux-py314
+          pixi run -e tests-linux-py314
           python -m doctest -v docs/source/how_to/how_to_constraints.md
   run-mypy:
     name: Run mypy
@@ -130,7 +130,7 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: typecheck
+          environments: type-checking
       - name: Run mypy
         shell: bash -el {0}
-        run: pixi run -e typecheck mypy
+        run: pixi run -e type-checking mypy
