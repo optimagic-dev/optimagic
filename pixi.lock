@@ -19402,8 +19402,8 @@ packages:
   timestamp: 1733688053334
 - pypi: ./
   name: optimagic
-  version: 0.5.4.dev5+g8654d6292.d20260312
-  sha256: 72e7ed28837a3da869c13448a83bee607a85ab9f1e2d9dc5b5e7604d8ce2bf94
+  version: 0.1.dev472+g7cc224247.d20260331
+  sha256: 3fd4339b58c2f6c6ec2bec645fbce927d4e9a2180d17832e181c41f478e57915
   requires_dist:
   - annotated-types>=0.4
   - cloudpickle>=2.2
@@ -19525,7 +19525,7 @@ packages:
   license: Apache-2.0
   license_family: Apache
   purls:
-  - pkg:pypi/optree?source=compressed-mapping
+  - pkg:pypi/optree?source=hash-mapping
   size: 378894
   timestamp: 1771868468546
 - conda: https://conda.anaconda.org/conda-forge/win-64/optree-0.19.0-py313hf069bd2_0.conda
@@ -19541,7 +19541,7 @@ packages:
   license: Apache-2.0
   license_family: Apache
   purls:
-  - pkg:pypi/optree?source=compressed-mapping
+  - pkg:pypi/optree?source=hash-mapping
   size: 385763
   timestamp: 1771868441594
 - conda: https://conda.anaconda.org/conda-forge/win-64/optree-0.19.0-py314h909e829_0.conda
@@ -19557,7 +19557,7 @@ packages:
   license: Apache-2.0
   license_family: Apache
   purls:
-  - pkg:pypi/optree?source=compressed-mapping
+  - pkg:pypi/optree?source=hash-mapping
   size: 394633
   timestamp: 1771868448953
 - pypi: https://files.pythonhosted.org/packages/00/04/c6f72daca5092e3117840a1b1e88dfc809cc1470cf0734890d0366b684a1/orjson-3.11.7-cp313-cp313-win_amd64.whl
