@@ -11,8 +11,8 @@ from scipy.optimize import Bounds as ScipyBounds
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import (
     get_registry,
+    set_data_col_df_attribute,
     tree_map,
-    update_tree,
 )
 from optimagic.parameters.tree_registry import (
     tree_just_flatten as tree_leaves,
@@ -183,7 +183,9 @@ def _update_bounds_and_flatten(
 
     """
     registry = get_registry(extended=True, data_col=kind)
-    flat_nan_tree = tree_leaves(update_tree(nan_tree, data_col=kind), registry=registry)
+    flat_nan_tree = tree_leaves(
+        set_data_col_df_attribute(nan_tree, data_col=kind), registry=registry
+    )
 
     if bounds is not None:
         registry = get_registry(extended=True)

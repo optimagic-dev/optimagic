@@ -131,16 +131,32 @@ def tree_map(func, tree, is_leaf=None, registry=None):
     )
 
 
-def update_tree(tree, data_col):
-    return tree_map(
-        lambda node: (
-            node
-            if not isinstance(node, pd.DataFrame)
-            else CustomDataFrame(node, data_col=data_col)
-        ),
-        tree,
-    )
+def set_data_col_df_attribute(tree, data_col):
+    def set_attr(node):
+        if isinstance(node, pd.DataFrame):
+            node = node.copy()
+            node.attrs["data_col"] = data_col
+        return node
 
+    return tree_map(set_attr, tree)
+
+
+def _flatten_df_optree(df):
+    data_col = df.attrs.get("data_col", "value")
+    return _flatten_df(df, data_col=data_col)
+
+
+def _unflatten_df_optree(aux_data, leaves):
+    data_col = aux_data["df"].attrs.get("data_col", "value")
+    return _unflatten_df(aux_data=aux_data, leaves=leaves, data_col=data_col)
+
+
+optree.register_pytree_node(
+    pd.DataFrame,
+    _flatten_df_optree,
+    _unflatten_df_optree,
+    namespace=extended,
+)
 
 optree.register_pytree_node(
     pd.Series,
@@ -149,30 +165,6 @@ optree.register_pytree_node(
         {"index": sr.index, "name": sr.name},
     ),
     lambda aux_data, leaves: pd.Series(leaves, **aux_data),
-    namespace=extended,
-)
-
-
-@optree.register_pytree_node_class(namespace=extended)
-class CustomDataFrame:
-    def __init__(self, df, data_col):
-        self.df = df
-        self.data_col = data_col
-
-    def __tree_flatten__(self):
-        return _flatten_df(self.df, self.data_col)
-
-    @classmethod
-    def __tree_unflatten__(cls, aux_data, leaves):
-        return _unflatten_df(
-            aux_data=aux_data, leaves=leaves, data_col=aux_data["data_col"]
-        )
-
-
-optree.register_pytree_node(
-    pd.DataFrame,
-    partial(_flatten_df, data_col="value"),
-    partial(_unflatten_df, data_col="value"),
     namespace=extended,
 )
 

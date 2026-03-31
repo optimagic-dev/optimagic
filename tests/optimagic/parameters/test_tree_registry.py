@@ -6,6 +6,7 @@ from pybaum import leaf_names
 
 from optimagic.parameters.tree_registry import (
     get_registry,
+    set_data_col_df_attribute,
     tree_flatten,
     tree_unflatten,
 )
@@ -66,3 +67,31 @@ def test_leaf_names_partially_numeric_df(other_df):
     registry = get_registry(extended=True)
     names = leaf_names(other_df, registry=registry)
     assert names == ["alpha_b", "alpha_c", "beta_b", "beta_c", "gamma_b", "gamma_c"]
+
+
+def test_set_data_col_attribute_assigns_attribute(value_df):
+    df = set_data_col_df_attribute(value_df, data_col="attr")
+    assert df.attrs.get("data_col") == "attr"
+    assert value_df.attrs.get("data_col") is None
+
+
+def test_set_data_col_attribute_unflattened_tree_has_attribute(value_df):
+    registry = get_registry(extended=True)
+    df = set_data_col_df_attribute(value_df, data_col="attr")
+    tree, treedef = tree_flatten(df, registry=registry)
+    df = tree_unflatten(treedef, tree)
+    assert df.attrs.get("data_col") == "attr"
+
+
+def test_set_data_col_attribute_returns_nan(value_df):
+    registry = get_registry(extended=True)
+    df = set_data_col_df_attribute(value_df, data_col="attr")
+    tree, treedef = tree_flatten(df, registry=registry)
+    assert all(np.isnan(value) for value in tree)
+
+
+def test_set_data_col_attribute_returs_column_values(value_df):
+    registry = get_registry(extended=True)
+    df = set_data_col_df_attribute(value_df, data_col="a")
+    tree, treedef = tree_flatten(df, registry=registry)
+    assert tree == [0, 2, 4]
