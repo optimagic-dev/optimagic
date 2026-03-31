@@ -1,10 +1,13 @@
 """Wrapper around pybaum get_registry to tailor it to optimagic."""
 
+from collections import OrderedDict
 from functools import partial
 from itertools import product
 
 import numpy as np
+import optree
 import pandas as pd
+from optree.pytree import PyTreeSpec
 from pybaum import get_registry as get_pybaum_registry
 
 
@@ -88,3 +91,95 @@ def _index_element_to_string(element):
         res_string = str(element)
 
     return res_string
+
+
+extended = "extended"
+
+
+def tree_flatten(tree, is_leaf=None, registry=None):
+    if isinstance(tree, dict):
+        tree = OrderedDict(tree)
+    return optree.tree_flatten(
+        tree, is_leaf=is_leaf, namespace=extended if registry else ""
+    )
+
+
+def tree_just_flatten(tree, is_leaf=None, registry=None):
+    if isinstance(tree, dict):
+        tree = OrderedDict(tree)
+
+    return optree.tree_leaves(
+        tree,
+        is_leaf,
+        namespace=extended if registry else "",
+    )
+
+
+def tree_unflatten(treedef, leaves, is_leaf=None, registry=None):
+    if not isinstance(treedef, PyTreeSpec):
+        if isinstance(treedef, dict):
+            treedef = OrderedDict(treedef)
+        _, treedef = optree.tree_flatten(
+            treedef, namespace=extended if registry else ""
+        )
+    return optree.tree_unflatten(treespec=treedef, leaves=leaves)
+
+
+def tree_map(func, tree, is_leaf=None, registry=None):
+    return optree.tree_map(
+        func, tree, is_leaf=is_leaf, namespace=extended if registry else ""
+    )
+
+
+def update_tree(tree, data_col):
+    return tree_map(
+        lambda node: (
+            node
+            if not isinstance(node, pd.DataFrame)
+            else CustomDataFrame(node, data_col=data_col)
+        ),
+        tree,
+    )
+
+
+optree.register_pytree_node(
+    pd.Series,
+    lambda sr: (
+        sr.tolist(),
+        {"index": sr.index, "name": sr.name},
+    ),
+    lambda aux_data, leaves: pd.Series(leaves, **aux_data),
+    namespace=extended,
+)
+
+
+@optree.register_pytree_node_class(namespace=extended)
+class CustomDataFrame:
+    def __init__(self, df, data_col):
+        self.df = df
+        self.data_col = data_col
+
+    def __tree_flatten__(self):
+        return _flatten_df(self.df, self.data_col)
+
+    @classmethod
+    def __tree_unflatten__(cls, aux_data, leaves):
+        return _unflatten_df(
+            aux_data=aux_data, leaves=leaves, data_col=aux_data["data_col"]
+        )
+
+
+optree.register_pytree_node(
+    pd.DataFrame,
+    partial(_flatten_df, data_col="value"),
+    partial(_unflatten_df, data_col="value"),
+    namespace=extended,
+)
+
+optree.register_pytree_node(
+    np.ndarray,
+    lambda arr: (arr.flatten().tolist(), arr.shape),
+    lambda aux_data, leaves: np.array(leaves).reshape(aux_data),
+    namespace=extended,
+)
+# DONT FORGET JAX
