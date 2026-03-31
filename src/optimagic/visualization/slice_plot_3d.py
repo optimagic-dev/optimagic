@@ -8,7 +8,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from numpy.typing import NDArray
 from plotly.subplots import make_subplots
-from pybaum import tree_just_flatten
 
 from optimagic import deprecations
 from optimagic.batch_evaluators import process_batch_evaluator
@@ -20,7 +19,7 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 

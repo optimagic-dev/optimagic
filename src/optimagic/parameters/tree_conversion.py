@@ -1,12 +1,17 @@
 from typing import Callable, NamedTuple
 
 import numpy as np
-from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+from pybaum import leaf_names
 
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.block_trees import block_tree_to_matrix
 from optimagic.parameters.bounds import get_internal_bounds
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_flatten,
+    tree_just_flatten,
+    tree_unflatten,
+)
 from optimagic.typing import AggregationLevel
 
 

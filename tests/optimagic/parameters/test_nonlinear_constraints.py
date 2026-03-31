@@ -6,7 +6,6 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
-from pybaum import tree_just_flatten
 
 from optimagic.differentiation.numdiff_options import NumdiffOptions
 from optimagic.exceptions import InvalidConstraintError
@@ -22,7 +21,7 @@ from optimagic.parameters.nonlinear_constraints import (
     process_nonlinear_constraints,
     vector_as_list_of_scalar_constraints,
 )
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 
 
 @dataclass

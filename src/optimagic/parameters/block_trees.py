@@ -2,10 +2,13 @@
 
 import numpy as np
 import pandas as pd
-from pybaum import tree_flatten, tree_unflatten
-from pybaum import tree_just_flatten as tree_leaves
 
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_flatten,
+    tree_unflatten,
+)
+from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
 
 
 def matrix_to_block_tree(matrix, outer_tree, inner_tree):

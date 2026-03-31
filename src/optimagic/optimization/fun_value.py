@@ -5,10 +5,9 @@ from typing import Any, Callable, ParamSpec
 
 import numpy as np
 from numpy.typing import NDArray
-from pybaum import tree_just_flatten
 
 from optimagic.exceptions import InvalidFunctionError
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 from optimagic.typing import AggregationLevel, PyTree, Scalar
 from optimagic.utilities import isscalar
 

@@ -8,8 +8,6 @@ from typing import Any, Callable, Literal, NamedTuple, cast
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
-from pybaum import tree_just_flatten as tree_leaves
 
 from optimagic import batch_evaluators, deprecations
 from optimagic.config import DEFAULT_N_CORES
@@ -22,7 +20,13 @@ from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_flatten,
+    tree_just_flatten,
+    tree_unflatten,
+)
+from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
 from optimagic.typing import BatchEvaluatorLiteral, PyTree
 
 

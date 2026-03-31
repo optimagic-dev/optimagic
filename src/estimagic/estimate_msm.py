@@ -9,7 +9,7 @@ from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-from pybaum import leaf_names, tree_just_flatten
+from pybaum import leaf_names
 
 from estimagic.msm_covs import cov_optimal, cov_robust
 from estimagic.msm_sensitivity import (
@@ -51,7 +51,7 @@ from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_blo
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )

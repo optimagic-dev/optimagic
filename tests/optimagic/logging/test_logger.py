@@ -3,7 +3,7 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 import pytest
-from pybaum import tree_equal, tree_just_flatten
+from pybaum import tree_equal
 
 from optimagic.logging.logger import (
     LogOptions,
@@ -13,7 +13,7 @@ from optimagic.logging.logger import (
     SQLiteLogReader,
 )
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 from optimagic.typing import Direction
 
 

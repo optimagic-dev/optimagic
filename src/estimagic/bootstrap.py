@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+from pybaum import leaf_names
 
 from estimagic.bootstrap_ci import calculate_ci
 from estimagic.bootstrap_helpers import check_inputs
@@ -13,7 +13,12 @@ from estimagic.bootstrap_outcomes import get_bootstrap_outcomes
 from estimagic.shared_covs import calculate_estimation_summary
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.parameters.block_trees import matrix_to_block_tree
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_flatten,
+    tree_just_flatten,
+    tree_unflatten,
+)
 from optimagic.utilities import get_rng
 
 

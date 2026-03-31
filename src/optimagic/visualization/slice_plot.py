@@ -5,7 +5,6 @@ from typing import Any, Callable, Literal
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import tree_just_flatten
 
 import optimagic as om
 from optimagic import deprecations
@@ -24,7 +23,7 @@ from optimagic.optimization.fun_value import (
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel, PyTree
 from optimagic.visualization.backends import grid_line_plot, line_plot

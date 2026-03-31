@@ -2,12 +2,11 @@ import functools
 
 import numpy as np
 import pandas as pd
-from pybaum import tree_just_flatten
 from scipy.linalg import block_diag
 
 from estimagic.bootstrap import bootstrap
 from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 from optimagic.utilities import robust_inverse
 
 

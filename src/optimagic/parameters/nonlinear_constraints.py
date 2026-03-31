@@ -4,13 +4,17 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
-from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import InvalidConstraintError, InvalidFunctionError
 from optimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from optimagic.parameters.block_trees import block_tree_to_matrix
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_flatten,
+    tree_just_flatten,
+    tree_unflatten,
+)
 
 
 def process_nonlinear_constraints(

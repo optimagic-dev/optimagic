@@ -10,14 +10,17 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import tree_just_flatten, tree_unflatten
 
 from optimagic import mark
 from optimagic.optimization.fun_value import (
     FunctionValue,
 )
 from optimagic.parameters.block_trees import matrix_to_block_tree
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_just_flatten,
+    tree_unflatten,
+)
 from optimagic.typing import PyTree
 
 REGISTRY = get_registry(extended=True)

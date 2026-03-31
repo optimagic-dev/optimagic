@@ -5,14 +5,19 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 
 import numpy as np
-from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
+from pybaum import leaf_names
 
 from optimagic.config import DEFAULT_PALETTE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_flatten,
+    tree_just_flatten,
+    tree_unflatten,
+)
 from optimagic.typing import IterationHistory, PyTree
 from optimagic.visualization.backends import line_plot
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle

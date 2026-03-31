@@ -2,9 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-from pybaum import leaf_names, tree_flatten, tree_unflatten
+from pybaum import leaf_names
 
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_flatten,
+    tree_unflatten,
+)
 
 
 @pytest.fixture()

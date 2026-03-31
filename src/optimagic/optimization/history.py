@@ -6,9 +6,9 @@ from typing import Any, Callable, Iterable, Literal
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import leaf_names, tree_just_flatten
+from pybaum import leaf_names
 
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
 from optimagic.timing import CostModel
 from optimagic.typing import Direction, EvalTask, PyTree
 

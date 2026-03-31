@@ -5,12 +5,18 @@ from typing import Any, Literal, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
-from pybaum import leaf_names, tree_map
-from pybaum import tree_just_flatten as tree_leaves
+from pybaum import leaf_names
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    get_registry,
+    tree_map,
+    update_tree,
+)
+from optimagic.parameters.tree_registry import (
+    tree_just_flatten as tree_leaves,
+)
 from optimagic.typing import PyTree, PyTreeRegistry
 from optimagic.utilities import fast_numpy_full
 
@@ -177,7 +183,7 @@ def _update_bounds_and_flatten(
 
     """
     registry = get_registry(extended=True, data_col=kind)
-    flat_nan_tree = tree_leaves(nan_tree, registry=registry)
+    flat_nan_tree = tree_leaves(update_tree(nan_tree, data_col=kind), registry=registry)
 
     if bounds is not None:
         registry = get_registry(extended=True)
