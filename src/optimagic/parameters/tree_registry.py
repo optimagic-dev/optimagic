@@ -137,12 +137,6 @@ def set_data_col_df_attribute(tree, data_col):
     return tree_map(set_attr, tree)
 
 
-def _get_names_pandas_dataframe(df):
-    index_strings = list(df.index.map(_index_element_to_string))
-    out = ["_".join([loc, col]) for loc, col in product(index_strings, df.columns)]
-    return out
-
-
 def _array_element_names(arr):
     dim_names = [map(str, range(n)) for n in arr.shape]
     names = list(map("_".join, itertools.product(*dim_names)))
