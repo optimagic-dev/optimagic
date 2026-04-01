@@ -1,7 +1,6 @@
 """Wrapper around pybaum get_registry to tailor it to optimagic."""
 
 import itertools
-from collections import OrderedDict
 from functools import partial
 from itertools import product
 
@@ -97,11 +96,10 @@ def _index_element_to_string(element):
 
 
 def tree_flatten(tree, is_leaf=None, registry=None):
-    if isinstance(tree, dict):
-        tree = OrderedDict(tree)
-    return optree.tree_flatten(
-        tree, is_leaf=is_leaf, namespace=extended_namespace if registry else ""
-    )
+    with optree.dict_insertion_ordered(True, namespace=extended_namespace):
+        return optree.tree_flatten(
+            tree, is_leaf=is_leaf, namespace=extended_namespace if registry else ""
+        )
 
 
 def tree_just_flatten(tree, is_leaf=None, registry=None):
@@ -122,7 +120,7 @@ def tree_map(func, tree, is_leaf=None, registry=None):
 
 
 def leaf_names(tree, is_leaf=None, registry=None, separator="_"):
-    leaves, treespec = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+    _, treespec = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
     paths = treespec.paths()
     return [separator.join(str(p) for p in path) for path in paths]
 
