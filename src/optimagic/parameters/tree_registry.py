@@ -11,6 +11,8 @@ import pandas as pd
 from optree.pytree import PyTreeSpec
 from pybaum import get_registry as get_pybaum_registry
 
+from optimagic.typing import extended_namespace
+
 
 def get_registry(extended=False, data_col="value"):
     """Return pytree registry.
@@ -94,14 +96,11 @@ def _index_element_to_string(element):
     return res_string
 
 
-extended = "extended"
-
-
 def tree_flatten(tree, is_leaf=None, registry=None):
     if isinstance(tree, dict):
         tree = OrderedDict(tree)
     return optree.tree_flatten(
-        tree, is_leaf=is_leaf, namespace=extended if registry else ""
+        tree, is_leaf=is_leaf, namespace=extended_namespace if registry else ""
     )
 
 
@@ -118,7 +117,7 @@ def tree_unflatten(treedef, leaves, is_leaf=None, registry=None):
 
 def tree_map(func, tree, is_leaf=None, registry=None):
     return optree.tree_map(
-        func, tree, is_leaf=is_leaf, namespace=extended if registry else ""
+        func, tree, is_leaf=is_leaf, namespace=extended_namespace if registry else ""
     )
 
 
@@ -174,7 +173,7 @@ optree.register_pytree_node(
     pd.DataFrame,
     _flatten_df_optree,
     _unflatten_df_optree,
-    namespace=extended,
+    namespace=extended_namespace,
 )
 
 optree.register_pytree_node(
@@ -185,12 +184,12 @@ optree.register_pytree_node(
         list(sr.index.map(_index_element_to_string)),
     ),
     lambda aux_data, leaves: pd.Series(leaves, **aux_data),
-    namespace=extended,
+    namespace=extended_namespace,
 )
 
 optree.register_pytree_node(
     np.ndarray,
     lambda arr: (arr.flatten().tolist(), arr.shape, _array_element_names(arr)),
     lambda aux_data, leaves: np.array(leaves).reshape(aux_data),
-    namespace=extended,
+    namespace=extended_namespace,
 )

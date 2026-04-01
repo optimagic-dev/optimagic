@@ -22,6 +22,7 @@ PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]
 Scalar = Any
 
 T = TypeVar("T")
+extended_namespace = "extended_namespace"
 
 
 class AggregationLevel(Enum):
