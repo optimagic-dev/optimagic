@@ -1,5 +1,6 @@
 """Wrapper around pybaum get_registry to tailor it to optimagic."""
 
+import itertools
 from collections import OrderedDict
 from functools import partial
 from itertools import product
@@ -131,6 +132,12 @@ def tree_map(func, tree, is_leaf=None, registry=None):
     )
 
 
+def leaf_names(tree, is_leaf=None, registry=None, separator="_"):
+    leaves, treespec = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+    paths = treespec.paths()
+    return [separator.join(str(p) for p in path) for path in paths]
+
+
 def set_data_col_df_attribute(tree, data_col):
     def set_attr(node):
         if isinstance(node, pd.DataFrame):
@@ -141,9 +148,31 @@ def set_data_col_df_attribute(tree, data_col):
     return tree_map(set_attr, tree)
 
 
+def _get_names_pandas_dataframe(df):
+    index_strings = list(df.index.map(_index_element_to_string))
+    out = ["_".join([loc, col]) for loc, col in product(index_strings, df.columns)]
+    return out
+
+
+def _array_element_names(arr):
+    dim_names = [map(str, range(n)) for n in arr.shape]
+    names = list(map("_".join, itertools.product(*dim_names)))
+    return names
+
+
 def _flatten_df_optree(df):
     data_col = df.attrs.get("data_col", "value")
-    return _flatten_df(df, data_col=data_col)
+    is_value_df = "value" in df
+    if is_value_df:
+        flat = df.get(data_col, default=np.full(len(df), np.nan)).tolist()
+    else:
+        flat = df.to_numpy().flatten().tolist()
+
+    aux_data = {
+        "is_value_df": is_value_df,
+        "df": df,
+    }
+    return flat, aux_data, _get_df_names(df)
 
 
 def _unflatten_df_optree(aux_data, leaves):
@@ -163,6 +192,7 @@ optree.register_pytree_node(
     lambda sr: (
         sr.tolist(),
         {"index": sr.index, "name": sr.name},
+        list(sr.index.map(_index_element_to_string)),
     ),
     lambda aux_data, leaves: pd.Series(leaves, **aux_data),
     namespace=extended,
@@ -170,8 +200,7 @@ optree.register_pytree_node(
 
 optree.register_pytree_node(
     np.ndarray,
-    lambda arr: (arr.flatten().tolist(), arr.shape),
+    lambda arr: (arr.flatten().tolist(), arr.shape, _array_element_names(arr)),
     lambda aux_data, leaves: np.array(leaves).reshape(aux_data),
     namespace=extended,
 )
-# DONT FORGET JAX

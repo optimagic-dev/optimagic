@@ -5,12 +5,12 @@ from typing import Any, Literal, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
-from pybaum import leaf_names
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import (
     get_registry,
+    leaf_names,
     set_data_col_df_attribute,
     tree_map,
 )
