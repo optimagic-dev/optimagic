@@ -106,23 +106,13 @@ def tree_flatten(tree, is_leaf=None, registry=None):
 
 
 def tree_just_flatten(tree, is_leaf=None, registry=None):
-    if isinstance(tree, dict):
-        tree = OrderedDict(tree)
-
-    return optree.tree_leaves(
-        tree,
-        is_leaf,
-        namespace=extended if registry else "",
-    )
+    leaves, _ = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+    return leaves
 
 
 def tree_unflatten(treedef, leaves, is_leaf=None, registry=None):
     if not isinstance(treedef, PyTreeSpec):
-        if isinstance(treedef, dict):
-            treedef = OrderedDict(treedef)
-        _, treedef = optree.tree_flatten(
-            treedef, namespace=extended if registry else ""
-        )
+        _, treedef = tree_flatten(treedef, is_leaf=is_leaf, registry=registry)
     return optree.tree_unflatten(treespec=treedef, leaves=leaves)
 
 
