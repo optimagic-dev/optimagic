@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import tree_equal
 
 from estimagic.shared_covs import (
     _to_numpy,
@@ -15,7 +14,7 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.parameters.tree_registry import get_registry, leaf_names
+from optimagic.parameters.tree_registry import get_registry, leaf_names, tree_equal
 from optimagic.utilities import get_rng
 
 

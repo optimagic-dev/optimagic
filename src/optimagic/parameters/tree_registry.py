@@ -185,3 +185,35 @@ optree.register_pytree_node(
     lambda aux_data, leaves: np.array(leaves).reshape(aux_data),
     namespace=extended_namespace,
 )
+
+EQUALITY_CHECKERS = {}
+EQUALITY_CHECKERS[np.ndarray] = lambda a, b: bool((a == b).all())
+EQUALITY_CHECKERS[pd.Series] = lambda a, b: a.equals(b)
+EQUALITY_CHECKERS[pd.DataFrame] = lambda a, b: a.equals(b)
+
+
+def tree_equal(tree, other, is_leaf=None, registry=None, equality_checkers=None):
+    equality_checkers = (
+        EQUALITY_CHECKERS
+        if equality_checkers is None
+        else {**EQUALITY_CHECKERS, **equality_checkers}
+    )
+
+    first_flat, first_treespec = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+    second_flat, second_treespec = tree_flatten(
+        other, is_leaf=is_leaf, registry=registry
+    )
+
+    first_names = leaf_names(tree, is_leaf=is_leaf, registry=registry)
+    second_names = leaf_names(tree, is_leaf=is_leaf, registry=registry)
+
+    equal = first_names == second_names and first_treespec == second_treespec
+
+    if equal:
+        for first, second in zip(first_flat, second_flat, strict=True):
+            check_func = equality_checkers.get(type(first), lambda a, b: a == b)
+            equal = equal and check_func(first, second)
+            if not equal:
+                break
+
+    return equal
