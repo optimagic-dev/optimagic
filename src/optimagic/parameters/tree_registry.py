@@ -11,10 +11,21 @@ from optree.pytree import PyTreeSpec
 
 from optimagic.typing import optree_namespaces
 
+try:
+    import jax.numpy as jnp  # type: ignore[import-not-found]
+
+    _has_jax = True
+except ImportError:
+    _has_jax = False
+
+
 EQUALITY_CHECKERS = {}
 EQUALITY_CHECKERS[np.ndarray.__name__] = lambda a, b: bool((a == b).all())
 EQUALITY_CHECKERS[pd.Series.__name__] = lambda a, b: a.equals(b)
 EQUALITY_CHECKERS[pd.DataFrame.__name__] = lambda a, b: a.equals(b)
+
+if _has_jax:
+    EQUALITY_CHECKERS[jnp.ndarray.__name__] = lambda a, b: bool((a == b).all())
 
 
 def tree_flatten(tree, is_leaf=None, namespace=""):
@@ -149,6 +160,15 @@ def _unflatten_ndarray(aux_data, leaves):
     return np.array(leaves).reshape(aux_data)
 
 
+if _has_jax:
+
+    def _flatten_jax_array(arr: jnp.ndarray):
+        return arr.flatten().tolist(), arr.shape, _array_element_names(arr)
+
+    def _unflatten_jax_array(aux_data, leaves):
+        return jnp.array(leaves).reshape(aux_data)
+
+
 for namespace in optree_namespaces:
     optree.register_pytree_node(
         pd.DataFrame,
@@ -170,3 +190,11 @@ for namespace in optree_namespaces:
         _unflatten_ndarray,
         namespace=namespace,
     )
+
+    if _has_jax:
+        optree.register_pytree_node(
+            jnp.ndarray,
+            _flatten_jax_array,
+            _unflatten_jax_array,
+            namespace=namespace,
+        )
