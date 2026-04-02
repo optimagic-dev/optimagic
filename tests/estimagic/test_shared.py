@@ -14,7 +14,7 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.parameters.tree_registry import get_registry, leaf_names, tree_equal
+from optimagic.parameters.tree_registry import extended, leaf_names, tree_equal
 from optimagic.utilities import get_rng
 
 
@@ -239,8 +239,7 @@ def test_calculate_estimation_summary():
         "free": np.array([True, True, True]),
     }
 
-    registry = get_registry(extended=True)
-    names = leaf_names(summary_data["value"], registry=registry)
+    names = leaf_names(summary_data["value"], namespace=extended)
     free_names = names
 
     # function call

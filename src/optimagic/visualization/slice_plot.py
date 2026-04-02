@@ -23,7 +23,7 @@ from optimagic.optimization.fun_value import (
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
+from optimagic.parameters.tree_registry import extended, tree_just_flatten
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel, PyTree
 from optimagic.visualization.backends import grid_line_plot, line_plot
@@ -248,9 +248,8 @@ def _get_plot_data(
     selected = np.arange(n_params, dtype=int)
     if selector is not None:
         helper = converter.params_from_internal(selected)
-        registry = get_registry(extended=True)
         selected = np.array(
-            tree_just_flatten(selector(helper), registry=registry), dtype=int
+            tree_just_flatten(selector(helper), namespace=extended), dtype=int
         ).ravel()  # Ensure the result is a 1D array
 
     if not np.isfinite(internal_params.lower_bounds[selected]).all():

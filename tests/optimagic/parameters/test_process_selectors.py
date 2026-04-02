@@ -7,7 +7,7 @@ from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.process_selectors import process_selectors
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     tree_flatten,
     tree_just_flatten,
     tree_unflatten,
@@ -35,15 +35,14 @@ def tree_params():
 
 @pytest.fixture()
 def tree_params_converter(tree_params):
-    registry = get_registry(extended=True)
-    _, treedef = tree_flatten(tree_params, registry=registry)
+    _, treedef = tree_flatten(tree_params, namespace=extended)
 
     converter = TreeConverter(
         params_flatten=lambda params: np.array(
-            tree_just_flatten(params, registry=registry)
+            tree_just_flatten(params, namespace=extended)
         ),
         params_unflatten=lambda x: tree_unflatten(
-            treedef, x.tolist(), registry=registry
+            treedef, x.tolist(), namespace=extended
         ),
         derivative_flatten=None,
     )

@@ -8,7 +8,7 @@ import pandas as pd
 from numpy.typing import NDArray
 
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     leaf_names,
     tree_just_flatten,
 )
@@ -401,8 +401,7 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
     if fast_path:
         flatten = lambda x: x.tolist()
     else:
-        registry = get_registry(extended=True)
-        flatten = partial(tree_just_flatten, registry=registry)
+        flatten = partial(tree_just_flatten, namespace=extended)
 
     return [flatten(p) for p in params]
 
@@ -414,8 +413,7 @@ def _get_flat_param_names(param: PyTree) -> list[str]:
         # arrays, but the fast path is only taken for 1d arrays, so it can be ignored.
         return np.arange(param.size).astype(str).tolist()
 
-    registry = get_registry(extended=True)
-    return leaf_names(param, registry=registry)
+    return leaf_names(param, namespace=extended)
 
 
 def _is_1d_array(param: PyTree) -> bool:

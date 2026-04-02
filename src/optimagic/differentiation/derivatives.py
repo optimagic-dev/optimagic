@@ -21,7 +21,7 @@ from optimagic.differentiation.richardson_extrapolation import richardson_extrap
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     tree_flatten,
     tree_just_flatten,
     tree_unflatten,
@@ -218,24 +218,23 @@ def first_derivative(
     # ==================================================================================
     # Convert scalar | pytree arguments to 1d arrays of floats
     # ==================================================================================
-    registry = get_registry(extended=True)
 
     is_fast_path = _is_1d_array(params)
 
     if not is_fast_path:
-        x, params_treedef = tree_flatten(params, registry=registry)
+        x, params_treedef = tree_flatten(params, namespace=extended)
         x = np.array(x, dtype=np.float64)
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
-                tree_just_flatten(scaling_factor, registry=registry)
+                tree_just_flatten(scaling_factor, namespace=extended)
             )
 
         if min_steps is not None and not np.isscalar(min_steps):
-            min_steps = np.array(tree_just_flatten(min_steps, registry=registry))
+            min_steps = np.array(tree_just_flatten(min_steps, namespace=extended))
 
         if step_size is not None and not np.isscalar(step_size):
-            step_size = np.array(tree_just_flatten(step_size, registry=registry))
+            step_size = np.array(tree_just_flatten(step_size, namespace=extended))
     else:
         x = params.astype(np.float64)
 
@@ -289,7 +288,7 @@ def first_derivative(
     if not is_fast_path:
         evaluation_points = [
             # entries are either a numpy.ndarray or np.nan
-            _unflatten_if_not_nan(p, params_treedef, registry)
+            _unflatten_if_not_nan(p, params_treedef, extended)
             for p in evaluation_points
         ]
 
@@ -328,14 +327,14 @@ def first_derivative(
     elif vector_out:
         f0 = f0_tree.astype(float)
     else:
-        f0 = tree_leaves(f0_tree, registry=registry)
+        f0 = tree_leaves(f0_tree, namespace=extended)
         f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals_arr = _convert_evals_to_numpy(
         raw_evals=raw_evals,
         unpacker=unpacker,
-        registry=registry,
+        namespace=extended,
         is_scalar_out=scalar_out,
         is_vector_out=vector_out,
     )
@@ -533,24 +532,23 @@ def second_derivative(
     # ==================================================================================
     # Convert scalar | pytree arguments to 1d arrays of floats
     # ==================================================================================
-    registry = get_registry(extended=True)
 
     is_fast_path = _is_1d_array(params)
 
     if not is_fast_path:
-        x, params_treedef = tree_flatten(params, registry=registry)
+        x, params_treedef = tree_flatten(params, namespace=extended)
         x = np.array(x, dtype=np.float64)
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
-                tree_just_flatten(scaling_factor, registry=registry)
+                tree_just_flatten(scaling_factor, namespace=extended)
             )
 
         if min_steps is not None and not np.isscalar(min_steps):
-            min_steps = np.array(tree_just_flatten(min_steps, registry=registry))
+            min_steps = np.array(tree_just_flatten(min_steps, namespace=extended))
 
         if step_size is not None and not np.isscalar(step_size):
-            step_size = np.array(tree_just_flatten(step_size, registry=registry))
+            step_size = np.array(tree_just_flatten(step_size, namespace=extended))
     else:
         x = params.astype(np.float64)
 
@@ -626,7 +624,7 @@ def second_derivative(
         evaluation_points = {
             # entries are either a numpy.ndarray or np.nan, we unflatten only
             step_type: [
-                _unflatten_if_not_nan(p, params_treedef, registry) for p in points
+                _unflatten_if_not_nan(p, params_treedef, extended) for p in points
             ]
             for step_type, points in evaluation_points.items()
         }
@@ -665,13 +663,13 @@ def second_derivative(
     func_value = f0
 
     f0_tree = unpacker(f0)
-    f0 = tree_leaves(f0_tree, registry=registry)
+    f0 = tree_leaves(f0_tree, namespace=extended)
     f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
         step_type: _convert_evals_to_numpy(
-            raw_evals=evals, unpacker=unpacker, registry=registry
+            raw_evals=evals, unpacker=unpacker, namespace=extended
         )
         for step_type, evals in raw_evals.items()
     }
@@ -925,7 +923,7 @@ def _convert_richardson_candidates_to_frame(jac, err):
 
 
 def _convert_evals_to_numpy(
-    raw_evals, unpacker, registry, is_scalar_out=False, is_vector_out=False
+    raw_evals, unpacker, namespace, is_scalar_out=False, is_vector_out=False
 ):
     """Harmonize the output of the function evaluations.
 
@@ -949,7 +947,7 @@ def _convert_evals_to_numpy(
     else:
         evals = [
             (
-                np.array(tree_leaves(val, registry=registry), dtype=np.float64)
+                np.array(tree_leaves(val, namespace=namespace), dtype=np.float64)
                 if not _is_scalar_nan(val)
                 else val
             )
@@ -1208,9 +1206,9 @@ def _is_scalar_nan(value):
     return isinstance(value, float) and np.isnan(value)
 
 
-def _unflatten_if_not_nan(leaves, treedef, registry):
+def _unflatten_if_not_nan(leaves, treedef, namespace):
     if isinstance(leaves, np.ndarray):
-        out = tree_unflatten(treedef, leaves, registry=registry)
+        out = tree_unflatten(treedef, leaves, namespace=namespace)
     else:
         out = leaves
     return out

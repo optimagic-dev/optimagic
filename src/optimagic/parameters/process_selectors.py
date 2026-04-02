@@ -6,7 +6,7 @@ import pandas as pd
 
 from optimagic.constraints import Constraint
 from optimagic.exceptions import InvalidConstraintError
-from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
+from optimagic.parameters.tree_registry import extended, tree_just_flatten
 
 
 def process_selectors(constraints, params, tree_converter, param_names):
@@ -36,7 +36,6 @@ def process_selectors(constraints, params, tree_converter, param_names):
     if isinstance(constraints, dict):
         constraints = [constraints]
 
-    registry = get_registry(extended=True)
     n_params = len(tree_converter.params_flatten(params))
     helper = tree_converter.params_unflatten(np.arange(n_params))
     params_case = _get_params_case(params)
@@ -52,7 +51,7 @@ def process_selectors(constraints, params, tree_converter, param_names):
             field=field,
             constraint=constr,
             params_case=params_case,
-            registry=registry,
+            namespace=extended,
         )
         try:
             with warnings.catch_warnings():
@@ -135,19 +134,19 @@ def _get_selection_field(constraint, selector_case, params_case):
     return field
 
 
-def _get_selection_evaluator(field, constraint, params_case, registry):
+def _get_selection_evaluator(field, constraint, params_case, namespace):
     if field == "selector":
 
         def evaluator(params):
             raw = constraint["selector"](params)
-            flat = tree_just_flatten(raw, registry=registry)
+            flat = tree_just_flatten(raw, namespace=namespace)
             return flat
 
     elif field == "selectors":
 
         def evaluator(params):
             raw = [sel(params) for sel in constraint["selectors"]]
-            flat = [tree_just_flatten(r, registry=registry) for r in raw]
+            flat = [tree_just_flatten(r, namespace=namespace) for r in raw]
             return flat
 
     elif field == "loc":

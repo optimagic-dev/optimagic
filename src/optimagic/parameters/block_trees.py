@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     tree_flatten,
     tree_unflatten,
 )
@@ -332,9 +332,8 @@ def _is_pd_object(obj):
 
 
 def _check_dimensions_matrix(matrix, outer_tree, inner_tree):
-    extended_registry = get_registry(extended=True)
-    flat_outer = tree_leaves(outer_tree, registry=extended_registry)
-    flat_inner = tree_leaves(inner_tree, registry=extended_registry)
+    flat_outer = tree_leaves(outer_tree, namespace=extended)
+    flat_inner = tree_leaves(inner_tree, namespace=extended)
 
     if matrix.shape[0] != len(flat_outer):
         raise ValueError("First dimension of matrix does not match that of outer_tree.")
@@ -345,9 +344,8 @@ def _check_dimensions_matrix(matrix, outer_tree, inner_tree):
 
 
 def _check_dimensions_hessian(hessian, f_tree, params_tree):
-    extended_registry = get_registry(extended=True)
-    flat_f = tree_leaves(f_tree, registry=extended_registry)
-    flat_p = tree_leaves(params_tree, registry=extended_registry)
+    flat_f = tree_leaves(f_tree, namespace=extended)
+    flat_p = tree_leaves(params_tree, namespace=extended)
 
     if len(flat_f) == 1:
         # consider only dimensions with non trivial size (larger than 1)

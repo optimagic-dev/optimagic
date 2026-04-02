@@ -6,7 +6,7 @@ import scipy
 
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     tree_just_flatten,
     tree_unflatten,
 )
@@ -149,9 +149,8 @@ def calculate_estimation_summary(
     # Flatten summary and construct data frame for flat estimates
     # ==================================================================================
 
-    registry = get_registry(extended=True)
     flat_data = {
-        key: tree_just_flatten(val, registry=registry)
+        key: tree_just_flatten(val, namespace=extended)
         for key, val in summary_data.items()
     }
 
@@ -170,7 +169,7 @@ def calculate_estimation_summary(
     # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(summary_data["value"], names, registry=registry)
+    indices = tree_unflatten(summary_data["value"], names, namespace=extended)
 
     estimates_flat = tree_just_flatten(summary_data["value"])
     indices_flat = tree_just_flatten(indices)
@@ -319,8 +318,7 @@ def calculate_free_estimates(estimates, internal_estimates):
     mask = internal_estimates.free_mask
     names = internal_estimates.names
 
-    registry = get_registry(extended=True)
-    external_flat = np.array(tree_just_flatten(estimates, registry=registry))
+    external_flat = np.array(tree_just_flatten(estimates, namespace=extended))
 
     free_estimates = FreeParams(
         values=external_flat[mask],
@@ -354,8 +352,7 @@ def transform_free_values_to_params_tree(values, free_params, params):
     mask = free_params.free_mask
     flat = np.full(len(mask), np.nan)
     flat[np.ix_(mask)] = values
-    registry = get_registry(extended=True)
-    pytree = tree_unflatten(params, flat, registry=registry)
+    pytree = tree_unflatten(params, flat, namespace=extended)
     return pytree
 
 

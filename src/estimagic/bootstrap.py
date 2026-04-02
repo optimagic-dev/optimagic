@@ -13,7 +13,7 @@ from estimagic.shared_covs import calculate_estimation_summary
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     leaf_names,
     tree_flatten,
     tree_just_flatten,
@@ -107,9 +107,8 @@ def bootstrap(
     # Process results
     # ==================================================================================
 
-    registry = get_registry(extended=True)
     flat_outcomes = [
-        tree_just_flatten(_outcome, registry=registry) for _outcome in all_outcomes
+        tree_just_flatten(_outcome, namespace=extended) for _outcome in all_outcomes
     ]
     internal_outcomes = np.array(flat_outcomes)
 
@@ -167,11 +166,10 @@ class BootstrapResult:
             List[Any]: The boostrap outcomes as a list of pytrees.
 
         """
-        registry = get_registry(extended=True)
-        _, treedef = tree_flatten(self._base_outcome, registry=registry)
+        _, treedef = tree_flatten(self._base_outcome, namespace=extended)
 
         outcomes = [
-            tree_unflatten(treedef, out, registry=registry)
+            tree_unflatten(treedef, out, namespace=extended)
             for out in self._internal_outcomes
         ]
         return outcomes
@@ -187,10 +185,9 @@ class BootstrapResult:
         cov = self._internal_cov
         se = np.sqrt(np.diagonal(cov))
 
-        registry = get_registry(extended=True)
-        _, treedef = tree_flatten(self._base_outcome, registry=registry)
+        _, treedef = tree_flatten(self._base_outcome, namespace=extended)
 
-        se = tree_unflatten(treedef, se, registry=registry)
+        se = tree_unflatten(treedef, se, namespace=extended)
         return se
 
     def cov(self, return_type="pytree"):
@@ -211,8 +208,7 @@ class BootstrapResult:
         cov = self._internal_cov
 
         if return_type == "dataframe":
-            registry = get_registry(extended=True)
-            names = np.array(leaf_names(self._base_outcome, registry=registry))
+            names = np.array(leaf_names(self._base_outcome, namespace=extended))
             cov = pd.DataFrame(cov, columns=names, index=names)
         elif return_type == "pytree":
             cov = matrix_to_block_tree(cov, self._base_outcome, self._base_outcome)
@@ -239,15 +235,16 @@ class BootstrapResult:
                 bounds of confidence intervals.
 
         """
-        registry = get_registry(extended=True)
-        base_outcome_flat, treedef = tree_flatten(self._base_outcome, registry=registry)
+        base_outcome_flat, treedef = tree_flatten(
+            self._base_outcome, namespace=extended
+        )
 
         lower_flat, upper_flat = calculate_ci(
             base_outcome_flat, self._internal_outcomes, ci_method, ci_level
         )
 
-        lower = tree_unflatten(treedef, lower_flat, registry=registry)
-        upper = tree_unflatten(treedef, upper_flat, registry=registry)
+        lower = tree_unflatten(treedef, lower_flat, namespace=extended)
+        upper = tree_unflatten(treedef, upper_flat, namespace=extended)
         return lower, upper
 
     def p_values(self):
@@ -276,8 +273,7 @@ class BootstrapResult:
                 Soon this will be a pytree.
 
         """
-        registry = get_registry(extended=True)
-        names = leaf_names(self.base_outcome, registry=registry)
+        names = leaf_names(self.base_outcome, namespace=extended)
         summary_data = _calulcate_summary_data_bootstrap(
             self, ci_method=ci_method, ci_level=ci_level
         )

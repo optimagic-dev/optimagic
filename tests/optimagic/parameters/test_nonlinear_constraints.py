@@ -21,7 +21,7 @@ from optimagic.parameters.nonlinear_constraints import (
     process_nonlinear_constraints,
     vector_as_list_of_scalar_constraints,
 )
-from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
+from optimagic.parameters.tree_registry import extended, tree_just_flatten
 
 
 @dataclass
@@ -30,8 +30,7 @@ class Converter:
         return x
 
     def params_to_internal(self, params):
-        registry = get_registry(extended=True)
-        return np.array(tree_just_flatten(params, registry=registry))
+        return np.array(tree_just_flatten(params, namespace=extended))
 
 
 # ======================================================================================

@@ -13,7 +13,7 @@ from optimagic.logging.logger import (
 )
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     tree_equal,
     tree_just_flatten,
 )
@@ -84,10 +84,9 @@ def test_log_reader_read_multistart_history(example_db):
     assert local_history is None
     assert exploration is None
 
-    registry = get_registry(extended=True)
     assert tree_equal(
-        tree_just_flatten(asdict(history), registry=registry),
-        tree_just_flatten(asdict(reader.read_history()), registry=registry),
+        tree_just_flatten(asdict(history), namespace=extended),
+        tree_just_flatten(asdict(reader.read_history()), namespace=extended),
     )
 
 

@@ -10,7 +10,7 @@ from optimagic.exceptions import InvalidConstraintError, InvalidFunctionError
 from optimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from optimagic.parameters.block_trees import block_tree_to_matrix
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     tree_flatten,
     tree_just_flatten,
     tree_unflatten,
@@ -365,14 +365,13 @@ def _extend_jacobian(jac_mat, selection_indices, n_params):
 
 def _get_selection_indices(params, selector):
     """Get index of selected flat params and number of flat params."""
-    registry = get_registry(extended=True)
-    flat_params, params_treedef = tree_flatten(params, registry=registry)
+    flat_params, params_treedef = tree_flatten(params, namespace=extended)
     n_params = len(flat_params)
     indices = np.arange(n_params, dtype=int)
-    params_indices = tree_unflatten(params_treedef, indices, registry=registry)
+    params_indices = tree_unflatten(params_treedef, indices, namespace=extended)
     selected = selector(params_indices)
     selection_indices = np.array(
-        tree_just_flatten(selected, registry=registry), dtype=int
+        tree_just_flatten(selected, namespace=extended), dtype=int
     )
     return selection_indices, n_params
 

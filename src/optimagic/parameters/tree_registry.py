@@ -1,78 +1,14 @@
 """Wrapper around pybaum get_registry to tailor it to optimagic."""
 
 import itertools
-from functools import partial
 from itertools import product
 
 import numpy as np
 import optree
 import pandas as pd
 from optree.pytree import PyTreeSpec
-from pybaum import get_registry as get_pybaum_registry
 
 from optimagic.typing import extended_namespace
-
-
-def get_registry(extended=False, data_col="value"):
-    """Return pytree registry.
-
-    Special Rules
-    -------------
-    If extended is True the registry contains pd.DataFrame. In optimagic a data frame
-    can represent a 1d object with extra information, instead of a 2d object. This is
-    only allowed for params data frames, in which case they contain a 'value' column.
-    The extra information of such an object can be accessed using the data_col argument.
-    By default the 'value' column is extracted. If data_col is not 'value' but the data
-    frame contains a 'value' column, a list of np.nan is returned.
-
-    Args:
-        extended (bool): If True appends types 'numpy.ndarray', 'pandas.Series' and
-            'pandas.DataFrame' to the registry.
-        data_col (str): This column is used as the data source in a data frame when
-            flattening and unflattening a pytree. Defaults to 'value'; see special rules
-            above for behavior with non-default values.
-
-    Returns:
-        dict: The pytree registry.
-
-    """
-    types = (
-        ["numpy.ndarray", "pandas.Series", "jax.numpy.ndarray"] if extended else None
-    )
-    registry = get_pybaum_registry(types=types)
-    if extended:
-        registry[pd.DataFrame] = {
-            "flatten": partial(_flatten_df, data_col=data_col),
-            "unflatten": partial(_unflatten_df, data_col=data_col),
-            "names": _get_df_names,
-        }
-    return registry
-
-
-def _flatten_df(df, data_col):
-    is_value_df = "value" in df
-    if is_value_df:
-        flat = df.get(data_col, default=np.full(len(df), np.nan)).tolist()
-    else:
-        flat = df.to_numpy().flatten().tolist()
-
-    aux_data = {
-        "is_value_df": is_value_df,
-        "df": df,
-    }
-    return flat, aux_data
-
-
-def _unflatten_df(aux_data, leaves, data_col):
-    if aux_data["is_value_df"]:
-        out = aux_data["df"].assign(**{data_col: leaves})
-    else:
-        out = pd.DataFrame(
-            data=np.array(leaves).reshape(aux_data["df"].shape),
-            columns=aux_data["df"].columns,
-            index=aux_data["df"].index,
-        )
-    return out
 
 
 def _get_df_names(df):
@@ -95,32 +31,31 @@ def _index_element_to_string(element):
     return res_string
 
 
-def tree_flatten(tree, is_leaf=None, registry=None):
+def tree_flatten(tree, is_leaf=None, namespace=""):
     with optree.dict_insertion_ordered(True, namespace=extended_namespace):
-        return optree.tree_flatten(
-            tree, is_leaf=is_leaf, namespace=extended_namespace if registry else ""
-        )
+        return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
 
 
-def tree_just_flatten(tree, is_leaf=None, registry=None):
-    leaves, _ = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+def tree_just_flatten(tree, is_leaf=None, namespace=""):
+    leaves, _ = tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
     return leaves
 
 
-def tree_unflatten(treedef, leaves, is_leaf=None, registry=None):
+extended = extended_namespace
+
+
+def tree_unflatten(treedef, leaves, is_leaf=None, namespace=""):
     if not isinstance(treedef, PyTreeSpec):
-        _, treedef = tree_flatten(treedef, is_leaf=is_leaf, registry=registry)
+        _, treedef = tree_flatten(treedef, is_leaf=is_leaf, namespace=namespace)
     return optree.tree_unflatten(treespec=treedef, leaves=leaves)
 
 
-def tree_map(func, tree, is_leaf=None, registry=None):
-    return optree.tree_map(
-        func, tree, is_leaf=is_leaf, namespace=extended_namespace if registry else ""
-    )
+def tree_map(func, tree, is_leaf=None, namespace=""):
+    return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
 
 
-def leaf_names(tree, is_leaf=None, registry=None, separator="_"):
-    _, treespec = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+def leaf_names(tree, is_leaf=None, namespace="", separator="_"):
+    _, treespec = tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
     paths = treespec.paths()
     return [separator.join(str(p) for p in path) for path in paths]
 
@@ -158,7 +93,15 @@ def _flatten_df_optree(df):
 
 def _unflatten_df_optree(aux_data, leaves):
     data_col = aux_data["df"].attrs.get("data_col", "value")
-    return _unflatten_df(aux_data=aux_data, leaves=leaves, data_col=data_col)
+    if aux_data["is_value_df"]:
+        out = aux_data["df"].assign(**{data_col: leaves})
+    else:
+        out = pd.DataFrame(
+            data=np.array(leaves).reshape(aux_data["df"].shape),
+            columns=aux_data["df"].columns,
+            index=aux_data["df"].index,
+        )
+    return out
 
 
 optree.register_pytree_node(
@@ -192,20 +135,22 @@ EQUALITY_CHECKERS[pd.Series] = lambda a, b: a.equals(b)
 EQUALITY_CHECKERS[pd.DataFrame] = lambda a, b: a.equals(b)
 
 
-def tree_equal(tree, other, is_leaf=None, registry=None, equality_checkers=None):
+def tree_equal(tree, other, is_leaf=None, namespace="", equality_checkers=None):
     equality_checkers = (
         EQUALITY_CHECKERS
         if equality_checkers is None
         else {**EQUALITY_CHECKERS, **equality_checkers}
     )
 
-    first_flat, first_treespec = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+    first_flat, first_treespec = tree_flatten(
+        tree, is_leaf=is_leaf, namespace=namespace
+    )
     second_flat, second_treespec = tree_flatten(
-        other, is_leaf=is_leaf, registry=registry
+        other, is_leaf=is_leaf, namespace=namespace
     )
 
-    first_names = leaf_names(tree, is_leaf=is_leaf, registry=registry)
-    second_names = leaf_names(tree, is_leaf=is_leaf, registry=registry)
+    first_names = leaf_names(tree, is_leaf=is_leaf, namespace=namespace)
+    second_names = leaf_names(tree, is_leaf=is_leaf, namespace=namespace)
 
     equal = first_names == second_names and first_treespec == second_treespec
 

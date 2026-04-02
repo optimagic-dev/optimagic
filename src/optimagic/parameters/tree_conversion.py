@@ -6,7 +6,7 @@ from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.block_trees import block_tree_to_matrix
 from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     leaf_names,
     tree_flatten,
     tree_just_flatten,
@@ -50,26 +50,25 @@ def get_tree_converter(
         FlatParams: NamedTuple of 1d arrays with flattened bounds and param names.
 
     """
-    _registry = get_registry(extended=True)
-    _params_vec, _params_treedef = tree_flatten(params, registry=_registry)
+    _params_vec, _params_treedef = tree_flatten(params, namespace=extended)
     _params_vec = np.array(_params_vec).astype(float)
     _lower, _upper = get_internal_bounds(
         params=params,
         bounds=bounds,
-        registry=_registry,
+        namespace=extended,
     )
 
     if add_soft_bounds:
         _soft_lower, _soft_upper = get_internal_bounds(
             params=params,
             bounds=bounds,
-            registry=_registry,
+            namespace=extended,
             add_soft_bounds=add_soft_bounds,
         )
     else:
         _soft_lower, _soft_upper = None, None
 
-    _param_names = leaf_names(params, registry=_registry)
+    _param_names = leaf_names(params, namespace=extended)
 
     flat_params = FlatParams(
         values=_params_vec,
@@ -80,13 +79,13 @@ def get_tree_converter(
         soft_upper_bounds=_soft_upper,
     )
 
-    _params_flatten = _get_params_flatten(registry=_registry)
+    _params_flatten = _get_params_flatten(namespace=extended)
     _params_unflatten = _get_params_unflatten(
-        registry=_registry, treedef=_params_treedef
+        namespace=extended, treedef=_params_treedef
     )
 
     _derivative_flatten = _get_derivative_flatten(
-        registry=_registry,
+        namespace=extended,
         solver_type=solver_type,
         params=params,
         func_eval=func_eval,
@@ -102,16 +101,16 @@ def get_tree_converter(
     return converter, flat_params
 
 
-def _get_params_flatten(registry):
+def _get_params_flatten(namespace):
     def params_flatten(params):
-        return np.array(tree_just_flatten(params, registry=registry)).astype(float)
+        return np.array(tree_just_flatten(params, namespace=namespace)).astype(float)
 
     return params_flatten
 
 
-def _get_params_unflatten(registry, treedef):
+def _get_params_unflatten(namespace, treedef):
     def params_unflatten(x):
-        return tree_unflatten(treedef=treedef, leaves=list(x), registry=registry)
+        return tree_unflatten(treedef=treedef, leaves=list(x), namespace=namespace)
 
     return params_unflatten
 
@@ -143,13 +142,13 @@ def _get_best_key_and_aggregator(needed_key, available_keys):
     return key, aggregate
 
 
-def _get_derivative_flatten(registry, solver_type, params, func_eval, derivative_eval):
+def _get_derivative_flatten(namespace, solver_type, params, func_eval, derivative_eval):
     # gradient case
     if solver_type == AggregationLevel.SCALAR:
 
         def derivative_flatten(derivative_eval):
             flat = np.array(
-                tree_just_flatten(derivative_eval, registry=registry)
+                tree_just_flatten(derivative_eval, namespace=namespace)
             ).astype(float)
             return flat
 

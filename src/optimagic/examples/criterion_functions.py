@@ -17,13 +17,11 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
-    get_registry,
+    extended,
     tree_just_flatten,
     tree_unflatten,
 )
 from optimagic.typing import PyTree
-
-REGISTRY = get_registry(extended=True)
 
 
 @mark.scalar
@@ -217,11 +215,10 @@ def _get_x(params: PyTree) -> NDArray[np.float64]:
     if isinstance(params, np.ndarray) and params.ndim == 1:
         x = params.astype(float)
     else:
-        registry = get_registry(extended=True)
-        x = np.array(tree_just_flatten(params, registry=registry), dtype=np.float64)
+        x = np.array(tree_just_flatten(params, namespace=extended), dtype=np.float64)
     return x
 
 
 def _unflatten_gradient(flat: NDArray[np.float64], params: PyTree) -> PyTree:
-    out = tree_unflatten(params, flat.tolist(), registry=REGISTRY)
+    out = tree_unflatten(params, flat.tolist(), namespace=extended)
     return out

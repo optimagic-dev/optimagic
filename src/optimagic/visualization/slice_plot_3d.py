@@ -19,7 +19,7 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.tree_registry import get_registry, tree_just_flatten
+from optimagic.parameters.tree_registry import extended, tree_just_flatten
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 
@@ -149,9 +149,8 @@ def slice_plot_3d(  # type: ignore[no-untyped-def]
     selected = np.arange(n_params, dtype=int)
     if selector is not None:
         helper = converter.params_from_internal(selected)
-        registry = get_registry(extended=True)
         selected = np.array(
-            tree_just_flatten(selector(helper), registry=registry), dtype=int
+            tree_just_flatten(selector(helper), namespace=extended), dtype=int
         ).reshape(-1)
     n_params = len(selected)
     if not np.isfinite(internal_params.lower_bounds[selected]).all():
