@@ -13,7 +13,8 @@ import numpy as np
 from optimagic import batch_evaluators
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import extended, tree_just_flatten
+from optimagic.parameters.tree_registry import tree_just_flatten
+from optimagic.typing import value_namespace
 
 
 def run_benchmark(
@@ -189,7 +190,7 @@ def _process_one_result(optimize_result, problem):
 
     # This will happen if the optimization raised an error
     if isinstance(optimize_result, str):
-        params_history_flat = [tree_just_flatten(_start_x, namespace=extended)]
+        params_history_flat = [tree_just_flatten(_start_x, namespace=value_namespace)]
         criterion_history = [_start_crit_value]
         time_history = [np.inf]
         batches_history = [0]
@@ -197,7 +198,7 @@ def _process_one_result(optimize_result, problem):
         history = optimize_result.history
         params_history = history.params
         params_history_flat = [
-            tree_just_flatten(p, namespace=extended) for p in params_history
+            tree_just_flatten(p, namespace=value_namespace) for p in params_history
         ]
         if _is_noisy:
             criterion_history = np.array([_criterion(p) for p in params_history])

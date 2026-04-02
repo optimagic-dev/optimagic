@@ -6,13 +6,12 @@ from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.block_trees import block_tree_to_matrix
 from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import (
-    extended,
     leaf_names,
     tree_flatten,
     tree_just_flatten,
     tree_unflatten,
 )
-from optimagic.typing import AggregationLevel
+from optimagic.typing import AggregationLevel, value_namespace
 
 
 def get_tree_converter(
@@ -50,25 +49,25 @@ def get_tree_converter(
         FlatParams: NamedTuple of 1d arrays with flattened bounds and param names.
 
     """
-    _params_vec, _params_treedef = tree_flatten(params, namespace=extended)
+    _params_vec, _params_treedef = tree_flatten(params, namespace=value_namespace)
     _params_vec = np.array(_params_vec).astype(float)
     _lower, _upper = get_internal_bounds(
         params=params,
         bounds=bounds,
-        namespace=extended,
+        namespace=value_namespace,
     )
 
     if add_soft_bounds:
         _soft_lower, _soft_upper = get_internal_bounds(
             params=params,
             bounds=bounds,
-            namespace=extended,
+            namespace=value_namespace,
             add_soft_bounds=add_soft_bounds,
         )
     else:
         _soft_lower, _soft_upper = None, None
 
-    _param_names = leaf_names(params, namespace=extended)
+    _param_names = leaf_names(params, namespace=value_namespace)
 
     flat_params = FlatParams(
         values=_params_vec,
@@ -79,13 +78,13 @@ def get_tree_converter(
         soft_upper_bounds=_soft_upper,
     )
 
-    _params_flatten = _get_params_flatten(namespace=extended)
+    _params_flatten = _get_params_flatten(namespace=value_namespace)
     _params_unflatten = _get_params_unflatten(
-        namespace=extended, treedef=_params_treedef
+        namespace=value_namespace, treedef=_params_treedef
     )
 
     _derivative_flatten = _get_derivative_flatten(
-        namespace=extended,
+        namespace=value_namespace,
         solver_type=solver_type,
         params=params,
         func_eval=func_eval,

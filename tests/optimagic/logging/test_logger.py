@@ -13,11 +13,10 @@ from optimagic.logging.logger import (
 )
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import (
-    extended,
     tree_equal,
     tree_just_flatten,
 )
-from optimagic.typing import Direction
+from optimagic.typing import Direction, value_namespace
 
 
 @pytest.fixture()
@@ -85,8 +84,8 @@ def test_log_reader_read_multistart_history(example_db):
     assert exploration is None
 
     assert tree_equal(
-        tree_just_flatten(asdict(history), namespace=extended),
-        tree_just_flatten(asdict(reader.read_history()), namespace=extended),
+        tree_just_flatten(asdict(history), namespace=value_namespace),
+        tree_just_flatten(asdict(reader.read_history()), namespace=value_namespace),
     )
 
 

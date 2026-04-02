@@ -6,7 +6,8 @@ import pandas as pd
 
 from optimagic.constraints import Constraint
 from optimagic.exceptions import InvalidConstraintError
-from optimagic.parameters.tree_registry import extended, tree_just_flatten
+from optimagic.parameters.tree_registry import tree_just_flatten
+from optimagic.typing import value_namespace
 
 
 def process_selectors(constraints, params, tree_converter, param_names):
@@ -51,7 +52,7 @@ def process_selectors(constraints, params, tree_converter, param_names):
             field=field,
             constraint=constr,
             params_case=params_case,
-            namespace=extended,
+            namespace=value_namespace,
         )
         try:
             with warnings.catch_warnings():

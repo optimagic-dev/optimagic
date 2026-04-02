@@ -9,14 +9,7 @@ import optree
 import pandas as pd
 from optree.pytree import PyTreeSpec
 
-extended = "value"
-namespaces = [
-    extended,
-    "lower_bound",
-    "upper_bound",
-    "soft_lower_bound",
-    "soft_upper_bound",
-]
+from optimagic.typing import optree_namespaces
 
 EQUALITY_CHECKERS = {}
 EQUALITY_CHECKERS[np.ndarray.__name__] = lambda a, b: bool((a == b).all())
@@ -156,7 +149,7 @@ def _unflatten_ndarray(aux_data, leaves):
     return np.array(leaves).reshape(aux_data)
 
 
-for namespace in namespaces:
+for namespace in optree_namespaces:
     optree.register_pytree_node(
         pd.DataFrame,
         partial(_flatten_df, data_col=namespace),

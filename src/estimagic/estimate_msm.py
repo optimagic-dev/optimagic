@@ -51,13 +51,13 @@ from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
 from optimagic.parameters.tree_registry import (
-    extended,
     leaf_names,
     tree_just_flatten,
 )
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
+from optimagic.typing import value_namespace
 from optimagic.utilities import get_rng, to_pickle
 
 
@@ -321,7 +321,7 @@ def estimate_msm(
             sim_mom = simulate_moments(params, **simulate_moments_kwargs)
             if isinstance(sim_mom, dict) and "simulated_moments" in sim_mom:
                 sim_mom = sim_mom["simulated_moments"]
-            out = np.array(tree_just_flatten(sim_mom, namespace=extended))
+            out = np.array(tree_just_flatten(sim_mom, namespace=value_namespace))
             return out
 
         int_jac = first_derivative(
@@ -420,7 +420,7 @@ def get_msm_optimization_functions(
 
     chol_weights = np.linalg.cholesky(flat_weights)
 
-    flat_emp_mom = tree_just_flatten(empirical_moments, namespace=extended)
+    flat_emp_mom = tree_just_flatten(empirical_moments, namespace=value_namespace)
 
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
@@ -431,7 +431,7 @@ def get_msm_optimization_functions(
             simulate_moments=_simulate_moments,
             flat_empirical_moments=flat_emp_mom,
             chol_weights=chol_weights,
-            namespace=extended,
+            namespace=value_namespace,
         )
     )
 
@@ -977,7 +977,7 @@ class MomentsResult:
             )
         elif return_type == "dataframe":
             row_names = self._internal_estimates.names
-            col_names = leaf_names(self._empirical_moments, namespace=extended)
+            col_names = leaf_names(self._empirical_moments, namespace=value_namespace)
             out = pd.DataFrame(
                 data=raw,
                 index=row_names,

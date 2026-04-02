@@ -9,14 +9,13 @@ from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import (
-    extended,
     leaf_names,
     tree_map,
 )
 from optimagic.parameters.tree_registry import (
     tree_just_flatten as tree_leaves,
 )
-from optimagic.typing import PyTree
+from optimagic.typing import PyTree, value_namespace
 from optimagic.utilities import fast_numpy_full
 
 
@@ -80,7 +79,7 @@ def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
 def get_internal_bounds(
     params: PyTree,
     bounds: Bounds | None = None,
-    namespace: str = extended,
+    namespace: str = value_namespace,
     add_soft_bounds: bool = False,
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
@@ -182,11 +181,15 @@ def _update_bounds_and_flatten(
     """
     flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
     if bounds is not None:
-        flat_bounds = tree_leaves(bounds, namespace=extended)
+        flat_bounds = tree_leaves(bounds, namespace=value_namespace)
 
         seperator = 10 * "$"
-        params_names = leaf_names(nan_tree, namespace=extended, separator=seperator)
-        bounds_names = leaf_names(bounds, namespace=extended, separator=seperator)
+        params_names = leaf_names(
+            nan_tree, namespace=value_namespace, separator=seperator
+        )
+        bounds_names = leaf_names(
+            bounds, namespace=value_namespace, separator=seperator
+        )
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree, strict=False))
 

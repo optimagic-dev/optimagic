@@ -12,13 +12,12 @@ from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import (
-    extended,
     leaf_names,
     tree_flatten,
     tree_just_flatten,
     tree_unflatten,
 )
-from optimagic.typing import IterationHistory, PyTree
+from optimagic.typing import IterationHistory, PyTree, value_namespace
 from optimagic.visualization.backends import line_plot
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
@@ -585,13 +584,19 @@ def _extract_params_plot_lines(
         history = data.history.params
     start_params = data.start_params
 
-    hist_arr = np.array([tree_just_flatten(p, namespace=extended) for p in history]).T
-    names = leaf_names(start_params, namespace=extended)
+    hist_arr = np.array(
+        [tree_just_flatten(p, namespace=value_namespace) for p in history]
+    ).T
+    names = leaf_names(start_params, namespace=value_namespace)
 
     if selector is not None:
-        flat, treedef = tree_flatten(start_params, namespace=extended)
-        helper = tree_unflatten(treedef, list(range(len(flat))), namespace=extended)
-        selected = np.array(tree_just_flatten(selector(helper), namespace=extended))
+        flat, treedef = tree_flatten(start_params, namespace=value_namespace)
+        helper = tree_unflatten(
+            treedef, list(range(len(flat))), namespace=value_namespace
+        )
+        selected = np.array(
+            tree_just_flatten(selector(helper), namespace=value_namespace)
+        )
         names = [names[i] for i in selected]
         hist_arr = hist_arr[selected]
 

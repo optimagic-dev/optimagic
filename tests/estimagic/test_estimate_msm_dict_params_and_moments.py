@@ -5,7 +5,8 @@ import pandas as pd
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.estimate_msm import estimate_msm
-from optimagic.parameters.tree_registry import extended, tree_just_flatten
+from optimagic.parameters.tree_registry import tree_just_flatten
+from optimagic.typing import value_namespace
 
 
 def test_estimate_msm_dict_params_and_moments():
@@ -97,7 +98,7 @@ def assert_almost_equal(x, y, decimal=6):
         x_flat = x
         y_flat = y
     else:
-        x_flat = np.array(tree_just_flatten(x, namespace=extended))
-        y_flat = np.array(tree_just_flatten(x, namespace=extended))
+        x_flat = np.array(tree_just_flatten(x, namespace=value_namespace))
+        y_flat = np.array(tree_just_flatten(x, namespace=value_namespace))
 
     aaae(x_flat, y_flat, decimal=decimal)

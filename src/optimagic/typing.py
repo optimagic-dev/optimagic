@@ -173,3 +173,14 @@ class MultiStartIterationHistory(TupleLikeAccess):
     history: IterationHistory
     local_histories: list[IterationHistory] | None = None
     exploration: IterationHistory | None = None
+
+
+optree_namespaces = [
+    "value",
+    "lower_bound",
+    "upper_bound",
+    "soft_lower_bound",
+    "soft_upper_bound",
+]
+
+value_namespace = optree_namespaces[0]
