@@ -1,6 +1,5 @@
 """Wrapper around optree to tailor it to optimagic."""
 
-import itertools
 from functools import partial
 from itertools import product
 
@@ -165,7 +164,7 @@ def _index_element_to_string(element):
 
 def _array_element_names(arr):
     dim_names = [map(str, range(n)) for n in arr.shape]
-    names = list(map("_".join, itertools.product(*dim_names)))
+    names = list(map("_".join, product(*dim_names)))
     return names
 
 
