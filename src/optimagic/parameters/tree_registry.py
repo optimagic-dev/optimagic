@@ -140,7 +140,7 @@ def _unflatten_df(aux_data, leaves, data_col):
     return out
 
 
-def _flatten_series(series: pd.Series):
+def _flatten_series(series):
     return (
         series.tolist(),
         {"index": series.index, "name": series.name},
@@ -152,7 +152,7 @@ def _unflatten_series(aux_data, leaves):
     return pd.Series(leaves, **aux_data)
 
 
-def _flatten_ndarray(arr: np.ndarray):
+def _flatten_ndarray(arr):
     return arr.flatten().tolist(), arr.shape, _array_element_names(arr)
 
 
@@ -162,7 +162,7 @@ def _unflatten_ndarray(aux_data, leaves):
 
 if _has_jax:
 
-    def _flatten_jax_array(arr: jnp.ndarray):
+    def _flatten_jax_array(arr):
         return arr.flatten().tolist(), arr.shape, _array_element_names(arr)
 
     def _unflatten_jax_array(aux_data, leaves):
