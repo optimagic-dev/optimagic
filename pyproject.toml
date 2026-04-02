@@ -348,7 +348,6 @@ ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = [
-    "pybaum",
     "scipy",
     "scipy.linalg",
     "scipy.linalg.lapack",
