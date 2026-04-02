@@ -1,4 +1,4 @@
-"""Wrapper around pybaum get_registry to tailor it to optimagic."""
+"""Wrapper around optree to tailor it to optimagic."""
 
 import itertools
 from functools import partial
@@ -88,32 +88,6 @@ def tree_equal(tree, other, is_leaf=None, namespace="", equality_checkers=None):
     return equal
 
 
-def _array_element_names(arr):
-    dim_names = [map(str, range(n)) for n in arr.shape]
-    names = list(map("_".join, itertools.product(*dim_names)))
-    return names
-
-
-def _get_df_names(df):
-    index_strings = list(df.index.map(_index_element_to_string))
-    if "value" in df:
-        out = index_strings
-    else:
-        out = ["_".join([loc, col]) for loc, col in product(index_strings, df.columns)]
-
-    return out
-
-
-def _index_element_to_string(element):
-    if isinstance(element, (tuple, list)):
-        as_strings = [str(entry) for entry in element]
-        res_string = "_".join(as_strings)
-    else:
-        res_string = str(element)
-
-    return res_string
-
-
 def _flatten_df(df, data_col):
     is_value_df = "value" in df
     if is_value_df:
@@ -167,6 +141,32 @@ if _has_jax:
 
     def _unflatten_jax_array(aux_data, leaves):
         return jnp.array(leaves).reshape(aux_data)
+
+
+def _get_df_names(df):
+    index_strings = list(df.index.map(_index_element_to_string))
+    if "value" in df:
+        out = index_strings
+    else:
+        out = ["_".join([loc, col]) for loc, col in product(index_strings, df.columns)]
+
+    return out
+
+
+def _index_element_to_string(element):
+    if isinstance(element, (tuple, list)):
+        as_strings = [str(entry) for entry in element]
+        res_string = "_".join(as_strings)
+    else:
+        res_string = str(element)
+
+    return res_string
+
+
+def _array_element_names(arr):
+    dim_names = [map(str, range(n)) for n in arr.shape]
+    names = list(map("_".join, itertools.product(*dim_names)))
+    return names
 
 
 for namespace in optree_namespaces:
