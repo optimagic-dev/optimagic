@@ -11,7 +11,6 @@ from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import (
     extended,
     leaf_names,
-    set_data_col_df_attribute,
     tree_map,
 )
 from optimagic.parameters.tree_registry import (
@@ -181,9 +180,7 @@ def _update_bounds_and_flatten(
         np.ndarray: The updated and flattened bounds.
 
     """
-    flat_nan_tree = tree_leaves(
-        set_data_col_df_attribute(nan_tree, data_col=kind), namespace=extended
-    )
+    flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
     if bounds is not None:
         flat_bounds = tree_leaves(bounds, namespace=extended)
 
