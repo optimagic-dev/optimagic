@@ -34,24 +34,26 @@ def tree_just_flatten(tree, is_leaf=None, namespace=""):
     return _with_insertion_order(namespace, optree.tree_leaves, tree, is_leaf=is_leaf)
 
 
-def tree_unflatten(treedef, leaves, is_leaf=None, namespace=""):
+def tree_unflatten(treedef, leaves, namespace=""):
     """Reconstruct a pytree from the tree definition and the leaves."""
     _register_namespaces()
 
     if not isinstance(treedef, PyTreeSpec):
-        treedef = _with_insertion_order(
-            namespace, optree.tree_structure, treedef, is_leaf=is_leaf
-        )
+        treedef = _with_insertion_order(namespace, optree.tree_structure, treedef)
 
+    # optree.tree_unflatten doesn't need to be wrapped with _with_insertion_order
+    # because it keeps the insertion order for dictionaries.
     return optree.tree_unflatten(treedef, leaves)
 
 
 def tree_map(func, tree, is_leaf=None, namespace=""):
-    """Map an input function over pytree args to produce a new pytree."""
+    """Map an input function over pytree args to produce a new pytree.
+
+    optree.tree_map always respects insertion order for dictionaries and doesn't
+    require to be wrapped with _with_insertion_order.
+    """
     _register_namespaces()
-    return _with_insertion_order(
-        namespace, optree.tree_map, func, tree, is_leaf=is_leaf
-    )
+    return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
 
 
 def leaf_names(tree, is_leaf=None, namespace="", separator="_"):
