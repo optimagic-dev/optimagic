@@ -182,7 +182,7 @@ def _flatten_df(df, data_col):
 
 
 def _unflatten_df(aux_data, leaves, data_col):
-    """Reconstrut a dataframe."""
+    """Reconstruct a dataframe."""
     if aux_data["is_value_df"]:
         out = aux_data["df"].assign(**{data_col: leaves})
     else:
@@ -204,7 +204,7 @@ def _flatten_series(series):
 
 
 def _unflatten_series(aux_data, leaves):
-    """Reconstrut a series."""
+    """Reconstruct a series."""
     return pd.Series(leaves, **aux_data)
 
 

@@ -15,6 +15,7 @@ dependencies = [
     "sqlalchemy>=2.0",
     "annotated-types>=0.4",
     "typing-extensions>=4.5",
+		"optree>=0.19",
 ]
 dynamic = ["version"]
 keywords = [
@@ -437,7 +438,6 @@ cma = ">=3.3"
 pygad = ">=3.2"
 pytorch-cpu = ">=2.2"
 ruff = ">=0.15.5,<0.16"
-optree = ">=0.19.0,<0.20"
 
 [tool.pixi.pypi-dependencies]
 optimagic = { path = ".", editable = true }

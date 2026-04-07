@@ -18,7 +18,6 @@ from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
 
 PyTree = Any
-PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]
 Scalar = Any
 
 T = TypeVar("T")

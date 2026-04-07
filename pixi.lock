@@ -19369,13 +19369,14 @@ packages:
   timestamp: 1733688053334
 - pypi: ./
   name: optimagic
-  version: 0.1.dev490+gca240b536.d20260404
-  sha256: c88af4df72626cc43fa554ada0e3a9053ae6d0cd9adcad0267c28e762e925cdd
+  version: 0.1.dev492+g2bea3de84.d20260407
+  sha256: 69348fe3caa97fcd753cc09374e64240ac1bccf76be0a6ec9de862d9f95d577d
   requires_dist:
   - annotated-types>=0.4
   - cloudpickle>=2.2
   - joblib>=1.1
   - numpy>=1.26
+  - optree>=0.19
   - pandas>=2.1
   - plotly>=5.14
   - scipy>=1.11
@@ -19443,7 +19444,7 @@ packages:
   license: Apache-2.0
   license_family: Apache
   purls:
-  - pkg:pypi/optree?source=compressed-mapping
+  - pkg:pypi/optree?source=hash-mapping
   size: 429640
   timestamp: 1771868574672
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/optree-0.19.0-py313h5c29297_0.conda

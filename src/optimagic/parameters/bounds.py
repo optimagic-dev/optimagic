@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any, Literal, Sequence
 
 import numpy as np
-import optree
 from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
@@ -180,20 +179,17 @@ def _update_bounds_and_flatten(
         np.ndarray: The updated and flattened bounds.
 
     """
-    with optree.dict_insertion_ordered(True, namespace=kind):
-        flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
+    flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
     if bounds is not None:
-        with optree.dict_insertion_ordered(True, namespace=VALUE_NAMESPACE):
-            flat_bounds = tree_leaves(bounds, namespace=VALUE_NAMESPACE)
+        flat_bounds = tree_leaves(bounds, namespace=VALUE_NAMESPACE)
 
         seperator = 10 * "$"
-        with optree.dict_insertion_ordered(True, namespace=VALUE_NAMESPACE):
-            params_names = leaf_names(
-                nan_tree, namespace=VALUE_NAMESPACE, separator=seperator
-            )
-            bounds_names = leaf_names(
-                bounds, namespace=VALUE_NAMESPACE, separator=seperator
-            )
+        params_names = leaf_names(
+            nan_tree, namespace=VALUE_NAMESPACE, separator=seperator
+        )
+        bounds_names = leaf_names(
+            bounds, namespace=VALUE_NAMESPACE, separator=seperator
+        )
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree, strict=False))
 

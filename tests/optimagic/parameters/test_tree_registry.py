@@ -156,7 +156,7 @@ def test_dict_insertion_ordering_is_respected_for_registered_namespaces():
     assert names == ["b_0", "b_1", "a_0", "a_1"]
 
 
-def test_dict_ordering_is_default_behaviour_is_by_name():
+def test_dict_ordering_default_behaviour_is_by_name():
     params = {"b": [1, 4], "a": [8, 9]}
     leaves, _ = tree_flatten(params)
     assert leaves == [8, 9, 1, 4]
