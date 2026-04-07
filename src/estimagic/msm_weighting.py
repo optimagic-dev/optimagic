@@ -7,7 +7,7 @@ from scipy.linalg import block_diag
 from estimagic.bootstrap import bootstrap
 from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
 from optimagic.parameters.tree_registry import tree_just_flatten
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 from optimagic.utilities import robust_inverse
 
 
@@ -55,7 +55,7 @@ def get_moments_cov(
     def func(data, **kwargs):
         raw = calculate_moments(data, **kwargs)
         out = pd.Series(
-            tree_just_flatten(raw, namespace=value_namespace)
+            tree_just_flatten(raw, namespace=VALUE_NAMESPACE)
         )  # xxxx won't be necessary soon!
         return out
 

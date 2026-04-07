@@ -11,7 +11,7 @@ from optimagic.parameters.tree_registry import (
     tree_just_flatten,
     tree_unflatten,
 )
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 
 
 @pytest.mark.parametrize("constraints", [None, []])
@@ -35,14 +35,14 @@ def tree_params():
 
 @pytest.fixture()
 def tree_params_converter(tree_params):
-    _, treedef = tree_flatten(tree_params, namespace=value_namespace)
+    _, treedef = tree_flatten(tree_params, namespace=VALUE_NAMESPACE)
 
     converter = TreeConverter(
         params_flatten=lambda params: np.array(
-            tree_just_flatten(params, namespace=value_namespace)
+            tree_just_flatten(params, namespace=VALUE_NAMESPACE)
         ),
         params_unflatten=lambda x: tree_unflatten(
-            treedef, x.tolist(), namespace=value_namespace
+            treedef, x.tolist(), namespace=VALUE_NAMESPACE
         ),
         derivative_flatten=None,
     )

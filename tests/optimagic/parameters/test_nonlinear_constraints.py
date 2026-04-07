@@ -22,7 +22,7 @@ from optimagic.parameters.nonlinear_constraints import (
     vector_as_list_of_scalar_constraints,
 )
 from optimagic.parameters.tree_registry import tree_just_flatten
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 
 
 @dataclass
@@ -31,7 +31,7 @@ class Converter:
         return x
 
     def params_to_internal(self, params):
-        return np.array(tree_just_flatten(params, namespace=value_namespace))
+        return np.array(tree_just_flatten(params, namespace=VALUE_NAMESPACE))
 
 
 # ======================================================================================

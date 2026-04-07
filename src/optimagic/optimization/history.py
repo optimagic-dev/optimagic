@@ -12,7 +12,7 @@ from optimagic.parameters.tree_registry import (
     tree_just_flatten,
 )
 from optimagic.timing import CostModel
-from optimagic.typing import Direction, EvalTask, PyTree, value_namespace
+from optimagic.typing import VALUE_NAMESPACE, Direction, EvalTask, PyTree
 
 
 @dataclass(frozen=True)
@@ -400,7 +400,7 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
     if fast_path:
         flatten = lambda x: x.tolist()
     else:
-        flatten = partial(tree_just_flatten, namespace=value_namespace)
+        flatten = partial(tree_just_flatten, namespace=VALUE_NAMESPACE)
 
     return [flatten(p) for p in params]
 
@@ -412,7 +412,7 @@ def _get_flat_param_names(param: PyTree) -> list[str]:
         # arrays, but the fast path is only taken for 1d arrays, so it can be ignored.
         return np.arange(param.size).astype(str).tolist()
 
-    return leaf_names(param, namespace=value_namespace)
+    return leaf_names(param, namespace=VALUE_NAMESPACE)
 
 
 def _is_1d_array(param: PyTree) -> bool:

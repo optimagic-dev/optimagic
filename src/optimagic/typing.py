@@ -175,12 +175,12 @@ class MultiStartIterationHistory(TupleLikeAccess):
     exploration: IterationHistory | None = None
 
 
-optree_namespaces = [
+OPTREE_NAMESPACES = (
     "value",
     "lower_bound",
     "upper_bound",
     "soft_lower_bound",
     "soft_upper_bound",
-]
+)
 
-value_namespace = optree_namespaces[0]
+VALUE_NAMESPACE = OPTREE_NAMESPACES[0]

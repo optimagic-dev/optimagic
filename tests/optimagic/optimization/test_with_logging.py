@@ -21,7 +21,7 @@ from optimagic.logging.logger import SQLiteLogOptions
 from optimagic.logging.types import ExistenceStrategy
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import tree_just_flatten
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 
 
 @mark.least_squares
@@ -47,7 +47,7 @@ def test_optimization_with_valid_logging(algorithm, params):
         algorithm=algorithm,
         logging="logging.db",
     )
-    flat = np.array(tree_just_flatten(res.params, namespace=value_namespace))
+    flat = np.array(tree_just_flatten(res.params, namespace=VALUE_NAMESPACE))
     aaae(flat, np.zeros(3))
 
 

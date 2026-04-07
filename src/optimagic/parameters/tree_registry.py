@@ -8,7 +8,7 @@ import optree
 import pandas as pd
 from optree.pytree import PyTreeSpec
 
-from optimagic.typing import optree_namespaces
+from optimagic.typing import OPTREE_NAMESPACES
 
 try:
     import jax.numpy as jnp  # type: ignore[import-not-found]
@@ -17,50 +17,72 @@ try:
 except ImportError:
     _has_jax = False
 
-
-EQUALITY_CHECKERS = {}
-EQUALITY_CHECKERS[np.ndarray.__name__] = lambda a, b: bool((a == b).all())
-EQUALITY_CHECKERS[pd.Series.__name__] = lambda a, b: a.equals(b)
-EQUALITY_CHECKERS[pd.DataFrame.__name__] = lambda a, b: a.equals(b)
-
-if _has_jax:
-    EQUALITY_CHECKERS[jnp.ndarray.__name__] = lambda a, b: bool((a == b).all())
+_are_namespaces_registered = False
 
 
 def tree_flatten(tree, is_leaf=None, namespace=""):
-    if namespace:
-        with optree.dict_insertion_ordered(True, namespace=namespace):
-            return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
-    else:
-        return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
+    """Flatten a pytree."""
+    _register_namespaces()
+
+    return _with_insertion_order(namespace, optree.tree_flatten, tree, is_leaf=is_leaf)
 
 
 def tree_just_flatten(tree, is_leaf=None, namespace=""):
-    leaves, _ = tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
-    return leaves
+    """Get the leaves of a pytree."""
+    _register_namespaces()
+
+    return _with_insertion_order(namespace, optree.tree_leaves, tree, is_leaf=is_leaf)
 
 
 def tree_unflatten(treedef, leaves, is_leaf=None, namespace=""):
+    """Reconstruct a pytree from the tree definition and the leaves."""
+    _register_namespaces()
+
     if not isinstance(treedef, PyTreeSpec):
-        _, treedef = tree_flatten(treedef, is_leaf=is_leaf, namespace=namespace)
-    return optree.tree_unflatten(treespec=treedef, leaves=leaves)
+        treedef = _with_insertion_order(
+            namespace, optree.tree_structure, treedef, is_leaf=is_leaf
+        )
+
+    return optree.tree_unflatten(treedef, leaves)
 
 
 def tree_map(func, tree, is_leaf=None, namespace=""):
-    return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
+    """Map an input function over pytree args to produce a new pytree."""
+    _register_namespaces()
+    return _with_insertion_order(
+        namespace, optree.tree_map, func, tree, is_leaf=is_leaf
+    )
 
 
 def leaf_names(tree, is_leaf=None, namespace="", separator="_"):
-    _, treespec = tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
-    paths = treespec.paths()
+    """Get the path names for tree leaves."""
+    _register_namespaces()
+
+    paths, _, _ = _with_insertion_order(
+        namespace, optree.tree_flatten_with_path, tree, is_leaf=is_leaf
+    )
     return [separator.join(str(p) for p in path) for path in paths]
 
 
+def _with_insertion_order(namespace, optree_func, *args, **kwargs):
+    """Call an optree function, preserving dict key order within a namespace.
+
+    By default, optree sorts dictionary keys. When a namespace is provided,
+    this wrapper enables dict_insertion_ordered mode so that the original
+    key order is preserved in the output.
+    """
+    if namespace:
+        with optree.dict_insertion_ordered(True, namespace=namespace):
+            return optree_func(*args, namespace=namespace, **kwargs)
+    return optree_func(*args, namespace=namespace, **kwargs)
+
+
 def tree_equal(tree, other, is_leaf=None, namespace="", equality_checkers=None):
+    """Check the equality between two trees."""
     equality_checkers = (
-        EQUALITY_CHECKERS
+        _get_equality_checkers()
         if equality_checkers is None
-        else {**EQUALITY_CHECKERS, **equality_checkers}
+        else {**_get_equality_checkers(), **equality_checkers}
     )
 
     first_flat, first_treespec = tree_flatten(
@@ -87,7 +109,65 @@ def tree_equal(tree, other, is_leaf=None, namespace="", equality_checkers=None):
     return equal
 
 
+def _get_equality_checkers():
+    """Return type-specific equality checkers for array and DataFrame leaves.
+
+    These are used during pytree operations to compare leaves that don't
+    support simple ``==`` equality (e.g. NumPy arrays, pandas objects).
+    """
+    equality_checkers = {}
+    equality_checkers[np.ndarray.__name__] = lambda a, b: bool((a == b).all())
+    equality_checkers[pd.Series.__name__] = lambda a, b: a.equals(b)
+    equality_checkers[pd.DataFrame.__name__] = lambda a, b: a.equals(b)
+
+    if _has_jax:
+        equality_checkers[jnp.ndarray.__name__] = lambda a, b: bool((a == b).all())
+
+    return equality_checkers
+
+
+def _register_namespaces() -> None:
+    """Register pytree flatten/unflatten methods for each namespace.
+
+    This method must only be called once as each namespace must only be registered
+    one time.
+    """
+    global _are_namespaces_registered  # noqa: PLW0603
+    if _are_namespaces_registered is False:
+        _are_namespaces_registered = True
+        for namespace in OPTREE_NAMESPACES:
+            optree.register_pytree_node(
+                pd.DataFrame,
+                partial(_flatten_df, data_col=namespace),
+                partial(_unflatten_df, data_col=namespace),
+                namespace=namespace,
+            )
+
+            optree.register_pytree_node(
+                pd.Series,
+                _flatten_series,
+                _unflatten_series,
+                namespace=namespace,
+            )
+
+            optree.register_pytree_node(
+                np.ndarray,
+                _flatten_ndarray,
+                _unflatten_ndarray,
+                namespace=namespace,
+            )
+
+            if _has_jax:
+                optree.register_pytree_node(
+                    jnp.ndarray,
+                    _flatten_jax_array,
+                    _unflatten_jax_array,
+                    namespace=namespace,
+                )
+
+
 def _flatten_df(df, data_col):
+    """Flatten a dataframe."""
     is_value_df = "value" in df
     if is_value_df:
         flat = df.get(data_col, default=np.full(len(df), np.nan)).tolist()
@@ -102,6 +182,7 @@ def _flatten_df(df, data_col):
 
 
 def _unflatten_df(aux_data, leaves, data_col):
+    """Reconstrut a dataframe."""
     if aux_data["is_value_df"]:
         out = aux_data["df"].assign(**{data_col: leaves})
     else:
@@ -114,6 +195,7 @@ def _unflatten_df(aux_data, leaves, data_col):
 
 
 def _flatten_series(series):
+    """Flatten a series."""
     return (
         series.tolist(),
         {"index": series.index, "name": series.name},
@@ -122,23 +204,28 @@ def _flatten_series(series):
 
 
 def _unflatten_series(aux_data, leaves):
+    """Reconstrut a series."""
     return pd.Series(leaves, **aux_data)
 
 
 def _flatten_ndarray(arr):
+    """Flatten a numpy array."""
     return arr.flatten().tolist(), arr.shape, _array_element_names(arr)
 
 
 def _unflatten_ndarray(aux_data, leaves):
+    """Reconstrut a numpy array."""
     return np.array(leaves).reshape(aux_data)
 
 
 if _has_jax:
 
     def _flatten_jax_array(arr):
+        """Flatten a jax array."""
         return arr.flatten().tolist(), arr.shape, _array_element_names(arr)
 
     def _unflatten_jax_array(aux_data, leaves):
+        """Unflatten a jax array."""
         return jnp.array(leaves).reshape(aux_data)
 
 
@@ -166,34 +253,3 @@ def _array_element_names(arr):
     dim_names = [map(str, range(n)) for n in arr.shape]
     names = list(map("_".join, product(*dim_names)))
     return names
-
-
-for namespace in optree_namespaces:
-    optree.register_pytree_node(
-        pd.DataFrame,
-        partial(_flatten_df, data_col=namespace),
-        partial(_unflatten_df, data_col=namespace),
-        namespace=namespace,
-    )
-
-    optree.register_pytree_node(
-        pd.Series,
-        _flatten_series,
-        _unflatten_series,
-        namespace=namespace,
-    )
-
-    optree.register_pytree_node(
-        np.ndarray,
-        _flatten_ndarray,
-        _unflatten_ndarray,
-        namespace=namespace,
-    )
-
-    if _has_jax:
-        optree.register_pytree_node(
-            jnp.ndarray,
-            _flatten_jax_array,
-            _unflatten_jax_array,
-            namespace=namespace,
-        )

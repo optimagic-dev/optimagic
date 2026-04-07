@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.tree_registry import tree_just_flatten
-from optimagic.typing import AggregationLevel, PyTree, Scalar, value_namespace
+from optimagic.typing import VALUE_NAMESPACE, AggregationLevel, PyTree, Scalar
 from optimagic.utilities import isscalar
 
 
@@ -123,7 +123,7 @@ def _get_flat_value(value: PyTree) -> NDArray[np.float64]:
     elif isinstance(value, np.ndarray):
         flat = value.flatten()
     else:
-        flat = tree_just_flatten(value, namespace=value_namespace)
+        flat = tree_just_flatten(value, namespace=VALUE_NAMESPACE)
 
     flat_arr = np.asarray(flat, dtype=np.float64)
     return flat_arr

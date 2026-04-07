@@ -26,7 +26,7 @@ from optimagic.parameters.tree_registry import (
     tree_unflatten,
 )
 from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
-from optimagic.typing import BatchEvaluatorLiteral, PyTree, value_namespace
+from optimagic.typing import VALUE_NAMESPACE, BatchEvaluatorLiteral, PyTree
 
 
 @dataclass(frozen=True)
@@ -221,22 +221,22 @@ def first_derivative(
     is_fast_path = _is_1d_array(params)
 
     if not is_fast_path:
-        x, params_treedef = tree_flatten(params, namespace=value_namespace)
+        x, params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
         x = np.array(x, dtype=np.float64)
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
-                tree_just_flatten(scaling_factor, namespace=value_namespace)
+                tree_just_flatten(scaling_factor, namespace=VALUE_NAMESPACE)
             )
 
         if min_steps is not None and not np.isscalar(min_steps):
             min_steps = np.array(
-                tree_just_flatten(min_steps, namespace=value_namespace)
+                tree_just_flatten(min_steps, namespace=VALUE_NAMESPACE)
             )
 
         if step_size is not None and not np.isscalar(step_size):
             step_size = np.array(
-                tree_just_flatten(step_size, namespace=value_namespace)
+                tree_just_flatten(step_size, namespace=VALUE_NAMESPACE)
             )
     else:
         x = params.astype(np.float64)
@@ -291,7 +291,7 @@ def first_derivative(
     if not is_fast_path:
         evaluation_points = [
             # entries are either a numpy.ndarray or np.nan
-            _unflatten_if_not_nan(p, params_treedef, value_namespace)
+            _unflatten_if_not_nan(p, params_treedef, VALUE_NAMESPACE)
             for p in evaluation_points
         ]
 
@@ -330,14 +330,14 @@ def first_derivative(
     elif vector_out:
         f0 = f0_tree.astype(float)
     else:
-        f0 = tree_leaves(f0_tree, namespace=value_namespace)
+        f0 = tree_leaves(f0_tree, namespace=VALUE_NAMESPACE)
         f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals_arr = _convert_evals_to_numpy(
         raw_evals=raw_evals,
         unpacker=unpacker,
-        namespace=value_namespace,
+        namespace=VALUE_NAMESPACE,
         is_scalar_out=scalar_out,
         is_vector_out=vector_out,
     )
@@ -539,22 +539,22 @@ def second_derivative(
     is_fast_path = _is_1d_array(params)
 
     if not is_fast_path:
-        x, params_treedef = tree_flatten(params, namespace=value_namespace)
+        x, params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
         x = np.array(x, dtype=np.float64)
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
-                tree_just_flatten(scaling_factor, namespace=value_namespace)
+                tree_just_flatten(scaling_factor, namespace=VALUE_NAMESPACE)
             )
 
         if min_steps is not None and not np.isscalar(min_steps):
             min_steps = np.array(
-                tree_just_flatten(min_steps, namespace=value_namespace)
+                tree_just_flatten(min_steps, namespace=VALUE_NAMESPACE)
             )
 
         if step_size is not None and not np.isscalar(step_size):
             step_size = np.array(
-                tree_just_flatten(step_size, namespace=value_namespace)
+                tree_just_flatten(step_size, namespace=VALUE_NAMESPACE)
             )
     else:
         x = params.astype(np.float64)
@@ -631,7 +631,7 @@ def second_derivative(
         evaluation_points = {
             # entries are either a numpy.ndarray or np.nan, we unflatten only
             step_type: [
-                _unflatten_if_not_nan(p, params_treedef, value_namespace)
+                _unflatten_if_not_nan(p, params_treedef, VALUE_NAMESPACE)
                 for p in points
             ]
             for step_type, points in evaluation_points.items()
@@ -671,13 +671,13 @@ def second_derivative(
     func_value = f0
 
     f0_tree = unpacker(f0)
-    f0 = tree_leaves(f0_tree, namespace=value_namespace)
+    f0 = tree_leaves(f0_tree, namespace=VALUE_NAMESPACE)
     f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
         step_type: _convert_evals_to_numpy(
-            raw_evals=evals, unpacker=unpacker, namespace=value_namespace
+            raw_evals=evals, unpacker=unpacker, namespace=VALUE_NAMESPACE
         )
         for step_type, evals in raw_evals.items()
     }

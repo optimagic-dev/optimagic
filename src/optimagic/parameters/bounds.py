@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Literal, Sequence
 
 import numpy as np
+import optree
 from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
@@ -15,7 +16,7 @@ from optimagic.parameters.tree_registry import (
 from optimagic.parameters.tree_registry import (
     tree_just_flatten as tree_leaves,
 )
-from optimagic.typing import PyTree, value_namespace
+from optimagic.typing import VALUE_NAMESPACE, PyTree
 from optimagic.utilities import fast_numpy_full
 
 
@@ -79,7 +80,7 @@ def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
 def get_internal_bounds(
     params: PyTree,
     bounds: Bounds | None = None,
-    namespace: str = value_namespace,
+    namespace: str = VALUE_NAMESPACE,
     add_soft_bounds: bool = False,
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
@@ -179,17 +180,20 @@ def _update_bounds_and_flatten(
         np.ndarray: The updated and flattened bounds.
 
     """
-    flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
+    with optree.dict_insertion_ordered(True, namespace=kind):
+        flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
     if bounds is not None:
-        flat_bounds = tree_leaves(bounds, namespace=value_namespace)
+        with optree.dict_insertion_ordered(True, namespace=VALUE_NAMESPACE):
+            flat_bounds = tree_leaves(bounds, namespace=VALUE_NAMESPACE)
 
         seperator = 10 * "$"
-        params_names = leaf_names(
-            nan_tree, namespace=value_namespace, separator=seperator
-        )
-        bounds_names = leaf_names(
-            bounds, namespace=value_namespace, separator=seperator
-        )
+        with optree.dict_insertion_ordered(True, namespace=VALUE_NAMESPACE):
+            params_names = leaf_names(
+                nan_tree, namespace=VALUE_NAMESPACE, separator=seperator
+            )
+            bounds_names = leaf_names(
+                bounds, namespace=VALUE_NAMESPACE, separator=seperator
+            )
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree, strict=False))
 

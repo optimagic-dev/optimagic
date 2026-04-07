@@ -14,7 +14,7 @@ from optimagic.parameters.tree_registry import (
     tree_just_flatten,
     tree_unflatten,
 )
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 
 
 def process_nonlinear_constraints(
@@ -365,13 +365,13 @@ def _extend_jacobian(jac_mat, selection_indices, n_params):
 
 def _get_selection_indices(params, selector):
     """Get index of selected flat params and number of flat params."""
-    flat_params, params_treedef = tree_flatten(params, namespace=value_namespace)
+    flat_params, params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
     n_params = len(flat_params)
     indices = np.arange(n_params, dtype=int)
-    params_indices = tree_unflatten(params_treedef, indices, namespace=value_namespace)
+    params_indices = tree_unflatten(params_treedef, indices, namespace=VALUE_NAMESPACE)
     selected = selector(params_indices)
     selection_indices = np.array(
-        tree_just_flatten(selected, namespace=value_namespace), dtype=int
+        tree_just_flatten(selected, namespace=VALUE_NAMESPACE), dtype=int
     )
     return selection_indices, n_params
 

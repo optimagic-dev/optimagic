@@ -12,7 +12,7 @@ from optimagic.parameters.block_trees import (
 )
 from optimagic.parameters.tree_registry import tree_equal
 from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 
 
 def test_matrix_to_block_tree_array_and_scalar():
@@ -129,8 +129,8 @@ def test_block_tree_to_hessian_bijection():
     params = {"a": np.arange(4), "b": [{"c": (1, 2), "d": np.array([5, 6])}]}
     f_tree = {"e": np.arange(3), "f": (5, 6, [7, 8, {"g": 1.0}])}
 
-    n_p = len(tree_leaves(params, namespace=value_namespace))
-    n_f = len(tree_leaves(f_tree, namespace=value_namespace))
+    n_p = len(tree_leaves(params, namespace=VALUE_NAMESPACE))
+    n_f = len(tree_leaves(f_tree, namespace=VALUE_NAMESPACE))
 
     expected = np.arange(n_f * n_p**2).reshape(n_f, n_p, n_p)
     block_hessian = hessian_to_block_tree(expected, f_tree, params)

@@ -8,7 +8,7 @@ from optimagic.parameters.tree_registry import (
     tree_unflatten,
 )
 from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 
 
 def matrix_to_block_tree(matrix, outer_tree, inner_tree):
@@ -332,8 +332,8 @@ def _is_pd_object(obj):
 
 
 def _check_dimensions_matrix(matrix, outer_tree, inner_tree):
-    flat_outer = tree_leaves(outer_tree, namespace=value_namespace)
-    flat_inner = tree_leaves(inner_tree, namespace=value_namespace)
+    flat_outer = tree_leaves(outer_tree, namespace=VALUE_NAMESPACE)
+    flat_inner = tree_leaves(inner_tree, namespace=VALUE_NAMESPACE)
 
     if matrix.shape[0] != len(flat_outer):
         raise ValueError("First dimension of matrix does not match that of outer_tree.")
@@ -344,8 +344,8 @@ def _check_dimensions_matrix(matrix, outer_tree, inner_tree):
 
 
 def _check_dimensions_hessian(hessian, f_tree, params_tree):
-    flat_f = tree_leaves(f_tree, namespace=value_namespace)
-    flat_p = tree_leaves(params_tree, namespace=value_namespace)
+    flat_f = tree_leaves(f_tree, namespace=VALUE_NAMESPACE)
+    flat_p = tree_leaves(params_tree, namespace=VALUE_NAMESPACE)
 
     if len(flat_f) == 1:
         # consider only dimensions with non trivial size (larger than 1)

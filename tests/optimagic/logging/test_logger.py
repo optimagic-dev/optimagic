@@ -16,7 +16,7 @@ from optimagic.parameters.tree_registry import (
     tree_equal,
     tree_just_flatten,
 )
-from optimagic.typing import Direction, value_namespace
+from optimagic.typing import VALUE_NAMESPACE, Direction
 
 
 @pytest.fixture()
@@ -84,8 +84,8 @@ def test_log_reader_read_multistart_history(example_db):
     assert exploration is None
 
     assert tree_equal(
-        tree_just_flatten(asdict(history), namespace=value_namespace),
-        tree_just_flatten(asdict(reader.read_history()), namespace=value_namespace),
+        tree_just_flatten(asdict(history), namespace=VALUE_NAMESPACE),
+        tree_just_flatten(asdict(reader.read_history()), namespace=VALUE_NAMESPACE),
     )
 
 

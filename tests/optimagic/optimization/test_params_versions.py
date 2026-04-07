@@ -11,7 +11,7 @@ from optimagic.examples.criterion_functions import (
 )
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import tree_just_flatten
-from optimagic.typing import value_namespace
+from optimagic.typing import VALUE_NAMESPACE
 
 PARAMS = [
     {"a": 1.0, "b": 2, "c": 3, "d": 4, "e": 5},
@@ -27,7 +27,7 @@ SCALAR_PARAMS = [6, 6.2, np.array([4]), np.array([4.5])]
 
 @pytest.mark.parametrize("params", PARAMS + SCALAR_PARAMS)
 def test_tree_params_numerical_derivative_scalar_criterion(params):
-    flat = np.array(tree_just_flatten(params, namespace=value_namespace))
+    flat = np.array(tree_just_flatten(params, namespace=VALUE_NAMESPACE))
     expected = np.zeros_like(flat)
 
     res = minimize(
@@ -35,13 +35,13 @@ def test_tree_params_numerical_derivative_scalar_criterion(params):
         params=params,
         algorithm="scipy_lbfgsb",
     )
-    calculated = np.array(tree_just_flatten(res.params, namespace=value_namespace))
+    calculated = np.array(tree_just_flatten(res.params, namespace=VALUE_NAMESPACE))
     aaae(calculated, expected)
 
 
 @pytest.mark.parametrize("params", PARAMS + SCALAR_PARAMS)
 def test_tree_params_scalar_criterion(params):
-    flat = np.array(tree_just_flatten(params, namespace=value_namespace))
+    flat = np.array(tree_just_flatten(params, namespace=VALUE_NAMESPACE))
     expected = np.zeros_like(flat)
 
     res = minimize(
@@ -50,7 +50,7 @@ def test_tree_params_scalar_criterion(params):
         params=params,
         algorithm="scipy_lbfgsb",
     )
-    calculated = np.array(tree_just_flatten(res.params, namespace=value_namespace))
+    calculated = np.array(tree_just_flatten(res.params, namespace=VALUE_NAMESPACE))
     aaae(calculated, expected)
 
 
@@ -62,7 +62,7 @@ for p in PARAMS:
 
 @pytest.mark.parametrize("params, algorithm", TEST_CASES_SOS_LS)
 def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
-    flat = np.array(tree_just_flatten(params, namespace=value_namespace))
+    flat = np.array(tree_just_flatten(params, namespace=VALUE_NAMESPACE))
     expected = np.zeros_like(flat)
 
     res = minimize(
@@ -70,13 +70,13 @@ def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
         params=params,
         algorithm=algorithm,
     )
-    calculated = np.array(tree_just_flatten(res.params, namespace=value_namespace))
+    calculated = np.array(tree_just_flatten(res.params, namespace=VALUE_NAMESPACE))
     aaae(calculated, expected)
 
 
 @pytest.mark.parametrize("params, algorithm", TEST_CASES_SOS_LS)
 def test_tree_params_sos_ls(params, algorithm):
-    flat = np.array(tree_just_flatten(params, namespace=value_namespace))
+    flat = np.array(tree_just_flatten(params, namespace=VALUE_NAMESPACE))
     expected = np.zeros_like(flat)
 
     derivatives = [sos_gradient, sos_ls_jacobian]
@@ -86,5 +86,5 @@ def test_tree_params_sos_ls(params, algorithm):
         params=params,
         algorithm=algorithm,
     )
-    calculated = np.array(tree_just_flatten(res.params, namespace=value_namespace))
+    calculated = np.array(tree_just_flatten(res.params, namespace=VALUE_NAMESPACE))
     aaae(calculated, expected)
