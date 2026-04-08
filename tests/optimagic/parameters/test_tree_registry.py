@@ -83,21 +83,6 @@ def test_leaf_names_partially_numeric_df(other_df):
     assert names == ["alpha_b", "alpha_c", "beta_b", "beta_c", "gamma_b", "gamma_c"]
 
 
-def test_tree_methods_with_empty_namespace(value_df):
-    leaves, _ = tree_flatten(value_df)
-    assert leaves == [value_df]
-
-    leaves = tree_just_flatten(value_df)
-    assert leaves == [value_df]
-
-    names = leaf_names(value_df)
-    expected_names = [""]
-    assert names == expected_names
-
-    tree = tree_map(lambda x: x * 2, value_df)
-    assert_frame_equal(tree, value_df)
-
-
 @pytest.fixture()
 def bounds_df():
     return pd.DataFrame(
@@ -110,6 +95,23 @@ def bounds_df():
         },
         index=["alpha", "beta", "gamma"],
     )
+
+
+def test_tree_methods_with_empty_namespace(bounds_df):
+    leaves, _ = tree_flatten(bounds_df)
+    assert len(leaves) == 1
+    assert_frame_equal(leaves[0], bounds_df)
+
+    leaves = tree_just_flatten(bounds_df)
+    assert len(leaves) == 1
+    assert_frame_equal(leaves[0], bounds_df)
+
+    names = leaf_names(bounds_df)
+    expected_names = [""]
+    assert names == expected_names
+
+    tree = tree_map(lambda x: x * 2, bounds_df)
+    assert_frame_equal(tree, bounds_df * 2)
 
 
 @pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
