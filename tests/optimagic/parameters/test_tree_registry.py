@@ -132,10 +132,20 @@ def test_tree_methods_with_optimagic_namespace(namespace, bounds_df):
     assert_frame_equal(tree, expected)
 
 
-def test_tree_flatten_with_unregisted_namespace(value_df):
+@pytest.mark.parametrize(
+    "tree_method",
+    [tree_flatten, tree_just_flatten, leaf_names, tree_map, tree_flatten],
+)
+def test_tree_methods_raise_warning_with_unregisted_namespace(tree_method, value_df):
     """If namespace is not registered optree method fallbacks to default behaviour."""
-    leaves, _ = tree_flatten(value_df, namespace="unregistered_namespace")
-    assert leaves == [value_df]
+    unregistered_namespace = "unregistered_namespace"
+    with pytest.warns(match="is not registered."):
+        if tree_method == tree_map:
+            _ = tree_map(lambda x: x, value_df, namespace=unregistered_namespace)
+        elif tree_method == tree_unflatten:
+            _ = tree_method(value_df, [], namespace=unregistered_namespace)
+        else:
+            _ = tree_method(value_df, namespace=unregistered_namespace)
 
 
 def test_tree_flatten_and_unflatten_with_None():

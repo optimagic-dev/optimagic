@@ -1,5 +1,6 @@
 """Wrapper around optree to tailor it to optimagic."""
 
+import warnings
 from functools import partial
 from itertools import product
 
@@ -23,6 +24,7 @@ _are_namespaces_registered = False
 def tree_flatten(tree, is_leaf=None, namespace=""):
     """Flatten a pytree."""
     _register_namespaces()
+    _check_namespace(namespace)
 
     return _with_insertion_order(namespace, optree.tree_flatten, tree, is_leaf=is_leaf)
 
@@ -30,6 +32,7 @@ def tree_flatten(tree, is_leaf=None, namespace=""):
 def tree_just_flatten(tree, is_leaf=None, namespace=""):
     """Get the leaves of a pytree."""
     _register_namespaces()
+    _check_namespace(namespace)
 
     return _with_insertion_order(namespace, optree.tree_leaves, tree, is_leaf=is_leaf)
 
@@ -39,6 +42,7 @@ def tree_unflatten(treedef, leaves, namespace=""):
     _register_namespaces()
 
     if not isinstance(treedef, PyTreeSpec):
+        _check_namespace(namespace)
         treedef = _with_insertion_order(namespace, optree.tree_structure, treedef)
 
     # optree.tree_unflatten doesn't need to be wrapped with _with_insertion_order
@@ -53,12 +57,15 @@ def tree_map(func, tree, is_leaf=None, namespace=""):
     require to be wrapped with _with_insertion_order.
     """
     _register_namespaces()
+    _check_namespace(namespace)
+
     return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
 
 
 def leaf_names(tree, is_leaf=None, namespace="", separator="_"):
     """Get the path names for tree leaves."""
     _register_namespaces()
+    _check_namespace(namespace)
 
     paths, _, _ = _with_insertion_order(
         namespace, optree.tree_flatten_with_path, tree, is_leaf=is_leaf
@@ -126,6 +133,16 @@ def _get_equality_checkers():
         equality_checkers[jnp.ndarray.__name__] = lambda a, b: bool((a == b).all())
 
     return equality_checkers
+
+
+def _check_namespace(namespace: str) -> None:
+    """Checks if the namespace is a registered and raise a warning."""
+    if namespace and namespace not in OPTREE_NAMESPACES:
+        warnings.warn(
+            f"Namespace '{namespace}' is not registered. "
+            f"Registered namespaces are: {','.join(OPTREE_NAMESPACES)}. "
+            "Pytree method is being parsed with the default optree namespace."
+        )
 
 
 def _register_namespaces() -> None:
