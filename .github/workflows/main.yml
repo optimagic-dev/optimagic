@@ -15,6 +15,7 @@ on:
 jobs:
   run-tests-linux:
     name: Run tests on ubuntu-latest py${{ matrix.python-version }}
+    environment: codecov
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
