@@ -13,6 +13,7 @@ from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES
 
 try:
     import jax.numpy as jnp  # type: ignore[import-not-found]
+    import jaxlib  # type: ignore[import-not-found]
 
     _has_jax = True
 except ImportError:
@@ -166,9 +167,8 @@ def _register_namespaces() -> None:
             )
 
             if _has_jax:
-                _jax_array_type = type(jnp.empty(0))
                 optree.register_pytree_node(
-                    _jax_array_type,
+                    jaxlib._jax.ArrayImpl,
                     _flatten_jax_array,
                     _unflatten_jax_array,
                     namespace=namespace,
