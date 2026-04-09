@@ -174,6 +174,7 @@ class MultiStartIterationHistory(TupleLikeAccess):
     exploration: IterationHistory | None = None
 
 
+DEFAULT_NAMESPACE = "optimagic_namespace"
 OPTREE_NAMESPACES = (
     "value",
     "lower_bound",
@@ -181,5 +182,4 @@ OPTREE_NAMESPACES = (
     "soft_lower_bound",
     "soft_upper_bound",
 )
-
 VALUE_NAMESPACE = OPTREE_NAMESPACES[0]

@@ -158,41 +158,38 @@ def test_tree_flatten_and_unflatten_with_None():
     assert tree == [None]
 
 
-def test_dict_insertion_ordering_is_respected_for_registered_namespaces():
+@pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
+def test_dict_insertion_ordering_is_respected_for_registered_namespaces(namespace):
     params = {"b": [1, 4], "a": [8, 9]}
-    leaves, _ = tree_flatten(params, namespace=VALUE_NAMESPACE)
+    leaves, _ = tree_flatten(params, namespace=namespace)
     assert leaves == [1, 4, 8, 9]
-    leaves2 = tree_just_flatten(params, namespace=VALUE_NAMESPACE)
+
+    tree = tree_unflatten(params, [1, 4, 8, 9], namespace=namespace)
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    leaves2 = tree_just_flatten(params, namespace=namespace)
     assert leaves2 == [1, 4, 8, 9]
-    names = leaf_names(params, namespace=VALUE_NAMESPACE)
+
+    tree = tree_map(lambda x: x, params, namespace=namespace)
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    names = leaf_names(params, namespace=namespace)
     assert names == ["b_0", "b_1", "a_0", "a_1"]
 
 
-def test_dict_ordering_default_behaviour_is_by_name():
+def test_dict_insertion_ordering_is_respected_for_default_namespace():
     params = {"b": [1, 4], "a": [8, 9]}
     leaves, _ = tree_flatten(params)
-    assert leaves == [8, 9, 1, 4]
+    assert leaves == [1, 4, 8, 9]
+
+    tree = tree_unflatten(params, [1, 4, 8, 9])
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
 
     leaves2 = tree_just_flatten(params)
-    assert leaves2 == [8, 9, 1, 4]
+    assert leaves2 == [1, 4, 8, 9]
 
-    names = leaf_names(params)
-    assert names == ["a_0", "a_1", "b_0", "b_1"]
-
-
-def test_unflatten_respects_insertion_order():
-    params = {"b": [1, 4], "a": [8, 9]}
-    leaves, treespec = tree_flatten(params)
-    tree = tree_unflatten(treespec, leaves)
-    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
-    leaves2, treespec2 = tree_flatten(params, namespace=VALUE_NAMESPACE)
-    tree2 = tree_unflatten(treespec2, leaves2)
-    assert list(tree2.items()) == [("b", [1, 4]), ("a", [8, 9])]
-
-
-def test_map_always_respects_insertion_order():
-    params = {"b": [1, 4], "a": [8, 9]}
     tree = tree_map(lambda x: x, params)
     assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
-    tree2 = tree_map(lambda x: x, params, namespace=VALUE_NAMESPACE)
-    assert list(tree2.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    names = leaf_names(params)
+    assert names == ["b_0", "b_1", "a_0", "a_1"]

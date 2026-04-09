@@ -9,7 +9,7 @@ import optree
 import pandas as pd
 from optree.pytree import PyTreeSpec
 
-from optimagic.typing import OPTREE_NAMESPACES
+from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES
 
 try:
     import jax.numpy as jnp  # type: ignore[import-not-found]
@@ -21,72 +21,61 @@ except ImportError:
 _are_namespaces_registered = False
 
 
-def tree_flatten(tree, is_leaf=None, namespace=""):
+def tree_flatten(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
     """Flatten a pytree."""
     _register_namespaces()
     _check_namespace(namespace)
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
 
-    return _with_insertion_order(namespace, optree.tree_flatten, tree, is_leaf=is_leaf)
 
-
-def tree_just_flatten(tree, is_leaf=None, namespace=""):
+def tree_just_flatten(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
     """Get the leaves of a pytree."""
     _register_namespaces()
     _check_namespace(namespace)
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        return optree.tree_leaves(tree, is_leaf=is_leaf, namespace=namespace)
 
-    return _with_insertion_order(namespace, optree.tree_leaves, tree, is_leaf=is_leaf)
 
-
-def tree_unflatten(treedef, leaves, namespace=""):
+def tree_unflatten(treedef, leaves, namespace=DEFAULT_NAMESPACE):
     """Reconstruct a pytree from the tree definition and the leaves."""
     _register_namespaces()
 
     if not isinstance(treedef, PyTreeSpec):
         _check_namespace(namespace)
-        treedef = _with_insertion_order(namespace, optree.tree_structure, treedef)
+        with optree.dict_insertion_ordered(True, namespace=namespace):
+            treedef = optree.tree_structure(treedef, namespace=namespace)
 
-    # optree.tree_unflatten doesn't need to be wrapped with _with_insertion_order
-    # because it keeps the insertion order for dictionaries.
+    # Doesn't need to be wrapped with dict_insertion_ordered
+    # because it keeps the insertion order for dictionaries by default.
     return optree.tree_unflatten(treedef, leaves)
 
 
-def tree_map(func, tree, is_leaf=None, namespace=""):
-    """Map an input function over pytree args to produce a new pytree.
-
-    optree.tree_map always respects insertion order for dictionaries and doesn't
-    require to be wrapped with _with_insertion_order.
-    """
+def tree_map(func, tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
+    """Map an input function over pytree args to produce a new pytree."""
     _register_namespaces()
     _check_namespace(namespace)
 
+    # Doesn't need to be wrapped with dict_insertion_ordered
+    # because it keeps the insertion order for dictionaries by default.
     return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
 
 
-def leaf_names(tree, is_leaf=None, namespace="", separator="_"):
+def leaf_names(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE, separator="_"):
     """Get the path names for tree leaves."""
     _register_namespaces()
     _check_namespace(namespace)
 
-    paths, _, _ = _with_insertion_order(
-        namespace, optree.tree_flatten_with_path, tree, is_leaf=is_leaf
-    )
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        paths, _, _ = optree.tree_flatten_with_path(
+            tree, is_leaf=is_leaf, namespace=namespace
+        )
     return [separator.join(str(p) for p in path) for path in paths]
 
 
-def _with_insertion_order(namespace, optree_func, *args, **kwargs):
-    """Call an optree function, preserving dict key order within a namespace.
-
-    By default, optree sorts dictionary keys. When a namespace is provided,
-    this wrapper enables dict_insertion_ordered mode so that the original
-    key order is preserved in the output.
-    """
-    if namespace:
-        with optree.dict_insertion_ordered(True, namespace=namespace):
-            return optree_func(*args, namespace=namespace, **kwargs)
-    return optree_func(*args, namespace=namespace, **kwargs)
-
-
-def tree_equal(tree, other, is_leaf=None, namespace="", equality_checkers=None):
+def tree_equal(
+    tree, other, is_leaf=None, namespace=DEFAULT_NAMESPACE, equality_checkers=None
+):
     """Check the equality between two trees."""
     equality_checkers = (
         _get_equality_checkers()
@@ -136,8 +125,8 @@ def _get_equality_checkers():
 
 
 def _check_namespace(namespace: str) -> None:
-    """Checks if the namespace is a registered and raise a warning."""
-    if namespace and namespace not in OPTREE_NAMESPACES:
+    """Checks if the namespace is registered and raise a warning."""
+    if namespace != DEFAULT_NAMESPACE and namespace not in OPTREE_NAMESPACES:
         warnings.warn(
             f"Namespace '{namespace}' is not registered. "
             f"Registered namespaces are: {','.join(OPTREE_NAMESPACES)}. "
