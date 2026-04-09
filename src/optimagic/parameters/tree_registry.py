@@ -166,8 +166,9 @@ def _register_namespaces() -> None:
             )
 
             if _has_jax:
+                _jax_array_type = type(jnp.empty(0))
                 optree.register_pytree_node(
-                    jnp.ndarray,
+                    _jax_array_type,
                     _flatten_jax_array,
                     _unflatten_jax_array,
                     namespace=namespace,
