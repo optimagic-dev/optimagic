@@ -52,7 +52,7 @@ from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
 from optimagic.parameters.tree_registry import (
     leaf_names,
-    tree_just_flatten,
+    tree_leaves,
 )
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,
@@ -321,7 +321,7 @@ def estimate_msm(
             sim_mom = simulate_moments(params, **simulate_moments_kwargs)
             if isinstance(sim_mom, dict) and "simulated_moments" in sim_mom:
                 sim_mom = sim_mom["simulated_moments"]
-            out = np.array(tree_just_flatten(sim_mom, namespace=VALUE_NAMESPACE))
+            out = np.array(tree_leaves(sim_mom, namespace=VALUE_NAMESPACE))
             return out
 
         int_jac = first_derivative(
@@ -420,7 +420,7 @@ def get_msm_optimization_functions(
 
     chol_weights = np.linalg.cholesky(flat_weights)
 
-    flat_emp_mom = tree_just_flatten(empirical_moments, namespace=VALUE_NAMESPACE)
+    flat_emp_mom = tree_leaves(empirical_moments, namespace=VALUE_NAMESPACE)
 
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
@@ -455,7 +455,7 @@ def _msm_criterion(
     if isinstance(simulated, np.ndarray) and simulated.ndim == 1:
         simulated_flat = simulated
     else:
-        simulated_flat = np.array(tree_just_flatten(simulated, namespace=namespace))
+        simulated_flat = np.array(tree_leaves(simulated, namespace=namespace))
 
     deviations = simulated_flat - flat_empirical_moments
     residuals = deviations @ chol_weights

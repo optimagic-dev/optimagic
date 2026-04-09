@@ -6,7 +6,7 @@ import pytest
 
 from estimagic.bootstrap_ci import calculate_ci, check_inputs
 from estimagic.bootstrap_samples import get_bootstrap_indices
-from optimagic.parameters.tree_registry import tree_just_flatten
+from optimagic.parameters.tree_registry import tree_leaves
 from optimagic.typing import VALUE_NAMESPACE
 from optimagic.utilities import get_rng
 
@@ -71,7 +71,7 @@ TEST_CASES = itertools.product(
 def test_ci(outcome, method, setup, expected):
 
     def outcome_flat(data):
-        return tree_just_flatten(outcome(data), namespace=VALUE_NAMESPACE)
+        return tree_leaves(outcome(data), namespace=VALUE_NAMESPACE)
 
     base_outcome = outcome_flat(setup["df"])
     lower, upper = calculate_ci(base_outcome, setup["estimates"], ci_method=method)

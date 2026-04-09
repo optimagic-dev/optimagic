@@ -10,10 +10,8 @@ from scipy.optimize import Bounds as ScipyBounds
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.parameters.tree_registry import (
     leaf_names,
+    tree_leaves,
     tree_map,
-)
-from optimagic.parameters.tree_registry import (
-    tree_just_flatten as tree_leaves,
 )
 from optimagic.typing import VALUE_NAMESPACE, PyTree
 from optimagic.utilities import fast_numpy_full

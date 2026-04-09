@@ -6,7 +6,7 @@ from pandas.testing import assert_frame_equal
 from optimagic.parameters.tree_registry import (
     leaf_names,
     tree_flatten,
-    tree_just_flatten,
+    tree_leaves,
     tree_map,
     tree_unflatten,
 )
@@ -102,7 +102,7 @@ def test_tree_methods_with_empty_namespace(bounds_df):
     assert len(leaves) == 1
     assert_frame_equal(leaves[0], bounds_df)
 
-    leaves = tree_just_flatten(bounds_df)
+    leaves = tree_leaves(bounds_df)
     assert len(leaves) == 1
     assert_frame_equal(leaves[0], bounds_df)
 
@@ -121,7 +121,7 @@ def test_tree_methods_with_optimagic_namespace(namespace, bounds_df):
     leaves, _ = tree_flatten(bounds_df, namespace=namespace)
     assert leaves == expected_leaves
 
-    leaves = tree_just_flatten(bounds_df, namespace=namespace)
+    leaves = tree_leaves(bounds_df, namespace=namespace)
     assert leaves == expected_leaves
 
     names = leaf_names(bounds_df, namespace=namespace)
@@ -136,7 +136,7 @@ def test_tree_methods_with_optimagic_namespace(namespace, bounds_df):
 
 @pytest.mark.parametrize(
     "tree_method",
-    [tree_flatten, tree_just_flatten, leaf_names, tree_map, tree_flatten],
+    [tree_flatten, tree_leaves, leaf_names, tree_map, tree_flatten],
 )
 def test_tree_methods_raise_warning_with_unregisted_namespace(tree_method, value_df):
     """If namespace is not registered optree method fallbacks to default behaviour."""
@@ -167,7 +167,7 @@ def test_dict_insertion_ordering_is_respected_for_registered_namespaces(namespac
     tree = tree_unflatten(params, [1, 4, 8, 9], namespace=namespace)
     assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
 
-    leaves2 = tree_just_flatten(params, namespace=namespace)
+    leaves2 = tree_leaves(params, namespace=namespace)
     assert leaves2 == [1, 4, 8, 9]
 
     tree = tree_map(lambda x: x, params, namespace=namespace)
@@ -185,7 +185,7 @@ def test_dict_insertion_ordering_is_respected_for_default_namespace():
     tree = tree_unflatten(params, [1, 4, 8, 9])
     assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
 
-    leaves2 = tree_just_flatten(params)
+    leaves2 = tree_leaves(params)
     assert leaves2 == [1, 4, 8, 9]
 
     tree = tree_map(lambda x: x, params)

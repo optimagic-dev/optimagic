@@ -8,7 +8,7 @@ from optimagic.parameters.process_selectors import process_selectors
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import (
     tree_flatten,
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
 from optimagic.typing import VALUE_NAMESPACE
@@ -39,7 +39,7 @@ def tree_params_converter(tree_params):
 
     converter = TreeConverter(
         params_flatten=lambda params: np.array(
-            tree_just_flatten(params, namespace=VALUE_NAMESPACE)
+            tree_leaves(params, namespace=VALUE_NAMESPACE)
         ),
         params_unflatten=lambda x: tree_unflatten(
             treedef, x.tolist(), namespace=VALUE_NAMESPACE

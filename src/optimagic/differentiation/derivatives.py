@@ -22,10 +22,9 @@ from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_bl
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.parameters.tree_registry import (
     tree_flatten,
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
-from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
 from optimagic.typing import VALUE_NAMESPACE, BatchEvaluatorLiteral, PyTree
 
 
@@ -226,18 +225,14 @@ def first_derivative(
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
-                tree_just_flatten(scaling_factor, namespace=VALUE_NAMESPACE)
+                tree_leaves(scaling_factor, namespace=VALUE_NAMESPACE)
             )
 
         if min_steps is not None and not np.isscalar(min_steps):
-            min_steps = np.array(
-                tree_just_flatten(min_steps, namespace=VALUE_NAMESPACE)
-            )
+            min_steps = np.array(tree_leaves(min_steps, namespace=VALUE_NAMESPACE))
 
         if step_size is not None and not np.isscalar(step_size):
-            step_size = np.array(
-                tree_just_flatten(step_size, namespace=VALUE_NAMESPACE)
-            )
+            step_size = np.array(tree_leaves(step_size, namespace=VALUE_NAMESPACE))
     else:
         x = params.astype(np.float64)
 
@@ -544,18 +539,14 @@ def second_derivative(
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
-                tree_just_flatten(scaling_factor, namespace=VALUE_NAMESPACE)
+                tree_leaves(scaling_factor, namespace=VALUE_NAMESPACE)
             )
 
         if min_steps is not None and not np.isscalar(min_steps):
-            min_steps = np.array(
-                tree_just_flatten(min_steps, namespace=VALUE_NAMESPACE)
-            )
+            min_steps = np.array(tree_leaves(min_steps, namespace=VALUE_NAMESPACE))
 
         if step_size is not None and not np.isscalar(step_size):
-            step_size = np.array(
-                tree_just_flatten(step_size, namespace=VALUE_NAMESPACE)
-            )
+            step_size = np.array(tree_leaves(step_size, namespace=VALUE_NAMESPACE))
     else:
         x = params.astype(np.float64)
 

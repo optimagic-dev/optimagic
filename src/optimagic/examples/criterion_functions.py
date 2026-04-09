@@ -17,7 +17,7 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
 from optimagic.typing import VALUE_NAMESPACE, PyTree
@@ -214,9 +214,7 @@ def _get_x(params: PyTree) -> NDArray[np.float64]:
     if isinstance(params, np.ndarray) and params.ndim == 1:
         x = params.astype(float)
     else:
-        x = np.array(
-            tree_just_flatten(params, namespace=VALUE_NAMESPACE), dtype=np.float64
-        )
+        x = np.array(tree_leaves(params, namespace=VALUE_NAMESPACE), dtype=np.float64)
     return x
 
 

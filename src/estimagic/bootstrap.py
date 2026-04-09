@@ -15,7 +15,7 @@ from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
     leaf_names,
     tree_flatten,
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
 from optimagic.typing import VALUE_NAMESPACE
@@ -108,8 +108,7 @@ def bootstrap(
     # ==================================================================================
 
     flat_outcomes = [
-        tree_just_flatten(_outcome, namespace=VALUE_NAMESPACE)
-        for _outcome in all_outcomes
+        tree_leaves(_outcome, namespace=VALUE_NAMESPACE) for _outcome in all_outcomes
     ]
     internal_outcomes = np.array(flat_outcomes)
 

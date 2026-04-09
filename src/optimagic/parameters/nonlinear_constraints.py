@@ -11,7 +11,7 @@ from optimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from optimagic.parameters.block_trees import block_tree_to_matrix
 from optimagic.parameters.tree_registry import (
     tree_flatten,
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
 from optimagic.typing import VALUE_NAMESPACE
@@ -371,7 +371,7 @@ def _get_selection_indices(params, selector):
     params_indices = tree_unflatten(params_treedef, indices, namespace=VALUE_NAMESPACE)
     selected = selector(params_indices)
     selection_indices = np.array(
-        tree_just_flatten(selected, namespace=VALUE_NAMESPACE), dtype=int
+        tree_leaves(selected, namespace=VALUE_NAMESPACE), dtype=int
     )
     return selection_indices, n_params
 

@@ -5,9 +5,9 @@ import pandas as pd
 
 from optimagic.parameters.tree_registry import (
     tree_flatten,
+    tree_leaves,
     tree_unflatten,
 )
-from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
 from optimagic.typing import VALUE_NAMESPACE
 
 

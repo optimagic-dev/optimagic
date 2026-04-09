@@ -6,7 +6,7 @@ import pandas as pd
 
 from optimagic.constraints import Constraint
 from optimagic.exceptions import InvalidConstraintError
-from optimagic.parameters.tree_registry import tree_just_flatten
+from optimagic.parameters.tree_registry import tree_leaves
 from optimagic.typing import VALUE_NAMESPACE
 
 
@@ -140,14 +140,14 @@ def _get_selection_evaluator(field, constraint, params_case, namespace):
 
         def evaluator(params):
             raw = constraint["selector"](params)
-            flat = tree_just_flatten(raw, namespace=namespace)
+            flat = tree_leaves(raw, namespace=namespace)
             return flat
 
     elif field == "selectors":
 
         def evaluator(params):
             raw = [sel(params) for sel in constraint["selectors"]]
-            flat = [tree_just_flatten(r, namespace=namespace) for r in raw]
+            flat = [tree_leaves(r, namespace=namespace) for r in raw]
             return flat
 
     elif field == "loc":

@@ -14,7 +14,7 @@ from optimagic.logging.logger import (
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.tree_registry import (
     tree_equal,
-    tree_just_flatten,
+    tree_leaves,
 )
 from optimagic.typing import VALUE_NAMESPACE, Direction
 
@@ -84,8 +84,8 @@ def test_log_reader_read_multistart_history(example_db):
     assert exploration is None
 
     assert tree_equal(
-        tree_just_flatten(asdict(history), namespace=VALUE_NAMESPACE),
-        tree_just_flatten(asdict(reader.read_history()), namespace=VALUE_NAMESPACE),
+        tree_leaves(asdict(history), namespace=VALUE_NAMESPACE),
+        tree_leaves(asdict(reader.read_history()), namespace=VALUE_NAMESPACE),
     )
 
 

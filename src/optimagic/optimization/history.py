@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 
 from optimagic.parameters.tree_registry import (
     leaf_names,
-    tree_just_flatten,
+    tree_leaves,
 )
 from optimagic.timing import CostModel
 from optimagic.typing import VALUE_NAMESPACE, Direction, EvalTask, PyTree
@@ -400,7 +400,7 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
     if fast_path:
         flatten = lambda x: x.tolist()
     else:
-        flatten = partial(tree_just_flatten, namespace=VALUE_NAMESPACE)
+        flatten = partial(tree_leaves, namespace=VALUE_NAMESPACE)
 
     return [flatten(p) for p in params]
 

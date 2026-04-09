@@ -10,8 +10,7 @@ from optimagic.parameters.block_trees import (
     hessian_to_block_tree,
     matrix_to_block_tree,
 )
-from optimagic.parameters.tree_registry import tree_equal
-from optimagic.parameters.tree_registry import tree_just_flatten as tree_leaves
+from optimagic.parameters.tree_registry import tree_equal, tree_leaves
 from optimagic.typing import VALUE_NAMESPACE
 
 

@@ -14,7 +14,7 @@ from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.parameters.tree_registry import (
     leaf_names,
     tree_flatten,
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
 from optimagic.typing import VALUE_NAMESPACE, IterationHistory, PyTree
@@ -584,9 +584,7 @@ def _extract_params_plot_lines(
         history = data.history.params
     start_params = data.start_params
 
-    hist_arr = np.array(
-        [tree_just_flatten(p, namespace=VALUE_NAMESPACE) for p in history]
-    ).T
+    hist_arr = np.array([tree_leaves(p, namespace=VALUE_NAMESPACE) for p in history]).T
     names = leaf_names(start_params, namespace=VALUE_NAMESPACE)
 
     if selector is not None:
@@ -594,9 +592,7 @@ def _extract_params_plot_lines(
         helper = tree_unflatten(
             treedef, list(range(len(flat))), namespace=VALUE_NAMESPACE
         )
-        selected = np.array(
-            tree_just_flatten(selector(helper), namespace=VALUE_NAMESPACE)
-        )
+        selected = np.array(tree_leaves(selector(helper), namespace=VALUE_NAMESPACE))
         names = [names[i] for i in selected]
         hist_arr = hist_arr[selected]
 

@@ -6,7 +6,7 @@ import scipy
 
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
 from optimagic.typing import VALUE_NAMESPACE
@@ -150,7 +150,7 @@ def calculate_estimation_summary(
     # ==================================================================================
 
     flat_data = {
-        key: tree_just_flatten(val, namespace=VALUE_NAMESPACE)
+        key: tree_leaves(val, namespace=VALUE_NAMESPACE)
         for key, val in summary_data.items()
     }
 
@@ -171,8 +171,8 @@ def calculate_estimation_summary(
     # create tree with values corresponding to indices of df
     indices = tree_unflatten(summary_data["value"], names, namespace=VALUE_NAMESPACE)
 
-    estimates_flat = tree_just_flatten(summary_data["value"])
-    indices_flat = tree_just_flatten(indices)
+    estimates_flat = tree_leaves(summary_data["value"])
+    indices_flat = tree_leaves(indices)
 
     # use index chunks in indices_flat to access the corresponding sub data frame of df,
     # and use the index information stored in estimates_flat to form the correct (multi)
@@ -318,7 +318,7 @@ def calculate_free_estimates(estimates, internal_estimates):
     mask = internal_estimates.free_mask
     names = internal_estimates.names
 
-    external_flat = np.array(tree_just_flatten(estimates, namespace=VALUE_NAMESPACE))
+    external_flat = np.array(tree_leaves(estimates, namespace=VALUE_NAMESPACE))
 
     free_estimates = FreeParams(
         values=external_flat[mask],

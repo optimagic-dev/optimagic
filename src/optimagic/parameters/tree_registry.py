@@ -29,7 +29,7 @@ def tree_flatten(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
         return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
 
 
-def tree_just_flatten(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
+def tree_leaves(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
     """Get the leaves of a pytree."""
     _register_namespaces()
     _check_namespace(namespace)

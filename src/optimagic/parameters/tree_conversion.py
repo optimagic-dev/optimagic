@@ -8,7 +8,7 @@ from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.tree_registry import (
     leaf_names,
     tree_flatten,
-    tree_just_flatten,
+    tree_leaves,
     tree_unflatten,
 )
 from optimagic.typing import VALUE_NAMESPACE, AggregationLevel
@@ -102,7 +102,7 @@ def get_tree_converter(
 
 def _get_params_flatten(namespace):
     def params_flatten(params):
-        return np.array(tree_just_flatten(params, namespace=namespace)).astype(float)
+        return np.array(tree_leaves(params, namespace=namespace)).astype(float)
 
     return params_flatten
 
@@ -146,9 +146,9 @@ def _get_derivative_flatten(namespace, solver_type, params, func_eval, derivativ
     if solver_type == AggregationLevel.SCALAR:
 
         def derivative_flatten(derivative_eval):
-            flat = np.array(
-                tree_just_flatten(derivative_eval, namespace=namespace)
-            ).astype(float)
+            flat = np.array(tree_leaves(derivative_eval, namespace=namespace)).astype(
+                float
+            )
             return flat
 
     # jacobian case
