@@ -140,20 +140,20 @@ def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
     assert_frame_equal(tree, expected)
 
 
-@pytest.mark.parametrize(
-    "tree_method",
-    [tree_flatten, tree_leaves, leaf_names, tree_map, tree_flatten],
-)
-def test_tree_methods_raise_warning_with_unregisted_namespace(tree_method, value_df):
-    """If namespace is not registered optree method fallbacks to default behaviour."""
+def test_tree_methods_raise_warning_with_unregisted_namespace():
     unregistered_namespace = "unregistered_namespace"
-    with pytest.warns(match="is not registered."):
-        if tree_method == tree_map:
-            _ = tree_map(lambda x: x, value_df, namespace=unregistered_namespace)
-        elif tree_method == tree_unflatten:
-            _ = tree_method(value_df, [], namespace=unregistered_namespace)
-        else:
-            _ = tree_method(value_df, namespace=unregistered_namespace)
+    tree, leaves = [0], [0]
+    match_str = "is not registered."
+    with pytest.warns(match=match_str):
+        tree_flatten(tree, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        tree_leaves(tree, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        tree_unflatten(tree, leaves, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        leaf_names(tree, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        tree_map(lambda x: x * 2, tree, namespace=unregistered_namespace)
 
 
 def test_tree_flatten_and_unflatten_with_None():
