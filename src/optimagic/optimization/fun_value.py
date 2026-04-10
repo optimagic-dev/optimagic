@@ -123,7 +123,8 @@ def _get_flat_value(value: PyTree) -> NDArray[np.float64]:
     elif isinstance(value, np.ndarray):
         flat = value.flatten()
     else:
-        flat = tree_leaves(value, namespace=VALUE_NAMESPACE)
+        value_leaves = tree_leaves(value, namespace=VALUE_NAMESPACE)
+        flat = np.asarray(value_leaves, dtype=np.float64)
 
     flat_arr = np.asarray(flat, dtype=np.float64)
     return flat_arr

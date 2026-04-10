@@ -3,13 +3,14 @@
 import warnings
 from functools import partial
 from itertools import product
+from typing import Any, Callable, Iterable
 
 import numpy as np
 import optree
 import pandas as pd
 from optree.pytree import PyTreeSpec
 
-from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES
+from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES, PyTree
 
 try:
     import jax.numpy as jnp  # type: ignore[import-not-found]
@@ -22,7 +23,11 @@ except ImportError:
 _are_namespaces_registered = False
 
 
-def tree_flatten(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
+def tree_flatten(
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> tuple[list, PyTreeSpec]:
     """Flatten a pytree."""
     _register_namespaces()
     _check_namespace(namespace)
@@ -30,7 +35,11 @@ def tree_flatten(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
         return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
 
 
-def tree_leaves(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
+def tree_leaves(
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> list:
     """Get the leaves of a pytree."""
     _register_namespaces()
     _check_namespace(namespace)
@@ -38,7 +47,11 @@ def tree_leaves(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
         return optree.tree_leaves(tree, is_leaf=is_leaf, namespace=namespace)
 
 
-def tree_unflatten(treedef, leaves, namespace=DEFAULT_NAMESPACE):
+def tree_unflatten(
+    treedef: PyTree | PyTreeSpec,
+    leaves: Iterable,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> PyTree:
     """Reconstruct a pytree from the tree definition and the leaves."""
     _register_namespaces()
 
@@ -52,7 +65,12 @@ def tree_unflatten(treedef, leaves, namespace=DEFAULT_NAMESPACE):
     return optree.tree_unflatten(treedef, leaves)
 
 
-def tree_map(func, tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
+def tree_map(
+    func: Callable[[PyTree], PyTree],
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> PyTree:
     """Map an input function over pytree args to produce a new pytree."""
     _register_namespaces()
     _check_namespace(namespace)
@@ -62,7 +80,12 @@ def tree_map(func, tree, is_leaf=None, namespace=DEFAULT_NAMESPACE):
     return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
 
 
-def leaf_names(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE, separator="_"):
+def leaf_names(
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+    separator: str = "_",
+) -> list[str]:
     """Get the path names for tree leaves."""
     _register_namespaces()
     _check_namespace(namespace)
@@ -75,8 +98,12 @@ def leaf_names(tree, is_leaf=None, namespace=DEFAULT_NAMESPACE, separator="_"):
 
 
 def tree_equal(
-    tree, other, is_leaf=None, namespace=DEFAULT_NAMESPACE, equality_checkers=None
-):
+    tree: PyTree,
+    other: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+    equality_checkers: dict[str, Callable[[Any, Any], bool]] | None = None,
+) -> bool:
     """Check the equality between two trees."""
     equality_checkers = (
         _get_equality_checkers()
@@ -238,7 +265,8 @@ if _has_jax:
         return jnp.array(leaves).reshape(aux_data)
 
 
-def _get_df_names(df):
+def _get_df_names(df: pd.DataFrame) -> list[str]:
+    """Get string names for dataframe leaf paths."""
     index_strings = list(df.index.map(_index_element_to_string))
     if "value" in df:
         out = index_strings
@@ -248,7 +276,8 @@ def _get_df_names(df):
     return out
 
 
-def _index_element_to_string(element):
+def _index_element_to_string(element: Any) -> str:
+    """Convert an index element to its string representation."""
     if isinstance(element, (tuple, list)):
         as_strings = [str(entry) for entry in element]
         res_string = "_".join(as_strings)
@@ -258,7 +287,8 @@ def _index_element_to_string(element):
     return res_string
 
 
-def _array_element_names(arr):
+def _array_element_names(arr: np.ndarray) -> list[str]:
+    """Get string names for array like element leaf paths."""
     dim_names = [map(str, range(n)) for n in arr.shape]
     names = list(map("_".join, product(*dim_names)))
     return names

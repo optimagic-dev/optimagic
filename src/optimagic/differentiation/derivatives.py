@@ -220,8 +220,8 @@ def first_derivative(
     is_fast_path = _is_1d_array(params)
 
     if not is_fast_path:
-        x, params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
-        x = np.array(x, dtype=np.float64)
+        params_leaves, params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
+        x = np.array(params_leaves, dtype=np.float64)
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
@@ -272,7 +272,7 @@ def first_derivative(
     step_size = cast(NDArray[np.float64], step_size)
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
-    evaluation_points = []
+    evaluation_points: list[float | np.ndarray] = []
     for step_arr in step_size:
         for i, j in product(range(n_steps), range(len(x))):
             if np.isnan(step_arr[i, j]):
@@ -534,8 +534,8 @@ def second_derivative(
     is_fast_path = _is_1d_array(params)
 
     if not is_fast_path:
-        x, params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
-        x = np.array(x, dtype=np.float64)
+        params_leaves, params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
+        x = np.array(params_leaves, dtype=np.float64)
 
         if scaling_factor is not None and not np.isscalar(scaling_factor):
             scaling_factor = np.array(
