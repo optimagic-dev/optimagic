@@ -97,14 +97,17 @@ def bounds_df():
     )
 
 
-def test_tree_methods_with_empty_namespace(bounds_df):
-    leaves, _ = tree_flatten(bounds_df)
+def test_tree_methods_with_default_namespace(bounds_df):
+    leaves, treedef = tree_flatten(bounds_df)
     assert len(leaves) == 1
     assert_frame_equal(leaves[0], bounds_df)
 
     leaves = tree_leaves(bounds_df)
     assert len(leaves) == 1
     assert_frame_equal(leaves[0], bounds_df)
+
+    tree = tree_unflatten(treedef, leaves)
+    assert_frame_equal(tree, bounds_df)
 
     names = leaf_names(bounds_df)
     expected_names = [""]
@@ -115,14 +118,17 @@ def test_tree_methods_with_empty_namespace(bounds_df):
 
 
 @pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
-def test_tree_methods_with_optimagic_namespace(namespace, bounds_df):
+def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
     expected_leaves = bounds_df[namespace].tolist()
 
-    leaves, _ = tree_flatten(bounds_df, namespace=namespace)
+    leaves, treedef = tree_flatten(bounds_df, namespace=namespace)
     assert leaves == expected_leaves
 
     leaves = tree_leaves(bounds_df, namespace=namespace)
     assert leaves == expected_leaves
+
+    tree = tree_unflatten(treedef, leaves, namespace=namespace)
+    assert_frame_equal(tree, bounds_df)
 
     names = leaf_names(bounds_df, namespace=namespace)
     assert names == ["alpha", "beta", "gamma"]
