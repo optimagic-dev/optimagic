@@ -49,9 +49,9 @@ Your contribution should fulfill the criteria provided below.
   on the selected benchmark sets and other things. In such situations, dictionaries that
   map strings to BenchmarkProblem objects are a good idea.
 
-- Think about autocomplete! If want to accept a string as argument (e.g. an algorithm
-  name) also accept input types that are more amenable to static analysis and offer
-  better autocomplete.
+- Think about autocomplete! If you want to accept a string as an argument (e.g. an
+  algorithm name) also accept input types that are more amenable to static analysis and
+  offer better autocomplete.
 
 - Whenever possible, use immutable types. Whenever things need to be changeable,
   consider using an immutable type with copy constructors for modified instances.
