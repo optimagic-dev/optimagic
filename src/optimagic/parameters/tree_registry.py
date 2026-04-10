@@ -10,15 +10,13 @@ import optree
 import pandas as pd
 from optree.pytree import PyTreeSpec
 
+from optimagic.config import IS_JAX_INSTALLED
 from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES, PyTree
 
-try:
+if IS_JAX_INSTALLED:
     import jax.numpy as jnp  # type: ignore[import-not-found]
     import jaxlib  # type: ignore[import-not-found]
 
-    _has_jax = True
-except ImportError:
-    _has_jax = False
 
 _are_namespaces_registered = False
 
@@ -146,7 +144,7 @@ def _get_equality_checkers():
     equality_checkers[pd.Series.__name__] = lambda a, b: a.equals(b)
     equality_checkers[pd.DataFrame.__name__] = lambda a, b: a.equals(b)
 
-    if _has_jax:
+    if IS_JAX_INSTALLED:
         equality_checkers[jnp.ndarray.__name__] = lambda a, b: bool((a == b).all())
 
     return equality_checkers
@@ -193,11 +191,15 @@ def _register_namespaces() -> None:
                 namespace=namespace,
             )
 
-            if _has_jax:
+            if IS_JAX_INSTALLED:
                 optree.register_pytree_node(
                     jaxlib._jax.ArrayImpl,
-                    _flatten_jax_array,
-                    _unflatten_jax_array,
+                    lambda arr: (
+                        arr.flatten().tolist(),  # type: ignore[attr-defined]
+                        arr.shape,  # type: ignore[attr-defined]
+                        _array_element_names(arr),  # type: ignore[arg-type]
+                    ),
+                    lambda aux_data, leaves: jnp.array(leaves).reshape(aux_data),
                     namespace=namespace,
                 )
 
@@ -252,17 +254,6 @@ def _flatten_ndarray(arr):
 def _unflatten_ndarray(aux_data, leaves):
     """Reconstrut a numpy array."""
     return np.array(leaves).reshape(aux_data)
-
-
-if _has_jax:
-
-    def _flatten_jax_array(arr):
-        """Flatten a jax array."""
-        return arr.flatten().tolist(), arr.shape, _array_element_names(arr)
-
-    def _unflatten_jax_array(aux_data, leaves):
-        """Unflatten a jax array."""
-        return jnp.array(leaves).reshape(aux_data)
 
 
 def _get_df_names(df: pd.DataFrame) -> list[str]:
