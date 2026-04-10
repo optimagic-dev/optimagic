@@ -18,7 +18,6 @@ from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
 
 PyTree = Any
-PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]
 Scalar = Any
 
 T = TypeVar("T")
@@ -173,3 +172,14 @@ class MultiStartIterationHistory(TupleLikeAccess):
     history: IterationHistory
     local_histories: list[IterationHistory] | None = None
     exploration: IterationHistory | None = None
+
+
+DEFAULT_NAMESPACE = "optimagic_namespace"
+OPTREE_NAMESPACES = (
+    "value",
+    "lower_bound",
+    "upper_bound",
+    "soft_lower_bound",
+    "soft_upper_bound",
+)
+VALUE_NAMESPACE = OPTREE_NAMESPACES[0]

@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import tree_just_flatten
 
 from optimagic import mark
 from optimagic.examples.criterion_functions import (
@@ -21,7 +20,8 @@ from optimagic.examples.criterion_functions import (
 from optimagic.logging.logger import SQLiteLogOptions
 from optimagic.logging.types import ExistenceStrategy
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.typing import VALUE_NAMESPACE
 
 
 @mark.least_squares
@@ -47,8 +47,7 @@ def test_optimization_with_valid_logging(algorithm, params):
         algorithm=algorithm,
         logging="logging.db",
     )
-    registry = get_registry(extended=True)
-    flat = np.array(tree_just_flatten(res.params, registry=registry))
+    flat = np.array(tree_leaves(res.params, namespace=VALUE_NAMESPACE))
     aaae(flat, np.zeros(3))
 
 

@@ -2,9 +2,15 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-from pybaum import leaf_names, tree_flatten, tree_unflatten
 
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    leaf_names,
+    tree_flatten,
+    tree_leaves,
+    tree_map,
+    tree_unflatten,
+)
+from optimagic.typing import OPTREE_NAMESPACES, VALUE_NAMESPACE
 
 
 @pytest.fixture()
@@ -25,40 +31,171 @@ def other_df():
     return df
 
 
+@pytest.fixture
+def example_tree():
+    return (
+        [0, np.array([1, 2]), {"a": pd.Series([3, 4], index=["c", "d"]), "b": 5}],
+        6,
+    )
+
+
 def test_flatten_df_with_value_column(value_df):
-    registry = get_registry(extended=True)
-    flat, _ = tree_flatten(value_df, registry=registry)
+    flat, _ = tree_flatten(value_df, namespace=VALUE_NAMESPACE)
     assert flat == [1, 3, 5]
 
 
 def test_unflatten_df_with_value_column(value_df):
-    registry = get_registry(extended=True)
-    _, treedef = tree_flatten(value_df, registry=registry)
-    unflat = tree_unflatten(treedef, [10, 11, 12], registry=registry)
+    _, treedef = tree_flatten(value_df, namespace=VALUE_NAMESPACE)
+    unflat = tree_unflatten(treedef, [10, 11, 12], namespace=VALUE_NAMESPACE)
     assert unflat.equals(value_df.assign(value=[10, 11, 12]))
 
 
 def test_leaf_names_df_with_value_column(value_df):
-    registry = get_registry(extended=True)
-    names = leaf_names(value_df, registry=registry)
+    names = leaf_names(value_df, namespace=VALUE_NAMESPACE)
     assert names == ["alpha", "beta", "gamma"]
 
 
+def test_leaf_names_with_is_leaf():
+    params = {"a": 1, "b": np.array([0, 1])}
+    names = leaf_names(
+        params,
+        is_leaf=lambda tree: isinstance(tree, np.ndarray),
+        namespace=VALUE_NAMESPACE,
+    )
+    expected_names = ["a", "b"]
+    assert names == expected_names
+
+
 def test_flatten_partially_numeric_df(other_df):
-    registry = get_registry(extended=True)
-    flat, _ = tree_flatten(other_df, registry=registry)
+    flat, _ = tree_flatten(other_df, namespace=VALUE_NAMESPACE)
     assert flat == [0, 3.14, 1, 3.14, 2, 3.14]
 
 
 def test_unflatten_partially_numeric_df(other_df):
-    registry = get_registry(extended=True)
-    _, treedef = tree_flatten(other_df, registry=registry)
-    unflat = tree_unflatten(treedef, [1, 2, 3, 4, 5, 6], registry=registry)
+    _, treedef = tree_flatten(other_df, namespace=VALUE_NAMESPACE)
+    unflat = tree_unflatten(treedef, [1, 2, 3, 4, 5, 6], namespace=VALUE_NAMESPACE)
     other_df = other_df.assign(b=[1, 3, 5], c=[2, 4, 6])
     assert_frame_equal(unflat, other_df, check_dtype=False)
 
 
 def test_leaf_names_partially_numeric_df(other_df):
-    registry = get_registry(extended=True)
-    names = leaf_names(other_df, registry=registry)
+    names = leaf_names(other_df, namespace=VALUE_NAMESPACE)
     assert names == ["alpha_b", "alpha_c", "beta_b", "beta_c", "gamma_b", "gamma_c"]
+
+
+@pytest.fixture()
+def bounds_df():
+    return pd.DataFrame(
+        {
+            "value": [1, 2, 3],
+            "lower_bound": [0, 0, 0],
+            "upper_bound": [10, 20, 30],
+            "soft_lower_bound": [0.5, 0.5, 0.5],
+            "soft_upper_bound": [9, 19, 29],
+        },
+        index=["alpha", "beta", "gamma"],
+    )
+
+
+def test_tree_methods_with_default_namespace(bounds_df):
+    leaves, treedef = tree_flatten(bounds_df)
+    assert len(leaves) == 1
+    assert_frame_equal(leaves[0], bounds_df)
+
+    leaves = tree_leaves(bounds_df)
+    assert len(leaves) == 1
+    assert_frame_equal(leaves[0], bounds_df)
+
+    tree = tree_unflatten(treedef, leaves)
+    assert_frame_equal(tree, bounds_df)
+
+    names = leaf_names(bounds_df)
+    expected_names = [""]
+    assert names == expected_names
+
+    tree = tree_map(lambda x: x * 2, bounds_df)
+    assert_frame_equal(tree, bounds_df * 2)
+
+
+@pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
+def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
+    expected_leaves = bounds_df[namespace].tolist()
+
+    leaves, treedef = tree_flatten(bounds_df, namespace=namespace)
+    assert leaves == expected_leaves
+
+    leaves = tree_leaves(bounds_df, namespace=namespace)
+    assert leaves == expected_leaves
+
+    tree = tree_unflatten(treedef, leaves, namespace=namespace)
+    assert_frame_equal(tree, bounds_df)
+
+    names = leaf_names(bounds_df, namespace=namespace)
+    assert names == ["alpha", "beta", "gamma"]
+
+    tree = tree_map(lambda x: x * 2, bounds_df, namespace=namespace)
+    doubled = [v * 2 for v in expected_leaves]
+    expected = bounds_df.copy()
+    expected[namespace] = doubled
+    assert_frame_equal(tree, expected)
+
+
+def test_tree_methods_raise_warning_with_unregisted_namespace():
+    unregistered_namespace = "unregistered_namespace"
+    tree, leaves = [0], [0]
+    match_str = "is not registered."
+    with pytest.warns(match=match_str):
+        tree_flatten(tree, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        tree_leaves(tree, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        tree_unflatten(tree, leaves, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        leaf_names(tree, namespace=unregistered_namespace)
+    with pytest.warns(match=match_str):
+        tree_map(lambda x: x * 2, tree, namespace=unregistered_namespace)
+
+
+def test_tree_flatten_and_unflatten_with_None():
+    params = [None]
+    leaves, treespec = tree_flatten(params)
+    assert leaves == []
+    tree = tree_unflatten(treespec, leaves)
+    assert tree == [None]
+
+
+@pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
+def test_dict_insertion_ordering_is_respected_for_registered_namespaces(namespace):
+    params = {"b": [1, 4], "a": [8, 9]}
+    leaves, _ = tree_flatten(params, namespace=namespace)
+    assert leaves == [1, 4, 8, 9]
+
+    tree = tree_unflatten(params, [1, 4, 8, 9], namespace=namespace)
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    leaves2 = tree_leaves(params, namespace=namespace)
+    assert leaves2 == [1, 4, 8, 9]
+
+    tree = tree_map(lambda x: x, params, namespace=namespace)
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    names = leaf_names(params, namespace=namespace)
+    assert names == ["b_0", "b_1", "a_0", "a_1"]
+
+
+def test_dict_insertion_ordering_is_respected_for_default_namespace():
+    params = {"b": [1, 4], "a": [8, 9]}
+    leaves, _ = tree_flatten(params)
+    assert leaves == [1, 4, 8, 9]
+
+    tree = tree_unflatten(params, [1, 4, 8, 9])
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    leaves2 = tree_leaves(params)
+    assert leaves2 == [1, 4, 8, 9]
+
+    tree = tree_map(lambda x: x, params)
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    names = leaf_names(params)
+    assert names == ["b_0", "b_1", "a_0", "a_1"]

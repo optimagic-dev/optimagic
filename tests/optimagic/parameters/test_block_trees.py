@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal
-from pybaum import tree_equal
-from pybaum import tree_just_flatten as tree_leaves
 
 from optimagic import second_derivative
 from optimagic.parameters.block_trees import (
@@ -12,7 +10,8 @@ from optimagic.parameters.block_trees import (
     hessian_to_block_tree,
     matrix_to_block_tree,
 )
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import tree_equal, tree_leaves
+from optimagic.typing import VALUE_NAMESPACE
 
 
 def test_matrix_to_block_tree_array_and_scalar():
@@ -129,9 +128,8 @@ def test_block_tree_to_hessian_bijection():
     params = {"a": np.arange(4), "b": [{"c": (1, 2), "d": np.array([5, 6])}]}
     f_tree = {"e": np.arange(3), "f": (5, 6, [7, 8, {"g": 1.0}])}
 
-    registry = get_registry(extended=True)
-    n_p = len(tree_leaves(params, registry=registry))
-    n_f = len(tree_leaves(f_tree, registry=registry))
+    n_p = len(tree_leaves(params, namespace=VALUE_NAMESPACE))
+    n_f = len(tree_leaves(f_tree, namespace=VALUE_NAMESPACE))
 
     expected = np.arange(n_f * n_p**2).reshape(n_f, n_p, n_p)
     block_hessian = hessian_to_block_tree(expected, f_tree, params)

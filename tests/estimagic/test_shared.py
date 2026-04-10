@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import leaf_names, tree_equal
 
 from estimagic.shared_covs import (
     _to_numpy,
@@ -15,7 +14,8 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import leaf_names, tree_equal
+from optimagic.typing import VALUE_NAMESPACE
 from optimagic.utilities import get_rng
 
 
@@ -240,8 +240,7 @@ def test_calculate_estimation_summary():
         "free": np.array([True, True, True]),
     }
 
-    registry = get_registry(extended=True)
-    names = leaf_names(summary_data["value"], registry=registry)
+    names = leaf_names(summary_data["value"], namespace=VALUE_NAMESPACE)
     free_names = names
 
     # function call
