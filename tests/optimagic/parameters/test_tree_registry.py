@@ -164,6 +164,11 @@ def test_tree_flatten_and_unflatten_with_None():
     assert tree == [None]
 
 
+def test_leaf_names_with_none():
+    names = leaf_names(None)
+    assert names == []
+
+
 @pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
 def test_dict_insertion_ordering_is_respected_for_registered_namespaces(namespace):
     params = {"b": [1, 4], "a": [8, 9]}

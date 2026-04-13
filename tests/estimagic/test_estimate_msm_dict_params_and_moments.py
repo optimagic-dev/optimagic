@@ -99,6 +99,6 @@ def assert_almost_equal(x, y, decimal=6):
         y_flat = y
     else:
         x_flat = np.array(tree_leaves(x, namespace=VALUE_NAMESPACE))
-        y_flat = np.array(tree_leaves(x, namespace=VALUE_NAMESPACE))
+        y_flat = np.array(tree_leaves(y, namespace=VALUE_NAMESPACE))
 
     aaae(x_flat, y_flat, decimal=decimal)
