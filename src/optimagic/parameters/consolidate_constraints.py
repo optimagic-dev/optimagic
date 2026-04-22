@@ -233,17 +233,17 @@ def _consolidate_fixes_with_equality_constraints(
 def _fold_fixes_into_probability_constraints(
     constraints, fixed_values, is_fixed_to_value, param_names
 ):
-    """Shrink probability selectors to exclude parameters fixed to 0.0.
+    """Shrink probability selectors to exclude parameters with compatible fixes.
 
     A probability constraint requires that the selected parameters are non-negative
-    and sum to 1. If some of the selected parameters are additionally pinned to 0.0
-    via a fixed constraint, they do not contribute to the sum and the constraint
-    reduces to a probability constraint over the remaining free parameters. This
-    function rewrites such constraints by removing zero-fixed indices from the
-    selector before the kernel transformation sees them.
-
-    Fixes to values other than 0.0 are not supported here; they would require a
-    scaled kernel transformation and are rejected with a clear error.
+    and sum to 1. If some of the selected parameters are additionally pinned via a
+    fixed constraint to values in ``[0, 1)`` that sum to less than 1, the constraint
+    reduces to a probability constraint over the remaining free parameters, summing
+    to ``1 - sum(fixed values)``. This function rewrites such constraints by
+    removing fixed indices from the selector and attaching the implied simplex
+    target as ``sum_target`` on the returned transformation dict. When all fixed
+    values are 0.0, the ``sum_target`` is 1.0 and the key is omitted so that the
+    no-op path produces a transformation dict identical to the pre-existing one.
 
     Args:
         constraints (list): List of constraint dictionaries where selectors have
@@ -256,7 +256,8 @@ def _fold_fixes_into_probability_constraints(
 
     Returns:
         list: Constraints with probability selectors reduced to their non-fixed
-        subsets. Non-probability constraints are returned unchanged.
+        subsets, carrying ``sum_target`` when the fixed values are non-zero.
+        Non-probability constraints are returned unchanged.
 
     """
     out = []
@@ -278,13 +279,21 @@ def _fold_fixes_into_probability_constraints(
             i for i, is_fixed in zip(index, fixed_mask, strict=True) if not is_fixed
         ]
 
-        non_zero = [i for i in fixed_idx if fixed_values[i] != 0.0]
-        if non_zero:
-            problematic = [param_names[i] for i in non_zero]
+        negative = [i for i in fixed_idx if fixed_values[i] < 0.0]
+        if negative:
+            problematic = [param_names[i] for i in negative]
             raise InvalidConstraintError(
-                "Only fixes to value 0.0 are currently supported for parameters "
-                "inside a probability constraint. This is violated for:\n"
-                f"{problematic}"
+                "Parameters inside a probability constraint that are fixed to a "
+                "value must be fixed to a value in [0, 1). This is violated for:"
+                f"\n{problematic}"
+            )
+
+        fixed_sum = float(sum(fixed_values[i] for i in fixed_idx))
+        if fixed_sum >= 1.0:
+            problematic = [param_names[i] for i in fixed_idx]
+            raise InvalidConstraintError(
+                "The fixed values inside a probability constraint must sum to "
+                f"strictly less than 1; got sum={fixed_sum} for:\n{problematic}"
             )
 
         if len(free_idx) < 2:
@@ -296,6 +305,8 @@ def _fold_fixes_into_probability_constraints(
             )
 
         new_constr = {**constr, "index": free_idx}
+        if fixed_sum > 0.0:
+            new_constr["sum_target"] = 1.0 - fixed_sum
         out.append(new_constr)
 
     return out

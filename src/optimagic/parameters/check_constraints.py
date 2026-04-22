@@ -226,9 +226,9 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
             if subset["is_fixed_to_value"].any():
                 problematic = subset["index"][subset["is_fixed_to_value"]]
                 raise InvalidConstraintError(
-                    "Only fixes to value 0.0 are currently supported for "
-                    "parameters inside a probability constraint. This is "
-                    f"violated for:\n{problematic}"
+                    "Fixed values inside a probability constraint should have "
+                    "been folded into the selector before this check; the "
+                    f"following parameters still carry a fix:\n{problematic}"
                 )
             finite_bounds = np.isfinite(subset["lower_bounds"]) | np.isfinite(
                 subset["upper_bounds"]

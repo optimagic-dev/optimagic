@@ -80,13 +80,23 @@ def test_probability_constraint_accepts_zero_fix_on_selector_element():
     )
 
 
-def test_probability_constraint_rejects_non_zero_fix_on_selector_element():
-    with pytest.raises(InvalidConstraintError, match="Only fixes to value 0.0"):
+def test_probability_constraint_accepts_non_zero_fix_on_selector_element():
+    check_constraints(
+        params=np.array([0.1, 0.3, 0.2, 0.4]),
+        constraints=[
+            om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3]]),
+            om.FixedConstraint(lambda x: x[[0]]),
+        ],
+    )
+
+
+def test_probability_constraint_rejects_fixes_summing_to_one_or_more():
+    with pytest.raises(InvalidConstraintError, match="sum to strictly less than 1"):
         check_constraints(
-            params=np.array([0.1, 0.3, 0.2, 0.4]),
+            params=np.array([0.5, 0.5, 0.0, 0.0]),
             constraints=[
                 om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3]]),
-                om.FixedConstraint(lambda x: x[[0]]),
+                om.FixedConstraint(lambda x: x[[0, 1]]),
             ],
         )
 
