@@ -7,12 +7,10 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 
 ## Unreleased
 
-- Allows a `FixedConstraint` pinning selected elements to `0.0` to coexist with a
-  `ProbabilityConstraint` on the same parameters. The zero-fixed entries are held at
-  zero and the remaining free entries form a simplex summing to one.
-- Generalises the above to fixes at any value in `[0, 1)` whose sum is strictly less
-  than one. The free entries of the probability constraint are then optimised on a
-  simplex summing to `1 - sum(fixed values)`.
+- Allows a `FixedConstraint` pinning selected elements to any value in `[0, 1)` (with
+  their sum strictly less than one) to coexist with a `ProbabilityConstraint` on the
+  same parameters. The fixed entries are held at their values and the remaining free
+  entries are optimised on a simplex summing to `1 - sum(fixed values)`.
 
 
 ## 0.5.3
