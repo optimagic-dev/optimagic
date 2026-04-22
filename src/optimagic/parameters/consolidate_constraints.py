@@ -68,6 +68,13 @@ def consolidate_constraints(
         if not constr_info["is_fixed_to_value"][c["index"]].all()
     ]
 
+    other_constraints = _fold_fixes_into_probability_constraints(
+        other_constraints,
+        fixed_values=constr_info["fixed_values"],
+        is_fixed_to_value=constr_info["is_fixed_to_value"],
+        param_names=param_names,
+    )
+
     (
         other_constraints,
         lower_bounds,
@@ -221,6 +228,77 @@ def _consolidate_fixes_with_equality_constraints(
             fixed_value[eq["index"]] = valcounts[0]
 
     return fixed_value
+
+
+def _fold_fixes_into_probability_constraints(
+    constraints, fixed_values, is_fixed_to_value, param_names
+):
+    """Shrink probability selectors to exclude parameters fixed to 0.0.
+
+    A probability constraint requires that the selected parameters are non-negative
+    and sum to 1. If some of the selected parameters are additionally pinned to 0.0
+    via a fixed constraint, they do not contribute to the sum and the constraint
+    reduces to a probability constraint over the remaining free parameters. This
+    function rewrites such constraints by removing zero-fixed indices from the
+    selector before the kernel transformation sees them.
+
+    Fixes to values other than 0.0 are not supported here; they would require a
+    scaled kernel transformation and are rejected with a clear error.
+
+    Args:
+        constraints (list): List of constraint dictionaries where selectors have
+            been processed into an ``"index"`` field.
+        fixed_values (np.ndarray): 1d array with fixed values (NaN where free).
+        is_fixed_to_value (np.ndarray): 1d boolean array that is True for
+            parameters fixed to a value.
+        param_names (list): Names of the flattened parameters. Used for error
+            messages only.
+
+    Returns:
+        list: Constraints with probability selectors reduced to their non-fixed
+        subsets. Non-probability constraints are returned unchanged.
+
+    """
+    out = []
+    for constr in constraints:
+        if constr["type"] != "probability":
+            out.append(constr)
+            continue
+
+        index = list(constr["index"])
+        fixed_mask = is_fixed_to_value[index]
+        if not fixed_mask.any():
+            out.append(constr)
+            continue
+
+        fixed_idx = [
+            i for i, is_fixed in zip(index, fixed_mask, strict=True) if is_fixed
+        ]
+        free_idx = [
+            i for i, is_fixed in zip(index, fixed_mask, strict=True) if not is_fixed
+        ]
+
+        non_zero = [i for i in fixed_idx if fixed_values[i] != 0.0]
+        if non_zero:
+            problematic = [param_names[i] for i in non_zero]
+            raise InvalidConstraintError(
+                "Only fixes to value 0.0 are currently supported for parameters "
+                "inside a probability constraint. This is violated for:\n"
+                f"{problematic}"
+            )
+
+        if len(free_idx) < 2:
+            problematic = [param_names[i] for i in index]
+            raise InvalidConstraintError(
+                "A probability constraint must have at least two non-fixed "
+                "selected parameters after folding in fixes. This is violated "
+                f"for:\n{problematic}"
+            )
+
+        new_constr = {**constr, "index": free_idx}
+        out.append(new_constr)
+
+    return out
 
 
 def _consolidate_bounds_with_equality_constraints(
