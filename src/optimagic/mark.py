@@ -24,8 +24,8 @@ def scalar(func: ScalarFuncT) -> ScalarFuncT:
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.SCALAR
-    return wrapper
+        wrapper._problem_type = AggregationLevel.SCALAR  # ty:ignore[unresolved-attribute]
+    return wrapper  # ty:ignore[invalid-return-type]
 
 
 def least_squares(func: VectorFuncT) -> VectorFuncT:
@@ -41,8 +41,8 @@ def least_squares(func: VectorFuncT) -> VectorFuncT:
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES
-    return wrapper
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # ty:ignore[unresolved-attribute]
+    return wrapper  # ty:ignore[invalid-return-type]
 
 
 def likelihood(func: VectorFuncT) -> VectorFuncT:
@@ -58,8 +58,8 @@ def likelihood(func: VectorFuncT) -> VectorFuncT:
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD
-    return wrapper
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # ty:ignore[unresolved-attribute]
+    return wrapper  # ty:ignore[invalid-return-type]
 
 
 # TODO: I get an error when adding bound=Algorithm to AlgorithmSubclass. Why?
@@ -137,7 +137,7 @@ def minimizer(
             disable_history=disable_history,
             experimental=experimental,
         )
-        cls.__algo_info__ = algo_info
+        cls.__algo_info__ = algo_info  # ty:ignore[unresolved-attribute]
         return cls
 
     return decorator

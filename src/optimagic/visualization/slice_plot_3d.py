@@ -908,7 +908,7 @@ def evaluate_make_subplot_kwargs(
             "horizontal_spacing": 1 / (make_subplot_defaults["cols"] * 5),
             "vertical_spacing": (1 / max(make_subplot_defaults["rows"] - 1, 1)) / 5,
         }
-    )
+    )  # ty:ignore[no-matching-overload]
     make_subplot_defaults.update(make_subplot_kwargs)
     return make_subplot_defaults
 

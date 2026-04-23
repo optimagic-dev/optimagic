@@ -43,7 +43,7 @@ def test_with_invalid_numdiff_options():
             fun=lambda x: x @ x,
             params=np.arange(5),
             algorithm="scipy_lbfgsb",
-            numdiff_options={"bla": 15},
+            numdiff_options={"bla": 15},  # ty:ignore[invalid-argument-type, invalid-key]
         )
 
 
@@ -61,7 +61,7 @@ def test_with_optional_fun_argument():
 def test_fun_and_jac_list():
     with pytest.raises(NotImplementedError):
         minimize(
-            fun_and_jac=[lambda x: (x @ x, 2 * x)],
+            fun_and_jac=[lambda x: (x @ x, 2 * x)],  # ty:ignore[invalid-argument-type]
             params=np.arange(5),
             algorithm="scipy_lbfgsb",
         )

@@ -82,7 +82,7 @@ class SQLAlchemyConfig:
             inspector: Any, table: sql.Table, column_info: dict[str, Any]
         ) -> None:  # noqa: ARG001
             if isinstance(column_info["type"], sql.BLOB):
-                column_info["type"] = sql.PickleType(pickler=RobustPickler)
+                column_info["type"] = sql.PickleType(pickler=RobustPickler)  # ty:ignore[invalid-argument-type]
 
 
 @dataclass
@@ -230,7 +230,7 @@ class SQLAlchemySimpleStore(
         super().__init__(input_type, output_type, primary_key)
         columns = [
             sql.Column(primary_key, sql.Integer, primary_key=True, autoincrement=True),
-            sql.Column(self._value_column, sql.PickleType(pickler=RobustPickler)),
+            sql.Column(self._value_column, sql.PickleType(pickler=RobustPickler)),  # ty:ignore[invalid-argument-type]
         ]
         table_config = TableConfig(table_name, columns, self.primary_key)
 
@@ -280,7 +280,7 @@ class SQLAlchemySimpleStore(
         result = self._select_last_rows(n_rows)
         return self._post_process(result)
 
-    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:
+    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:  # ty:ignore[unresolved-attribute]
         output_list = []
         for row in results:
             row_dict = {self.primary_key: row[0]}
@@ -370,7 +370,7 @@ class SQLAlchemyTableStore(
         result = self._select_last_rows(n_rows)
         return self._post_process(result)
 
-    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:
+    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:  # ty:ignore[unresolved-attribute]
         return [
             self._output_type(**dict(zip(self.column_names, row, strict=False)))
             for row in results
@@ -460,7 +460,7 @@ class ProblemStore(
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
             Column("direction", String),
-            Column("params", PickleType(pickler=RobustPickler)),
+            Column("params", PickleType(pickler=RobustPickler)),  # ty:ignore[invalid-argument-type]
         ]
 
         table_config = TableConfig(

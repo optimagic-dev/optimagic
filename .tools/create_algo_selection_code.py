@@ -109,7 +109,7 @@ def _get_algorithms_in_module(module: ModuleType) -> dict[str, Type[Algorithm]]:
     }
     algos = {}
     for candidate in candidate_dict.values():
-        name = candidate.algo_info.name
+        name = candidate.algo_info.name  # ty:ignore[unresolved-attribute]
         if issubclass(candidate, Algorithm) and candidate is not Algorithm:
             algos[name] = candidate
     return algos
@@ -223,7 +223,7 @@ def _generate_category_combinations(categories: list[str]) -> list[tuple[str, ..
     result: list[tuple[str, ...]] = []
     for r in range(len(categories) + 1):
         result.extend(map(tuple, map(sorted, combinations(categories, r))))
-    return sorted(result, key=len, reverse=True)
+    return sorted(result, key=len, reverse=True)  # ty:ignore[invalid-return-type]
 
 
 def _apply_filters(

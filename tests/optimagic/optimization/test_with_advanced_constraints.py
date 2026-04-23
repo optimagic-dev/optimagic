@@ -62,7 +62,7 @@ def test_with_covariance_constraint_bounds_distance(derivative, constr_name):
         params=params,
         algorithm="scipy_lbfgsb",
         jac=derivative,
-        constraints=CONSTR_INFO[constr_name],
+        constraints=CONSTR_INFO[constr_name],  # ty:ignore[invalid-argument-type]
     )
 
     assert res.success, "scipy_lbfgsb did not converge."

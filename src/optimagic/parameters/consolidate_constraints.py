@@ -474,7 +474,7 @@ def _plug_equality_constraints_into_linear_weights(weights, post_replacements):
     """
     w = weights.T
     plugged_iloc = pd.Series(post_replacements)
-    plugged_iloc = plugged_iloc.where(plugged_iloc >= 0, np.arange(len(plugged_iloc)))
+    plugged_iloc = plugged_iloc.where(plugged_iloc >= 0, np.arange(len(plugged_iloc)))  # ty:ignore[invalid-argument-type]
     w["plugged_iloc"] = plugged_iloc
 
     plugged_weights = w.groupby("plugged_iloc").sum()

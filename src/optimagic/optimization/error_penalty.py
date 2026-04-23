@@ -78,7 +78,7 @@ def get_error_penalty_function(
     dim_out = (
         1
         if solver_type == AggregationLevel.SCALAR
-        else len(start_criterion.internal_value(solver_type))
+        else len(start_criterion.internal_value(solver_type))  # ty:ignore[invalid-argument-type]
     )
 
     _penalty: Callable[

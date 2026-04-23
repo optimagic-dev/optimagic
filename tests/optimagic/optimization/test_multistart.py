@@ -75,8 +75,8 @@ def test_run_explorations():
             return self
 
     calculated = run_explorations(
-        internal_problem=Dummy(),
-        sample=np.arange(6).reshape(3, 2),
+        internal_problem=Dummy(),  # ty:ignore[invalid-argument-type]
+        sample=np.arange(6).reshape(3, 2),  # ty:ignore[invalid-argument-type]
         n_cores=1,
         step_id=0,
     )
@@ -130,7 +130,7 @@ def starts():
 @pytest.fixture()
 def results():
     res = InternalOptimizeResult(
-        x=np.arange(3) + 1e-10,
+        x=np.arange(3) + 1e-10,  # ty:ignore[invalid-argument-type]
         fun=4,
     )
     return [res]

@@ -72,13 +72,13 @@ def process_selectors(constraints, params, tree_converter, param_names):
             if np.isscalar(selected):
                 selected = [selected]
             selected = np.array(selected).astype(int)
-            _fail_if_duplicates(selected, constr, param_names)
+            _fail_if_duplicates(selected, constr, param_names)  # ty:ignore[invalid-argument-type]
         else:
             selected = [[sel] if np.isscalar(sel) else sel for sel in selected]
             _fail_if_selections_are_incompatible(selected, constr)
             selected = [np.array(sel).astype(int) for sel in selected]
             for sel in selected:
-                _fail_if_duplicates(sel, constr, param_names)
+                _fail_if_duplicates(sel, constr, param_names)  # ty:ignore[invalid-argument-type]
 
         new_constr = constr.copy()
         if selector_case == "one selector":

@@ -651,7 +651,7 @@ def _line_plot_altair(
 
     if template is None:
         template = "default"
-    alt.theme.enable(template)
+    alt.theme.enable(template)  # ty:ignore[invalid-argument-type]
 
     dfs = []
     for line in lines:

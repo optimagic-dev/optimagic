@@ -101,5 +101,5 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
     contribs, _ = contribs_func(x)
     root_contribs, _ = root_contribs_func(x)
 
-    assert np.isclose(scalar.value, contribs.value.sum())
-    assert np.isclose(scalar.value, (root_contribs.value**2).sum())
+    assert np.isclose(scalar.value, contribs.value.sum())  # ty:ignore[unresolved-attribute]
+    assert np.isclose(scalar.value, (root_contribs.value**2).sum())  # ty:ignore[unresolved-attribute]

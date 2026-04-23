@@ -41,7 +41,7 @@ def tree_params_converter(tree_params):
         params_unflatten=lambda x: tree_unflatten(
             treedef, x.tolist(), registry=registry
         ),
-        derivative_flatten=None,
+        derivative_flatten=None,  # ty:ignore[invalid-argument-type]
     )
     return converter
 
@@ -68,7 +68,7 @@ def df_params_converter(df_params):
     converter = TreeConverter(
         lambda x: x["value"].to_numpy(),
         lambda x: df_params.assign(value=x),
-        None,
+        None,  # ty:ignore[invalid-argument-type]
     )
     return converter
 

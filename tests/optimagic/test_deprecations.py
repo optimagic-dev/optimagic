@@ -562,8 +562,8 @@ def test_old_bounds_are_deprecated_in_slice_plot():
         om.slice_plot(
             lambda x: x @ x,
             np.arange(3),
-            lower_bounds=np.full(3, -1),
-            upper_bounds=np.full(3, 2),
+            lower_bounds=np.full(3, -1),  # ty:ignore[invalid-argument-type]
+            upper_bounds=np.full(3, 2),  # ty:ignore[invalid-argument-type]
         )
 
 
@@ -704,7 +704,7 @@ def test_deprecated_dict_access_of_multistart_info():
     )
     msg = "The dictionary access for 'local_optima' is deprecated and will be removed"
     with pytest.warns(FutureWarning, match=msg):
-        _ = res.multistart_info["local_optima"]
+        _ = res.multistart_info["local_optima"]  # ty:ignore[not-subscriptable]
 
 
 def test_base_steps_in_first_derivatives_is_deprecated():
@@ -805,7 +805,7 @@ def test_jac_dicts_are_deprecated_in_minimize():
             lambda x: x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            jac={"value": lambda x: 2 * x},
+            jac={"value": lambda x: 2 * x},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -817,7 +817,7 @@ def test_jac_dicts_are_deprecated_in_maximize():
             lambda x: -x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            jac={"value": lambda x: -2 * x},
+            jac={"value": lambda x: -2 * x},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -829,7 +829,7 @@ def test_fun_and_jac_dicts_are_deprecated_in_minimize():
             lambda x: x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            fun_and_jac={"value": lambda x: (x @ x, 2 * x)},
+            fun_and_jac={"value": lambda x: (x @ x, 2 * x)},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -841,7 +841,7 @@ def test_fun_and_jac_dicts_are_deprecated_in_maximize():
             lambda x: -x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            fun_and_jac={"value": lambda x: (-x @ x, -2 * x)},
+            fun_and_jac={"value": lambda x: (-x @ x, -2 * x)},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -1079,7 +1079,7 @@ def test_pre_process_constraints_list_of_constraints(dummy_func):
         {"type": "fixed", "selector": dummy_func},
         {"type": "increasing", "selector": dummy_func},
     ]
-    assert pre_process_constraints(constraints) == expected
+    assert pre_process_constraints(constraints) == expected  # ty:ignore[invalid-argument-type]
 
 
 def test_pre_process_constraints_none_case():
@@ -1095,7 +1095,7 @@ def test_pre_process_constraints_mixed_case(dummy_func):
         {"type": "fixed", "selector": dummy_func},
         {"type": "increasing", "selector": dummy_func},
     ]
-    assert pre_process_constraints(constraints) == expected
+    assert pre_process_constraints(constraints) == expected  # ty:ignore[invalid-argument-type]
 
 
 def test_pre_process_constraints_dict_case(dummy_func):
@@ -1108,7 +1108,7 @@ def test_pre_process_constraints_invalid_case():
     constraints = "invalid"
     msg = "Invalid constraint type: <class 'str'>"
     with pytest.raises(InvalidConstraintError, match=msg):
-        pre_process_constraints(constraints)
+        pre_process_constraints(constraints)  # ty:ignore[invalid-argument-type]
 
 
 def test_pre_process_constraints_invalid_mixed_case():
@@ -1119,13 +1119,13 @@ def test_pre_process_constraints_invalid_mixed_case():
     ]
     msg = "Invalid constraint types: {<class 'str'>}"
     with pytest.raises(InvalidConstraintError, match=msg):
-        pre_process_constraints(constraints)
+        pre_process_constraints(constraints)  # ty:ignore[invalid-argument-type]
 
 
 def test_deprecated_log_reader(example_db):
     with pytest.warns(FutureWarning, match="SQLiteLogReader"):
         reader = OptimizeLogReader(example_db)
-        res = reader.read_start_params()
+        res = reader.read_start_params()  # ty:ignore[unresolved-attribute]
         assert res == {"a": 1, "b": 2, "c": 3}
 
 

@@ -154,7 +154,7 @@ def test_maximum_likelihood_external_interfaace(
 
     result_bhhh = minimize(
         fun=mark.likelihood(criterion_and_derivative),
-        jac=True,
+        jac=True,  # ty:ignore[invalid-argument-type]
         params=x,
         algorithm="bhhh",
     )
