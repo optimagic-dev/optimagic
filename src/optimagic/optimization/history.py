@@ -407,8 +407,6 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
 def _get_flat_param_names(param: PyTree) -> list[str]:
     fast_path = _is_1d_array(param)
     if fast_path:
-        # Mypy raises an error here because .tolist() returns a str for zero-dimensional
-        # arrays, but the fast path is only taken for 1d arrays, so it can be ignored.
         return np.arange(param.size).astype(str).tolist()
 
     registry = get_registry(extended=True)

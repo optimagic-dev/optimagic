@@ -913,7 +913,6 @@ def evaluate_make_subplot_kwargs(
     return make_subplot_defaults
 
 
-# mypy: disable-error-code="dict-item"
 def evaluate_layout_kwargs(
     layout_kwargs,
     projection,
