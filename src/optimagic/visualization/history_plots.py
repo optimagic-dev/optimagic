@@ -360,10 +360,10 @@ def _retrieve_optimization_data_from_result_object(
                     fun=fun,
                     params=params,
                     # TODO: This needs to be fixed
-                    start_time=len(fun) * [None],  # type: ignore
-                    stop_time=len(fun) * [None],  # type: ignore
-                    batches=len(fun) * [None],  # type: ignore
-                    task=len(fun) * [None],  # type: ignore
+                    start_time=len(fun) * [None],
+                    stop_time=len(fun) * [None],
+                    batches=len(fun) * [None],
+                    task=len(fun) * [None],
                 )
         else:
             stacked = None
@@ -416,8 +416,8 @@ def _retrieve_optimization_data_from_database(
     if stack_multistart and local_histories is not None:
         stacked = _get_stacked_local_histories(local_histories, direction, _history)
         if show_exploration:
-            stacked["params"] = exploration["params"][::-1] + stacked["params"]  # type: ignore
-            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]  # type: ignore
+            stacked["params"] = exploration["params"][::-1] + stacked["params"]
+            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]
     else:
         stacked = None
 
@@ -428,8 +428,8 @@ def _retrieve_optimization_data_from_database(
         start_time=_history["time"],
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(_history["fun"]) * [None],  # type: ignore
-        task=len(_history["fun"]) * [None],  # type: ignore
+        stop_time=len(_history["fun"]) * [None],
+        task=len(_history["fun"]) * [None],
         batches=list(range(len(_history["fun"]))),
     )
 
@@ -476,8 +476,8 @@ def _get_stacked_local_histories(
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available for the
         # IterationHistory.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(stacked["criterion"]) * [None],  # type: ignore
-        task=len(stacked["criterion"]) * [None],  # type: ignore
+        stop_time=len(stacked["criterion"]) * [None],
+        task=len(stacked["criterion"]) * [None],
         batches=list(range(len(stacked["criterion"]))),
     )
 

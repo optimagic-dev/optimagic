@@ -585,7 +585,7 @@ def second_derivative(
     step_size = cast(NDArray[np.float64], step_size)
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
-    evaluation_points = {  # type: ignore
+    evaluation_points = {
         "one_step": [],
         "two_step": [],
         "cross_step": [],

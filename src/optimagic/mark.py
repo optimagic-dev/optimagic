@@ -15,16 +15,16 @@ def scalar(func: ScalarFuncT) -> ScalarFuncT:
     """Mark a function as a scalar function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
+        wrapper._problem_type = AggregationLevel.SCALAR
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
 
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
+        def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
+        wrapper._problem_type = AggregationLevel.SCALAR
     return wrapper
 
 
@@ -32,16 +32,16 @@ def least_squares(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a least squares function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
 
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
+        def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES
     return wrapper
 
 
@@ -49,16 +49,16 @@ def likelihood(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a likelihood function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
 
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
+        def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD
     return wrapper
 
 
@@ -137,7 +137,7 @@ def minimizer(
             disable_history=disable_history,
             experimental=experimental,
         )
-        cls.__algo_info__ = algo_info  # type: ignore
+        cls.__algo_info__ = algo_info
         return cls
 
     return decorator

@@ -25,7 +25,7 @@ from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 
 
-def slice_plot_3d(  # type: ignore[no-untyped-def]
+def slice_plot_3d(
     func,
     params,
     bounds=None,
@@ -342,7 +342,7 @@ def slice_plot_3d(  # type: ignore[no-untyped-def]
                             fig = plot_contour(
                                 x,
                                 y,
-                                z,  # type: ignore[arg-type]
+                                z,
                                 scatter_point,
                                 plot_kwargs,
                                 layout_kwargs,
@@ -360,7 +360,7 @@ def slice_plot_3d(  # type: ignore[no-untyped-def]
     return combine_plots(plots, make_subplot_kwargs, layout_kwargs, expand_yrange)
 
 
-def generate_evaluation_points(  # type: ignore[no-untyped-def]
+def generate_evaluation_points(
     projection, selected, internal_params, params_data, converter
 ):
     """Create the list of parameter sets for function evaluation.
@@ -413,9 +413,7 @@ def generate_evaluation_points(  # type: ignore[no-untyped-def]
     return evaluation_points
 
 
-def plot_data_cache(  # type: ignore[no-untyped-def]
-    projection, selected, internal_params, func_values, n_gridpoints
-):
+def plot_data_cache(projection, selected, internal_params, func_values, n_gridpoints):
     """Caches and maps evaluated function values to their parameters.
 
     This function takes the flat array of criterion function outputs and maps
@@ -471,7 +469,7 @@ def plot_data_cache(  # type: ignore[no-untyped-def]
     return plot_data
 
 
-def plot_line(  # type: ignore[no-untyped-def]
+def plot_line(
     x: list[float],
     y: list[float],
     display_name: str,
@@ -525,7 +523,7 @@ def plot_line(  # type: ignore[no-untyped-def]
     return fig
 
 
-def plot_surface(  # type: ignore[no-untyped-def]
+def plot_surface(
     x: NDArray[np.float64],
     y: NDArray[np.float64],
     z,
@@ -567,7 +565,7 @@ def plot_surface(  # type: ignore[no-untyped-def]
     return fig
 
 
-def plot_contour(  # type: ignore[no-untyped-def]
+def plot_contour(
     x: NDArray[np.float64],
     y: NDArray[np.float64],
     z: list[float],
@@ -617,7 +615,7 @@ class ProjectionConfig(str, Enum):
     SURFACE = "surface"
 
     @classmethod
-    def validate(cls, value):  # type: ignore[no-untyped-def]
+    def validate(cls, value):
         if value is None:
             return None
         if isinstance(value, str):
@@ -649,14 +647,14 @@ class Projection:
 
     """
 
-    def __init__(self, value):  # type: ignore[no-untyped-def]
+    def __init__(self, value):
         self._univariate = False
         self.lower = None
         self.upper = None
 
         self._parse(value)
 
-    def _parse(self, value):  # type: ignore[no-untyped-def]
+    def _parse(self, value):
         if isinstance(value, str):
             value = value.lower()
             if value == ProjectionConfig.UNIVARIATE:
@@ -683,7 +681,7 @@ class Projection:
     def is_dict(self) -> bool:
         return not self._univariate
 
-    def get_config(self):  # type: ignore[no-untyped-def]
+    def get_config(self):
         if self._univariate:
             return ProjectionConfig.UNIVARIATE
         return {"lower": self.lower, "upper": self.upper}
@@ -696,7 +694,7 @@ def compute_yaxis_range(y: list[float], expand_yrange: float) -> list[float]:
     return [y_min - expand_yrange * y_range, y_max + expand_yrange * y_range]
 
 
-def combine_plots(  # type: ignore[no-untyped-def]
+def combine_plots(
     plots: dict[tuple[int, int], go.Figure],
     make_subplot_kwargs,
     layout_kwargs,
@@ -808,7 +806,7 @@ def combine_plots(  # type: ignore[no-untyped-def]
     return fig
 
 
-def _get_subplot_spec(  # type: ignore[no-untyped-def]
+def _get_subplot_spec(
     i: int, j: int, projection, n_selected: int
 ) -> dict[str | None, str | None]:
     # Determine subplot spec type (xy, scene, contour) for a given subplot position.
@@ -832,7 +830,7 @@ def _get_subplot_spec(  # type: ignore[no-untyped-def]
     return {}
 
 
-def evaluate_plot_kwargs(plot_kwargs):  # type: ignore[no-untyped-def]
+def evaluate_plot_kwargs(plot_kwargs):
     # Set default styling for plots if not provided by the user.
     if plot_kwargs is None:
         plot_kwargs = {}
@@ -862,7 +860,7 @@ def evaluate_plot_kwargs(plot_kwargs):  # type: ignore[no-untyped-def]
     return plot_kwargs_defaults
 
 
-def evaluate_make_subplot_kwargs(  # type: ignore[no-untyped-def]
+def evaluate_make_subplot_kwargs(
     make_subplot_kwargs,
     n_selected: int,
     projection,
@@ -916,7 +914,7 @@ def evaluate_make_subplot_kwargs(  # type: ignore[no-untyped-def]
 
 
 # mypy: disable-error-code="dict-item"
-def evaluate_layout_kwargs(  # type: ignore[no-untyped-def]
+def evaluate_layout_kwargs(
     layout_kwargs,
     projection,
     subplot_config,

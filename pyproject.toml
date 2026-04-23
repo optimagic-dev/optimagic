@@ -123,8 +123,9 @@ select = [
   "ISC",
   # pydocstyle
   "D",
-	# For enforcing disallow_incomplete_defs and disallow_untyped_defs from mypy
+	# Checks that function arguments have type annotations
 	"ANN001",
+	# Checks that public functions and methods have return type annotations
 	"ANN201",
 ]
 
@@ -326,141 +327,19 @@ none_representation = "null"
 
 
 # ======================================================================================
-# Mypy configuration
+# Ty configuration
 # ======================================================================================
-[tool.mypy]
-files = ["src", "tests", ".tools"] # ty src include
-check_untyped_defs = true # Is default behaviour on ty
-disallow_any_generics = true # No ty equivalent
-disallow_untyped_defs = true # Enforced via ANN20
-disallow_incomplete_defs = true # Enforced via Ruff ANN001
-no_implicit_optional = true # Default behaviour on ty https://docs.astral.sh/ty/reference/rules/#invalid-parameter-default
-warn_redundant_casts = true # Default behaviour on ty https://docs.astral.sh/ty/reference/rules/#redundant-cast
-warn_unused_ignores = true # Default behaviour on ty https://docs.astral.sh/ty/reference/rules/#unused-ignore-comment, https://docs.astral.sh/ty/reference/rules/#unused-type-ignore-comment
-
 [tool.ty]
 src.include = ["src", ".tools", "tests"]
 
-[[tool.mypy.overrides]]
-module = [
-    "optimagic.benchmarking",
-    "optimagic.benchmarking.benchmark_reports",
-    "optimagic.benchmarking.cartis_roberts",
-    "optimagic.benchmarking.get_benchmark_problems",
-    "optimagic.benchmarking.more_wild",
-    "optimagic.benchmarking.noise_distributions",
-    "optimagic.benchmarking.process_benchmark_results",
-    "optimagic.benchmarking.run_benchmark",
-
-    "optimagic.differentiation",
-    "optimagic.differentiation.derivatives",
-    "optimagic.differentiation.finite_differences",
-    "optimagic.differentiation.generate_steps",
-    "optimagic.differentiation.richardson_extrapolation",
-
-    "optimagic.examples",
-    "optimagic.examples.numdiff_functions",
-
-    "optimagic.optimization",
-    "optimagic.optimization.algo_options",
-    "optimagic.optimization.convergence_report",
-    "optimagic.optimization.optimization_logging",
-    "optimagic.optimization.optimize_result",
-    "optimagic.optimization.optimize",
-    "optimagic.optimization.multistart",
-    "optimagic.optimization.scipy_aliases",
-    "optimagic.optimization.create_optimization_problem",
-
-    "optimagic.optimizers._pounders",
-    "optimagic.optimizers._pounders.pounders_auxiliary",
-    "optimagic.optimizers._pounders.pounders_history",
-    "optimagic.optimizers._pounders._conjugate_gradient",
-    "optimagic.optimizers._pounders._steihaug_toint",
-    "optimagic.optimizers._pounders._trsbox",
-    "optimagic.optimizers._pounders.bntr",
-    "optimagic.optimizers._pounders.gqtpar",
-    "optimagic.optimizers._pounders.linear_subsolvers",
-
-    "optimagic.optimizers",
-    "optimagic.optimizers.tranquilo",
-    "optimagic.optimizers.pygmo_optimizers",
-    "optimagic.optimizers.scipy_optimizers",
-    "optimagic.optimizers.nag_optimizers",
-    "optimagic.optimizers.neldermead",
-    "optimagic.optimizers.nlopt_optimizers",
-    "optimagic.optimizers.ipopt",
-    "optimagic.optimizers.fides",
-    "optimagic.optimizers.pounders",
-    "optimagic.optimizers.tao_optimizers",
-
-
-    "optimagic.parameters",
-    "optimagic.parameters.block_trees",
-    "optimagic.parameters.check_constraints",
-    "optimagic.parameters.consolidate_constraints",
-    "optimagic.parameters.constraint_tools",
-    "optimagic.parameters.conversion",
-    "optimagic.parameters.kernel_transformations",
-    "optimagic.parameters.nonlinear_constraints",
-    "optimagic.parameters.process_constraints",
-    "optimagic.parameters.process_selectors",
-    "optimagic.parameters.space_conversion",
-    "optimagic.parameters.tree_conversion",
-    "optimagic.parameters.tree_registry",
-
-
-    "optimagic.shared",
-    "optimagic.shared.check_option_dicts",
-    "optimagic.shared.compat",
-    "optimagic.shared.process_user_function",
-
-    "optimagic.visualization",
-    "optimagic.visualization.convergence_plot",
-    "optimagic.visualization.backends",
-    "optimagic.visualization.deviation_plot",
-    "optimagic.visualization.history_plots",
-    "optimagic.visualization.plotting_utilities",
-    "optimagic.visualization.profile_plot",
-    "optimagic.visualization.slice_plot",
-
-    "optimagic",
-    "optimagic.decorators",
-    "optimagic.exceptions",
-    "optimagic.utilities",
-    "optimagic.deprecations",
-
-    "estimagic",
-    "estimagic.examples",
-    "estimagic.examples.logit",
-    "estimagic.estimate_ml",
-    "estimagic.estimate_msm",
-    "estimagic.estimation_summaries",
-    "estimagic.msm_weighting",
-    "estimagic.bootstrap_ci",
-    "estimagic.bootstrap_helpers",
-    "estimagic.bootstrap_outcomes",
-    "estimagic.bootstrap_samples",
-    "estimagic.bootstrap",
-    "estimagic.ml_covs",
-    "estimagic.msm_covs",
-    "estimagic.shared_covs",
-    "estimagic.msm_sensitivity",
-    "estimagic.estimation_table",
-    "estimagic.lollipop_plot",
-
+[tool.ty.analysis]
+allowed-unresolved-imports = [
+      "petsc4py.**",
+      "jax.**",
+      "pathos.**",
+      "nevergrad.**",
 ]
-check_untyped_defs = false # handled by ruff added a skip for it
-disallow_any_generics = false # Is false by default because no way to handle this in ty.
-disallow_untyped_defs = false # handled by ruff added a skip for it
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false # handled by ruff added a skip for it
-ignore_errors = true # This flag doesnt exist rules must be explicitly added
-
-
-[[tool.mypy.overrides]]
-module = [
+replace-imports-with-any = [
     "pybaum",
     "scipy",
     "scipy.linalg",
@@ -489,8 +368,6 @@ module = [
     "bokeh.command",
     "bokeh.command.util",
     "fides",
-    "petsc4py",
-    "petsc4py.PETSc",
     "tranquilo",
     "tranquilo.tranquilo",
     "tranquilo.options",
@@ -498,79 +375,13 @@ module = [
     "dfols",
     "pybobyqa",
     "pygmo",
-    "jax",
     "joblib",
     "cloudpickle",
     "numba",
-    "pathos",
-    "pathos.pools",
     "optimagic._version",
     "annotated_types",
     "pdbp",
     "iminuit",
-    "nevergrad",
-    "nevergrad.optimization.base",
-    "pygad",
-    "pyswarms",
-    "pyswarms.backend.topology",
-    "yaml",
-    "gradient_free_optimizers",
-    "gradient_free_optimizers.optimizers.base_optimizer",
-  ]
-ignore_missing_imports = true
-
-[tool.ty.analysis]
-replace-imports-with-any = [
-    "pybaum",
-    "scipy",
-    "scipy.linalg",
-    "scipy.linalg.lapack",
-    "scipy.linalg.lapack.dpotrf",
-   	"scipy.stats",
-    "scipy.optimize",
-    "scipy.ndimage",
-    "scipy.optimize._trustregion_exact",
-    "plotly",
-    "plotly.graph_objects",
-    "plotly.express",
-    "plotly.subplots",
-    "matplotlib",
-    "matplotlib.pyplot",
-    "cyipopt",
-    "nlopt",
-    "bokeh",
-    "bokeh.layouts",
-    "bokeh.models",
-    "bokeh.plotting",
-    "bokeh.application",
-    "bokeh.application.handlers",
-    "bokeh.application.handlers.function",
-    "bokeh.server",
-    "bokeh.server.server",
-    "bokeh.command",
-    "bokeh.command.util",
-    "fides",
-    "petsc4py",
-    "petsc4py.PETSc",
-    "tranquilo",
-    "tranquilo.tranquilo",
-    "tranquilo.options",
-    "tranquilo.process_arguments",
-    "dfols",
-    "pybobyqa",
-    "pygmo",
-    "jax",
-    "joblib",
-    "cloudpickle",
-    "numba",
-    "pathos",
-    "pathos.pools",
-    "optimagic._version",
-    "annotated_types",
-    "pdbp",
-    "iminuit",
-    "nevergrad",
-    "nevergrad.optimization.base",
     "pygad",
     "pyswarms",
     "pyswarms.backend.topology",
@@ -642,9 +453,8 @@ tests = { cmd = "pytest", description = "Run the full test suite" }
 tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
 tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src", description = "Run tests with XML coverage report" }
 
-# --- Feature: type-checking (mypy + type stubs) --------------------------------------
+# --- Feature: type-checking (ty + type stubs) --------------------------------------
 [tool.pixi.feature.type-checking.dependencies]
-mypy = "==1.19.1"
 ty = ">=0.0.24,<0.0.25"
 
 [tool.pixi.feature.type-checking.pypi-dependencies]
@@ -655,7 +465,6 @@ types-jinja2 = "*"
 sqlalchemy-stubs = "*"
 
 [tool.pixi.feature.type-checking.tasks]
-mypy = { cmd = "mypy", description = "Run mypy type checker" }
 ty = { cmd = "ty check", description = "Run ty type checker" }
 ty-concise = { cmd = "ty check --output-format concise", description = "Run ty type checker with concise output" }
 

@@ -624,7 +624,7 @@ class InternalOptimizationProblem:
         )
 
         algo_fun_value, hist_fun_value = _process_fun_value(
-            value=fun_value,  # type: ignore
+            value=fun_value,
             solver_type=self._solver_type,
             direction=self._direction,
         )

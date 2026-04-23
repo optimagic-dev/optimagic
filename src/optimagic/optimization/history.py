@@ -136,7 +136,7 @@ class History:
             fun = _apply_reduction_to_batches(
                 data=fun,
                 batch_ids=self.batches,
-                reduction_function=min_or_max,  # type: ignore[arg-type]
+                reduction_function=min_or_max,
             )
 
             # Verify that tasks are homogeneous in each batch, and select first if true.
@@ -449,7 +449,7 @@ def _validate_args_are_all_none_or_lists_of_same_length(
 
     if not all_none:
         if all_list:
-            unique_list_lengths = set(map(len, args))  # type: ignore[arg-type]
+            unique_list_lengths = set(map(len, args))
 
             if len(unique_list_lengths) != 1:
                 raise ValueError("All list arguments must have the same length.")
@@ -517,7 +517,7 @@ def _apply_reduction_to_batches(
             )
             raise ValueError(msg)
 
-        batch_results.append(float(reduced))  # type: ignore[arg-type,unused-ignore]
+        batch_results.append(float(reduced))
 
     return np.array(batch_results, dtype=np.float64)
 
