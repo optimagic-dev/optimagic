@@ -8,6 +8,7 @@ from typing import Any, Generic, Type, TypeVar, cast
 import numpy as np
 import pandas as pd
 import sqlalchemy as sql
+import sqlalchemy.event
 from sqlalchemy.engine import Engine
 
 from optimagic.logging.base import (
