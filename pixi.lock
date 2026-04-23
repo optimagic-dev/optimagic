@@ -9641,6 +9641,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.67.3-pyh8f84b5b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tranquilo-0.1.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/ty-0.0.24-h4e94fc0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.15.0-h396c80c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_utils-0.1.0-pyhd8ed1ab_1.conda
@@ -9942,6 +9943,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.67.3-pyh8f84b5b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tranquilo-0.1.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ty-0.0.24-ha73ee7d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.15.0-h396c80c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_utils-0.1.0-pyhd8ed1ab_1.conda
@@ -10227,6 +10229,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.67.3-pyha7b4d00_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tranquilo-0.1.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/ty-0.0.24-hc21aad4_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.15.0-h396c80c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_utils-0.1.0-pyhd8ed1ab_1.conda
@@ -19402,8 +19405,8 @@ packages:
   timestamp: 1733688053334
 - pypi: ./
   name: optimagic
-  version: 0.5.4.dev5+g8654d6292.d20260312
-  sha256: 72e7ed28837a3da869c13448a83bee607a85ab9f1e2d9dc5b5e7604d8ce2bf94
+  version: 0.1.dev474+ga11d368b0.d20260423
+  sha256: 81c3db4593f38cb4620ecc64202e001cb4ee43846632e53ebe0c09122816954e
   requires_dist:
   - annotated-types>=0.4
   - cloudpickle>=2.2
@@ -25728,6 +25731,58 @@ packages:
   - pkg:pypi/tranquilo?source=hash-mapping
   size: 73744
   timestamp: 1772093378917
+- conda: https://conda.anaconda.org/conda-forge/linux-64/ty-0.0.24-h4e94fc0_0.conda
+  noarch: python
+  sha256: 3de56413211bcb07c8df0a66eaaed996f0d14a6dbd9cee0b42a0b275c0e464e0
+  md5: db52fd98c2edb81ba0f81a1b0aecc8cc
+  depends:
+  - python
+  - libgcc >=14
+  - __glibc >=2.17,<3.0.a0
+  - _python_abi3_support 1.*
+  - cpython >=3.10
+  constrains:
+  - __glibc >=2.17
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/ty?source=hash-mapping
+  size: 9207623
+  timestamp: 1773948239539
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/ty-0.0.24-ha73ee7d_0.conda
+  noarch: python
+  sha256: c6924afb9d541bed15f159389c08ab5ae492bb69f4e660ae608add0498834703
+  md5: 39c996ee15024882153fd31b502b6572
+  depends:
+  - python
+  - __osx >=11.0
+  - _python_abi3_support 1.*
+  - cpython >=3.10
+  constrains:
+  - __osx >=11.0
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/ty?source=hash-mapping
+  size: 8304066
+  timestamp: 1773948334333
+- conda: https://conda.anaconda.org/conda-forge/win-64/ty-0.0.24-hc21aad4_0.conda
+  noarch: python
+  sha256: 754cd686b04cebdb019d64481f4e3affdbf2fad05e34410ecf6d266c5463e2d5
+  md5: b8a33290eda47d529ed05976ec5b0128
+  depends:
+  - python
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  - ucrt >=10.0.20348.0
+  - _python_abi3_support 1.*
+  - cpython >=3.10
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/ty?source=hash-mapping
+  size: 9232166
+  timestamp: 1773948344148
 - pypi: https://files.pythonhosted.org/packages/c8/15/4564f173d031f64bf56964d192b6b705e679fc23c02704b84ccbcb809396/types_cffi-1.17.0.20260307-py3-none-any.whl
   name: types-cffi
   version: 1.17.0.20260307
