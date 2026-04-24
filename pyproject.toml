@@ -123,6 +123,10 @@ select = [
   "ISC",
   # pydocstyle
   "D",
+	# Checks that function arguments have type annotations
+	"ANN001",
+	# Checks that public functions and methods have return type annotations
+	"ANN201",
 ]
 
 extend-ignore = [
@@ -164,9 +168,115 @@ extend-ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "docs/source/conf.py" = ["E501", "ERA001", "DTZ005"]
-"src/optimagic/parameters/kernel_transformations.py" = ["ARG001", "N806"]
+"src/optimagic/parameters/kernel_transformations.py" = ["ARG001", "N806", "ANN001", "ANN201"]
 "docs/source/*" = ["B018"]
 "src/optimagic/algorithms.py" = ["E501"]
+"docs/*" = ["ANN001", "ANN201"]
+"tests/*" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/benchmark_reports.py" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/cartis_roberts.py" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/get_benchmark_problems.py" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/more_wild.py" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/noise_distributions.py" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/process_benchmark_results.py" = ["ANN001", "ANN201"]
+"src/optimagic/benchmarking/run_benchmark.py" = ["ANN001", "ANN201"]
+
+"src/optimagic/differentiation/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/differentiation/derivatives.py" = ["ANN001", "ANN201"]
+"src/optimagic/differentiation/finite_differences.py" = ["ANN001", "ANN201"]
+"src/optimagic/differentiation/generate_steps.py" = ["ANN001", "ANN201"]
+"src/optimagic/differentiation/richardson_extrapolation.py" = ["ANN001", "ANN201"]
+
+"src/optimagic/examples/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/examples/numdiff_functions.py" = ["ANN001", "ANN201"]
+
+"src/optimagic/optimization/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/algo_options.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/convergence_report.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/optimization_logging.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/optimize_result.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/optimize.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/multistart.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/scipy_aliases.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimization/create_optimization_problem.py" = ["ANN001", "ANN201"]
+
+"src/optimagic/optimizers/_pounders/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/pounders_auxiliary.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/pounders_history.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/_conjugate_gradient.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/_steihaug_toint.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/_trsbox.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/bntr.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/gqtpar.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/_pounders/linear_subsolvers.py" = ["ANN001", "ANN201"]
+
+"src/optimagic/optimizers/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/tranquilo.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/pygmo_optimizers.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/scipy_optimizers.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/nag_optimizers.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/neldermead.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/nlopt_optimizers.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/ipopt.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/fides.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/pounders.py" = ["ANN001", "ANN201"]
+"src/optimagic/optimizers/tao_optimizers.py" = ["ANN001", "ANN201"]
+
+
+"src/optimagic/parameters/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/block_trees.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/check_constraints.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/consolidate_constraints.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/constraint_tools.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/conversion.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/nonlinear_constraints.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/process_constraints.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/process_selectors.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/space_conversion.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/tree_conversion.py" = ["ANN001", "ANN201"]
+"src/optimagic/parameters/tree_registry.py" = ["ANN001", "ANN201"]
+
+
+"src/optimagic/shared/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/shared/check_option_dicts.py" = ["ANN001", "ANN201"]
+"src/optimagic/shared/compat.py" = ["ANN001", "ANN201"]
+"src/optimagic/shared/process_user_function.py" = ["ANN001", "ANN201"]
+
+"src/optimagic/visualization/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/convergence_plot.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/backend.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/deviation_plot.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/history_plots.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/plotting_utilities.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/profile_plot.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/slice_plot.py" = ["ANN001", "ANN201"]
+
+"src/optimagic/__init__.py" = ["ANN001", "ANN201"]
+"src/optimagic/decorators.py" = ["ANN001", "ANN201"]
+"src/optimagic/exceptions.py" = ["ANN001", "ANN201"]
+"src/optimagic/utilities.py" = ["ANN001", "ANN201"]
+"src/optimagic/deprecations.py" = ["ANN001", "ANN201"]
+
+"src/estimagic/__init__.py" = ["ANN001", "ANN201"]
+"src/estimagic/examples/__init__.py" = ["ANN001", "ANN201"]
+"src/estimagic/examples/logit.py" = ["ANN001", "ANN201"]
+"src/estimagic/estimate_ml.py" = ["ANN001", "ANN201"]
+"src/estimagic/estimate_msm.py" = ["ANN001", "ANN201"]
+"src/estimagic/estimation_summaries.py" = ["ANN001", "ANN201"]
+"src/estimagic/msm_weighting.py" = ["ANN001", "ANN201"]
+"src/estimagic/bootstrap_ci.py" = ["ANN001", "ANN201"]
+"src/estimagic/bootstrap_helpers.py" = ["ANN001", "ANN201"]
+"src/estimagic/bootstrap_outcomes.py" = ["ANN001", "ANN201"]
+"src/estimagic/bootstrap_samples.py" = ["ANN001", "ANN201"]
+"src/estimagic/bootstrap.py" = ["ANN001", "ANN201"]
+"src/estimagic/ml_covs.py" = ["ANN001", "ANN201"]
+"src/estimagic/msm_covs.py" = ["ANN001", "ANN201"]
+"src/estimagic/shared_covs.py" = ["ANN001", "ANN201"]
+"src/estimagic/msm_sensitivity.py" = ["ANN001", "ANN201"]
+"src/estimagic/estimation_table.py" = ["ANN001", "ANN201"]
+"src/estimagic/lollipop_plot.py" = ["ANN001", "ANN201"]
+"src/optimagic/visualization/slice_plot_3d.py" = ["ANN001", "ANN201"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -217,138 +327,19 @@ none_representation = "null"
 
 
 # ======================================================================================
-# Mypy configuration
+# Ty configuration
 # ======================================================================================
-[tool.mypy]
-files = ["src", "tests", ".tools"]
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
+[tool.ty]
+src.include = ["src", ".tools", "tests"]
 
-[[tool.mypy.overrides]]
-module = [
-    "optimagic.benchmarking",
-    "optimagic.benchmarking.benchmark_reports",
-    "optimagic.benchmarking.cartis_roberts",
-    "optimagic.benchmarking.get_benchmark_problems",
-    "optimagic.benchmarking.more_wild",
-    "optimagic.benchmarking.noise_distributions",
-    "optimagic.benchmarking.process_benchmark_results",
-    "optimagic.benchmarking.run_benchmark",
-
-    "optimagic.differentiation",
-    "optimagic.differentiation.derivatives",
-    "optimagic.differentiation.finite_differences",
-    "optimagic.differentiation.generate_steps",
-    "optimagic.differentiation.richardson_extrapolation",
-
-    "optimagic.examples",
-    "optimagic.examples.numdiff_functions",
-
-    "optimagic.optimization",
-    "optimagic.optimization.algo_options",
-    "optimagic.optimization.convergence_report",
-    "optimagic.optimization.optimization_logging",
-    "optimagic.optimization.optimize_result",
-    "optimagic.optimization.optimize",
-    "optimagic.optimization.multistart",
-    "optimagic.optimization.scipy_aliases",
-    "optimagic.optimization.create_optimization_problem",
-
-    "optimagic.optimizers._pounders",
-    "optimagic.optimizers._pounders.pounders_auxiliary",
-    "optimagic.optimizers._pounders.pounders_history",
-    "optimagic.optimizers._pounders._conjugate_gradient",
-    "optimagic.optimizers._pounders._steihaug_toint",
-    "optimagic.optimizers._pounders._trsbox",
-    "optimagic.optimizers._pounders.bntr",
-    "optimagic.optimizers._pounders.gqtpar",
-    "optimagic.optimizers._pounders.linear_subsolvers",
-
-    "optimagic.optimizers",
-    "optimagic.optimizers.tranquilo",
-    "optimagic.optimizers.pygmo_optimizers",
-    "optimagic.optimizers.scipy_optimizers",
-    "optimagic.optimizers.nag_optimizers",
-    "optimagic.optimizers.neldermead",
-    "optimagic.optimizers.nlopt_optimizers",
-    "optimagic.optimizers.ipopt",
-    "optimagic.optimizers.fides",
-    "optimagic.optimizers.pounders",
-    "optimagic.optimizers.tao_optimizers",
-
-
-    "optimagic.parameters",
-    "optimagic.parameters.block_trees",
-    "optimagic.parameters.check_constraints",
-    "optimagic.parameters.consolidate_constraints",
-    "optimagic.parameters.constraint_tools",
-    "optimagic.parameters.conversion",
-    "optimagic.parameters.kernel_transformations",
-    "optimagic.parameters.nonlinear_constraints",
-    "optimagic.parameters.process_constraints",
-    "optimagic.parameters.process_selectors",
-    "optimagic.parameters.space_conversion",
-    "optimagic.parameters.tree_conversion",
-    "optimagic.parameters.tree_registry",
-
-
-    "optimagic.shared",
-    "optimagic.shared.check_option_dicts",
-    "optimagic.shared.compat",
-    "optimagic.shared.process_user_function",
-
-    "optimagic.visualization",
-    "optimagic.visualization.convergence_plot",
-    "optimagic.visualization.backends",
-    "optimagic.visualization.deviation_plot",
-    "optimagic.visualization.history_plots",
-    "optimagic.visualization.plotting_utilities",
-    "optimagic.visualization.profile_plot",
-    "optimagic.visualization.slice_plot",
-
-    "optimagic",
-    "optimagic.decorators",
-    "optimagic.exceptions",
-    "optimagic.utilities",
-    "optimagic.deprecations",
-
-    "estimagic",
-    "estimagic.examples",
-    "estimagic.examples.logit",
-    "estimagic.estimate_ml",
-    "estimagic.estimate_msm",
-    "estimagic.estimation_summaries",
-    "estimagic.msm_weighting",
-    "estimagic.bootstrap_ci",
-    "estimagic.bootstrap_helpers",
-    "estimagic.bootstrap_outcomes",
-    "estimagic.bootstrap_samples",
-    "estimagic.bootstrap",
-    "estimagic.ml_covs",
-    "estimagic.msm_covs",
-    "estimagic.shared_covs",
-    "estimagic.msm_sensitivity",
-    "estimagic.estimation_table",
-    "estimagic.lollipop_plot",
-
+[tool.ty.analysis]
+allowed-unresolved-imports = [
+      "petsc4py.**",
+      "jax.**",
+      "pathos.**",
+      "nevergrad.**",
 ]
-check_untyped_defs = false
-disallow_any_generics = false
-disallow_untyped_defs = false
-
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = [
+replace-imports-with-any = [
     "pybaum",
     "scipy",
     "scipy.linalg",
@@ -377,8 +368,6 @@ module = [
     "bokeh.command",
     "bokeh.command.util",
     "fides",
-    "petsc4py",
-    "petsc4py.PETSc",
     "tranquilo",
     "tranquilo.tranquilo",
     "tranquilo.options",
@@ -386,18 +375,13 @@ module = [
     "dfols",
     "pybobyqa",
     "pygmo",
-    "jax",
     "joblib",
     "cloudpickle",
     "numba",
-    "pathos",
-    "pathos.pools",
     "optimagic._version",
     "annotated_types",
     "pdbp",
     "iminuit",
-    "nevergrad",
-    "nevergrad.optimization.base",
     "pygad",
     "pyswarms",
     "pyswarms.backend.topology",
@@ -405,7 +389,6 @@ module = [
     "gradient_free_optimizers",
     "gradient_free_optimizers.optimizers.base_optimizer",
   ]
-ignore_missing_imports = true
 
 
 # ======================================================================================
@@ -470,19 +453,19 @@ tests = { cmd = "pytest", description = "Run the full test suite" }
 tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
 tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src", description = "Run tests with XML coverage report" }
 
-# --- Feature: type-checking (mypy + type stubs) --------------------------------------
+# --- Feature: type-checking (ty + type stubs) --------------------------------------
 [tool.pixi.feature.type-checking.dependencies]
-mypy = "==1.19.1"
+ty = ">=0.0.24,<0.0.25"
 
 [tool.pixi.feature.type-checking.pypi-dependencies]
 pandas-stubs = "*"
 types-cffi = "*"
 types-openpyxl = "*"
 types-jinja2 = "*"
-sqlalchemy-stubs = "*"
 
 [tool.pixi.feature.type-checking.tasks]
-mypy = { cmd = "mypy", description = "Run mypy type checker" }
+ty = { cmd = "ty check", description = "Run ty type checker" }
+ty-concise = { cmd = "ty check --output-format concise", description = "Run ty type checker with concise output" }
 
 # --- Feature: linux (Linux-only deps) ------------------------------------------------
 [tool.pixi.feature.linux]

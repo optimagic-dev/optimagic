@@ -176,7 +176,7 @@ class AlgorithmMeta(ABCMeta):
 
     def __repr__(self) -> str:
         if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
-            out = f"om.algos.{self.__algo_info__.name}"
+            out = f"om.algos.{self.__algo_info__.name}"  # ty:ignore[unresolved-attribute]
         else:
             out = self.__class__.__name__
         return out
@@ -184,7 +184,7 @@ class AlgorithmMeta(ABCMeta):
     @property
     def name(self) -> str:
         if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
-            out = self.__algo_info__.name
+            out = self.__algo_info__.name  # ty:ignore[unresolved-attribute]
         else:
             out = self.__class__.__name__
         return out
@@ -198,7 +198,7 @@ class AlgorithmMeta(ABCMeta):
             )
             raise AttributeError(msg)
 
-        return self.__algo_info__
+        return self.__algo_info__  # ty:ignore[invalid-return-type]
 
 
 @dataclass(frozen=True)
@@ -222,7 +222,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
             target_type = typing.cast(type, self.__dataclass_fields__[field].type)
             if target_type in TYPE_CONVERTERS:
                 try:
-                    value = TYPE_CONVERTERS[target_type](raw_value)
+                    value = TYPE_CONVERTERS[target_type](raw_value)  # ty:ignore[invalid-argument-type]
                 except (KeyboardInterrupt, SystemExit):
                     raise
                 except Exception as e:
@@ -317,7 +317,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
         """The name of the algorithm."""
         # cannot call algo_info here because it would be an infinite recursion
         if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
-            return self.__algo_info__.name
+            return self.__algo_info__.name  # ty:ignore[unresolved-attribute]
         return self.__class__.__name__
 
     @property
@@ -330,4 +330,4 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
             )
             raise AttributeError(msg)
 
-        return self.__algo_info__
+        return self.__algo_info__  # ty:ignore[invalid-return-type]

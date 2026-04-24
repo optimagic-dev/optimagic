@@ -176,7 +176,7 @@ def run_multistart_optimization(
     }
 
     raw_res = state["best_res"]
-    res = replace(raw_res, multistart_info=multistart_info)
+    res = replace(raw_res, multistart_info=multistart_info)  # ty:ignore[invalid-argument-type]
 
     return res
 
@@ -445,7 +445,7 @@ def update_convergence_state(
     # array as solution_criterion.
     for res in valid_results:
         if np.isscalar(res.fun):
-            fun = float(res.fun)
+            fun = float(res.fun)  # ty:ignore[invalid-argument-type]
         elif solver_type == AggregationLevel.LIKELIHOOD:
             fun = float(np.sum(res.fun))
         elif solver_type == AggregationLevel.LEAST_SQUARES:

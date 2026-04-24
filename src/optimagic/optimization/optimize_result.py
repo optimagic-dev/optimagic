@@ -61,7 +61,7 @@ class OptimizeResult:
 
     history: History | None = None
 
-    convergence_report: Dict | None = None
+    convergence_report: Dict | None = None  # ty:ignore[unsupported-operator]
 
     multistart_info: Optional["MultistartInfo"] = None
     algorithm_output: Dict[str, Any] | None = None

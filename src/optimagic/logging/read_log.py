@@ -20,7 +20,7 @@ from optimagic.logging.logger import SQLiteLogOptions, SQLiteLogReader
 
 @dataclass
 class OptimizeLogReader:
-    def __new__(cls, *args, **kwargs):  # type: ignore
+    def __new__(cls, *args, **kwargs):
         warnings.warn(
             "OptimizeLogReader is deprecated and will be removed in a future "
             "version. Please use optimagic.logging.SQLiteLogReader instead.",

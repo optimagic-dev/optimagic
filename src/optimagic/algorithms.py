@@ -124,11 +124,7 @@ class AlgoSelection:
 
     def _available(self) -> list[Type[Algorithm]]:
         _all = self._all()
-        return [
-            a
-            for a in _all
-            if a.algo_info.is_available  # type: ignore
-        ]
+        return [a for a in _all if a.algo_info.is_available]
 
     @property
     def All(self) -> list[Type[Algorithm]]:

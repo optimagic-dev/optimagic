@@ -79,12 +79,12 @@ def test_multistart_optimization_with_sum_of_squares_at_defaults(
 
     assert hasattr(res, "multistart_info")
     ms_info = res.multistart_info
-    assert len(ms_info.exploration_sample) == 400
-    assert isinstance(ms_info.exploration_results, list)
-    assert len(ms_info.exploration_results) == 400
-    assert all(isinstance(entry, float) for entry in ms_info.exploration_results)
-    assert all(isinstance(entry, OptimizeResult) for entry in ms_info.local_optima)
-    assert all(isinstance(entry, pd.DataFrame) for entry in ms_info.start_parameters)
+    assert len(ms_info.exploration_sample) == 400  # ty:ignore[unresolved-attribute]
+    assert isinstance(ms_info.exploration_results, list)  # ty:ignore[unresolved-attribute]
+    assert len(ms_info.exploration_results) == 400  # ty:ignore[unresolved-attribute]
+    assert all(isinstance(entry, float) for entry in ms_info.exploration_results)  # ty:ignore[unresolved-attribute]
+    assert all(isinstance(entry, OptimizeResult) for entry in ms_info.local_optima)  # ty:ignore[unresolved-attribute]
+    assert all(isinstance(entry, pd.DataFrame) for entry in ms_info.start_parameters)  # ty:ignore[unresolved-attribute]
     assert np.allclose(res.fun, 0)
     aaae(res.params["value"], np.zeros(4))
 
@@ -103,7 +103,9 @@ def test_multistart_with_existing_sample(params):
     assert all(
         got.equals(expected)
         for expected, got in zip(
-            sample, res.multistart_info.exploration_sample, strict=False
+            sample,
+            res.multistart_info.exploration_sample,  # ty:ignore[unresolved-attribute]
+            strict=False,
         )
     )
 
@@ -121,7 +123,7 @@ def test_convergence_via_max_discoveries_works(params):
         multistart=options,
     )
 
-    assert len(res.multistart_info.local_optima) == 2
+    assert len(res.multistart_info.local_optima) == 2  # ty:ignore[unresolved-attribute]
 
 
 def test_steps_are_logged_as_skipped_if_convergence(tmp_path, params):
@@ -146,7 +148,7 @@ def test_steps_are_logged_as_skipped_if_convergence(tmp_path, params):
 
 def test_all_steps_occur_in_optimization_iterations_if_no_convergence(params):
     options = om.MultistartOptions(
-        convergence_max_discoveries=np.inf,
+        convergence_max_discoveries=np.inf,  # ty:ignore[invalid-argument-type]
         n_samples=10 * len(params),
     )
 
@@ -261,7 +263,7 @@ def test_with_ackley():
     }
 
     minimize(
-        **kwargs,
+        **kwargs,  # ty:ignore[invalid-argument-type]
         algorithm="scipy_lbfgsb",
         multistart=om.MultistartOptions(
             n_samples=200,
@@ -303,7 +305,7 @@ def test_with_ackley_using_dict_options():
     }
 
     minimize(
-        **kwargs,
+        **kwargs,  # ty:ignore[invalid-argument-type]
         algorithm="scipy_lbfgsb",
         multistart={
             "n_samples": 200,

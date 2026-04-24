@@ -136,7 +136,7 @@ class History:
             fun = _apply_reduction_to_batches(
                 data=fun,
                 batch_ids=self.batches,
-                reduction_function=min_or_max,  # type: ignore[arg-type]
+                reduction_function=min_or_max,  # ty:ignore[invalid-argument-type]
             )
 
             # Verify that tasks are homogeneous in each batch, and select first if true.
@@ -167,7 +167,7 @@ class History:
     # ----------------------------------------------------------------------------------
 
     @property
-    def is_accepted(self) -> NDArray[np.bool_]:
+    def is_accepted(self) -> NDArray[np.bool_]:  # ty:ignore[invalid-return-type]
         """Boolean indicator whether a function value is accepted.
 
         A function value is accepted if it is smaller (or equal) than the monotone
@@ -407,8 +407,6 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
 def _get_flat_param_names(param: PyTree) -> list[str]:
     fast_path = _is_1d_array(param)
     if fast_path:
-        # Mypy raises an error here because .tolist() returns a str for zero-dimensional
-        # arrays, but the fast path is only taken for 1d arrays, so it can be ignored.
         return np.arange(param.size).astype(str).tolist()
 
     registry = get_registry(extended=True)
@@ -449,7 +447,7 @@ def _validate_args_are_all_none_or_lists_of_same_length(
 
     if not all_none:
         if all_list:
-            unique_list_lengths = set(map(len, args))  # type: ignore[arg-type]
+            unique_list_lengths = set(map(len, args))  # ty:ignore[invalid-argument-type]
 
             if len(unique_list_lengths) != 1:
                 raise ValueError("All list arguments must have the same length.")
@@ -500,9 +498,9 @@ def _apply_reduction_to_batches(
                 reduced = reduction_function(batch_data)
         except Exception as e:
             msg = (
-                f"Calling function {reduction_function.__name__} on batch {batch_id} "
+                f"Calling function {reduction_function.__name__} on batch {batch_id} "  # ty:ignore[unresolved-attribute]
                 "of the History raised an Exception. Please verify that "
-                f"{reduction_function.__name__} is well-defined, takes an iterable of "
+                f"{reduction_function.__name__} is well-defined, takes an iterable of "  # ty:ignore[unresolved-attribute]
                 "floats as input and returns a scalar. The function must be able to "
                 "handle NaN's."
             )
@@ -510,14 +508,14 @@ def _apply_reduction_to_batches(
 
         if not np.isscalar(reduced):
             msg = (
-                f"Function {reduction_function.__name__} did not return a scalar for "
-                f"batch {batch_id}. Please verify that {reduction_function.__name__} "
+                f"Function {reduction_function.__name__} did not return a scalar for "  # ty:ignore[unresolved-attribute]
+                f"batch {batch_id}. Please verify that {reduction_function.__name__} "  # ty:ignore[unresolved-attribute]
                 "returns a scalar when called on an iterable of floats. The function "
                 "must be able to handle NaN's."
             )
             raise ValueError(msg)
 
-        batch_results.append(float(reduced))  # type: ignore[arg-type,unused-ignore]
+        batch_results.append(float(reduced))  # ty:ignore[invalid-argument-type]
 
     return np.array(batch_results, dtype=np.float64)
 
