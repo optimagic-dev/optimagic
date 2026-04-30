@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 import optimagic as om
-from optimagic.exceptions import InvalidParamsError
+from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.parameters.check_constraints import _iloc
 from optimagic.parameters.constraint_tools import check_constraints
 
@@ -67,6 +67,50 @@ def test_check_constraints_are_satisfied_type_probability():
         check_constraints(
             params=np.array([0.10, 0.25, 0.50, 1, 0.7]),
             constraints=om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 4]]),
+        )
+
+
+def test_probability_constraint_accepts_zero_fix_on_selector_element():
+    check_constraints(
+        params=np.array([0.0, 0.3, 0.0, 0.3, 0.4]),
+        constraints=[
+            om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3, 4]]),
+            om.FixedConstraint(lambda x: x[[0, 2]]),
+        ],
+    )
+
+
+def test_probability_constraint_accepts_non_zero_fix_on_selector_element():
+    check_constraints(
+        params=np.array([0.1, 0.3, 0.2, 0.4]),
+        constraints=[
+            om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3]]),
+            om.FixedConstraint(lambda x: x[[0]]),
+        ],
+    )
+
+
+def test_probability_constraint_rejects_fixes_summing_to_one_or_more():
+    with pytest.raises(InvalidConstraintError, match="sum to strictly less than 1"):
+        check_constraints(
+            params=np.array([0.5, 0.5, 0.0, 0.0]),
+            constraints=[
+                om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3]]),
+                om.FixedConstraint(lambda x: x[[0, 1]]),
+            ],
+        )
+
+
+def test_probability_constraint_rejects_too_few_free_after_fold():
+    with pytest.raises(
+        InvalidConstraintError, match="at least two non-fixed selected parameters"
+    ):
+        check_constraints(
+            params=np.array([0.0, 0.0, 1.0]),
+            constraints=[
+                om.ProbabilityConstraint(lambda x: x[[0, 1, 2]]),
+                om.FixedConstraint(lambda x: x[[0, 1]]),
+            ],
         )
 
 

@@ -345,6 +345,52 @@ def test_invalid_start_params():
         )
 
 
+def test_probability_constraint_with_zero_fix_on_selector_element():
+    """Some selected entries are fixed to zero; the remaining simplex is optimised."""
+
+    def criterion(params):
+        # Distances to a target simplex weight away from the fixed entries.
+        target = np.array([0.0, 0.2, 0.0, 0.5, 0.3])
+        return np.sum((params - target) ** 2)
+
+    res = minimize(
+        fun=criterion,
+        params=np.array([0.0, 0.3, 0.0, 0.3, 0.4]),
+        algorithm="scipy_lbfgsb",
+        constraints=[
+            om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3, 4]]),
+            om.FixedConstraint(lambda x: x[[0, 2]]),
+        ],
+    )
+
+    assert res.params[0] == 0.0
+    assert res.params[2] == 0.0
+    aaae(res.params[[1, 3, 4]].sum(), 1.0)
+    aaae(res.params, [0.0, 0.2, 0.0, 0.5, 0.3], decimal=4)
+
+
+def test_probability_constraint_with_non_zero_fix_on_selector_element():
+    """One selected entry is fixed to 0.2; the remaining free entries sum to 0.8."""
+
+    def criterion(params):
+        target = np.array([0.2, 0.2, 0.3, 0.3])
+        return np.sum((params - target) ** 2)
+
+    res = minimize(
+        fun=criterion,
+        params=np.array([0.2, 0.3, 0.2, 0.3]),
+        algorithm="scipy_lbfgsb",
+        constraints=[
+            om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3]]),
+            om.FixedConstraint(lambda x: x[[0]]),
+        ],
+    )
+
+    assert res.params[0] == 0.2
+    aaae(res.params[1:].sum(), 0.8)
+    aaae(res.params, [0.2, 0.2, 0.3, 0.3], decimal=4)
+
+
 def test_covariance_constraint_in_2_by_2_case():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
