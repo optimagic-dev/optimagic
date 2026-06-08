@@ -85,10 +85,6 @@ class Tranquilo(Algorithm):
     stopping_maxiter: PositiveInt = 200
     stopping_maxtime: NonNegativeFloat = np.inf
     # single advanced options
-    batch_evaluator: Literal[
-        "joblib",
-        "pathos",
-    ] = "joblib"
     n_cores: PositiveInt = 1
     batch_size: PositiveInt | None = None
     sample_size: PositiveInt | None = None
@@ -272,10 +268,6 @@ class TranquiloLS(Algorithm):
     stopping_maxiter: PositiveInt = 200
     stopping_maxtime: NonNegativeFloat = np.inf
     # single advanced options
-    batch_evaluator: Literal[
-        "joblib",
-        "pathos",
-    ] = "joblib"
     n_cores: PositiveInt = 1
     batch_size: PositiveInt | None = None
     sample_size: PositiveInt | None = None
