@@ -22,10 +22,10 @@ jobs:
           - '313'
           - '314'
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v5
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.70.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -35,7 +35,7 @@ jobs:
         run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
       - name: Upload coverage report.
         if: matrix.python-version == '312'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   run-tests-win-and-mac:
@@ -52,10 +52,10 @@ jobs:
           - '313'
           - '314'
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v5
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.70.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -67,10 +67,10 @@ jobs:
     name: Run tests on ubuntu-latest with plotly < 6
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v5
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.70.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -89,10 +89,10 @@ jobs:
           - '313'
           - '314'
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v5
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.70.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -102,14 +102,35 @@ jobs:
         run: >-
           pixi run -e tests-nevergrad-py${{ matrix.python-version }}
           pytest tests/optimagic/optimizers/test_nevergrad.py
+  run-tests-mpi:
+    name: Run MPI batch-evaluator tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: prefix-dev/setup-pixi@v0.9.6
+        with:
+          pixi-version: v0.70.2
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-mpi-py314
+      - name: Assert mpiexec and mpi4py are available
+        shell: bash -el {0}
+        run: >-
+          pixi run -e tests-mpi-py314
+          python -c "import shutil, mpi4py; assert shutil.which('mpiexec'),
+          'mpiexec missing'; print('mpi4py', mpi4py.__version__)"
+      - name: Run MPI tests
+        shell: bash -el {0}
+        run: pixi run -e tests-mpi-py314 python -m pytest -m mpi -v
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v5
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.70.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -123,10 +144,10 @@ jobs:
     name: Run mypy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@v5
+      - uses: prefix-dev/setup-pixi@v0.9.6
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.70.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
