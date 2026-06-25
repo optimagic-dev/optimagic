@@ -137,8 +137,9 @@ YesNoBool = Literal["yes", "no"] | bool
 values."""
 DirectionLiteral = Literal["minimize", "maximize"]
 """Type alias for optimization direction, either 'minimize' or 'maximize'."""
-BatchEvaluatorLiteral = Literal["joblib", "pathos", "threading"]
-"""Type alias for batch evaluator types, can be 'joblib', 'pathos', or 'threading'."""
+BatchEvaluatorLiteral = Literal["joblib", "pathos", "threading", "mpi"]
+"""Type alias for batch evaluator types, can be 'joblib', 'pathos', 'threading', or
+'mpi'."""
 ErrorHandlingLiteral = Literal["raise", "continue"]
 """Type alias for error handling strategies, can be 'raise' or 'continue'."""
 

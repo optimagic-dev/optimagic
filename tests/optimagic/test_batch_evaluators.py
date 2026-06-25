@@ -1,9 +1,15 @@
 import itertools
+import multiprocessing
 import warnings
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import pytest
 
-from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic.batch_evaluators import (
+    executor_batch_evaluator,
+    mpi_batch_evaluator,
+    process_batch_evaluator,
+)
 
 batch_evaluators = ["joblib", "threading"]
 
@@ -111,3 +117,78 @@ def test_get_batch_evaluator_invalid_type():
 
 def test_get_batch_evaluator_with_callable():
     assert callable(process_batch_evaluator(lambda x: x))
+
+
+def _make_closure_multiplier():
+    factor = 3
+    return lambda x: x * factor
+
+
+def _spawn_context():
+    return ProcessPoolExecutor(mp_context=multiprocessing.get_context("spawn"))
+
+
+@pytest.mark.slow()
+def test_executor_batch_evaluator_transports_closure_across_processes():
+    """A closure survives spawn-process transport and yields ordered results."""
+    closure = _make_closure_multiplier()
+    batch_evaluator = executor_batch_evaluator(_spawn_context())
+
+    calculated = batch_evaluator(func=closure, arguments=list(range(5)))
+
+    assert calculated == [0, 3, 6, 9, 12]
+
+
+def test_executor_batch_evaluator_with_threads_handles_closure():
+    """A closure run through a thread pool yields ordered results."""
+    closure = _make_closure_multiplier()
+    batch_evaluator = executor_batch_evaluator(ThreadPoolExecutor(max_workers=2))
+
+    calculated = batch_evaluator(func=closure, arguments=list(range(5)))
+
+    assert calculated == [0, 3, 6, 9, 12]
+
+
+@pytest.mark.slow()
+def test_executor_batch_evaluator_continue_sets_traceback_string():
+    """With error_handling='continue', a failing slot becomes a traceback string."""
+    batch_evaluator = executor_batch_evaluator(_spawn_context())
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        calculated = batch_evaluator(
+            func=buggy_func,
+            arguments=list(range(4)),
+            error_handling="continue",
+        )
+
+    assert all(isinstance(calc, str) for calc in calculated)
+
+
+@pytest.mark.slow()
+def test_executor_batch_evaluator_raise_reraises_exception():
+    """With error_handling='raise', the original exception is reraised."""
+    batch_evaluator = executor_batch_evaluator(_spawn_context())
+    with pytest.raises(AssertionError):
+        batch_evaluator(
+            func=buggy_func,
+            arguments=list(range(4)),
+            error_handling="raise",
+        )
+
+
+def test_process_batch_evaluator_resolves_mpi():
+    """The string 'mpi' resolves to the mpi batch evaluator."""
+    assert process_batch_evaluator("mpi") is mpi_batch_evaluator
+
+
+def test_mpi_batch_evaluator_without_mpi4py_raises_clear_error():
+    """Calling the mpi evaluator without mpi4py installed raises a clear ImportError."""
+    try:
+        import mpi4py  # noqa: F401
+    except ImportError:
+        pass
+    else:
+        pytest.skip("mpi4py is installed; cannot test the missing-dependency path.")
+
+    with pytest.raises(ImportError, match="optimagic\\[mpi\\]"):
+        mpi_batch_evaluator(func=double, arguments=[1, 2])

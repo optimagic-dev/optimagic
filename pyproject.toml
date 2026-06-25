@@ -53,6 +53,9 @@ maintainers = [
     { name = "Tim Mensinger", email = "mensingertim@gmail.com" },
 ]
 
+[project.optional-dependencies]
+mpi = ["mpi4py>=3.1"]
+
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
@@ -392,6 +395,8 @@ module = [
     "numba",
     "pathos",
     "pathos.pools",
+    "mpi4py",
+    "mpi4py.futures",
     "optimagic._version",
     "annotated_types",
     "pdbp",

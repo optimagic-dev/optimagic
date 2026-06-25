@@ -181,7 +181,7 @@ def maximize(
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
         batch_evaluator: Name of a pre-implemented batch evaluator (currently "joblib",
-            "pathos", or "threading") or a callable that conforms to the
+            "pathos", "threading", or "mpi") or a callable that conforms to the
             :class:`optimagic.BatchEvaluator` protocol. It parallelizes the criterion
             evaluations an algorithm requests in a batch (e.g. the sampled points of a
             trust-region optimizer such as tranquilo).
@@ -385,7 +385,7 @@ def minimize(
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
         batch_evaluator: Name of a pre-implemented batch evaluator (currently "joblib",
-            "pathos", or "threading") or a callable that conforms to the
+            "pathos", "threading", or "mpi") or a callable that conforms to the
             :class:`optimagic.BatchEvaluator` protocol. It parallelizes the criterion
             evaluations an algorithm requests in a batch (e.g. the sampled points of a
             trust-region optimizer such as tranquilo).
