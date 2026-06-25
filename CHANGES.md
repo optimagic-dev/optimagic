@@ -7,7 +7,7 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 
 ## 0.5.4
 
-- {gh}`NNN` Adds executor-backed and MPI batch evaluators ({ghuser}`hmgaudecker`).
+- {gh}`685` Adds executor-backed and MPI batch evaluators ({ghuser}`hmgaudecker`).
 
 
 ## 0.5.3
