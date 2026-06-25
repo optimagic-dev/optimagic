@@ -1,7 +1,12 @@
+import importlib.util
 import itertools
 import multiprocessing
+import shutil
+import subprocess
+import sys
 import warnings
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from pathlib import Path
 
 import pytest
 
@@ -10,6 +15,11 @@ from optimagic.batch_evaluators import (
     mpi_batch_evaluator,
     process_batch_evaluator,
 )
+
+_MPI_HELPER = Path(__file__).parent / "_mpi_helper.py"
+
+_mpiexec = shutil.which("mpiexec")
+_has_mpi4py = importlib.util.find_spec("mpi4py") is not None
 
 batch_evaluators = ["joblib", "threading"]
 
@@ -192,3 +202,37 @@ def test_mpi_batch_evaluator_without_mpi4py_raises_clear_error():
 
     with pytest.raises(ImportError, match="optimagic\\[mpi\\]"):
         mpi_batch_evaluator(func=double, arguments=[1, 2])
+
+
+@pytest.mark.mpi()
+@pytest.mark.skipif(
+    _mpiexec is None or not _has_mpi4py,
+    reason="requires mpiexec on PATH and an importable mpi4py.",
+)
+def test_mpi_batch_evaluator_integration():
+    """The mpi evaluator fans a closure out over MPI worker ranks, in input order.
+
+    Launches the helper under ``mpiexec -n 3 python -m mpi4py.futures`` so that
+    real worker ranks exist, proving cloudpickle-over-MPI transport of a locally
+    defined closure works end to end.
+    """
+    result = subprocess.run(
+        [
+            _mpiexec,
+            "-n",
+            "3",
+            sys.executable,
+            "-m",
+            "mpi4py.futures",
+            str(_MPI_HELPER),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=300,
+        check=False,
+    )
+
+    assert result.returncode == 0, (
+        f"mpiexec run failed (returncode {result.returncode}).\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )

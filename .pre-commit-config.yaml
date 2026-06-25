@@ -46,6 +46,9 @@ repos:
       - id: name-tests-test
         args:
           - --pytest-test-first
+        # _mpi_helper.py is a driver script run via `python -m mpi4py.futures`,
+        # not a pytest module, so it intentionally does not match test_*.py.
+        exclude: ^tests/optimagic/_mpi_helper\.py$
       - id: no-commit-to-branch
         args:
           - --branch
