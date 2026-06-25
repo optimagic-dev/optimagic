@@ -236,3 +236,10 @@ def test_mpi_batch_evaluator_integration():
         f"mpiexec run failed (returncode {result.returncode}).\n"
         f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
+
+
+def test_executor_batch_evaluator_is_exported_at_top_level():
+    """`executor_batch_evaluator` is reachable from the top-level namespace."""
+    import optimagic
+
+    assert optimagic.executor_batch_evaluator is executor_batch_evaluator
