@@ -711,6 +711,48 @@ def test_error_in_exploration_fun_maximize(error_max_problem):
 
 
 # ======================================================================================
+# test batch logging
+# ======================================================================================
+
+
+class _RecordingStore:
+    def __init__(self):
+        self.entries = []
+
+    def insert(self, entry):
+        self.entries.append(entry)
+
+
+class _RecordingLogger:
+    def __init__(self):
+        self.iteration_store = _RecordingStore()
+
+
+@pytest.mark.parametrize("n_cores", [1, 2])
+def test_batch_fun_logs_every_point_with_the_running_step(base_problem, n_cores):
+    """Every point in a batch is logged once, stamped with the running step.
+
+    The per-point evaluation is pure, so a point evaluated on a worker process
+    carries its log row back to the process that owns the database and is recorded
+    there with the optimizer's current step — not the worker's unstepped problem.
+    """
+    problem = copy(base_problem)
+    problem._logger = _RecordingLogger()
+    problem = problem.with_step_id(7)
+
+    problem.batch_fun(
+        [np.array([1.0, 2.0, 3.0]), np.array([4.0, 5.0, 6.0])],
+        n_cores=n_cores,
+        batch_size=2,
+    )
+
+    entries = problem._logger.iteration_store.entries
+    assert len(entries) == 2
+    assert [entry.step for entry in entries] == [7, 7]
+    aaae(sorted(entry.scalar_fun for entry in entries), [14, 77])
+
+
+# ======================================================================================
 # test SphereExampleInternalOptimizationProblem
 # ======================================================================================
 

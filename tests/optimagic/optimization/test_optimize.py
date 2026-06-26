@@ -5,11 +5,69 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from optimagic import mark
+from optimagic import build_internal_fun, mark
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.examples.criterion_functions import sos_scalar
 from optimagic.exceptions import InvalidFunctionError, InvalidNumdiffOptionsError
+from optimagic.logging.types import IterationState
+from optimagic.optimization.history import HistoryEntry
 from optimagic.optimization.optimize import maximize, minimize
+
+
+def test_build_internal_fun_evaluates_a_point_like_minimize():
+    """build_internal_fun returns the per-point (value, history, log) evaluator.
+
+    For a least-squares problem the internal value at a point is the residual vector,
+    the history entry restores the external params, and a log row is produced — the
+    same triple the driver's batch machinery consumes, so a distributed worker can
+    evaluate the driver's broadcast points with an interchangeable callable.
+    """
+    evaluate = build_internal_fun(
+        fun=mark.least_squares(lambda x: x),
+        params=np.array([1.0, 2.0, 3.0]),
+        algorithm="pounders",
+    )
+
+    value, hist_entry, log_entry = evaluate(np.array([4.0, 5.0, 6.0]))
+
+    aaae(value, [4.0, 5.0, 6.0])
+    assert isinstance(hist_entry, HistoryEntry)
+    aaae(hist_entry.params, [4.0, 5.0, 6.0])
+    assert isinstance(log_entry, IterationState)
+
+
+def test_build_internal_fun_matches_the_driver_evaluator():
+    """The worker evaluator equals the driver's, including tree reparametrization.
+
+    minimize's batch machinery and build_internal_fun build the same converter from
+    the same params, so for any internal point both map it to the same external params
+    and return the same value — the property a driver/worker split relies on.
+    """
+    captured = {}
+
+    def capturing_batch_evaluator(
+        func, arguments, *, n_cores=1, error_handling="continue", unpack_symbol=None
+    ):
+        captured["driver_fun"] = func
+        return joblib_batch_evaluator(
+            func, arguments, n_cores=n_cores, error_handling=error_handling
+        )
+
+    fun = mark.least_squares(lambda p: p["x"])
+    params = {"x": np.array([1.0, 2.0, 3.0])}
+
+    minimize(
+        fun=fun,
+        params=params,
+        algorithm="pounders",
+        batch_evaluator=capturing_batch_evaluator,
+        algo_options={"stopping_maxiter": 1, "n_cores": 2},
+    )
+
+    worker_fun = build_internal_fun(fun=fun, params=params, algorithm="pounders")
+
+    point = np.array([0.5, -0.5, 0.25])
+    aaae(worker_fun(point)[0], captured["driver_fun"](point)[0])
 
 
 def test_minimize_uses_custom_batch_evaluator():
