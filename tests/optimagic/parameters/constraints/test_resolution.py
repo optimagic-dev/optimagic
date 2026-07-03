@@ -226,7 +226,7 @@ def test_nonlinear_constraint_raises(np_params_converter):
             selector=lambda x: x[[0, 1]], func=lambda x: x @ x, value=1
         )
     ]
-    with pytest.raises(InvalidConstraintError, match="reparametrization"):
+    with pytest.raises(NotImplementedError, match="must not be resolved"):
         resolve_constraints(
             constraints=constraints,
             params=np.arange(6) + 10.0,

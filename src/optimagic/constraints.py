@@ -765,12 +765,10 @@ class NonlinearConstraint(Constraint):
             raise InvalidConstraintError("'derivative' must be callable.")
 
     def _resolve(self, context: ResolutionContext) -> ResolvedConstraint | None:
-        msg = (
-            f"Constraints of type {type(self).__name__} cannot be enforced "
-            f"via reparametrization. The problematic constraint is "
-            f"{context.source.describe()}."
+        raise NotImplementedError(
+            "Nonlinear constraints are directly passed to optimizers that support "
+            "them and must not be resolved."
         )
-        raise InvalidConstraintError(msg)
 
 
 def _all_none(*args: Any) -> bool:
