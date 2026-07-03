@@ -3,7 +3,7 @@ import warnings
 from dataclasses import dataclass, replace
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, ParamSpec, cast
+from typing import TYPE_CHECKING, Any, Callable, ParamSpec, cast
 
 import numpy as np
 import pandas as pd
@@ -22,6 +22,7 @@ from optimagic.constraints import (
     NonlinearConstraint,
     PairwiseEqualityConstraint,
     ProbabilityConstraint,
+    ResolvedFixedConstraint,
     identity_selector,
 )
 from optimagic.logging.logger import (
@@ -36,6 +37,9 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.bounds import Bounds
 from optimagic.typing import AggregationLevel
+
+if TYPE_CHECKING:
+    from optimagic.parameters.constraints.resolution import ResolutionContext
 
 _logger = logging.getLogger(__name__)
 
@@ -633,6 +637,14 @@ class FixedValueConstraint(FixedConstraint):
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "fixed", "selector": self.selector, "value": self.value}
+
+    def _resolve(self, context: "ResolutionContext") -> ResolvedFixedConstraint | None:
+        index = context.select(self.selector)
+        if len(index) == 0:
+            return None
+        return ResolvedFixedConstraint(
+            index=index, sources=(context.source,), value=self.value
+        )
 
 
 def _constraint_from_dict(constr: dict[str, Any]) -> Constraint:

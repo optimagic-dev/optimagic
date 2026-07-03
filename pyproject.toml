@@ -291,7 +291,6 @@ module = [
     "optimagic.parameters.kernel_transformations",
     "optimagic.parameters.nonlinear_constraints",
     "optimagic.parameters.process_constraints",
-    "optimagic.parameters.process_selectors",
     "optimagic.parameters.space_conversion",
     "optimagic.parameters.tree_conversion",
     "optimagic.parameters.tree_registry",
