@@ -4,9 +4,12 @@ This is the first stage of constraints processing. Each user constraint selects 
 subset of the parameters via a selector function. Here, the selectors are evaluated
 on a helper pytree that has the same structure as the user provided params but
 contains the positions of the parameters in the flat parameter vector. The result is
-a list of resolved constraints (see
-:mod:`optimagic.parameters.constraints.types`) that refer to parameters by
-position and carry provenance information for error messages.
+a list of resolved constraints (see :mod:`optimagic.constraints`) that refer to
+parameters by position and carry provenance information for error messages.
+
+The per-constraint resolution logic lives in the ``Constraint._resolve`` methods in
+:mod:`optimagic.constraints`. This module provides the loop over all constraints and
+the :class:`ResolutionContext` that the methods work with.
 
 """
 
@@ -14,6 +17,7 @@ from __future__ import annotations
 
 import warnings
 from collections import Counter
+from dataclasses import dataclass
 from typing import Any, Callable
 
 import numpy as np
@@ -22,20 +26,7 @@ from pybaum import tree_just_flatten
 
 from optimagic.constraints import (
     Constraint,
-    DecreasingConstraint,
-    EqualityConstraint,
-    FixedConstraint,
-    FlatCovConstraint,
-    FlatSDCorrConstraint,
-    IncreasingConstraint,
-    LinearConstraint,
-    PairwiseEqualityConstraint,
-    ProbabilityConstraint,
-)
-from optimagic.exceptions import InvalidConstraintError
-from optimagic.parameters.constraints.types import (
     ConstraintSource,
-    FloatArray,
     IntArray,
     ResolvedConstraint,
     ResolvedCovariance,
@@ -48,9 +39,63 @@ from optimagic.parameters.constraints.types import (
     ResolvedProbability,
     ResolvedSDCorr,
 )
+from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import PyTree
+
+
+@dataclass(frozen=True)
+class ResolutionContext:
+    """Everything a constraint needs to resolve its selectors to flat positions.
+
+    Attributes:
+        helper: Pytree with the same structure as the user provided params whose
+            leaves are the positions of the parameters in the flat parameter vector.
+        registry: Pytree registry used to flatten selections on the helper tree.
+        param_names: Names of the flat parameters. Used for error messages.
+        source: Provenance of the constraint that is being resolved.
+
+    """
+
+    helper: PyTree
+    registry: dict[type, Any]
+    param_names: list[str]
+    source: ConstraintSource
+
+    def select(self, selector: Callable[[PyTree], PyTree]) -> IntArray:
+        """Evaluate a selector on the helper tree and validate the selection."""
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+                raw = selector(self.helper)
+                flat = tree_just_flatten(raw, registry=self.registry)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = (
+                "An error occurred when trying to select parameters for "
+                f"{self.source.describe()}."
+            )
+            raise InvalidConstraintError(msg) from e
+
+        index = np.array(flat).astype(np.int64)
+        self._fail_if_duplicates(index)
+        return index
+
+    def _fail_if_duplicates(self, index: IntArray) -> None:
+        duplicates = [
+            pos for pos, count in Counter(index.tolist()).items() if count > 1
+        ]
+        if duplicates:
+            names = [self.param_names[pos] for pos in duplicates]
+            msg = (
+                "Error while processing constraints. There are duplicates in the "
+                f"selected parameters. The parameters that were selected more than "
+                f"once are {names}. The problematic constraint is "
+                f"{self.source.describe()}."
+            )
+            raise InvalidConstraintError(msg)
 
 
 def resolve_constraints(
@@ -84,24 +129,13 @@ def resolve_constraints(
 
     resolved: list[ResolvedConstraint] = []
     for position, constraint in enumerate(constraints):
-        source = ConstraintSource(constraint=constraint, position=position)
-        new: ResolvedConstraint | None
-        if isinstance(constraint, PairwiseEqualityConstraint):
-            new = _resolve_pairwise_equality_constraint(
-                constraint=constraint,
-                source=source,
-                helper=helper,
-                registry=dict(registry),
-                param_names=param_names,
-            )
-        else:
-            new = _resolve_single_selector_constraint(
-                constraint=constraint,
-                source=source,
-                helper=helper,
-                registry=dict(registry),
-                param_names=param_names,
-            )
+        context = ResolutionContext(
+            helper=helper,
+            registry=dict(registry),
+            param_names=param_names,
+            source=ConstraintSource(constraint=constraint, position=position),
+        )
+        new = constraint._resolve(context)
         if new is not None:
             resolved.append(new)
 
@@ -164,170 +198,3 @@ def to_legacy_dicts(resolved: list[ResolvedConstraint]) -> list[dict[str, Any]]:
             )
         out.append(new)
     return out
-
-
-def _resolve_single_selector_constraint(
-    constraint: Constraint,
-    source: ConstraintSource,
-    helper: PyTree,
-    registry: dict[type, Any],
-    param_names: list[str],
-) -> ResolvedConstraint | None:
-    index = _select_positions(
-        selector=constraint.selector,  # type: ignore[attr-defined]
-        source=source,
-        helper=helper,
-        registry=registry,
-        param_names=param_names,
-    )
-
-    if len(index) == 0:
-        return None
-
-    out: ResolvedConstraint
-    if isinstance(constraint, FixedConstraint):
-        # the value attribute only exists on the FixedValueConstraint subclass that
-        # supports deprecated dictionary constraints with explicit values
-        out = ResolvedFixed(
-            index=index,
-            sources=(source,),
-            value=getattr(constraint, "value", None),
-        )
-    elif isinstance(constraint, EqualityConstraint):
-        out = ResolvedEquality(index=index, sources=(source,))
-    elif isinstance(constraint, IncreasingConstraint):
-        out = ResolvedIncreasing(index=index, sources=(source,))
-    elif isinstance(constraint, DecreasingConstraint):
-        out = ResolvedDecreasing(index=index, sources=(source,))
-    elif isinstance(constraint, ProbabilityConstraint):
-        out = ResolvedProbability(index=index, sources=(source,))
-    elif isinstance(constraint, FlatCovConstraint):
-        out = ResolvedCovariance(
-            index=index,
-            regularization=constraint.regularization,
-            sources=(source,),
-        )
-    elif isinstance(constraint, FlatSDCorrConstraint):
-        out = ResolvedSDCorr(
-            index=index,
-            regularization=constraint.regularization,
-            sources=(source,),
-        )
-    elif isinstance(constraint, LinearConstraint):
-        out = ResolvedLinear(
-            index=index,
-            weights=_align_linear_weights(constraint.weights, index, source),
-            lower_bound=(
-                -np.inf if constraint.lower_bound is None else constraint.lower_bound
-            ),
-            upper_bound=(
-                np.inf if constraint.upper_bound is None else constraint.upper_bound
-            ),
-            value=np.nan if constraint.value is None else constraint.value,
-            sources=(source,),
-        )
-    else:
-        msg = (
-            f"Constraints of type {type(constraint).__name__} cannot be enforced "
-            f"via reparametrization. The problematic constraint is "
-            f"{source.describe()}."
-        )
-        raise InvalidConstraintError(msg)
-
-    return out
-
-
-def _resolve_pairwise_equality_constraint(
-    constraint: PairwiseEqualityConstraint,
-    source: ConstraintSource,
-    helper: PyTree,
-    registry: dict[type, Any],
-    param_names: list[str],
-) -> ResolvedPairwiseEquality | None:
-    indices = tuple(
-        _select_positions(
-            selector=selector,
-            source=source,
-            helper=helper,
-            registry=registry,
-            param_names=param_names,
-        )
-        for selector in constraint.selectors
-    )
-
-    lengths = [len(index) for index in indices]
-    if len(set(lengths)) != 1:
-        msg = (
-            "All selections of a pairwise equality constraint need to have the "
-            f"same length. You have lengths {lengths} in {source.describe()}."
-        )
-        raise InvalidConstraintError(msg)
-
-    if len(indices[0]) == 0:
-        return None
-
-    return ResolvedPairwiseEquality(indices=indices, sources=(source,))
-
-
-def _select_positions(
-    selector: Callable[[PyTree], PyTree],
-    source: ConstraintSource,
-    helper: PyTree,
-    registry: dict[type, Any],
-    param_names: list[str],
-) -> IntArray:
-    """Evaluate a selector on the position helper tree and validate the selection."""
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-            raw = selector(helper)
-            flat = tree_just_flatten(raw, registry=registry)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception as e:
-        msg = (
-            "An error occurred when trying to select parameters for "
-            f"{source.describe()}."
-        )
-        raise InvalidConstraintError(msg) from e
-
-    index = np.array(flat).astype(np.int64)
-    _fail_if_duplicates(index, source, param_names)
-    return index
-
-
-def _align_linear_weights(
-    weights: Any, index: IntArray, source: ConstraintSource
-) -> FloatArray:
-    """Broadcast and length-check the weights of a linear constraint."""
-    if isinstance(weights, (np.ndarray, list, tuple, pd.Series)):
-        if len(weights) != len(index):
-            msg = (
-                f"weights of length {len(weights)} could not be aligned with the "
-                f"{len(index)} selected parameters in {source.describe()}."
-            )
-            raise InvalidConstraintError(msg)
-        out = np.asarray(weights, dtype=np.float64)
-    elif isinstance(weights, (float, int)):
-        out = np.full(len(index), float(weights))
-    else:
-        msg = (
-            f"Invalid type for linear weights: {type(weights)}. The problematic "
-            f"constraint is {source.describe()}."
-        )
-        raise InvalidConstraintError(msg)
-    return out
-
-
-def _fail_if_duplicates(
-    index: IntArray, source: ConstraintSource, param_names: list[str]
-) -> None:
-    duplicates = [pos for pos, count in Counter(index.tolist()).items() if count > 1]
-    if duplicates:
-        names = [param_names[pos] for pos in duplicates]
-        msg = (
-            "Error while processing constraints. There are duplicates in the "
-            f"selected parameters. The parameters that were selected more than "
-            f"once are {names}. The problematic constraint is {source.describe()}."
-        )
-        raise InvalidConstraintError(msg)

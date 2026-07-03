@@ -5,17 +5,17 @@ from numpy.testing import assert_array_equal as aae
 from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 import optimagic as om
-from optimagic.exceptions import InvalidConstraintError
-from optimagic.parameters.constraints.resolution import (
-    resolve_constraints,
-    to_legacy_dicts,
-)
-from optimagic.parameters.constraints.types import (
+from optimagic.constraints import (
     ResolvedCovariance,
     ResolvedEquality,
     ResolvedFixed,
     ResolvedLinear,
     ResolvedPairwiseEquality,
+)
+from optimagic.exceptions import InvalidConstraintError
+from optimagic.parameters.constraints.resolution import (
+    resolve_constraints,
+    to_legacy_dicts,
 )
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import get_registry

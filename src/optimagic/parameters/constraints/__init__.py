@@ -14,7 +14,8 @@ reparametrization of the optimization problem:
 5. converter assembly: the space converter that maps between external and internal
    parameters
 
-The user facing constraint classes live in optimagic.constraints.
+The user facing constraint classes and their resolved counterparts live in
+optimagic.constraints.
 
 """
 
@@ -22,14 +23,8 @@ from optimagic.parameters.constraints.resolution import (
     resolve_constraints,
     to_legacy_dicts,
 )
-from optimagic.parameters.constraints.types import (
-    ConstraintSource,
-    ResolvedConstraint,
-)
 
 __all__ = [
-    "ConstraintSource",
-    "ResolvedConstraint",
     "resolve_constraints",
     "to_legacy_dicts",
 ]
