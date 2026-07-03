@@ -24,6 +24,9 @@ The tests cover four invariants for a corpus of constraint sets:
 In addition, the first-error behavior for misspecified constraints and violated start
 values is pinned to exception types (not messages).
 
+Nonlinear constraints are out of scope: they are passed on to the optimizer rather than
+reparametrized, so they never reach the reparametrization pipeline exercised here.
+
 """
 
 from dataclasses import dataclass, field
@@ -255,11 +258,59 @@ CASES = {
             ("fixed", {"positions": [1, 3, 4]}),
         ],
     ),
+    # A covariance block that does not start at flat position 0. Every other cov/sdcorr
+    # case sits at position 0, which hides bugs in the block-local vs global index
+    # handling of the covariance/sdcorr code paths.
+    "shifted_covariance": Case(
+        params=np.array([7.0, 1.0, 0.1, 2.0, 0.2, 0.3, 3.0]),
+        constraints=[om.FlatCovConstraint(selector=lambda x: x[1:7])],
+        bounds=None,
+        checks=[("covariance", {"positions": [1, 2, 3, 4, 5, 6]})],
+    ),
+    # uncorrelated_covariance for a block that does not start at flat position 0. The
+    # off-diagonals (global indices 2, 4, 5) are fixed to 0, so the constraint is
+    # simplified to bounds on the variances. This used to be wrongly rejected because
+    # the simplification compared block-local positions against global indices.
+    "shifted_uncorrelated_covariance": Case(
+        params=np.array([99.0, 1.0, 0.0, 4.0, 0.0, 0.0, 9.0]),
+        constraints=[
+            om.FlatCovConstraint(selector=lambda x: x[1:7]),
+            om.FixedConstraint(selector=lambda x: x[[2, 4, 5]]),
+        ],
+        bounds=None,
+        checks=[
+            ("covariance", {"positions": [1, 2, 3, 4, 5, 6]}),
+            ("fixed", {"positions": [2, 4, 5]}),
+        ],
+    ),
     "sdcorr": Case(
         params=np.array([2, 1.5, 3, 0.2, 0.15, 0.33, 10.0]),
         constraints=[om.FlatSDCorrConstraint(selector=lambda x: x[:6])],
         bounds=None,
         checks=[("sdcorr", {"positions": list(range(6))})],
+    ),
+    # A 2-dimensional sdcorr constraint is enforced by bounds instead of a kernel
+    # transformation: the standard deviations get a lower bound of 0 and the single
+    # correlation is bounded to [-1, 1].
+    "sdcorr_simplified": Case(
+        params=np.array([2.0, 3.0, 0.1, 5.0]),
+        constraints=[om.FlatSDCorrConstraint(selector=lambda x: x[:3])],
+        bounds=None,
+        checks=[("sdcorr", {"positions": [0, 1, 2]})],
+    ),
+    # sdcorr counterpart of "uncorrelated_covariance": with all correlations fixed to 0
+    # the constraint is simplified to bounds on the standard deviations.
+    "uncorrelated_sdcorr": Case(
+        params=np.array([2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 5.0]),
+        constraints=[
+            om.FlatSDCorrConstraint(selector=lambda x: x[:6]),
+            om.FixedConstraint(selector=lambda x: x[[3, 4, 5]]),
+        ],
+        bounds=None,
+        checks=[
+            ("sdcorr", {"positions": [0, 1, 2, 3, 4, 5]}),
+            ("fixed", {"positions": [3, 4, 5]}),
+        ],
     ),
     "fixed_and_increasing": Case(
         params=np.array([1.0, 2.0, 3.0, 4.0, 1.0]),
@@ -484,6 +535,26 @@ _EXPECTED = {
         upper_bounds=[inf, inf, inf, inf],
         free_mask=[True, False, True, False, False, True, True],
     ),
+    "shifted_covariance": ExpectedInternal(
+        values=[
+            7.0,
+            1.0,
+            0.1,
+            1.4106735979665885,
+            0.2,
+            0.19848673740233402,
+            1.708977183895495,
+        ],
+        lower_bounds=[-inf, 0.0, -inf, 0.0, -inf, -inf, 0.0],
+        upper_bounds=[inf] * 7,
+        free_mask=[True] * 7,
+    ),
+    "shifted_uncorrelated_covariance": ExpectedInternal(
+        values=[99.0, 1.0, 4.0, 9.0],
+        lower_bounds=[-inf, 0.0, 0.0, 0.0],
+        upper_bounds=[inf, inf, inf, inf],
+        free_mask=[True, True, False, True, False, False, True],
+    ),
     "sdcorr": ExpectedInternal(
         values=[
             2.0,
@@ -497,6 +568,18 @@ _EXPECTED = {
         lower_bounds=[0.0, -inf, 0.0, -inf, -inf, 0.0, -inf],
         upper_bounds=[inf] * 7,
         free_mask=[True] * 7,
+    ),
+    "sdcorr_simplified": ExpectedInternal(
+        values=[2.0, 3.0, 0.1, 5.0],
+        lower_bounds=[0.0, 0.0, -1.0, -inf],
+        upper_bounds=[inf, inf, 1.0, inf],
+        free_mask=[True, True, True, True],
+    ),
+    "uncorrelated_sdcorr": ExpectedInternal(
+        values=[2.0, 3.0, 4.0, 5.0],
+        lower_bounds=[0.0, 0.0, 0.0, -inf],
+        upper_bounds=[inf, inf, inf, inf],
+        free_mask=[True, True, True, False, False, False, True],
     ),
     "fixed_and_increasing": ExpectedInternal(
         values=[-1.0, 2.0, 4.0, 1.0],
@@ -708,6 +791,65 @@ def test_violated_linear_constraint_raises_invalid_params_error():
         )
 
 
+def test_violated_decreasing_constraint_raises_invalid_params_error():
+    with pytest.raises(InvalidParamsError):
+        _raises(
+            np.array([1.0, 2.0, 3.0]),
+            [om.DecreasingConstraint(selector=lambda x: x[[0, 1, 2]])],
+        )
+
+
+def test_violated_equality_constraint_raises_invalid_params_error():
+    with pytest.raises(InvalidParamsError):
+        _raises(
+            np.array([1.0, 2.0]),
+            [om.EqualityConstraint(selector=lambda x: x[[0, 1]])],
+        )
+
+
+def test_violated_linear_bound_raises_invalid_params_error():
+    """The other violated-linear test pins the equality (value) branch; this one pins
+    the bound branch.
+    """
+    with pytest.raises(InvalidParamsError):
+        _raises(
+            np.array([1.0, 1.0]),
+            [
+                om.LinearConstraint(
+                    selector=lambda x: x[[0, 1]], weights=[1, 1], lower_bound=10
+                )
+            ],
+        )
+
+
+def test_non_psd_covariance_at_start_raises_invalid_params_error():
+    with pytest.raises(InvalidParamsError):
+        _raises(
+            np.array([1.0, 2.0, 1.0]),
+            [om.FlatCovConstraint(selector=lambda x: x[:3])],
+        )
+
+
+def test_non_psd_sdcorr_at_start_raises_invalid_params_error():
+    """A correlation larger than one makes the implied matrix indefinite."""
+    with pytest.raises(InvalidParamsError):
+        _raises(
+            np.array([1.0, 1.0, 2.0]),
+            [om.FlatSDCorrConstraint(selector=lambda x: x[:3])],
+        )
+
+
+def test_negative_probability_at_start_raises_invalid_params_error():
+    """The parameters sum to one but one of them is negative; this pins a different
+    branch than the (sum does not equal one) probability test above.
+    """
+    with pytest.raises(InvalidParamsError):
+        _raises(
+            np.array([-0.1, 0.6, 0.5]),
+            [om.ProbabilityConstraint(selector=lambda x: x[[0, 1, 2]])],
+        )
+
+
 def test_fix_that_differs_from_start_value_raises_invalid_params_error():
     """Uses the old dict interface because the new constraint objects do not have a
     value attribute.
@@ -799,4 +941,44 @@ def test_invalid_selector_field_raises_invalid_constraint_error():
         _raises(
             {"a": 1.0, "b": 2.0},
             [{"type": "fixed", "loc": "a"}],
+        )
+
+
+def test_bound_on_covariance_constrained_param_raises_invalid_constraint_error():
+    """Bounds on any but the first parameter of a covariance constraint are invalid (as
+    long as the constraint cannot be simplified to bounds). This mirrors the fix-based
+    test above for the bounds path.
+    """
+    with pytest.raises(InvalidConstraintError):
+        _raises(
+            np.array([1.0, 0.1, 2.0, 0.2, 0.3, 3.0]),
+            [om.FlatCovConstraint(selector=lambda x: x[:6])],
+            bounds=om.Bounds(
+                lower=np.full(6, -inf),
+                upper=np.array([inf, inf, 5.0, inf, inf, inf]),
+            ),
+        )
+
+
+def test_fix_of_probability_constrained_param_raises_invalid_constraint_error():
+    """Mirror of the bound-on-probability test above for the fix path."""
+    with pytest.raises(InvalidConstraintError):
+        _raises(
+            np.array([0.3, 0.7]),
+            [
+                om.ProbabilityConstraint(selector=lambda x: x[[0, 1]]),
+                om.FixedConstraint(selector=lambda x: x[0]),
+            ],
+        )
+
+
+def test_contradictory_bounds_across_equality_set_raises_invalid_constraint_error():
+    """The two parameters are equality constrained, so consolidating their bounds yields
+    a lower bound (4) that exceeds the upper bound (2).
+    """
+    with pytest.raises(InvalidConstraintError):
+        _raises(
+            np.array([3.0, 3.0]),
+            [om.EqualityConstraint(selector=lambda x: x[[0, 1]])],
+            bounds=om.Bounds(lower=np.array([4.0, -inf]), upper=np.array([inf, 2.0])),
         )

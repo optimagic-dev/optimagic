@@ -286,7 +286,7 @@ def simplify_covariance_and_sdcorr_constraints(
         if constr["type"] == "covariance":
             diag_positions = [0, *np.cumsum(range(2, dim + 1)).tolist()]
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
-            off_indices = [i for i in constr["index"] if i not in diag_positions]
+            off_indices = np.delete(constr["index"], diag_positions).tolist()
         if constr["type"] == "sdcorr":
             diag_indices = constr["index"][:dim]
             off_indices = constr["index"][dim:]
