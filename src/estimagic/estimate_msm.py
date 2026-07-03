@@ -184,9 +184,7 @@ def estimate_msm(
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
-    # TODO: Replace dict_constraints with constraints, once we deprecate dictionary
-    # constraints.
-    dict_constraints = deprecations.pre_process_constraints(constraints)
+    processed_constraints = deprecations.pre_process_constraints(constraints)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(
@@ -297,7 +295,7 @@ def estimate_msm(
 
     converter, internal_estimates = get_converter(
         params=estimates,
-        constraints=dict_constraints,
+        constraints=processed_constraints,
         bounds=bounds,
         func_eval=func_eval,
         solver_type="contributions",
@@ -337,7 +335,11 @@ def estimate_msm(
     # Calculate external jac (if no constraints and not closed form )
     # ==================================================================================
 
-    if dict_constraints in [None, []] and jacobian_eval is None and int_jac is not None:
+    if (
+        processed_constraints in [None, []]
+        and jacobian_eval is None
+        and int_jac is not None
+    ):
         jacobian_eval = matrix_to_block_tree(
             int_jac,
             outer_tree=empirical_moments,
@@ -370,7 +372,7 @@ def estimate_msm(
         _empirical_moments=empirical_moments,
         _internal_estimates=internal_estimates,
         _free_estimates=free_estimates,
-        _has_constraints=dict_constraints not in [None, []],
+        _has_constraints=processed_constraints not in [None, []],
     )
     return res
 

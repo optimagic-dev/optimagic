@@ -21,7 +21,7 @@ import numpy as np
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.constraints import Constraint
+from optimagic.constraints import Constraint, NonlinearConstraint
 from optimagic.differentiation.numdiff_options import NumdiffOptions, NumdiffOptionsDict
 from optimagic.exceptions import (
     IncompleteBoundsError,
@@ -487,7 +487,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     constraints = problem.constraints
 
-    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
+    nonlinear_constraints = [
+        c for c in constraints if isinstance(c, NonlinearConstraint)
+    ]
 
     if nonlinear_constraints:
         if not problem.algorithm.algo_info.supports_nonlinear_constraints:
@@ -497,7 +499,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             )
 
     # the following constraints will be handled via reparametrization
-    constraints = [c for c in constraints if c["type"] != "nonlinear"]
+    constraints = [c for c in constraints if not isinstance(c, NonlinearConstraint)]
 
     # ==================================================================================
     # Do first evaluation of user provided functions
@@ -607,9 +609,10 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         direction=problem.direction,
     )
 
-    # process nonlinear constraints:
+    # process nonlinear constraints; converting to dicts is a temporary seam during
+    # the constraints refactoring, as the processing is still dict-based
     internal_nonlinear_constraints = process_nonlinear_constraints(
-        nonlinear_constraints=nonlinear_constraints,
+        nonlinear_constraints=[c._to_dict() for c in nonlinear_constraints],
         params=problem.params,
         bounds=problem.bounds,
         converter=converter,
