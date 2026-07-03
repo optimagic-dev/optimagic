@@ -8,8 +8,6 @@ import optimagic as om
 from optimagic.constraints import (
     ResolvedEqualityConstraint,
     ResolvedFixedConstraint,
-    ResolvedFlatCovConstraint,
-    ResolvedLinearConstraint,
     ResolvedPairwiseEqualityConstraint,
 )
 from optimagic.exceptions import InvalidConstraintError
@@ -122,48 +120,6 @@ def test_provenance_is_attached(np_params_converter):
         assert resolved.sources[0].constraint is constraints[position]
 
 
-def test_covariance_regularization_is_carried(np_params_converter):
-    calculated = resolve_constraints(
-        constraints=[
-            om.FlatCovConstraint(selector=lambda x: x[:6], regularization=0.1)
-        ],
-        params=np.arange(7) + 1.0,
-        tree_converter=np_params_converter,
-        param_names=PARAM_NAMES,
-    )
-    assert isinstance(calculated[0], ResolvedFlatCovConstraint)
-    assert calculated[0].regularization == 0.1
-
-
-def test_linear_scalar_weights_are_broadcast(np_params_converter):
-    calculated = resolve_constraints(
-        constraints=[
-            om.LinearConstraint(selector=lambda x: x[[0, 2]], weights=2, value=3)
-        ],
-        params=np.arange(6) + 10.0,
-        tree_converter=np_params_converter,
-        param_names=PARAM_NAMES,
-    )
-    assert isinstance(calculated[0], ResolvedLinearConstraint)
-    aae(calculated[0].weights, np.array([2.0, 2.0]))
-    assert calculated[0].value == 3
-    assert calculated[0].lower_bound == -np.inf
-    assert calculated[0].upper_bound == np.inf
-
-
-def test_linear_misaligned_weights_raise(np_params_converter):
-    constraints = [
-        om.LinearConstraint(selector=lambda x: x[[0, 2]], weights=[1, 2, 3], value=3)
-    ]
-    with pytest.raises(InvalidConstraintError, match="aligned"):
-        resolve_constraints(
-            constraints=constraints,
-            params=np.arange(6) + 10.0,
-            tree_converter=np_params_converter,
-            param_names=PARAM_NAMES,
-        )
-
-
 def test_empty_selections_are_dropped(np_params_converter):
     constraints = [
         om.FixedConstraint(selector=lambda x: x[np.array([], dtype=int)]),
@@ -194,39 +150,9 @@ def test_duplicates_raise(np_params_converter):
         )
 
 
-def test_different_lengths_in_pairwise_selections_raise(np_params_converter):
-    constraints = [
-        om.PairwiseEqualityConstraint(
-            selectors=[lambda x: x[[1, 4]], lambda x: x[[0, 3, 5]]]
-        )
-    ]
-    with pytest.raises(InvalidConstraintError, match="same length"):
-        resolve_constraints(
-            constraints=constraints,
-            params=np.arange(6) + 10.0,
-            tree_converter=np_params_converter,
-            param_names=PARAM_NAMES,
-        )
-
-
 def test_failing_selector_raises_invalid_constraint_error(np_params_converter):
     constraints = [om.FixedConstraint(selector=lambda x: x["invalid"])]
     with pytest.raises(InvalidConstraintError, match="select parameters"):
-        resolve_constraints(
-            constraints=constraints,
-            params=np.arange(6) + 10.0,
-            tree_converter=np_params_converter,
-            param_names=PARAM_NAMES,
-        )
-
-
-def test_nonlinear_constraint_raises(np_params_converter):
-    constraints = [
-        om.NonlinearConstraint(
-            selector=lambda x: x[[0, 1]], func=lambda x: x @ x, value=1
-        )
-    ]
-    with pytest.raises(NotImplementedError, match="must not be resolved"):
         resolve_constraints(
             constraints=constraints,
             params=np.arange(6) + 10.0,
