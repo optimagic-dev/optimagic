@@ -33,39 +33,47 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from pybaum import tree_just_flatten
 
 import optimagic as om
 from optimagic import first_derivative
 from optimagic.deprecations import pre_process_constraints
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.parameters.conversion import get_converter
+from optimagic.parameters.tree_registry import get_registry
 from optimagic.typing import AggregationLevel
 from optimagic.utilities import cov_params_to_matrix, get_rng, sdcorr_params_to_matrix
 
 inf = float("inf")
 
 
-@dataclass
+@dataclass(frozen=True)
 class Case:
-    """One corpus entry: a params/constraints pair plus feasibility information.
-
-    Attributes:
-        params: User provided params (numpy array, DataFrame with value column, or
-            pytree).
-        constraints: List of user provided constraint objects.
-        bounds: User provided bounds or None.
-        start_flat: The flattened start params.
-        checks: Feasibility checks as (kind, payload) tuples. Positions refer to the
-            flattened params. They are used to verify that any output of
-            params_from_internal satisfies the original constraints.
-
-    """
+    """One corpus entry: a params/constraints pair plus feasibility information."""
 
     params: Any
+    """User provided params (numpy array, DataFrame with value column, or pytree)."""
+
     constraints: list[Any]
+    """List of user provided constraint objects."""
+
     bounds: om.Bounds | None
-    start_flat: list[float]
+    """User provided bounds or None."""
+
     checks: list[tuple[str, dict[str, Any]]] = field(default_factory=list)
+    """Feasibility checks as (kind, payload) tuples. Positions refer to the flattened
+    params. They are used to verify that any output of params_from_internal satisfies
+    the original constraints."""
+
+    @property
+    def start_flat(self) -> np.ndarray:
+        """The start params flattened to optimagic's internal flat order.
+
+        Derived from ``params`` rather than spelled out per case: flattening is not what
+        these tests exercise, so the flat start values should not be duplicated by hand.
+        """
+        registry = get_registry(extended=True)
+        return np.array(tree_just_flatten(self.params, registry=registry), dtype=float)
 
 
 def _all_but_hours(p):
@@ -80,14 +88,12 @@ CASES = {
         params=np.array([1.0, 1.5, 4.5]),
         constraints=[om.FixedConstraint(selector=lambda x: x[0])],
         bounds=None,
-        start_flat=[1.0, 1.5, 4.5],
         checks=[("fixed", {"positions": [0]})],
     ),
     "equality": Case(
         params=np.array([1.0, 1.0, 1.0]),
         constraints=[om.EqualityConstraint(selector=lambda x: x[[0, 1, 2]])],
         bounds=None,
-        start_flat=[1.0, 1.0, 1.0],
         checks=[("equality", {"positions": [0, 1, 2]})],
     ),
     "pairwise_equality": Case(
@@ -96,21 +102,18 @@ CASES = {
             om.PairwiseEqualityConstraint(selectors=[lambda x: x[0], lambda x: x[1]])
         ],
         bounds=None,
-        start_flat=[2.0, 2.0, 3.0],
         checks=[("pairwise_equality", {"positions_list": [[0], [1]]})],
     ),
     "increasing": Case(
         params=np.array([1.0, 2.0, 3.0]),
         constraints=[om.IncreasingConstraint(selector=lambda x: x[[1, 2]])],
         bounds=None,
-        start_flat=[1.0, 2.0, 3.0],
         checks=[("increasing", {"positions": [1, 2]})],
     ),
     "decreasing": Case(
         params=np.array([3.0, 2.0, 1.0]),
         constraints=[om.DecreasingConstraint(selector=lambda x: x[[0, 1]])],
         bounds=None,
-        start_flat=[3.0, 2.0, 1.0],
         checks=[("decreasing", {"positions": [0, 1]})],
     ),
     "linear_value": Case(
@@ -119,7 +122,6 @@ CASES = {
             om.LinearConstraint(selector=lambda x: x[[0, 1]], value=4, weights=[1, 2])
         ],
         bounds=None,
-        start_flat=[2.0, 1.0, 3.0],
         checks=[("linear", {"positions": [0, 1], "weights": [1, 2], "value": 4})],
     ),
     "linear_bounds": Case(
@@ -133,7 +135,6 @@ CASES = {
             )
         ],
         bounds=None,
-        start_flat=[1.0, 2.0, 3.0],
         checks=[
             (
                 "linear",
@@ -157,7 +158,6 @@ CASES = {
             ),
         ],
         bounds=None,
-        start_flat=[2.0, 1.0, 3.0],
         checks=[
             ("linear", {"positions": [0, 1], "weights": [1, 1], "lower_bound": 1}),
             ("linear", {"positions": [1, 2], "weights": [1, 1], "upper_bound": 10}),
@@ -170,7 +170,6 @@ CASES = {
             om.LinearConstraint(selector=lambda x: x[[0, 1]], value=4, weights=[1, 2]),
         ],
         bounds=None,
-        start_flat=[2.0, 1.0, 3.0],
         checks=[
             ("fixed", {"positions": [0]}),
             ("linear", {"positions": [0, 1], "weights": [1, 2], "value": 4}),
@@ -185,7 +184,6 @@ CASES = {
             ),
         ],
         bounds=None,
-        start_flat=[1.0, 1.0, 4.0],
         checks=[
             ("equality", {"positions": [0, 1]}),
             ("linear", {"positions": [0, 1, 2], "weights": [1, 1, 1], "value": 6}),
@@ -199,7 +197,6 @@ CASES = {
             )
         ],
         bounds=None,
-        start_flat=[1.0, 2.0, 1.0],
         checks=[
             ("linear", {"positions": [0, 1], "weights": [-1, 1], "lower_bound": 0})
         ],
@@ -212,7 +209,6 @@ CASES = {
             )
         ],
         bounds=om.Bounds(lower=np.array([0.0, -inf, -inf]), upper=np.full(3, inf)),
-        start_flat=[1.0, 2.0, 3.0],
         checks=[
             ("linear", {"positions": [0, 1], "weights": [1, 1], "upper_bound": 5}),
             ("bounds", {"lower": [0.0, -inf, -inf], "upper": [inf, inf, inf]}),
@@ -225,21 +221,18 @@ CASES = {
             om.LinearConstraint(selector=lambda x: x[[0, 1]], weights=[1, 2], value=4),
         ],
         bounds=None,
-        start_flat=[2.0, 1.0, 3.0],
         checks=[("linear", {"positions": [0, 1], "weights": [1, 2], "value": 4})],
     ),
     "probability": Case(
         params=np.array([0.8, 0.2, 3.0]),
         constraints=[om.ProbabilityConstraint(selector=lambda x: x[[0, 1]])],
         bounds=None,
-        start_flat=[0.8, 0.2, 3.0],
         checks=[("probability", {"positions": [0, 1]})],
     ),
     "covariance": Case(
         params=np.array([1, -0.2, 1.2, -0.2, 0.1, 1.3, 0.1, -0.05, 0.2, 1, 10.0]),
         constraints=[om.FlatCovConstraint(selector=lambda x: x[:10])],
         bounds=None,
-        start_flat=[1, -0.2, 1.2, -0.2, 0.1, 1.3, 0.1, -0.05, 0.2, 1, 10.0],
         checks=[("covariance", {"positions": list(range(10))})],
     ),
     "covariance_regularized": Case(
@@ -248,7 +241,6 @@ CASES = {
             om.FlatCovConstraint(selector=lambda x: x[:6], regularization=0.1)
         ],
         bounds=None,
-        start_flat=[1, 0.1, 2, 0.2, 0.3, 3.0],
         checks=[("covariance", {"positions": list(range(6))})],
     ),
     "uncorrelated_covariance": Case(
@@ -258,7 +250,6 @@ CASES = {
             om.FixedConstraint(selector=lambda x: x[[1, 3, 4]]),
         ],
         bounds=None,
-        start_flat=[1, 0, 4, 0, 0, 9, 10.0],
         checks=[
             ("covariance", {"positions": list(range(6))}),
             ("fixed", {"positions": [1, 3, 4]}),
@@ -268,7 +259,6 @@ CASES = {
         params=np.array([2, 1.5, 3, 0.2, 0.15, 0.33, 10.0]),
         constraints=[om.FlatSDCorrConstraint(selector=lambda x: x[:6])],
         bounds=None,
-        start_flat=[2, 1.5, 3, 0.2, 0.15, 0.33, 10.0],
         checks=[("sdcorr", {"positions": list(range(6))})],
     ),
     "fixed_and_increasing": Case(
@@ -278,7 +268,6 @@ CASES = {
             om.FixedConstraint(selector=lambda x: x[2]),
         ],
         bounds=None,
-        start_flat=[1.0, 2.0, 3.0, 4.0, 1.0],
         checks=[
             ("increasing", {"positions": [0, 1, 2, 3]}),
             ("fixed", {"positions": [2]}),
@@ -293,7 +282,6 @@ CASES = {
             om.ProbabilityConstraint(selector=lambda x: x[[0, 1]]),
         ],
         bounds=None,
-        start_flat=[0.1, 0.9, 0.9, 0.1],
         checks=[
             ("pairwise_equality", {"positions_list": [[0, 1], [3, 2]]}),
             ("probability", {"positions": [0, 1]}),
@@ -303,7 +291,6 @@ CASES = {
         params=pd.DataFrame({"value": [0.8, 0.2, 3.0]}),
         constraints=[om.ProbabilityConstraint(selector=lambda p: p.loc[[0, 1]])],
         bounds=None,
-        start_flat=[0.8, 0.2, 3.0],
         checks=[("probability", {"positions": [0, 1]})],
     ),
     # flat order of the pytree: work_hourly_wage, work_hours, time_budget
@@ -319,7 +306,6 @@ CASES = {
             ),
         ],
         bounds=om.Bounds(lower={"work": {"hourly_wage": -inf, "hours": 0.0}}),
-        start_flat=[25.5, 2000.0, 61320.0],
         checks=[
             ("fixed", {"positions": [0, 2]}),
             ("increasing", {"positions": [1, 2]}),
@@ -329,95 +315,121 @@ CASES = {
 }
 
 
+@dataclass(frozen=True)
+class ExpectedInternal:
+    """Golden internal optimization parameters for one case.
+
+    These describe the reparametrized problem that optimagic actually optimizes after
+    all constraints have been applied to the start params: the vector of free internal
+    parameters, their box bounds, and how they map back to the external parameters.
+    They are internal quantities, not user facing params.
+    """
+
+    values: list[float]
+    """Values of the free internal parameters at the start params."""
+
+    lower_bounds: list[float]
+    """Lower bounds of the internal parameters, aligned element-wise with ``values``."""
+
+    upper_bounds: list[float]
+    """Upper bounds of the internal parameters, aligned element-wise with ``values``."""
+
+    free_mask: list[bool]
+    """One flag per flattened external parameter: True where it maps to a free internal
+    parameter and False where a constraint pins it. Its length is the number of external
+    parameters, which can exceed ``len(values)``.
+    """
+
+
 # Golden internal parameters, generated from the pre-refactoring implementation.
 # Do not regenerate; see module docstring.
 _EXPECTED = {
-    "fixed_at_start": {
-        "values": [1.5, 4.5],
-        "lower_bounds": [-inf, -inf],
-        "upper_bounds": [inf, inf],
-        "free_mask": [False, True, True],
-    },
-    "equality": {
-        "values": [1.0],
-        "lower_bounds": [-inf],
-        "upper_bounds": [inf],
-        "free_mask": [True, False, False],
-    },
-    "pairwise_equality": {
-        "values": [2.0, 3.0],
-        "lower_bounds": [-inf, -inf],
-        "upper_bounds": [inf, inf],
-        "free_mask": [True, False, True],
-    },
-    "increasing": {
-        "values": [1.0, 2.0, -1.0],
-        "lower_bounds": [-inf, -inf, -inf],
-        "upper_bounds": [inf, inf, 0.0],
-        "free_mask": [True, True, True],
-    },
-    "decreasing": {
-        "values": [3.0, 1.0, 1.0],
-        "lower_bounds": [-inf, 0.0, -inf],
-        "upper_bounds": [inf, inf, inf],
-        "free_mask": [True, True, True],
-    },
-    "linear_value": {
-        "values": [2.0, 3.0],
-        "lower_bounds": [-inf, -inf],
-        "upper_bounds": [inf, inf],
-        "free_mask": [True, False, True],
-    },
-    "linear_bounds": {
-        "values": [1.0, 2.0, 6.0],
-        "lower_bounds": [-inf, -inf, 0.0],
-        "upper_bounds": [inf, inf, 8.0],
-        "free_mask": [True, True, True],
-    },
-    "overlapping_linear": {
-        "values": [2.0, 3.0, 4.0],
-        "lower_bounds": [-inf, 1.0, -inf],
-        "upper_bounds": [inf, inf, 10.0],
-        "free_mask": [True, True, True],
-    },
-    "linear_with_fixed": {
-        "values": [3.0],
-        "lower_bounds": [-inf],
-        "upper_bounds": [inf],
-        "free_mask": [False, False, True],
-    },
-    "linear_with_equality": {
-        "values": [1.0],
-        "lower_bounds": [-inf],
-        "upper_bounds": [inf],
-        "free_mask": [True, False, False],
-    },
-    "linear_negative_weights": {
-        "values": [1.0, -1.0, 1.0],
-        "lower_bounds": [-inf, -inf, -inf],
-        "upper_bounds": [inf, 0.0, inf],
-        "free_mask": [True, True, True],
-    },
-    "linear_with_param_bounds": {
-        "values": [3.0, 1.0, 3.0],
-        "lower_bounds": [-inf, 0.0, -inf],
-        "upper_bounds": [5.0, inf, inf],
-        "free_mask": [True, True, True],
-    },
-    "duplicate_linear": {
-        "values": [2.0, 3.0],
-        "lower_bounds": [-inf, -inf],
-        "upper_bounds": [inf, inf],
-        "free_mask": [True, False, True],
-    },
-    "probability": {
-        "values": [4.0, 3.0],
-        "lower_bounds": [0.0, -inf],
-        "upper_bounds": [inf, inf],
-        "free_mask": [True, False, True],
-    },
-    "covariance": {
-        "values": [
+    "fixed_at_start": ExpectedInternal(
+        values=[1.5, 4.5],
+        lower_bounds=[-inf, -inf],
+        upper_bounds=[inf, inf],
+        free_mask=[False, True, True],
+    ),
+    "equality": ExpectedInternal(
+        values=[1.0],
+        lower_bounds=[-inf],
+        upper_bounds=[inf],
+        free_mask=[True, False, False],
+    ),
+    "pairwise_equality": ExpectedInternal(
+        values=[2.0, 3.0],
+        lower_bounds=[-inf, -inf],
+        upper_bounds=[inf, inf],
+        free_mask=[True, False, True],
+    ),
+    "increasing": ExpectedInternal(
+        values=[1.0, 2.0, -1.0],
+        lower_bounds=[-inf, -inf, -inf],
+        upper_bounds=[inf, inf, 0.0],
+        free_mask=[True, True, True],
+    ),
+    "decreasing": ExpectedInternal(
+        values=[3.0, 1.0, 1.0],
+        lower_bounds=[-inf, 0.0, -inf],
+        upper_bounds=[inf, inf, inf],
+        free_mask=[True, True, True],
+    ),
+    "linear_value": ExpectedInternal(
+        values=[2.0, 3.0],
+        lower_bounds=[-inf, -inf],
+        upper_bounds=[inf, inf],
+        free_mask=[True, False, True],
+    ),
+    "linear_bounds": ExpectedInternal(
+        values=[1.0, 2.0, 6.0],
+        lower_bounds=[-inf, -inf, 0.0],
+        upper_bounds=[inf, inf, 8.0],
+        free_mask=[True, True, True],
+    ),
+    "overlapping_linear": ExpectedInternal(
+        values=[2.0, 3.0, 4.0],
+        lower_bounds=[-inf, 1.0, -inf],
+        upper_bounds=[inf, inf, 10.0],
+        free_mask=[True, True, True],
+    ),
+    "linear_with_fixed": ExpectedInternal(
+        values=[3.0],
+        lower_bounds=[-inf],
+        upper_bounds=[inf],
+        free_mask=[False, False, True],
+    ),
+    "linear_with_equality": ExpectedInternal(
+        values=[1.0],
+        lower_bounds=[-inf],
+        upper_bounds=[inf],
+        free_mask=[True, False, False],
+    ),
+    "linear_negative_weights": ExpectedInternal(
+        values=[1.0, -1.0, 1.0],
+        lower_bounds=[-inf, -inf, -inf],
+        upper_bounds=[inf, 0.0, inf],
+        free_mask=[True, True, True],
+    ),
+    "linear_with_param_bounds": ExpectedInternal(
+        values=[3.0, 1.0, 3.0],
+        lower_bounds=[-inf, 0.0, -inf],
+        upper_bounds=[5.0, inf, inf],
+        free_mask=[True, True, True],
+    ),
+    "duplicate_linear": ExpectedInternal(
+        values=[2.0, 3.0],
+        lower_bounds=[-inf, -inf],
+        upper_bounds=[inf, inf],
+        free_mask=[True, False, True],
+    ),
+    "probability": ExpectedInternal(
+        values=[4.0, 3.0],
+        lower_bounds=[0.0, -inf],
+        upper_bounds=[inf, inf],
+        free_mask=[True, False, True],
+    ),
+    "covariance": ExpectedInternal(
+        values=[
             1.0,
             -0.2,
             1.0770329614269007,
@@ -430,7 +442,7 @@ _EXPECTED = {
             0.9747673916191802,
             10.0,
         ],
-        "lower_bounds": [
+        lower_bounds=[
             0.0,
             -inf,
             0.0,
@@ -443,11 +455,11 @@ _EXPECTED = {
             0.0,
             -inf,
         ],
-        "upper_bounds": [inf] * 11,
-        "free_mask": [True] * 11,
-    },
-    "covariance_regularized": {
-        "values": [
+        upper_bounds=[inf] * 11,
+        free_mask=[True] * 11,
+    ),
+    "covariance_regularized": ExpectedInternal(
+        values=[
             1.0,
             0.1,
             1.4106735979665885,
@@ -455,7 +467,7 @@ _EXPECTED = {
             0.19848673740233402,
             1.708977183895495,
         ],
-        "lower_bounds": [
+        lower_bounds=[
             0.31622776601683794,
             -inf,
             0.31622776601683794,
@@ -463,17 +475,17 @@ _EXPECTED = {
             -inf,
             0.31622776601683794,
         ],
-        "upper_bounds": [inf] * 6,
-        "free_mask": [True] * 6,
-    },
-    "uncorrelated_covariance": {
-        "values": [1.0, 4.0, 9.0, 10.0],
-        "lower_bounds": [0.0, 0.0, 0.0, -inf],
-        "upper_bounds": [inf, inf, inf, inf],
-        "free_mask": [True, False, True, False, False, True, True],
-    },
-    "sdcorr": {
-        "values": [
+        upper_bounds=[inf] * 6,
+        free_mask=[True] * 6,
+    ),
+    "uncorrelated_covariance": ExpectedInternal(
+        values=[1.0, 4.0, 9.0, 10.0],
+        lower_bounds=[0.0, 0.0, 0.0, -inf],
+        upper_bounds=[inf, inf, inf, inf],
+        free_mask=[True, False, True, False, False, True, True],
+    ),
+    "sdcorr": ExpectedInternal(
+        values=[
             2.0,
             0.30000000000000004,
             1.469693845669907,
@@ -482,34 +494,34 @@ _EXPECTED = {
             2.820239351544475,
             10.0,
         ],
-        "lower_bounds": [0.0, -inf, 0.0, -inf, -inf, 0.0, -inf],
-        "upper_bounds": [inf] * 7,
-        "free_mask": [True] * 7,
-    },
-    "fixed_and_increasing": {
-        "values": [-1.0, 2.0, 4.0, 1.0],
-        "lower_bounds": [-inf, -inf, 3.0, -inf],
-        "upper_bounds": [0.0, 3.0, inf, inf],
-        "free_mask": [True, True, False, True, True],
-    },
-    "probability_and_pairwise": {
-        "values": [0.11111111111111112],
-        "lower_bounds": [0.0],
-        "upper_bounds": [inf],
-        "free_mask": [True, False, False, False],
-    },
-    "dataframe_params": {
-        "values": [4.0, 3.0],
-        "lower_bounds": [0.0, -inf],
-        "upper_bounds": [inf, inf],
-        "free_mask": [True, False, True],
-    },
-    "pytree_params": {
-        "values": [2000.0],
-        "lower_bounds": [0.0],
-        "upper_bounds": [61320.0],
-        "free_mask": [False, True, False],
-    },
+        lower_bounds=[0.0, -inf, 0.0, -inf, -inf, 0.0, -inf],
+        upper_bounds=[inf] * 7,
+        free_mask=[True] * 7,
+    ),
+    "fixed_and_increasing": ExpectedInternal(
+        values=[-1.0, 2.0, 4.0, 1.0],
+        lower_bounds=[-inf, -inf, 3.0, -inf],
+        upper_bounds=[0.0, 3.0, inf, inf],
+        free_mask=[True, True, False, True, True],
+    ),
+    "probability_and_pairwise": ExpectedInternal(
+        values=[0.11111111111111112],
+        lower_bounds=[0.0],
+        upper_bounds=[inf],
+        free_mask=[True, False, False, False],
+    ),
+    "dataframe_params": ExpectedInternal(
+        values=[4.0, 3.0],
+        lower_bounds=[0.0, -inf],
+        upper_bounds=[inf, inf],
+        free_mask=[True, False, True],
+    ),
+    "pytree_params": ExpectedInternal(
+        values=[2000.0],
+        lower_bounds=[0.0],
+        upper_bounds=[61320.0],
+        free_mask=[False, True, False],
+    ),
 }
 
 
@@ -587,11 +599,11 @@ def test_golden_internal_params(name):
     expected = _EXPECTED[name]
     _, internal = _get_converter_and_internal(case)
 
-    aaae(internal.values, expected["values"])
-    aaae(internal.lower_bounds, expected["lower_bounds"])
-    aaae(internal.upper_bounds, expected["upper_bounds"])
-    assert internal.free_mask.tolist() == expected["free_mask"]
-    assert len(internal.values) == sum(expected["free_mask"])
+    aaae(internal.values, expected.values)
+    aaae(internal.lower_bounds, expected.lower_bounds)
+    aaae(internal.upper_bounds, expected.upper_bounds)
+    assert internal.free_mask.tolist() == expected.free_mask
+    assert len(internal.values) == sum(expected.free_mask)
 
 
 @pytest.mark.parametrize("name", PARAMETRIZATION)
@@ -644,7 +656,6 @@ def test_constraints_with_empty_selections_are_dropped():
             om.IncreasingConstraint(selector=lambda x: x[np.array([], dtype=int)]),
         ],
         bounds=None,
-        start_flat=[1.0, 2.0, 3.0],
     )
     converter, internal = _get_converter_and_internal(case)
 
@@ -698,8 +709,9 @@ def test_violated_linear_constraint_raises_invalid_params_error():
 
 
 def test_fix_that_differs_from_start_value_raises_invalid_params_error():
-    # Uses the old dict interface because the new constraint objects do not have a
-    # value attribute.
+    """Uses the old dict interface because the new constraint objects do not have a
+    value attribute.
+    """
     with pytest.raises(InvalidParamsError):
         _raises(
             np.arange(3),
@@ -730,8 +742,9 @@ def test_covariance_increasing_overlap_raises_invalid_constraint_error():
 
 
 def test_too_many_linear_constraints_raise_invalid_constraint_error():
-    # all three constraints are satisfied at the start params, so the error can only
-    # come from the rank check during consolidation
+    """All three constraints are satisfied at the start params, so the error can only
+    come from the rank check during consolidation.
+    """
     with pytest.raises(InvalidConstraintError):
         _raises(
             np.array([1.0, 2.0]),
@@ -759,8 +772,9 @@ def test_bound_on_probability_constrained_param_raises_invalid_constraint_error(
 
 
 def test_fix_of_covariance_constrained_param_raises_invalid_constraint_error():
-    # fixing any but the first parameter of a covariance constraint is invalid (as
-    # long as the constraint cannot be simplified to bounds)
+    """Fixing any but the first parameter of a covariance constraint is invalid (as
+    long as the constraint cannot be simplified to bounds).
+    """
     with pytest.raises(InvalidConstraintError):
         _raises(
             np.array([1.0, 0.1, 2.0, 0.2, 0.3, 3.0]),
@@ -780,7 +794,7 @@ def test_duplicate_selection_raises_invalid_constraint_error():
 
 
 def test_invalid_selector_field_raises_invalid_constraint_error():
-    # loc selectors are not allowed for general pytree params
+    """Loc selectors are not allowed for general pytree params."""
     with pytest.raises(InvalidConstraintError):
         _raises(
             {"a": 1.0, "b": 2.0},
