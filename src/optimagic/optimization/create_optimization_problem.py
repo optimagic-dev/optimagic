@@ -5,6 +5,7 @@ from typing import Any, Callable, Type
 
 from optimagic import deprecations
 from optimagic.algorithms import ALL_ALGORITHMS
+from optimagic.constraints import Constraint
 from optimagic.deprecations import (
     handle_log_options_throw_deprecated_warning,
     replace_and_warn_about_deprecated_algo_options,
@@ -71,8 +72,7 @@ class OptimizationProblem:
     params: PyTree
     algorithm: Algorithm
     bounds: Bounds | None
-    # TODO: Only allow list[Constraint] or Constraint
-    constraints: list[dict[str, Any]]
+    constraints: list[Constraint]
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     numdiff_options: NumdiffOptions
@@ -497,9 +497,8 @@ def create_optimization_problem(
         if not isinstance(bounds, Bounds | None):
             raise ValueError("bounds must be a Bounds object or None")
 
-        if not all(isinstance(c, dict) for c in constraints):
-            # TODO: Only allow list[Constraint]
-            raise ValueError("constraints must be a list of dictionaries")
+        if not all(isinstance(c, Constraint) for c in constraints):
+            raise ValueError("constraints must be a list of Constraint objects")
 
         if not isinstance(jac, Callable | None):
             raise ValueError("jac must be a callable or None")

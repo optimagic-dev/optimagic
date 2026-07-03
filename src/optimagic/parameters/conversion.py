@@ -35,7 +35,8 @@ def get_converter(
 
     Args:
         params (pytree): The user provided parameters.
-        constraints (list): The user provided constraints.
+        constraints (list): The user provided constraints as list of Constraint
+            objects.
         bounds (Bounds): The user provided bounds.
         func_eval (float or pytree): An evaluation of ``func`` at ``params``.
             Used to flatten the derivative output.
@@ -55,6 +56,10 @@ def get_converter(
             upper_bounds.
 
     """
+    # Temporary seam during the constraints refactoring: the internal pipeline still
+    # works on the deprecated dictionary representation of constraints.
+    constraints = [] if constraints is None else [c._to_dict() for c in constraints]
+
     fast_path = _is_fast_path(
         params=params,
         constraints=constraints,

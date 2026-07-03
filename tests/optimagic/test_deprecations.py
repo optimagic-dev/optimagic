@@ -1066,7 +1066,7 @@ def dummy_func():
 
 def test_pre_process_constraints_trivial_case(dummy_func):
     constraints = om.FixedConstraint(selector=dummy_func)
-    expected = [{"type": "fixed", "selector": dummy_func}]
+    expected = [om.FixedConstraint(selector=dummy_func)]
     assert pre_process_constraints(constraints) == expected
 
 
@@ -1076,8 +1076,8 @@ def test_pre_process_constraints_list_of_constraints(dummy_func):
         om.IncreasingConstraint(selector=dummy_func),
     ]
     expected = [
-        {"type": "fixed", "selector": dummy_func},
-        {"type": "increasing", "selector": dummy_func},
+        om.FixedConstraint(selector=dummy_func),
+        om.IncreasingConstraint(selector=dummy_func),
     ]
     assert pre_process_constraints(constraints) == expected
 
@@ -1092,15 +1092,15 @@ def test_pre_process_constraints_mixed_case(dummy_func):
         {"type": "increasing", "selector": dummy_func},
     ]
     expected = [
-        {"type": "fixed", "selector": dummy_func},
-        {"type": "increasing", "selector": dummy_func},
+        om.FixedConstraint(selector=dummy_func),
+        om.IncreasingConstraint(selector=dummy_func),
     ]
     assert pre_process_constraints(constraints) == expected
 
 
 def test_pre_process_constraints_dict_case(dummy_func):
     constraints = {"type": "fixed", "selector": dummy_func}
-    expected = [{"type": "fixed", "selector": dummy_func}]
+    expected = [om.FixedConstraint(selector=dummy_func)]
     assert pre_process_constraints(constraints) == expected
 
 

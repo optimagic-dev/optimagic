@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+import optimagic as om
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
     _is_fast_deriv_eval,
@@ -41,7 +42,7 @@ def test_get_converter_with_constraints_and_bounds():
     )
     converter, internal = get_converter(
         params=np.arange(3),
-        constraints=[{"loc": 2, "type": "fixed"}],
+        constraints=[om.FixedConstraint(selector=lambda x: x[2])],
         bounds=bounds,
         func_eval=3,
         derivative_eval=2 * np.arange(3),
