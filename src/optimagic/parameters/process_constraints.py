@@ -16,7 +16,6 @@ only be done after consolidation.
 """
 
 import numpy as np
-import pandas as pd
 
 from optimagic.parameters.check_constraints import (
     check_constraints_are_satisfied,
@@ -74,11 +73,8 @@ def process_constraints(
     check_types(constraints)
 
     constraints = _replace_pairwise_equality_by_equality(constraints)
-    constraints = _process_linear_weights(constraints)
     check_constraints_are_satisfied(constraints, params_vec, param_names)
     constraints = _replace_increasing_and_decreasing_by_linear(constraints)
-    # process newly generated linear constraints
-    constraints = _process_linear_weights(constraints)
 
     transformations, constr_info = consolidate_constraints(
         constraints=constraints,
@@ -138,44 +134,6 @@ def _replace_pairwise_equality_by_equality(constraints):
         constraints += equality_constraints
 
     return constraints
-
-
-def _process_linear_weights(constraints):
-    """Harmonize the weights of linear constraints.
-
-    Args:
-        constraints (list): Constraints where the selectors have already been processed.
-
-    Returns:
-        list: Constraints where all weights are Series.
-
-    """
-    processed = []
-    for constr in constraints:
-        if constr["type"] == "linear":
-            raw_weights = constr["weights"]
-
-            if isinstance(raw_weights, (np.ndarray, list, tuple, pd.Series)):
-                if len(raw_weights) != len(constr["index"]):
-                    msg = (
-                        f"weights of length {len(raw_weights)} could not be aligned "
-                        f"with selected parameters of length {len(constr['index'])}."
-                    )
-                    raise ValueError(msg)
-                weights = np.asarray(raw_weights)
-            elif isinstance(raw_weights, (float, int)):
-                weights = np.full(len(constr["index"]), float(raw_weights))
-            else:
-                raise TypeError(f"Invalid type for linear weights {type(raw_weights)}.")
-
-            new_constr = constr.copy()
-            weights_sr = pd.Series(weights, index=constr["index"])
-            new_constr["weights"] = weights_sr
-            processed.append(new_constr)
-        else:
-            processed.append(constr)
-
-    return processed
 
 
 def _replace_increasing_and_decreasing_by_linear(constraints):
@@ -248,8 +206,8 @@ def _create_internal_bounds(lower, upper, constraints):
             int_lower[constr["index"]] = -np.inf
             int_upper[constr["index"]] = np.inf
             relevant_index = constr["index"][-len(constr["right_hand_side"]) :]
-            int_lower[relevant_index] = constr["right_hand_side"]["lower_bound"]
-            int_upper[relevant_index] = constr["right_hand_side"]["upper_bound"]
+            int_lower[relevant_index] = constr["right_hand_side"].lower_bounds
+            int_upper[relevant_index] = constr["right_hand_side"].upper_bounds
         else:
             raise TypeError("Invalid constraint type {}".format(constr["type"]))
 
@@ -275,7 +233,7 @@ def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
         elif constr["type"] == "linear":
             int_fixed[constr["index"]] = False
             relevant_index = constr["index"][-len(constr["right_hand_side"]) :]
-            int_fixed[relevant_index] = np.isfinite(constr["right_hand_side"]["value"])
+            int_fixed[relevant_index] = np.isfinite(constr["right_hand_side"].values)
 
     int_free = ~int_fixed
 
@@ -323,6 +281,6 @@ def _create_internal_fixed_value(fixed_values, constraints):
         elif constr["type"] == "linear":
             int_fix[constr["index"]] = np.nan
             relevant_index = constr["index"][-len(constr["right_hand_side"]) :]
-            int_fix[relevant_index] = constr["right_hand_side"]["value"].to_numpy()
+            int_fix[relevant_index] = constr["right_hand_side"].values
 
     return int_fix
