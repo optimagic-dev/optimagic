@@ -11,6 +11,7 @@ constraints have been rewritten or merged.
 
 from __future__ import annotations
 
+from abc import ABC
 from dataclasses import dataclass
 from typing import Any, TypeAlias
 
@@ -43,22 +44,22 @@ class ConstraintSource:
         return f"constraint {self.position}: {self.constraint!r}"
 
 
+class ResolvedConstraint(ABC):  # noqa: B024
+    """Base class for all resolved constraints used for subtyping."""
+
+
 def _as_position_array(positions: Any) -> IntArray:
-    """Convert positions to a read-only integer array."""
-    out = np.array(positions).astype(np.int64)
-    out.flags.writeable = False
-    return out
+    """Convert positions to an int64 array."""
+    return np.asarray(positions, dtype=np.int64)
 
 
 def _as_float_array(values: Any) -> FloatArray:
-    """Convert values to a read-only float array."""
-    out = np.array(values).astype(np.float64)
-    out.flags.writeable = False
-    return out
+    """Convert values to a float64 array."""
+    return np.asarray(values, dtype=np.float64)
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedFixed:
+class ResolvedFixed(ResolvedConstraint):
     """Fix the selected parameters.
 
     Attributes:
@@ -80,7 +81,7 @@ class ResolvedFixed:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedEquality:
+class ResolvedEquality(ResolvedConstraint):
     """Enforce that the selected parameters are equal.
 
     Attributes:
@@ -97,7 +98,7 @@ class ResolvedEquality:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedPairwiseEquality:
+class ResolvedPairwiseEquality(ResolvedConstraint):
     """Enforce equality between corresponding parameters of multiple selections.
 
     Attributes:
@@ -116,7 +117,7 @@ class ResolvedPairwiseEquality:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedIncreasing:
+class ResolvedIncreasing(ResolvedConstraint):
     """Enforce that the selected parameters are weakly increasing.
 
     Attributes:
@@ -134,7 +135,7 @@ class ResolvedIncreasing:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedDecreasing:
+class ResolvedDecreasing(ResolvedConstraint):
     """Enforce that the selected parameters are weakly decreasing.
 
     Attributes:
@@ -152,7 +153,7 @@ class ResolvedDecreasing:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedProbability:
+class ResolvedProbability(ResolvedConstraint):
     """Enforce that the selected parameters are positive and sum to one.
 
     Attributes:
@@ -169,7 +170,7 @@ class ResolvedProbability:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedCovariance:
+class ResolvedCovariance(ResolvedConstraint):
     """Enforce that the selected parameters form a valid covariance matrix.
 
     Attributes:
@@ -190,7 +191,7 @@ class ResolvedCovariance:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedSDCorr:
+class ResolvedSDCorr(ResolvedConstraint):
     """Enforce that the selected parameters are valid standard deviations and
     correlations.
 
@@ -214,7 +215,7 @@ class ResolvedSDCorr:
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedLinear:
+class ResolvedLinear(ResolvedConstraint):
     """Restrict a weighted sum of the selected parameters.
 
     Attributes:
@@ -237,16 +238,3 @@ class ResolvedLinear:
     def __post_init__(self) -> None:
         object.__setattr__(self, "index", _as_position_array(self.index))
         object.__setattr__(self, "weights", _as_float_array(self.weights))
-
-
-ResolvedConstraint: TypeAlias = (
-    ResolvedFixed
-    | ResolvedEquality
-    | ResolvedPairwiseEquality
-    | ResolvedIncreasing
-    | ResolvedDecreasing
-    | ResolvedProbability
-    | ResolvedCovariance
-    | ResolvedSDCorr
-    | ResolvedLinear
-)

@@ -146,7 +146,7 @@ def to_legacy_dicts(resolved: list[ResolvedConstraint]) -> list[dict[str, Any]]:
                 "index": constraint.index,
                 "regularization": constraint.regularization,
             }
-        else:
+        elif isinstance(constraint, ResolvedLinear):
             new = {
                 "type": "linear",
                 "index": constraint.index,
@@ -158,6 +158,10 @@ def to_legacy_dicts(resolved: list[ResolvedConstraint]) -> list[dict[str, Any]]:
                 new["upper_bound"] = constraint.upper_bound
             if np.isfinite(constraint.value):
                 new["value"] = constraint.value
+        else:
+            raise TypeError(
+                f"Unsupported resolved constraint type: {type(constraint).__name__}."
+            )
         out.append(new)
     return out
 
