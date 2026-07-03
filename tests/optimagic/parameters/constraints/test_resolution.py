@@ -6,11 +6,11 @@ from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 import optimagic as om
 from optimagic.constraints import (
-    ResolvedCovariance,
-    ResolvedEquality,
-    ResolvedFixed,
-    ResolvedLinear,
-    ResolvedPairwiseEquality,
+    ResolvedEqualityConstraint,
+    ResolvedFixedConstraint,
+    ResolvedFlatCovConstraint,
+    ResolvedLinearConstraint,
+    ResolvedPairwiseEqualityConstraint,
 )
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.constraints.resolution import (
@@ -75,7 +75,7 @@ def test_tree_selector(tree_params, tree_params_converter):
         tree_converter=tree_params_converter,
         param_names=PARAM_NAMES,
     )
-    assert isinstance(calculated[0], ResolvedEquality)
+    assert isinstance(calculated[0], ResolvedEqualityConstraint)
     aae(calculated[0].index, np.array([6]))
 
 
@@ -89,7 +89,7 @@ def test_tree_selectors_pairwise(tree_params, tree_params_converter):
         tree_converter=tree_params_converter,
         param_names=PARAM_NAMES,
     )
-    assert isinstance(calculated[0], ResolvedPairwiseEquality)
+    assert isinstance(calculated[0], ResolvedPairwiseEqualityConstraint)
     aae(calculated[0].indices[0], np.array([6]))
     aae(calculated[0].indices[1], np.array([1]))
 
@@ -101,7 +101,7 @@ def test_numpy_selector(np_params_converter):
         tree_converter=np_params_converter,
         param_names=PARAM_NAMES,
     )
-    assert isinstance(calculated[0], ResolvedFixed)
+    assert isinstance(calculated[0], ResolvedFixedConstraint)
     aae(calculated[0].index, np.array([1, 4]))
 
 
@@ -131,7 +131,7 @@ def test_covariance_regularization_is_carried(np_params_converter):
         tree_converter=np_params_converter,
         param_names=PARAM_NAMES,
     )
-    assert isinstance(calculated[0], ResolvedCovariance)
+    assert isinstance(calculated[0], ResolvedFlatCovConstraint)
     assert calculated[0].regularization == 0.1
 
 
@@ -144,7 +144,7 @@ def test_linear_scalar_weights_are_broadcast(np_params_converter):
         tree_converter=np_params_converter,
         param_names=PARAM_NAMES,
     )
-    assert isinstance(calculated[0], ResolvedLinear)
+    assert isinstance(calculated[0], ResolvedLinearConstraint)
     aae(calculated[0].weights, np.array([2.0, 2.0]))
     assert calculated[0].value == 3
     assert calculated[0].lower_bound == -np.inf

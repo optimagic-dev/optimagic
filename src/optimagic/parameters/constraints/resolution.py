@@ -29,15 +29,15 @@ from optimagic.constraints import (
     ConstraintSource,
     IntArray,
     ResolvedConstraint,
-    ResolvedCovariance,
-    ResolvedDecreasing,
-    ResolvedEquality,
-    ResolvedFixed,
-    ResolvedIncreasing,
-    ResolvedLinear,
-    ResolvedPairwiseEquality,
-    ResolvedProbability,
-    ResolvedSDCorr,
+    ResolvedDecreasingConstraint,
+    ResolvedEqualityConstraint,
+    ResolvedFixedConstraint,
+    ResolvedFlatCovConstraint,
+    ResolvedFlatSDCorrConstraint,
+    ResolvedIncreasingConstraint,
+    ResolvedLinearConstraint,
+    ResolvedPairwiseEqualityConstraint,
+    ResolvedProbabilityConstraint,
 )
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.tree_conversion import TreeConverter
@@ -154,33 +154,33 @@ def to_legacy_dicts(resolved: list[ResolvedConstraint]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for constraint in resolved:
         new: dict[str, Any]
-        if isinstance(constraint, ResolvedFixed):
+        if isinstance(constraint, ResolvedFixedConstraint):
             new = {"type": "fixed", "index": constraint.index}
             if constraint.value is not None:
                 new["value"] = constraint.value
-        elif isinstance(constraint, ResolvedEquality):
+        elif isinstance(constraint, ResolvedEqualityConstraint):
             new = {"type": "equality", "index": constraint.index}
-        elif isinstance(constraint, ResolvedPairwiseEquality):
+        elif isinstance(constraint, ResolvedPairwiseEqualityConstraint):
             new = {"type": "pairwise_equality", "indices": list(constraint.indices)}
-        elif isinstance(constraint, ResolvedIncreasing):
+        elif isinstance(constraint, ResolvedIncreasingConstraint):
             new = {"type": "increasing", "index": constraint.index}
-        elif isinstance(constraint, ResolvedDecreasing):
+        elif isinstance(constraint, ResolvedDecreasingConstraint):
             new = {"type": "decreasing", "index": constraint.index}
-        elif isinstance(constraint, ResolvedProbability):
+        elif isinstance(constraint, ResolvedProbabilityConstraint):
             new = {"type": "probability", "index": constraint.index}
-        elif isinstance(constraint, ResolvedCovariance):
+        elif isinstance(constraint, ResolvedFlatCovConstraint):
             new = {
                 "type": "covariance",
                 "index": constraint.index,
                 "regularization": constraint.regularization,
             }
-        elif isinstance(constraint, ResolvedSDCorr):
+        elif isinstance(constraint, ResolvedFlatSDCorrConstraint):
             new = {
                 "type": "sdcorr",
                 "index": constraint.index,
                 "regularization": constraint.regularization,
             }
-        elif isinstance(constraint, ResolvedLinear):
+        elif isinstance(constraint, ResolvedLinearConstraint):
             new = {
                 "type": "linear",
                 "index": constraint.index,

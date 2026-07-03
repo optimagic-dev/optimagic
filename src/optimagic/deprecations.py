@@ -22,7 +22,7 @@ from optimagic.constraints import (
     NonlinearConstraint,
     PairwiseEqualityConstraint,
     ProbabilityConstraint,
-    ResolvedFixed,
+    ResolvedFixedConstraint,
     identity_selector,
 )
 from optimagic.logging.logger import (
@@ -638,11 +638,13 @@ class FixedValueConstraint(FixedConstraint):
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "fixed", "selector": self.selector, "value": self.value}
 
-    def _resolve(self, context: "ResolutionContext") -> ResolvedFixed | None:
+    def _resolve(self, context: "ResolutionContext") -> ResolvedFixedConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedFixed(index=index, sources=(context.source,), value=self.value)
+        return ResolvedFixedConstraint(
+            index=index, sources=(context.source,), value=self.value
+        )
 
 
 def _constraint_from_dict(constr: dict[str, Any]) -> Constraint:

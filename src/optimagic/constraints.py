@@ -109,15 +109,15 @@ class FixedConstraint(Constraint):
         if not callable(self.selector):
             raise InvalidConstraintError("'selector' must be callable.")
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedFixed | None:
+    def _resolve(self, context: ResolutionContext) -> ResolvedFixedConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedFixed(index=index, sources=(context.source,))
+        return ResolvedFixedConstraint(index=index, sources=(context.source,))
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedFixed(ResolvedConstraint):
+class ResolvedFixedConstraint(ResolvedConstraint):
     """Fix the selected parameters.
 
     Attributes:
@@ -160,15 +160,17 @@ class IncreasingConstraint(Constraint):
         if not callable(self.selector):
             raise InvalidConstraintError("'selector' must be callable.")
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedIncreasing | None:
+    def _resolve(
+        self, context: ResolutionContext
+    ) -> ResolvedIncreasingConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedIncreasing(index=index, sources=(context.source,))
+        return ResolvedIncreasingConstraint(index=index, sources=(context.source,))
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedIncreasing(ResolvedConstraint):
+class ResolvedIncreasingConstraint(ResolvedConstraint):
     """Enforce that the selected parameters are weakly increasing.
 
     Attributes:
@@ -207,15 +209,17 @@ class DecreasingConstraint(Constraint):
         if not callable(self.selector):
             raise InvalidConstraintError("'selector' must be callable.")
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedDecreasing | None:
+    def _resolve(
+        self, context: ResolutionContext
+    ) -> ResolvedDecreasingConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedDecreasing(index=index, sources=(context.source,))
+        return ResolvedDecreasingConstraint(index=index, sources=(context.source,))
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedDecreasing(ResolvedConstraint):
+class ResolvedDecreasingConstraint(ResolvedConstraint):
     """Enforce that the selected parameters are weakly decreasing.
 
     Attributes:
@@ -254,15 +258,15 @@ class EqualityConstraint(Constraint):
         if not callable(self.selector):
             raise InvalidConstraintError("'selector' must be callable.")
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedEquality | None:
+    def _resolve(self, context: ResolutionContext) -> ResolvedEqualityConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedEquality(index=index, sources=(context.source,))
+        return ResolvedEqualityConstraint(index=index, sources=(context.source,))
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedEquality(ResolvedConstraint):
+class ResolvedEqualityConstraint(ResolvedConstraint):
     """Enforce that the selected parameters are equal.
 
     Attributes:
@@ -303,15 +307,17 @@ class ProbabilityConstraint(Constraint):
         if not callable(self.selector):
             raise InvalidConstraintError("'selector' must be callable.")
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedProbability | None:
+    def _resolve(
+        self, context: ResolutionContext
+    ) -> ResolvedProbabilityConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedProbability(index=index, sources=(context.source,))
+        return ResolvedProbabilityConstraint(index=index, sources=(context.source,))
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedProbability(ResolvedConstraint):
+class ResolvedProbabilityConstraint(ResolvedConstraint):
     """Enforce that the selected parameters are positive and sum to one.
 
     Attributes:
@@ -354,7 +360,9 @@ class PairwiseEqualityConstraint(Constraint):
         if not all(callable(s) for s in self.selectors):
             raise InvalidConstraintError("All selectors must be callable.")
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedPairwiseEquality | None:
+    def _resolve(
+        self, context: ResolutionContext
+    ) -> ResolvedPairwiseEqualityConstraint | None:
         indices = tuple(context.select(selector) for selector in self.selectors)
 
         lengths = [len(index) for index in indices]
@@ -369,11 +377,13 @@ class PairwiseEqualityConstraint(Constraint):
         if len(indices[0]) == 0:
             return None
 
-        return ResolvedPairwiseEquality(indices=indices, sources=(context.source,))
+        return ResolvedPairwiseEqualityConstraint(
+            indices=indices, sources=(context.source,)
+        )
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedPairwiseEquality(ResolvedConstraint):
+class ResolvedPairwiseEqualityConstraint(ResolvedConstraint):
     """Enforce equality between corresponding parameters of multiple selections.
 
     Attributes:
@@ -429,11 +439,11 @@ class FlatCovConstraint(Constraint):
                 "'regularization' must be a non-negative float or int."
             )
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedCovariance | None:
+    def _resolve(self, context: ResolutionContext) -> ResolvedFlatCovConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedCovariance(
+        return ResolvedFlatCovConstraint(
             index=index,
             regularization=self.regularization,
             sources=(context.source,),
@@ -441,7 +451,7 @@ class FlatCovConstraint(Constraint):
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedCovariance(ResolvedConstraint):
+class ResolvedFlatCovConstraint(ResolvedConstraint):
     """Enforce that the selected parameters form a valid covariance matrix.
 
     Attributes:
@@ -502,11 +512,13 @@ class FlatSDCorrConstraint(Constraint):
                 "'regularization' must be a non-negative float or int."
             )
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedSDCorr | None:
+    def _resolve(
+        self, context: ResolutionContext
+    ) -> ResolvedFlatSDCorrConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedSDCorr(
+        return ResolvedFlatSDCorrConstraint(
             index=index,
             regularization=self.regularization,
             sources=(context.source,),
@@ -514,7 +526,7 @@ class FlatSDCorrConstraint(Constraint):
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedSDCorr(ResolvedConstraint):
+class ResolvedFlatSDCorrConstraint(ResolvedConstraint):
     """Enforce that the selected parameters are valid standard deviations and
     correlations.
 
@@ -614,11 +626,11 @@ class LinearConstraint(Constraint):
         if self.value is not None and not isinstance(self.value, float | int):
             raise InvalidConstraintError("'value' must be a float or an int.")
 
-    def _resolve(self, context: ResolutionContext) -> ResolvedLinear | None:
+    def _resolve(self, context: ResolutionContext) -> ResolvedLinearConstraint | None:
         index = context.select(self.selector)
         if len(index) == 0:
             return None
-        return ResolvedLinear(
+        return ResolvedLinearConstraint(
             index=index,
             weights=self._aligned_weights(index, context.source),
             lower_bound=-np.inf if self.lower_bound is None else self.lower_bound,
@@ -650,7 +662,7 @@ class LinearConstraint(Constraint):
 
 
 @dataclass(frozen=True, eq=False)
-class ResolvedLinear(ResolvedConstraint):
+class ResolvedLinearConstraint(ResolvedConstraint):
     """Restrict a weighted sum of the selected parameters.
 
     Attributes:
