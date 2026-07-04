@@ -1,5 +1,7 @@
 """Implementation of parallelosation of Nelder-Mead algorithm."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Callable, Literal, cast
 
@@ -41,54 +43,88 @@ from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral
 )
 @dataclass(frozen=True)
 class NelderMeadParallel(Algorithm):
-    r"""Parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
-    implementation of the simplex function minimization routine, Computational
-    Economics, 2007.
+    """Minimize a scalar function using a parallel Nelder-Mead algorithm.
 
-    Parameters
-    ----------
-    criterion (callable): A function that takes a Numpy array_like as
-        an argument and return scalar floating point.
+    This is a parallel Nelder-Mead algorithm following :cite:`LeeWiswall2007`,
+    which generalizes the classic simplex algorithm of Nelder and Mead
+    (:cite:`Nelder1965`) to parallel processors. In each iteration, instead of
+    reflecting only the worst vertex of the simplex, the p worst vertices are
+    reflected (and possibly expanded or contracted) simultaneously, so that up to
+    p criterion evaluations can be carried out in parallel. With ``n_cores=1``,
+    the algorithm behaves like a standard sequential Nelder-Mead algorithm.
 
-    x (array_like): 1-D array of initial value of parameters
+    As a direct search method, it does not require derivatives of the objective
+    function and can handle a moderate amount of noise or non-smoothness. It is a
+    local optimizer for scalar objective functions and does not support bounds or
+    constraints. Parallelization is most beneficial when a single criterion
+    evaluation is expensive and the number of parameters is large relative to the
+    number of available cores.
 
-    init_simplex_method (string or callable): Name of the method to create initial
-        simplex or callable which takes as an argument initial value of parameters
-        and returns initial simplex as j+1 x j array, where j is length of x.
-        The default is "gao_han".
+    The algorithm was implemented in optimagic by Jacek Barszczewski.
 
-    n_cores (int): Degrees of parallization. The default is 1 (no parallelization).
-
-    adaptive (bool): Adjust parameters of Nelder-Mead algorithm to accounf
-        for simplex size.
-        The default is True.
-
-    stopping_maxiter (int): Maximum number of algorithm iterations.
-        The default is STOPPING_MAX_ITERATIONS.
-
-    convergence_ftol_abs (float): maximal difference between
-        function value evaluated on simplex points.
-
-    convergence_xtol_abs (float): maximal distance between points in
-        the simplex.
-
-    batch_evaluator (string or callable): See :ref:`batch_evaluators` for
-        details. Default "joblib".
-
-    Returns:
-    -------
-    TYPE
-        DESCRIPTION.
+    .. note::
+        This is a pure-Python implementation within optimagic. It is currently
+        considered experimental.
 
     """
 
     init_simplex_method: InitSimplexLiteral | InitSimplexCallable = "gao_han"
+    """Method to create the initial simplex.
+
+    Either the name of one of the implemented methods, i.e. "pfeffer" (due to L.
+    Pfeffer at Stanford; the default in MATLAB's fminsearch and SciPy), "nash"
+    (:cite:`Nash1990`; the default in R's optim), "gao_han" (:cite:`Gao2012`) or
+    "varadhan_borchers" (:cite:`Varadhan2016`), or a callable that takes the
+    initial parameter vector as argument and returns the initial simplex as an
+    array of shape (j + 1, j), where j is the number of parameters. The default is
+    "gao_han". See :cite:`Wessing2019` for a discussion of the importance of the
+    choice of the initial simplex.
+
+    """
+
     n_cores: PositiveInt = 1
+    """Degree of parallelization.
+
+    The default is 1 (no parallelization). Values larger than or equal to the
+    number of parameters are reduced to the number of parameters minus 1.
+
+    """
+
     adaptive: bool = True
+    """Adjust the parameters of the Nelder-Mead algorithm to the dimension of the
+    problem, following :cite:`Gao2012`.
+
+    The default is True.
+
+    """
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of algorithm iterations."""
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
+    """Maximal absolute difference between the function value at the best vertex of
+    the simplex and the function values at the remaining vertices.
+
+    Convergence requires that this criterion and ``convergence_xtol_abs`` are
+    satisfied at the same time.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_XTOL_ABS
+    """Maximal absolute distance between the best vertex of the simplex and the
+    remaining vertices.
+
+    Convergence requires that this criterion and ``convergence_ftol_abs`` are
+    satisfied at the same time.
+
+    """
+
     batch_evaluator: BatchEvaluator | BatchEvaluatorLiteral = "joblib"
+    """Batch evaluator used for parallel function evaluations.
+
+    See :ref:`batch_evaluators` for details. The default is "joblib".
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
