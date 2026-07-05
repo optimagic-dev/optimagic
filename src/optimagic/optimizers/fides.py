@@ -1,5 +1,7 @@
 """Implement the fides optimizer."""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import Callable, Literal, cast
@@ -47,6 +49,33 @@ from optimagic.typing import (
 )
 @dataclass(frozen=True)
 class Fides(Algorithm):
+    """Minimize a scalar function using the Fides trust-region optimizer.
+
+    Fides implements an Interior Trust-Region Reflective method for bound-constrained
+    optimization, following the approach of :cite:`Coleman1994` and
+    :cite:`Coleman1996`. Accordingly, Fides is named after the Roman goddess of trust
+    and reliability. The optimizer is taken from the ``fides`` package
+    (:cite:`Froehlich2022`), which must be installed separately
+    (``pip install fides>=0.7.4``).
+
+    Fides is a gradient-based local optimizer for smooth, differentiable scalar
+    objective functions. It supports lower and upper bounds (including infinite
+    bounds) but no linear or nonlinear constraints. It requires first derivatives; the
+    Hessian is approximated internally using one of several quasi-Newton update
+    strategies, so no user-provided Hessian is needed. It is well suited for problems
+    with up to several hundred parameters.
+
+    In contrast to many other trust-region methods, Fides solves the full trust-region
+    subproblem exactly rather than approximately. This can yield higher-quality
+    proposal steps at a higher per-iteration cost, which makes Fides especially
+    attractive when the objective function is expensive to evaluate and the cost of
+    solving the trust-region subproblem is negligible in comparison.
+
+    .. note::
+        General linear and nonlinear constraints are not supported by optimagic.
+
+    """
+
     hessian_update_strategy: Literal[
         "bfgs",
         "bb",
@@ -54,30 +83,151 @@ class Fides(Algorithm):
         "dfp",
         "sr1",
     ] = "bfgs"
+    """Quasi-Newton strategy used to approximate the Hessian of the objective.
+
+    The available strategies are:
+
+    - ``"bfgs"``: the Broyden-Fletcher-Goldfarb-Shanno update, a rank-2 update that
+      preserves symmetry and positive definiteness. This is the default.
+    - ``"dfp"``: the Davidon-Fletcher-Powell update.
+    - ``"sr1"``: the Symmetric Rank 1 update, described in :cite:`Nocedal1999`,
+      Chapter 6.2.
+    - ``"bb"``: Broyden's "bad" method, introduced in :cite:`Broyden1965`.
+    - ``"bg"``: Broyden's "good" method, introduced in :cite:`Broyden1965`.
+
+    The general Broyden class update, a convex combination of the BFGS and DFP updates
+    controlled by a parameter :math:`\\phi` (:cite:`Nocedal1999`, Chapter 6.3), and the
+    residual-based approximations ``FX``, ``SSM``, ``TSSM`` and ``GNSBFGS`` provided by
+    the ``fides`` package are not available through this option, because they require
+    access to least-squares residuals or an interpolation parameter that optimagic does
+    not pass through.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    r"""Stop when the absolute change in the objective becomes small.
+
+    Denoting the absolute criterion tolerance by :math:`\alpha` (this parameter) and
+    the relative criterion tolerance by :math:`\beta`
+    (``convergence_ftol_rel``), Fides stops successfully when
+
+    .. math::
+
+        |f_k - f_{k-1}| < \alpha + \beta \, |f_{k-1}|.
+
+    This parameter therefore governs convergence on its own only when
+    ``convergence_ftol_rel`` is set to 0.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    r"""Stop when the relative change in the objective becomes small.
+
+    This is the relative criterion tolerance :math:`\beta` in the joint convergence
+    condition documented under ``convergence_ftol_abs``. It governs convergence on its
+    own only when ``convergence_ftol_abs`` is set to 0 (as is the default).
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    r"""Stop when the step size becomes small.
+
+    The optimization terminates successfully when the norm of the step
+    :math:`\|x_{k} - x_{k-1}\|` falls below this tolerance.
+
+    """
+
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    """Stop when the gradient norm is less than or equal to this tolerance."""
+
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    """Stop when the gradient norm divided by the absolute function value is less than
+    or equal to this tolerance."""
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations."""
+
     stopping_max_seconds: float = np.inf
+    """Maximum number of wall-clock seconds. Deactivated (infinite) by default."""
+
     trustregion_initial_radius: PositiveFloat = 1.0
+    """Initial trust-region radius."""
+
     trustregion_stepback_strategy: Literal[
         "truncate",
         "reflect",
         "reflect_single",
         "mixed",
     ] = "truncate"
+    """Refinement strategy applied when a proposed step reaches a parameter bound.
+
+    The available options are:
+
+    - ``"truncate"``: truncate the step at the boundary and re-solve the restricted
+      subproblem. This is optimagic's default.
+    - ``"reflect"``: recursive reflections at the boundary.
+    - ``"reflect_single"``: a single reflection at the boundary.
+    - ``"mixed"``: mix reflections and truncations.
+
+    Note that optimagic defaults to ``"truncate"``, whereas the ``fides`` package
+    itself defaults to ``"reflect"``.
+
+    """
+
     trustregion_subspace_dimension: Literal[
         "full",
         "2D",
         "scg",
     ] = "full"
+    """Dimension of the subspace in which the trust-region subproblem is solved.
+
+    The available options are:
+
+    - ``"full"``: use the full parameter dimensionality. This is optimagic's default.
+    - ``"2D"``: a two-dimensional Newton/gradient subspace.
+    - ``"scg"``: a conjugate-gradient subspace via Steihaug's method.
+
+    Note that optimagic defaults to ``"full"``, whereas the ``fides`` package itself
+    defaults to ``"2D"``.
+
+    """
+
     trustregion_max_stepback_fraction: float = 0.95
+    """Controls how close steps are allowed to get to the boundary.
+
+    It is the maximal fraction of a step to take if the full step would reach a
+    breakpoint (the bound).
+
+    """
+
     trustregion_decrease_threshold: float = 0.25
+    r"""Acceptance threshold for the trust-region ratio.
+
+    The trust-region radius is decreased when the trust-region ratio falls below this
+    value. It is denoted by :math:`\mu` in algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
+
     trustregion_increase_threshold: float = 0.75
+    r"""Threshold for the trust-region ratio above which the radius may be increased.
+
+    It is denoted by :math:`\eta` in algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
+
     trustregion_decrease_factor: float = 0.25
+    r"""Factor by which the trust-region radius is multiplied when it is decreased.
+
+    It is denoted by :math:`\gamma_1` in algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
+
     trustregion_increase_factor: float = 2.0
+    r"""Factor by which the trust-region radius is multiplied when it is increased.
+
+    It is denoted by :math:`\gamma_2` in algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]

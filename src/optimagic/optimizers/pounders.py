@@ -1,5 +1,7 @@
 """Implement the POUNDERS algorithm."""
 
+from __future__ import annotations
+
 import warnings
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -55,30 +57,179 @@ from optimagic.typing import (
 )
 @dataclass(frozen=True)
 class Pounders(Algorithm):
+    r"""Minimize a nonlinear least-squares problem using the POUNDERS algorithm.
+
+    POUNDERS (:cite:`Wild2015`, :cite:`Benson2017`) is a derivative-free
+    trust-region algorithm that is tailored to nonlinear least-squares problems.
+    This is a pure-Python implementation of the POUNDERS algorithm from the
+    Toolkit for Advanced Optimization (TAO), which is part of PETSc. In contrast
+    to the wrapped TAO version (``tao_pounders``), it runs on all platforms and
+    supports parallel function evaluations.
+
+    POUNDERS can be a useful tool for economists who estimate structural models
+    using indirect inference, because unlike commonly used algorithms such as
+    Nelder-Mead, it exploits the least-squares structure of the objective
+    function by building and maintaining interpolation-based quadratic models of
+    the residuals. It may therefore require fewer criterion evaluations to arrive
+    at a local optimum than general-purpose derivative-free optimizers.
+
+    Use pounders for smooth least-squares problems with a moderate number of
+    parameters when derivatives are not available. The objective function must be
+    a least-squares function, i.e. a function that is decorated with
+    ``om.mark.least_squares`` and returns the residuals rather than the sum of
+    their squares. Bound constraints are supported; other constraint types are
+    not.
+
+    .. note::
+        Scaling the problem is necessary such that bounds correspond to the unit
+        hypercube :math:`[0, 1]^n`. For unconstrained problems, scale each
+        parameter such that unit changes in parameters result in similar
+        order-of-magnitude changes in the criterion value(s).
+
+    """
+
     convergence_gtol_abs: NonNegativeFloat = 1e-8
+    """Convergence tolerance for the absolute gradient norm.
+
+    Stop if the norm of the gradient is less than this value.
+
+    """
+
     convergence_gtol_rel: NonNegativeFloat = 1e-8
+    """Convergence tolerance for the relative gradient norm.
+
+    Stop if the norm of the gradient relative to the criterion value is less than
+    this value.
+
+    """
+
     # TODO: Why can this a bool
     convergence_gtol_scaled: NonNegativeFloat | bool = False
+    """Convergence tolerance for the scaled gradient norm.
+
+    Stop if the norm of the gradient divided by the norm of the gradient at the
+    initial parameters is less than this value. Disabled, i.e. set to False, by
+    default.
+
+    """
+
     max_interpolation_points: PositiveInt | None = None
+    """Maximum number of interpolation points.
+
+    By default, 2 * n + 1 points are used, where n is the number of parameters.
+
+    """
+
     # TODO: Why is this not higher?
     stopping_maxiter: PositiveInt = 2_000
+    """Maximum number of iterations.
+
+    If reached, terminate.
+
+    """
+
     trustregion_initial_radius: PositiveFloat = 0.1
+    """Initial trust-region radius."""
+
     trustregion_minimal_radius: PositiveFloat = 1e-6
+    """Minimal trust-region radius."""
+
     trustregion_maximal_radius: PositiveFloat = 1e6
+    """Maximal trust-region radius."""
+
     trustregion_shrinking_factor_not_successful: PositiveFloat = 0.5
+    """Shrinking factor of the trust-region radius in case the solution vector of the
+    subproblem is not accepted, but the model is fully linear (i.e. "valid")."""
+
     trustregion_expansion_factor_successful: PositiveFloat = 2
+    """Expansion factor of the trust-region radius in case the solution vector of the
+    subproblem is accepted."""
+
     theta1: PositiveFloat = 1e-5
+    """Threshold for adding the current candidate vector to the model.
+
+    Used when searching for affine (i.e. model-improving) points.
+
+    """
+
     theta2: PositiveFloat = 1e-4
+    """Threshold for adding the current candidate vector to the model.
+
+    Used when computing the feature matrices of the residual model.
+
+    """
+
     trustregion_threshold_acceptance: NonNegativeFloat = 0
+    """First threshold for accepting the solution vector of the trust-region
+    subproblem as the best candidate."""
+
     trustregion_threshold_successful: NonNegativeFloat = 0.1
+    """Second threshold for accepting the solution vector of the trust-region
+    subproblem as the best candidate.
+
+    If exceeded, the iteration counts as successful and the trust-region radius is
+    expanded.
+
+    """
+
     c1: NonNegativeFloat | None = None
+    """Threshold for accepting the norm of the current candidate vector.
+
+    Used when searching for affine points in case the set of model-improving
+    points is zero. By default, it is set to sqrt(n), where n is the number of
+    parameters.
+
+    """
+
     c2: NonNegativeFloat = 10
+    """Threshold for accepting the norm of the current candidate vector.
+
+    Used when searching for affine points in case the set of model-improving
+    points is not zero. The default is 10.
+
+    """
+
     trustregion_subproblem_solver: Literal[
         "bntr",
         "gqtpar",
     ] = "bntr"
+    """Solver used for the trust-region subproblem.
+
+    Two internal solvers are supported: "bntr" (Bounded Newton Trust Region; the
+    default, supports bound constraints) and "gqtpar" (based on :cite:`More1983`;
+    does not support bound constraints).
+
+    """
+
     trustregion_subsolver_options: dict[str, Any] | None = None
+    """Options dictionary containing the stopping criteria for the trust-region
+    subproblem solver.
+
+    It takes different keys depending on the subproblem solver used, with the
+    exception of the stopping criterion "maxiter" (default 50), which is always
+    included.
+
+    If the subsolver "bntr" is used, the dictionary may additionally contain the
+    tolerance levels "gtol_abs" (default 1e-8), "gtol_rel" (default 1e-8), and
+    "gtol_scaled" (default 0), the maximum number of gradient descent iterations
+    "maxiter_gradient_descent" (default 5), and the "conjugate_gradient_method"
+    used to solve the subproblem. Available conjugate gradient methods are "cg"
+    (with the two additional stopping criteria "gtol_abs_cg", default 1e-8, and
+    "gtol_rel_cg", default 1e-6), "steihaug_toint", and "trsbox" (default).
+
+    If the subsolver "gqtpar" is employed, the two stopping criteria are "k_easy"
+    (default 0.1) and "k_hard" (default 0.2).
+
+    None of the dictionary keys need to be specified by default, but can be.
+
+    """
+
     n_cores: PositiveInt = DEFAULT_N_CORES
+    """Number of processes used to parallelize the function evaluations.
+
+    The default is 1 (no parallelization).
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
