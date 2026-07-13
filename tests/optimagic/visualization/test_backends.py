@@ -25,7 +25,7 @@ def test_line_plot_all_backends(sample_lines, backend, close_mpl_figures):
 
 def test_line_plot_invalid_backend(sample_lines):
     with pytest.raises(InvalidPlottingBackendError):
-        line_plot(sample_lines, backend="bla")
+        line_plot(sample_lines, backend="bla")  # ty:ignore[invalid-argument-type]
 
 
 def test_line_plot_unavailable_backend(sample_lines, monkeypatch):

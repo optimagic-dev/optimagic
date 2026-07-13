@@ -59,7 +59,7 @@ IS_BAYESOPTIM_INSTALLED = _is_installed("bayes-optim")
 # so if nevergrad is installed, bayes_opt will not work and vice-versa.
 IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2 = (
     _is_installed("bayes_opt")
-    and importlib.metadata.version("bayesian_optimization") > "2.0.0"
+    and importlib.metadata.version("bayesian_optimization") > "2.0.0"  # ty:ignore[possibly-missing-submodule]
 )
 IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED = _is_installed("gradient_free_optimizers")
 IS_PYGAD_INSTALLED = _is_installed("pygad")

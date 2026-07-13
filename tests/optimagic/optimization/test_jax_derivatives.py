@@ -92,7 +92,7 @@ def test_dict_output_works(algorithm):
         fun=criterion,
         params=jnp.array([1.0, 2.0, 3.0]),
         algorithm=algorithm,
-        jac=deriv_dict,
+        jac=deriv_dict,  # ty:ignore[invalid-argument-type]
     )
 
     assert isinstance(res.params, jnp.ndarray)

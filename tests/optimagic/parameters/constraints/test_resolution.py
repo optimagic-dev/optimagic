@@ -38,7 +38,7 @@ def tree_params_converter(tree_params):
         params_unflatten=lambda x: tree_unflatten(
             treedef, x.tolist(), registry=registry
         ),
-        derivative_flatten=None,
+        derivative_flatten=None,  # ty:ignore[invalid-argument-type]
     )
     return converter
 
@@ -82,7 +82,7 @@ def test_tree_selectors_pairwise(tree_params, tree_params_converter):
         om.PairwiseEqualityConstraint(selectors=[lambda x: x[1], lambda x: x[0][1][0]])
     ]
     calculated = resolve_constraints(
-        constraints=constraints,
+        constraints=constraints,  # ty:ignore[invalid-argument-type]
         params=tree_params,
         tree_converter=tree_params_converter,
         param_names=PARAM_NAMES,
@@ -109,15 +109,15 @@ def test_provenance_is_attached(np_params_converter):
         om.EqualityConstraint(selector=lambda x: x[[1, 2]]),
     ]
     calculated = resolve_constraints(
-        constraints=constraints,
+        constraints=constraints,  # ty:ignore[invalid-argument-type]
         params=np.arange(6) + 10.0,
         tree_converter=np_params_converter,
         param_names=PARAM_NAMES,
     )
     for position, resolved in enumerate(calculated):
-        assert len(resolved.sources) == 1
-        assert resolved.sources[0].position == position
-        assert resolved.sources[0].constraint is constraints[position]
+        assert len(resolved.sources) == 1  # ty:ignore[unresolved-attribute]
+        assert resolved.sources[0].position == position  # ty:ignore[unresolved-attribute]
+        assert resolved.sources[0].constraint is constraints[position]  # ty:ignore[unresolved-attribute]
 
 
 def test_empty_selections_are_dropped(np_params_converter):
@@ -131,7 +131,7 @@ def test_empty_selections_are_dropped(np_params_converter):
         ),
     ]
     calculated = resolve_constraints(
-        constraints=constraints,
+        constraints=constraints,  # ty:ignore[invalid-argument-type]
         params=np.arange(6) + 10.0,
         tree_converter=np_params_converter,
         param_names=PARAM_NAMES,
@@ -143,7 +143,7 @@ def test_duplicates_raise(np_params_converter):
     constraints = [om.EqualityConstraint(selector=lambda x: x[[0, 0, 1]])]
     with pytest.raises(InvalidConstraintError, match="duplicates"):
         resolve_constraints(
-            constraints=constraints,
+            constraints=constraints,  # ty:ignore[invalid-argument-type]
             params=np.arange(6) + 10.0,
             tree_converter=np_params_converter,
             param_names=PARAM_NAMES,
@@ -154,7 +154,7 @@ def test_failing_selector_raises_invalid_constraint_error(np_params_converter):
     constraints = [om.FixedConstraint(selector=lambda x: x["invalid"])]
     with pytest.raises(InvalidConstraintError, match="select parameters"):
         resolve_constraints(
-            constraints=constraints,
+            constraints=constraints,  # ty:ignore[invalid-argument-type]
             params=np.arange(6) + 10.0,
             tree_converter=np_params_converter,
             param_names=PARAM_NAMES,
@@ -177,7 +177,7 @@ def test_to_legacy_dicts_shapes(np_params_converter):
         om.LinearConstraint(selector=lambda x: x[[4, 5]], weights=1, upper_bound=5),
     ]
     resolved = resolve_constraints(
-        constraints=constraints,
+        constraints=constraints,  # ty:ignore[invalid-argument-type]
         params=np.arange(6) + 10.0,
         tree_converter=np_params_converter,
         param_names=PARAM_NAMES,

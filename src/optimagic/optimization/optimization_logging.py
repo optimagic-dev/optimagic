@@ -23,7 +23,7 @@ def log_scheduled_steps_and_get_ids(
     default_row = {"status": StepStatus.SCHEDULED.value}
     if logger:
         for row in steps:
-            data = StepResult(**{**default_row, **row})
+            data = StepResult(**{**default_row, **row})  # ty:ignore[invalid-argument-type]
             logger.step_store.insert(data)
 
         last_steps = logger.step_store.select_last_rows(len(steps))

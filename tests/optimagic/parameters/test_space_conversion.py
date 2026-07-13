@@ -214,7 +214,7 @@ def _get_test_case_normalized_covariance():
 
     internal = InternalParams(
         values=np.array([0.05, 1.4133294025, 0.1, 0.2087269956, 1.7165177078, 10]),
-        lower_bounds=[-np.inf, 0, -np.inf, -np.inf, 0, -np.inf],
+        lower_bounds=[-np.inf, 0, -np.inf, -np.inf, 0, -np.inf],  # ty:ignore[invalid-argument-type]
         upper_bounds=np.full(6, np.inf),
         names=None,
     )

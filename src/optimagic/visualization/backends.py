@@ -493,7 +493,7 @@ def _line_plot_bokeh(
         )
 
         if line.show_in_legend:
-            _legend_items.append(LegendItem(label=line.name, renderers=[glyph]))  # type: ignore[list-item]
+            _legend_items.append(LegendItem(label=line.name, renderers=[glyph]))
 
     if horizontal_line is not None:
         span = Span(
@@ -606,7 +606,7 @@ def _grid_line_plot_bokeh(
             subplot_row.append(p)
         plots.append(subplot_row)
 
-    grid = gridplot(  # type: ignore[call-overload]
+    grid = gridplot(
         plots,
         height=height // n_rows if height else None,
         width=width // n_cols if width else None,
@@ -651,7 +651,7 @@ def _line_plot_altair(
 
     if template is None:
         template = "default"
-    alt.theme.enable(template)
+    alt.theme.enable(template)  # ty:ignore[invalid-argument-type]
 
     dfs = []
     for line in lines:
