@@ -259,7 +259,7 @@ def test_process_nonlinear_constraints():
         assert g["n_constr"] == e["n_constr"]
         for value in [0.1, 0.2, 1.2, -2.0]:
             x = np.array([value])
-            assert_array_equal(g["fun"](x), e["fun"](x))
+            assert_array_equal(g["fun"](x), e["fun"](x))  # ty:ignore[call-non-callable]
         assert "jac" in g
         assert "tol" in g
 

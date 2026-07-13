@@ -104,7 +104,7 @@ def test_get_batched_optimization_sample():
         assert isinstance(calc_batch, list)
         for calc_entry, exp_entry in zip(calc_batch, exp_batch, strict=False):
             assert isinstance(calc_entry, np.ndarray)
-            assert calc_entry.tolist() == exp_entry
+            assert calc_entry.tolist() == exp_entry  # ty:ignore[no-matching-overload]
 
 
 @pytest.fixture()

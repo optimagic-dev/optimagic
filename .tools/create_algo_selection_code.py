@@ -223,7 +223,7 @@ def _generate_category_combinations(categories: list[str]) -> list[tuple[str, ..
     result: list[tuple[str, ...]] = []
     for r in range(len(categories) + 1):
         result.extend(map(tuple, map(sorted, combinations(categories, r))))
-    return sorted(result, key=len, reverse=True)  # ty:ignore[invalid-return-type]
+    return sorted(result, key=len, reverse=True)
 
 
 def _apply_filters(

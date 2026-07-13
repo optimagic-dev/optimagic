@@ -15,7 +15,7 @@ def scalar(func: ScalarFuncT) -> ScalarFuncT:
     """Mark a function as a scalar function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.SCALAR
+        wrapper._problem_type = AggregationLevel.SCALAR  # ty:ignore[unresolved-attribute]
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
@@ -32,7 +32,7 @@ def least_squares(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a least squares function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # ty:ignore[unresolved-attribute]
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
@@ -49,7 +49,7 @@ def likelihood(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a likelihood function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # ty:ignore[unresolved-attribute]
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:

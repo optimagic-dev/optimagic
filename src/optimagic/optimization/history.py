@@ -167,7 +167,7 @@ class History:
     # ----------------------------------------------------------------------------------
 
     @property
-    def is_accepted(self) -> NDArray[np.bool_]:  # ty:ignore[invalid-return-type]
+    def is_accepted(self) -> NDArray[np.bool_]:
         """Boolean indicator whether a function value is accepted.
 
         A function value is accepted if it is smaller (or equal) than the monotone

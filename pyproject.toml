@@ -455,7 +455,7 @@ tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src", description = "Run
 
 # --- Feature: type-checking (ty + type stubs) --------------------------------------
 [tool.pixi.feature.type-checking.dependencies]
-ty = ">=0.0.24,<0.0.25"
+ty = ">=0.0.59,<0.0.60"
 
 [tool.pixi.feature.type-checking.pypi-dependencies]
 pandas-stubs = "*"
@@ -466,6 +466,7 @@ types-jinja2 = "*"
 [tool.pixi.feature.type-checking.tasks]
 ty = { cmd = "ty check", description = "Run ty type checker" }
 ty-concise = { cmd = "ty check --output-format concise", description = "Run ty type checker with concise output" }
+ty-fix = { cmd = "ty check --fix", description = "Run ty type checker and apply safe fixes" }
 
 # --- Feature: linux (Linux-only deps) ------------------------------------------------
 [tool.pixi.feature.linux]

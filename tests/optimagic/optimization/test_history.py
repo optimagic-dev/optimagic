@@ -640,5 +640,7 @@ def test_apply_to_batch_func_with_non_scalar_return():
     batch_ids = [0, 0, 1, 1, 2]
     with pytest.raises(ValueError, match="Function <lambda> did not return a scalar"):
         _apply_reduction_to_batches(
-            data, batch_ids, reduction_function=lambda _list: _list
+            data,
+            batch_ids,
+            reduction_function=lambda _list: _list,  # ty:ignore[invalid-argument-type]
         )

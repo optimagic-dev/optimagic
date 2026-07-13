@@ -277,7 +277,7 @@ def test_retrieve_data_from_multistart_result(minimize_result, stack_multistart)
     if stack_multistart:
         assert_array_equal(
             data[0].stacked_local_histories.fun,  # ty:ignore[unresolved-attribute]
-            np.concatenate([hist.fun for hist in data[0].local_histories]),  # ty:ignore[no-matching-overload, not-iterable]
+            np.concatenate([hist.fun for hist in data[0].local_histories]),  # ty:ignore[not-iterable]
         )
     else:
         assert data[0].stacked_local_histories is None
