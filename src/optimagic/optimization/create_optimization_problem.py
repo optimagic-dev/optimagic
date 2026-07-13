@@ -45,7 +45,14 @@ from optimagic.shared.process_user_function import (
     infer_aggregation_level,
     partial_func_of_params,
 )
-from optimagic.typing import AggregationLevel, Direction, ErrorHandling, PyTree
+from optimagic.typing import (
+    AggregationLevel,
+    BatchEvaluator,
+    BatchEvaluatorLiteral,
+    Direction,
+    ErrorHandling,
+    PyTree,
+)
 from optimagic.utilities import propose_alternatives
 
 
@@ -76,6 +83,8 @@ class OptimizationProblem:
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     numdiff_options: NumdiffOptions
+    batch_evaluator: BatchEvaluator | BatchEvaluatorLiteral
+    """Batch evaluator used by `InternalOptimizationProblem.batch_fun`."""
     # TODO: logging will become None | Logger and log_options will be removed
     error_handling: ErrorHandling
     logging: LogOptions | None
@@ -103,6 +112,7 @@ def create_optimization_problem(
     fun_and_jac,
     fun_and_jac_kwargs,
     numdiff_options,
+    batch_evaluator="joblib",
     logging,
     error_handling,
     error_penalty,
@@ -542,6 +552,7 @@ def create_optimization_problem(
         jac=jac,
         fun_and_jac=fun_and_jac,
         numdiff_options=numdiff_options,
+        batch_evaluator=batch_evaluator,
         logging=logging,
         error_handling=error_handling,
         error_penalty=error_penalty,

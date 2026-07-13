@@ -63,6 +63,8 @@ from optimagic.parameters.nonlinear_constraints import process_nonlinear_constra
 from optimagic.parameters.scaling import ScalingOptions, ScalingOptionsDict
 from optimagic.typing import (
     AggregationLevel,
+    BatchEvaluator,
+    BatchEvaluatorLiteral,
     Direction,
     ErrorHandling,
     ErrorHandlingLiteral,
@@ -100,6 +102,7 @@ def maximize(
     fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
+    batch_evaluator: BatchEvaluator | BatchEvaluatorLiteral = "joblib",
     # TODO: add typed-dict support?
     logging: bool | str | Path | LogOptions | dict[str, Any] | None = None,
     error_handling: ErrorHandling | ErrorHandlingLiteral = ErrorHandling.RAISE,
@@ -177,6 +180,11 @@ def maximize(
         fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
+        batch_evaluator: Name of a pre-implemented batch evaluator (currently "joblib",
+            "pathos", or "threading") or a callable that conforms to the
+            :class:`optimagic.BatchEvaluator` protocol. It parallelizes the criterion
+            evaluations an algorithm requests in a batch (e.g. the sampled points of a
+            trust-region optimizer such as tranquilo).
         logging: If None, no logging is used. If a str or pathlib.Path is provided,
             it is interpreted as path to an sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
@@ -247,6 +255,7 @@ def maximize(
         fun_and_jac=fun_and_jac,
         fun_and_jac_kwargs=fun_and_jac_kwargs,
         numdiff_options=numdiff_options,
+        batch_evaluator=batch_evaluator,
         logging=logging,
         log_options=log_options,
         error_handling=error_handling,
@@ -297,6 +306,7 @@ def minimize(
     fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
+    batch_evaluator: BatchEvaluator | BatchEvaluatorLiteral = "joblib",
     # TODO: add typed-dict support?
     logging: bool | str | Path | LogOptions | dict[str, Any] | None = None,
     error_handling: ErrorHandling | ErrorHandlingLiteral = ErrorHandling.RAISE,
@@ -374,6 +384,11 @@ def minimize(
         fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
+        batch_evaluator: Name of a pre-implemented batch evaluator (currently "joblib",
+            "pathos", or "threading") or a callable that conforms to the
+            :class:`optimagic.BatchEvaluator` protocol. It parallelizes the criterion
+            evaluations an algorithm requests in a batch (e.g. the sampled points of a
+            trust-region optimizer such as tranquilo).
         logging: If None, no logging is used. If a str or pathlib.Path is provided,
             it is interpreted as path to an sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
@@ -444,6 +459,7 @@ def minimize(
         fun_and_jac=fun_and_jac,
         fun_and_jac_kwargs=fun_and_jac_kwargs,
         numdiff_options=numdiff_options,
+        batch_evaluator=batch_evaluator,
         logging=logging,
         error_handling=error_handling,
         error_penalty=error_penalty,
@@ -629,9 +645,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     # Create a batch evaluator
     # ==================================================================================
-    # TODO: Make batch evaluator an argument of maximize and minimize and move this
-    # to create_optimization_problem
-    batch_evaluator = process_batch_evaluator("joblib")
+    batch_evaluator = process_batch_evaluator(problem.batch_evaluator)
 
     # ==================================================================================
     # Create the InternalOptimizationProblem

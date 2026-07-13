@@ -5,9 +5,76 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from optimagic import mark
+from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.examples.criterion_functions import sos_scalar
 from optimagic.exceptions import InvalidFunctionError, InvalidNumdiffOptionsError
 from optimagic.optimization.optimize import maximize, minimize
+
+
+def test_minimize_uses_custom_batch_evaluator():
+    """A custom batch_evaluator passed to minimize is the one optimagic calls."""
+    used = []
+
+    def spy_batch_evaluator(
+        func, arguments, *, n_cores=1, error_handling="continue", unpack_symbol=None
+    ):
+        used.append(len(arguments))
+        return joblib_batch_evaluator(
+            func,
+            arguments,
+            n_cores=n_cores,
+            error_handling=error_handling,
+            unpack_symbol=unpack_symbol,
+        )
+
+    minimize(
+        fun=mark.least_squares(lambda x: x),
+        params=np.array([1.0, 2.0, 3.0]),
+        algorithm="tranquilo_ls",
+        batch_evaluator=spy_batch_evaluator,
+        algo_options={"stopping_maxiter": 1},
+    )
+
+    assert used
+
+
+def test_maximize_uses_custom_batch_evaluator():
+    """Maximize threads a custom batch_evaluator through, same as minimize."""
+    used = []
+
+    def spy_batch_evaluator(
+        func, arguments, *, n_cores=1, error_handling="continue", unpack_symbol=None
+    ):
+        used.append(len(arguments))
+        return joblib_batch_evaluator(
+            func,
+            arguments,
+            n_cores=n_cores,
+            error_handling=error_handling,
+            unpack_symbol=unpack_symbol,
+        )
+
+    maximize(
+        fun=lambda x: -x @ x,
+        params=np.array([1.0, 2.0, 3.0]),
+        algorithm="tranquilo",
+        batch_evaluator=spy_batch_evaluator,
+        algo_options={"stopping_maxiter": 1},
+    )
+
+    assert used
+
+
+def test_minimize_rejects_unknown_batch_evaluator():
+    """An unknown batch_evaluator name raises a clear error."""
+    with pytest.raises(ValueError, match="Invalid batch evaluator"):
+        minimize(
+            fun=mark.least_squares(lambda x: x),
+            params=np.array([1.0, 2.0]),
+            algorithm="tranquilo_ls",
+            batch_evaluator="does_not_exist",
+        )
 
 
 def test_sign_is_switched_back_after_maximization():

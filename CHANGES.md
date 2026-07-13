@@ -5,6 +5,12 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
 
+## 0.6.0
+
+- {gh}`684` Adds a user-suppliable `batch_evaluator` argument to `minimize` and
+  `maximize` ({ghuser}`hmgaudecker`).
+
+
 ## 0.5.3
 
 This release introduces **multi-backend plotting** with support for matplotlib, bokeh,
