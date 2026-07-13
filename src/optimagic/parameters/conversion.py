@@ -5,7 +5,7 @@ from typing import Callable
 
 import numpy as np
 
-from optimagic.parameters.process_selectors import process_selectors
+from optimagic.parameters.constraints import resolve_constraints, to_legacy_dicts
 from optimagic.parameters.scale_conversion import get_scale_converter
 from optimagic.parameters.space_conversion import InternalParams, get_space_converter
 from optimagic.parameters.tree_conversion import get_tree_converter
@@ -35,7 +35,8 @@ def get_converter(
 
     Args:
         params (pytree): The user provided parameters.
-        constraints (list): The user provided constraints.
+        constraints (list): The user provided constraints as list of Constraint
+            objects.
         bounds (Bounds): The user provided bounds.
         func_eval (float or pytree): An evaluation of ``func`` at ``params``.
             Used to flatten the derivative output.
@@ -55,6 +56,8 @@ def get_converter(
             upper_bounds.
 
     """
+    constraints = [] if constraints is None else constraints
+
     fast_path = _is_fast_path(
         params=params,
         constraints=constraints,
@@ -79,12 +82,16 @@ def get_converter(
         add_soft_bounds=add_soft_bounds,
     )
 
-    flat_constraints = process_selectors(
+    resolved_constraints = resolve_constraints(
         constraints=constraints,
         params=params,
         tree_converter=tree_converter,
         param_names=internal_params.names,
     )
+
+    # Temporary seam during the constraints refactoring: checking and consolidation
+    # still work on the deprecated dictionary representation of constraints.
+    flat_constraints = to_legacy_dicts(resolved_constraints)
 
     space_converter, internal_params = get_space_converter(
         internal_params=internal_params, internal_constraints=flat_constraints

@@ -19321,7 +19321,7 @@ packages:
   timestamp: 1733688053334
 - pypi: ./
   name: optimagic
-  version: 0.1.dev475+gc5e6012a1.d20260423
+  version: 0.5.4.dev11+g63a1f1424.d20260713
   sha256: 71263c11d276085203c19f5e6af3e045bb96d3e90779d10495cad5397fac1653
   requires_dist:
   - annotated-types>=0.4
