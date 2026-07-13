@@ -7,14 +7,37 @@ Check the module docstring of process_constraints for naming conventions.
 
 """
 
+from dataclasses import dataclass
+
 import numpy as np
-import pandas as pd
 
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.utilities import (
     fast_numpy_full,
     number_of_triangular_elements_to_dimension,
 )
+
+
+@dataclass(frozen=True)
+class LinearRightHandSide:
+    """Right hand side of a consolidated linear constraint.
+
+    All arrays have one entry per consolidated constraint, aligned with the rows of
+    the consolidated weights.
+
+    Attributes:
+        values: Value at which the weighted sum is fixed; nan where it is not fixed.
+        lower_bounds: Lower bound on the weighted sum; -inf where there is none.
+        upper_bounds: Upper bound on the weighted sum; inf where there is none.
+
+    """
+
+    values: np.ndarray
+    lower_bounds: np.ndarray
+    upper_bounds: np.ndarray
+
+    def __len__(self) -> int:
+        return len(self.values)
 
 
 def consolidate_constraints(
@@ -335,13 +358,19 @@ def _plug_equality_constraints_into_selectors(
         is_equal_to[sorted(eq["index"])[1:]] = sorted(eq["index"])[0]
     post_replacements = is_equal_to.astype(int)
     is_fixed_to_other = is_equal_to >= 0
-    helper = pd.Series(post_replacements)
-    replace_dict = helper[helper >= 0].to_dict()
 
     plugged_in = []
     for constr in other_constraints:
+        # linear constraints keep their original index; their equality plugging
+        # sums the weights of equal parameters in _consolidate_linear_constraints,
+        # which requires the weights at their original positions
+        if constr["type"] == "linear":
+            plugged_in.append(constr)
+            continue
         new = constr.copy()
-        new["index"] = pd.Series(constr["index"]).replace(replace_dict).tolist()
+        index = np.asarray(constr["index"])
+        replacements = post_replacements[index]
+        new["index"] = np.where(replacements >= 0, replacements, index).tolist()
         plugged_in.append(new)
 
     linear_constraints, others = _split_constraints(plugged_in, "linear")
@@ -384,139 +413,152 @@ def _consolidate_linear_constraints(
         list: Processed and consolidated linear constraints.
 
     """
-    weights, right_hand_side = _transform_linear_constraints_to_pandas_objects(
+    weights, values, lbs, ubs = _build_linear_system(
         linear_constraints, n_params=len(params_vec)
     )
 
-    weights = _plug_equality_constraints_into_linear_weights(
+    weights = _plug_equalities_into_linear_weights(
         weights, constr_info["post_replacements"]
     )
-    weights, right_hand_side = _plug_fixes_into_linear_weights_and_rhs(
+    weights, values, lbs, ubs = _plug_fixes_into_linear_system(
         weights,
-        right_hand_side,
+        values,
+        lbs,
+        ubs,
         constr_info["is_fixed_to_value"],
         constr_info["fixed_values"],
     )
 
-    involved_parameters = [set(w[w != 0].index) for _, w in weights.iterrows()]
+    involved_parameters = [set(np.flatnonzero(row).tolist()) for row in weights]
 
     bundled_indices = _join_overlapping_lists(involved_parameters)
 
     pc = []
-    for involved_parameters in bundled_indices:
-        w = weights[involved_parameters][
-            (weights[involved_parameters] != 0).any(axis=1)
-        ].copy(deep=True)
-        rhs = right_hand_side.loc[w.index].copy(deep=True)
-        w, rhs = _express_bounds_as_linear_constraints(
-            w, rhs, constr_info["lower_bounds"], constr_info["upper_bounds"]
+    for bundle in bundled_indices:
+        columns = [int(i) for i in bundle]
+        row_mask = (weights[:, columns] != 0).any(axis=1)
+        w = weights[row_mask][:, columns]
+        v, lb, ub = values[row_mask], lbs[row_mask], ubs[row_mask]
+        w, v, lb, ub = _append_bound_rows(
+            w,
+            v,
+            lb,
+            ub,
+            columns,
+            constr_info["lower_bounds"],
+            constr_info["upper_bounds"],
         )
-        w, rhs = _rescale_linear_constraints(w, rhs)
-        w, rhs = _drop_redundant_linear_constraints(w, rhs)
-        _check_consolidated_weights(w, param_names=param_names)
+        w, v, lb, ub = _rescale_rows(w, v, lb, ub)
+        w, v, lb, ub = _drop_redundant_rows(w, v, lb, ub)
+        _check_consolidated_weights(w, columns, param_names)
         to_internal, from_internal = _get_kernel_transformation_matrices(w)
         constr = {
-            "index": list(w.columns),
+            "index": columns,
             "type": "linear",
             "to_internal": to_internal,
             "from_internal": from_internal,
-            "right_hand_side": rhs,
+            "right_hand_side": LinearRightHandSide(
+                values=v, lower_bounds=lb, upper_bounds=ub
+            ),
         }
         pc.append(constr)
 
     return pc
 
 
-def _transform_linear_constraints_to_pandas_objects(linear_constranits, n_params):
-    """Collect information from the linear constraint dictionaries into pandas objects.
+def _build_linear_system(linear_constraints, n_params):
+    """Collect the linear constraints into a dense weight matrix and rhs arrays.
 
     Args:
-        linear_constraints (list): List of constraint of type "linear".
-        n_params (int): number of parameters.
+        linear_constraints (list): List of constraints of type "linear" with an
+            "index" field and weights that are already aligned with the index.
+        n_params (int): Number of parameters.
 
     Returns:
-        weights (pd.DataFrame): DataFrame with one row per constraint and one column
-            per parameter. Columns names are the ilocs of the parameters in params.
-        rhs (pd.DataFrame): DataFrame with the columns "value", "lower_bound" and
-            "upper_bound" that collects the right hand sides of the constraints.
+        weights (np.ndarray): Array of shape (n_constraints, n_params) with one row
+            per constraint.
+        values (np.ndarray): Values at which the weighted sums are fixed; nan where
+            they are not fixed.
+        lbs (np.ndarray): Lower bounds on the weighted sums; -inf where absent.
+        ubs (np.ndarray): Upper bounds on the weighted sums; inf where absent.
 
     """
-    all_weights, all_values, all_lbs, all_ubs = [], [], [], []
-    for constr in linear_constranits:
-        all_weights.append(constr["weights"])
-        all_values.append(constr.get("value", np.nan))
-        all_lbs.append(constr.get("lower_bound", -np.inf))
-        all_ubs.append(constr.get("upper_bound", np.inf))
+    n_rows = len(linear_constraints)
+    weights = np.zeros((n_rows, n_params))
+    values = np.full(n_rows, np.nan)
+    lbs = np.full(n_rows, -np.inf)
+    ubs = np.full(n_rows, np.inf)
+    for row, constr in enumerate(linear_constraints):
+        index = np.asarray(constr["index"], dtype=np.int64)
+        weights[row, index] = constr["weights"]
+        values[row] = constr.get("value", np.nan)
+        lbs[row] = constr.get("lower_bound", -np.inf)
+        ubs[row] = constr.get("upper_bound", np.inf)
 
-    weights = pd.concat(all_weights, axis=1).T.reset_index()
-    weights = weights.reindex(columns=np.arange(n_params)).fillna(0)
-    values = pd.Series(all_values, name="value")
-    lbs = pd.Series(all_lbs, name="lower_bound")
-    ubs = pd.Series(all_ubs, name="upper_bound")
-    rhs = pd.concat([values, lbs, ubs], axis=1)
-
-    return weights, rhs
+    return weights, values, lbs, ubs
 
 
-def _plug_equality_constraints_into_linear_weights(weights, post_replacements):
+def _plug_equalities_into_linear_weights(weights, post_replacements):
     """Sum the weights of equality constrained parameters.
 
     The sum of the weights is then the new weight of the equality constrained parameter
     that is actually free. The weights of the other parameters are set to zero.
 
     Args:
-        weights (pd.DataFrame): Weight matrices for linear constraints.
-        post_replacements (pd.Series): The _post_replacements column of pp.
+        weights (np.ndarray): Weight matrix of shape (n_constraints, n_params).
+        post_replacements (np.ndarray): For each parameter the position of the
+            parameter it is equal to; -1 for parameters that are not replaced.
 
     Returns:
-        plugged_weights (pd.DataFrame)
+        np.ndarray: The plugged in weight matrix.
 
     """
-    w = weights.T
-    plugged_iloc = pd.Series(post_replacements)
-    plugged_iloc = plugged_iloc.where(plugged_iloc >= 0, np.arange(len(plugged_iloc)))
-    w["plugged_iloc"] = plugged_iloc
+    followers = np.flatnonzero(post_replacements >= 0)
+    if len(followers) == 0:
+        return weights
 
-    plugged_weights = w.groupby("plugged_iloc").sum()
-    plugged_weights = plugged_weights.reindex(w.index).fillna(0).T
+    out = weights.copy()
+    representatives = post_replacements[followers]
+    np.add.at(out, (slice(None), representatives), out[:, followers])
+    out[:, followers] = 0
 
-    return plugged_weights
+    return out
 
 
-def _plug_fixes_into_linear_weights_and_rhs(
-    weights, rhs, is_fixed_to_value, fixed_value
+def _plug_fixes_into_linear_system(
+    weights, values, lbs, ubs, is_fixed_to_value, fixed_value
 ):
     """Set weights of fixed parameters to 0 and adjust right hand sides accordingly.
 
     Args:
-        weights (pd.DataFrame): Weight matrix for linear constraint.
-        rhs (pd.DataFrame): Right hand side of the linear constraint.
-        is_fixed_to_value (pd.Series): The _is_fixed_to_value column of pp.
-        fixed_value (pd.Series): The _fixed_value column of pp.
+        weights (np.ndarray): Weight matrix of shape (n_constraints, n_params).
+        values (np.ndarray): Values at which the weighted sums are fixed.
+        lbs (np.ndarray): Lower bounds on the weighted sums.
+        ubs (np.ndarray): Upper bounds on the weighted sums.
+        is_fixed_to_value (np.ndarray): Boolean array of length n_params.
+        fixed_value (np.ndarray): Array of length n_params with the fixed values.
 
     Returns:
-        new_weights (pd.DataFrame)
-        new_rhs (pd.DataFrame)
+        The adjusted (weights, values, lbs, ubs).
 
     """
-    ilocs = np.arange(len(fixed_value))
-    fixed_ilocs = ilocs[is_fixed_to_value].tolist()
-    new_rhs = rhs.copy()
+    if not is_fixed_to_value.any():
+        return weights, values, lbs, ubs
+
+    fixed_contribution = weights[:, is_fixed_to_value] @ fixed_value[is_fixed_to_value]
     new_weights = weights.copy()
+    new_weights[:, is_fixed_to_value] = 0
 
-    if len(fixed_ilocs) > 0:
-        fixed_values = fixed_value[fixed_ilocs]
-        fixed_contribution = weights[fixed_ilocs] @ fixed_values
-        for column in ["lower_bound", "upper_bound", "value"]:
-            new_rhs[column] = new_rhs[column] - fixed_contribution
-        for i in fixed_ilocs:
-            new_weights[i] = 0
-
-    return new_weights, new_rhs
+    return (
+        new_weights,
+        values - fixed_contribution,
+        lbs - fixed_contribution,
+        ubs - fixed_contribution,
+    )
 
 
-def _express_bounds_as_linear_constraints(weights, rhs, lower, upper):
-    """Express bounds of linearly constrained params as linear constraint.
+def _append_bound_rows(w, v, lb, ub, columns, lower_bounds, upper_bounds):
+    """Express bounds of linearly constrained params as additional linear constraints.
 
     In general it is easier to keep bounds separately from the constraints
     but in the case of linearly constrained parameters we need to express them as
@@ -524,116 +566,121 @@ def _express_bounds_as_linear_constraints(weights, rhs, lower, upper):
     reparametrization.
 
     Args:
-        weights (pd.DataFrame): The weight matrix of the linear constraint.
-        rhs (pd.DataFrame): The right hand side of the linear constraint.
-        lower (np.ndarray): Lower bounds.
-        upper (np.ndarray): Upper bounds.
+        w (np.ndarray): Weight matrix of one bundle, shape (n_rows, len(columns)).
+        v (np.ndarray): Values at which the weighted sums are fixed.
+        lb (np.ndarray): Lower bounds on the weighted sums.
+        ub (np.ndarray): Upper bounds on the weighted sums.
+        columns (list): The parameter positions the bundle applies to, sorted.
+        lower_bounds (np.ndarray): Lower bounds of all parameters.
+        upper_bounds (np.ndarray): Upper bounds of all parameters.
 
     Returns:
-        extended_weights (pd.DataFrame)
-        extended_rhs (pd.DataFrame)
+        The extended (w, v, lb, ub).
 
     """
-    additional_pc = []
-    for i in weights.columns:
-        new = {}
-        if np.isfinite(lower[i]):
-            new["lower_bound"] = lower[i]
-        if np.isfinite(upper[i]):
-            new["upper_bound"] = upper[i]
-        if new != {}:
-            new["weights"] = pd.Series([1], name="w", index=[i])
-            additional_pc.append(new)
+    extra_rows, extra_lb, extra_ub = [], [], []
+    for pos, i in enumerate(columns):
+        has_lower = np.isfinite(lower_bounds[i])
+        has_upper = np.isfinite(upper_bounds[i])
+        if has_lower or has_upper:
+            row = np.zeros(len(columns))
+            row[pos] = 1
+            extra_rows.append(row)
+            extra_lb.append(lower_bounds[i] if has_lower else -np.inf)
+            extra_ub.append(upper_bounds[i] if has_upper else np.inf)
 
-    if len(additional_pc) > 0:
-        new_weights, new_rhs = _transform_linear_constraints_to_pandas_objects(
-            additional_pc, len(lower)
-        )
-        new_weights = new_weights[weights.columns]
+    if extra_rows:
+        w = np.vstack([w, extra_rows])
+        v = np.concatenate([v, np.full(len(extra_rows), np.nan)])
+        lb = np.concatenate([lb, extra_lb])
+        ub = np.concatenate([ub, extra_ub])
 
-        extended_weights = pd.concat([weights, new_weights]).reset_index(drop=True)
-        extended_rhs = pd.concat([rhs, new_rhs]).reset_index(drop=True)
-    else:
-        extended_weights, extended_rhs = weights, rhs
-
-    return extended_weights, extended_rhs
+    return w, v, lb, ub
 
 
-def _rescale_linear_constraints(weights, rhs):
-    """Rescale rows in weights such that the first nonzero element equals one.
+def _rescale_rows(w, v, lb, ub):
+    """Rescale rows in w such that the first nonzero element equals one.
 
-    This will make it easier to detect redundant rows.
+    This will make it easier to detect redundant rows. If a row is rescaled with a
+    negative factor, its lower and upper bound switch roles.
 
     Args:
-        weights (pd.DataFrame): The weight matrix of the linear constraint.
-        rhs (pd.DataFrame): The right hand side of the linear constraint.
+        w (np.ndarray): Weight matrix of one bundle.
+        v (np.ndarray): Values at which the weighted sums are fixed.
+        lb (np.ndarray): Lower bounds on the weighted sums.
+        ub (np.ndarray): Upper bounds on the weighted sums.
 
     Returns:
-        new_weights (pd.DataFrame)
-        new_rhs (pd.DataFrame)
+        The rescaled (w, v, lb, ub).
 
     """
-    first_nonzero = weights.replace(0, np.nan).bfill(axis=1).iloc[:, 0]
-    scaling_factor = 1 / first_nonzero.to_numpy().reshape(-1, 1)
-    new_weights = scaling_factor * weights
-    scaled_rhs = scaling_factor * rhs
-    new_rhs = scaled_rhs.copy()
-    new_rhs["lower_bound"] = scaled_rhs["lower_bound"].where(
-        scaling_factor.flatten() > 0, scaled_rhs["upper_bound"]
-    )
-    new_rhs["upper_bound"] = scaled_rhs["upper_bound"].where(
-        scaling_factor.flatten() > 0, scaled_rhs["lower_bound"]
-    )
+    first_nonzero_pos = np.argmax(w != 0, axis=1)
+    first_nonzero = w[np.arange(len(w)), first_nonzero_pos]
+    factor = 1 / first_nonzero
 
-    return new_weights, new_rhs
+    new_w = w * factor.reshape(-1, 1)
+    new_v = v * factor
+    scaled_lb = lb * factor
+    scaled_ub = ub * factor
+    negative = factor < 0
+    new_lb = np.where(negative, scaled_ub, scaled_lb)
+    new_ub = np.where(negative, scaled_lb, scaled_ub)
+
+    return new_w, new_v, new_lb, new_ub
 
 
-def _drop_redundant_linear_constraints(weights, rhs):
+def _drop_redundant_rows(w, v, lb, ub):
     """Drop linear constraints that are implied by other linear constraints.
 
-    This is not yet very smart. We just check for linearly dependent weights.
+    This is not yet very smart. We just merge rows with identical weights, keeping
+    the strictest bounds. Rows with a fixed value keep the value and lose their
+    bounds. The first occurrence order of unique rows is preserved because the
+    internal parametrization depends on the row order.
 
     Args:
-        weights (pd.DataFrame): The weight matrix of the linear constraint.
-        rhs (pd.DataFrame): The right hand side of the linear constraint.
+        w (np.ndarray): Weight matrix of one bundle.
+        v (np.ndarray): Values at which the weighted sums are fixed.
+        lb (np.ndarray): Lower bounds on the weighted sums.
+        ub (np.ndarray): Upper bounds on the weighted sums.
 
     Returns:
-        new_weights (pd.DataFrame)
-        new_rhs (pd.DataFrame)
+        The deduplicated (w, v, lb, ub).
+
+    Raises:
+        ValueError: If identical weighted sums are fixed to different values.
 
     """
-    weights["dupl_group"] = weights.groupby(list(weights.columns)).ngroup()
-    rhs["dupl_group"] = weights["dupl_group"]
-    weights.set_index("dupl_group", inplace=True)
+    # normalize -0.0 to 0.0 so that rows only differing in the sign of a zero (which
+    # happens when a row is rescaled with a negative factor) are grouped together
+    normalized = w + 0.0
 
-    new_weights = weights.drop_duplicates()
-
-    def _consolidate_fix(x):
-        vc = x.value_counts(dropna=True)
-        if len(vc) == 0:
-            return np.nan
-        elif len(vc) == 1:
-            return vc.index[0]
-        else:
-            raise ValueError
-
-    ub = rhs.groupby("dupl_group")["upper_bound"].min()
-    lb = rhs.groupby("dupl_group")["lower_bound"].max()
-    fix = rhs.groupby("dupl_group")["value"].apply(_consolidate_fix)
-
-    # remove the bounds for fixed parameters
-    ub = ub.where(fix.isnull(), np.inf)
-    lb = lb.where(fix.isnull(), -np.inf)
-
-    new_rhs = pd.concat(
-        [lb, ub, fix], axis=1, names=["lower_bound", "upper_bound", "value"]
+    unique_rows, first_positions, inverse = np.unique(
+        normalized, axis=0, return_index=True, return_inverse=True
     )
-    new_rhs = new_rhs.reindex(new_weights.index)
+    order = np.argsort(first_positions)
 
-    return new_weights, new_rhs
+    n_groups = len(unique_rows)
+    new_w = unique_rows[order]
+    new_v = np.full(n_groups, np.nan)
+    new_lb = np.full(n_groups, -np.inf)
+    new_ub = np.full(n_groups, np.inf)
+
+    for out_position, group in enumerate(order):
+        members = inverse == group
+        distinct_values = np.unique(v[members][np.isfinite(v[members])])
+        if len(distinct_values) > 1:
+            raise ValueError
+        elif len(distinct_values) == 1:
+            # bounds are dropped for fixed weighted sums
+            new_v[out_position] = distinct_values[0]
+        else:
+            new_lb[out_position] = lb[members].max()
+            new_ub[out_position] = ub[members].min()
+
+    return new_w, new_v, new_lb, new_ub
 
 
-def _check_consolidated_weights(weights, param_names):
+def _check_consolidated_weights(weights, columns, param_names):
     """Check the rank condition on the linear weights."""
     n_constraints, n_params = weights.shape
 
@@ -650,7 +697,7 @@ def _check_consolidated_weights(weights, param_names):
         "constraints as linear constraints but as bounds, fixes, increasing or "
         "decreasing constraints."
     )
-    relevant_names = [param_names[i] for i in weights.columns]
+    relevant_names = [param_names[i] for i in columns]
 
     if n_constraints > n_params:
         raise InvalidConstraintError(
@@ -669,7 +716,7 @@ def _get_kernel_transformation_matrices(weights):
     See :ref:`linear_constraint_implementation` for details.
 
     Args:
-        weights (pd.DataFrame): Weight matrix of a linear constraint.
+        weights (np.ndarray): Weight matrix of a linear constraint bundle.
 
     """
     n_constraints, n_params = weights.shape
@@ -677,7 +724,7 @@ def _get_kernel_transformation_matrices(weights):
     identity = np.eye(n_params)
 
     i = 0
-    filled_weights = weights
+    filled_weights = weights.copy()
     while len(filled_weights) < n_params:
         candidate = np.vstack([identity[i], filled_weights])
         if np.linalg.matrix_rank(candidate) == len(candidate):
