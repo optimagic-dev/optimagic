@@ -1206,7 +1206,7 @@ def test_nonlinear_dict_without_selection_field_selects_all_params():
     func = lambda x: x @ x  # noqa: E731
     got = pre_process_constraints([{"type": "nonlinear", "func": func, "value": 1}])
     params = np.arange(3)
-    assert got[0].selector(params) is params
+    assert got[0].selector(params) is params  # ty:ignore[unresolved-attribute]
 
 
 def test_nonlinear_dict_loc_selector_has_no_value_indexing(df_params):
@@ -1221,7 +1221,7 @@ def test_nonlinear_dict_loc_selector_has_no_value_indexing(df_params):
             }
         ]
     )
-    selected = got[0].selector(df_params)
+    selected = got[0].selector(df_params)  # ty:ignore[unresolved-attribute]
     pd.testing.assert_frame_equal(selected, df_params.loc[["b", "e"]])
 
 
@@ -1230,7 +1230,7 @@ def test_pairwise_equality_dict_with_selectors_is_converted():
     got = pre_process_constraints(
         [{"type": "pairwise_equality", "selectors": selectors}]
     )
-    assert got == [om.PairwiseEqualityConstraint(selectors=selectors)]
+    assert got == [om.PairwiseEqualityConstraint(selectors=selectors)]  # ty:ignore[invalid-argument-type]
 
 
 def test_loc_on_numpy_params():
