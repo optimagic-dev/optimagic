@@ -72,6 +72,7 @@ def consolidate_constraints(
         other_constraints,
         fixed_values=constr_info["fixed_values"],
         is_fixed_to_value=constr_info["is_fixed_to_value"],
+        param_values=parvec,
         param_names=param_names,
     )
 
@@ -231,7 +232,7 @@ def _consolidate_fixes_with_equality_constraints(
 
 
 def _fold_fixes_into_probability_constraints(
-    constraints, fixed_values, is_fixed_to_value, param_names
+    constraints, fixed_values, is_fixed_to_value, param_values, param_names
 ):
     """Shrink probability selectors to exclude parameters with compatible fixes.
 
@@ -251,6 +252,7 @@ def _fold_fixes_into_probability_constraints(
         fixed_values (np.ndarray): 1d array with fixed values (NaN where free).
         is_fixed_to_value (np.ndarray): 1d boolean array that is True for
             parameters fixed to a value.
+        param_values (np.ndarray): 1d array with the flattened parameter values.
         param_names (list): Names of the flattened parameters. Used for error
             messages only.
 
@@ -303,6 +305,17 @@ def _fold_fixes_into_probability_constraints(
                 "selected parameters after folding in fixes. This is violated "
                 f"for:\n{problematic}"
             )
+
+        free_values = param_values[free_idx]
+        if not np.isfinite(free_values[-1]) or free_values[-1] <= 0:
+            positive_positions = np.flatnonzero(
+                np.isfinite(free_values) & (free_values > 0)
+            )
+            if len(positive_positions) > 0:
+                pivot_position = positive_positions[
+                    np.argmax(free_values[positive_positions])
+                ]
+                free_idx.append(free_idx.pop(pivot_position))
 
         new_constr = {**constr, "index": free_idx}
         if fixed_sum > 0.0:

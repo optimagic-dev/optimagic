@@ -105,7 +105,7 @@ def test_probability_from_internal_with_sum_target(sum_target):
     external = kt.probability_from_internal(internal, constr)
 
     assert np.isclose(external.sum(), sum_target)
-    # Internal pivot stays at 1 regardless of sum_target — so the inverse map is
+    # Internal pivot stays at 1 regardless of sum_target, so the inverse map is
     # a simple division by the last external entry.
     assert np.allclose(external / external[-1], internal / internal[-1])
 

@@ -59,6 +59,7 @@ def test_fold_fixes_into_probability_constraints_passes_through_when_no_fixes():
         constraints,
         fixed_values=fixed_values,
         is_fixed_to_value=is_fixed_to_value,
+        param_values=np.full(4, 0.25),
         param_names=["a", "b", "c", "d"],
     )
 
@@ -74,6 +75,7 @@ def test_fold_fixes_into_probability_constraints_shrinks_index_on_zero_fix():
         constraints,
         fixed_values=fixed_values,
         is_fixed_to_value=is_fixed_to_value,
+        param_values=np.array([0.0, 0.3, 0.0, 0.3, 0.4]),
         param_names=["a", "b", "c", "d", "e"],
     )
 
@@ -96,6 +98,7 @@ def test_fold_fixes_into_probability_constraints_passes_other_types_through():
         constraints,
         fixed_values=fixed_values,
         is_fixed_to_value=is_fixed_to_value,
+        param_values=np.full(5, 0.2),
         param_names=["a", "b", "c", "d", "e"],
     )
 
@@ -111,6 +114,7 @@ def test_fold_fixes_into_probability_constraints_shrinks_and_scales_on_non_zero_
         constraints,
         fixed_values=fixed_values,
         is_fixed_to_value=is_fixed_to_value,
+        param_values=np.array([0.3, 0.2, 0.2, 0.3]),
         param_names=["a", "b", "c", "d"],
     )
 
@@ -130,6 +134,7 @@ def test_fold_fixes_into_probability_constraints_rejects_negative_fix():
             constraints,
             fixed_values=fixed_values,
             is_fixed_to_value=is_fixed_to_value,
+            param_values=np.array([-0.1, 0.5, 0.6]),
             param_names=["a", "b", "c"],
         )
 
@@ -144,6 +149,7 @@ def test_fold_fixes_into_probability_constraints_rejects_fixes_summing_to_one():
             constraints,
             fixed_values=fixed_values,
             is_fixed_to_value=is_fixed_to_value,
+            param_values=np.array([0.7, 0.3, 0.0, 0.0]),
             param_names=["a", "b", "c", "d"],
         )
 
@@ -160,8 +166,25 @@ def test_fold_fixes_into_probability_constraints_rejects_too_few_free():
             constraints,
             fixed_values=fixed_values,
             is_fixed_to_value=is_fixed_to_value,
+            param_values=np.array([0.0, 0.0, 1.0]),
             param_names=["a", "b", "c"],
         )
+
+
+def test_fold_fixes_into_probability_constraints_uses_positive_pivot():
+    constraints = [{"type": "probability", "index": [0, 1, 2]}]
+    fixed_values = np.array([np.nan, np.nan, 0.2])
+    is_fixed_to_value = np.array([False, False, True])
+
+    result = _fold_fixes_into_probability_constraints(
+        constraints,
+        fixed_values=fixed_values,
+        is_fixed_to_value=is_fixed_to_value,
+        param_values=np.array([0.8, 0.0, 0.2]),
+        param_names=["a", "b", "c"],
+    )
+
+    assert result[0]["index"] == [1, 0]
 
 
 def test_process_constraints_folds_zero_fix_on_probability():

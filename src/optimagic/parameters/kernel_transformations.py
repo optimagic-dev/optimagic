@@ -334,7 +334,7 @@ def probability_from_internal_jacobian(internal_values, constr):
     where :math:`1` denotes a vector of all ones and :math:`I_m` the identity
     matrix. The jacobian can be computed as
 
-    .. math::  J(f)(x) = \frac{S}{\sigma} I_m - \frac{S}{\sigma^2} 1 x^\top
+    .. math::  J(f)(x) = \frac{S}{\sigma} I_m - \frac{S}{\sigma^2} x 1^\top
 
     When ``sum_target`` is absent from ``constr`` (or ``constr`` is ``None``),
     :math:`S = 1` and the Jacobian reduces to the unscaled form.

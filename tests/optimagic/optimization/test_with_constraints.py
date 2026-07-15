@@ -391,6 +391,24 @@ def test_probability_constraint_with_non_zero_fix_on_selector_element():
     aaae(res.params, [0.2, 0.2, 0.3, 0.3], decimal=4)
 
 
+def test_probability_constraint_with_fixed_original_pivot():
+    def criterion(params):
+        target = np.array([0.4, 0.4, 0.2])
+        return np.sum((params - target) ** 2)
+
+    res = minimize(
+        fun=criterion,
+        params=np.array([0.8, 0.0, 0.2]),
+        algorithm="scipy_lbfgsb",
+        constraints=[
+            om.ProbabilityConstraint(lambda x: x),
+            om.FixedConstraint(lambda x: x[[2]]),
+        ],
+    )
+
+    aaae(res.params, [0.4, 0.4, 0.2], decimal=4)
+
+
 def test_covariance_constraint_in_2_by_2_case():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
