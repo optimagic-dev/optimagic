@@ -5,6 +5,14 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
 
+## Unreleased
+
+- Allows a `FixedConstraint` pinning selected elements to any value in `[0, 1)` (with
+  their sum strictly less than one) to coexist with a `ProbabilityConstraint` on the
+  same parameters. The fixed entries are held at their values and the remaining free
+  entries are optimised on a simplex summing to `1 - sum(fixed values)`.
+
+
 ## 0.5.3
 
 This release introduces **multi-backend plotting** with support for matplotlib, bokeh,

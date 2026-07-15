@@ -254,6 +254,14 @@ full parameter vector and returns the subset of parameters that should be constr
         >>> res.params.round(2) # doctest: +SKIP
         array([0.53, 0.33, 0.13, 0.  , 0.2 , 0.  ])
 
+    You can combine a ``ProbabilityConstraint`` with a ``FixedConstraint`` that
+    pins some of the selected entries. The fixed values must each be in
+    ``[0, 1)``, sum to strictly less than one, and leave at least two free
+    entries. The remaining free entries are then optimised on the simplex
+    that sums to ``1 - sum(fixed values)``. This is useful when part of a
+    larger model does not need to contribute to the probability, or when
+    some weights are set externally.
+
 
 ```
 

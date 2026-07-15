@@ -97,6 +97,31 @@ def test_probability_to_internal_jacobian(dim, seed):  # noqa: ARG001
     aaae(deriv, numerical_deriv.derivative, decimal=3)
 
 
+@pytest.mark.parametrize("sum_target", [0.2, 0.5, 0.9])
+def test_probability_from_internal_with_sum_target(sum_target):
+    internal = get_internal_probability(dim=5)
+    constr = {"type": "probability", "index": [0, 1, 2, 3, 4], "sum_target": sum_target}
+
+    external = kt.probability_from_internal(internal, constr)
+
+    assert np.isclose(external.sum(), sum_target)
+    # Internal pivot stays at 1 regardless of sum_target, so the inverse map is
+    # a simple division by the last external entry.
+    assert np.allclose(external / external[-1], internal / internal[-1])
+
+
+@pytest.mark.parametrize("sum_target", [0.2, 0.5, 0.9])
+def test_probability_from_internal_jacobian_with_sum_target(sum_target):
+    internal = get_internal_probability(dim=10)
+    constr = {"type": "probability", "index": list(range(10)), "sum_target": sum_target}
+
+    func = partial(kt.probability_from_internal, constr=constr)
+    numerical_deriv = first_derivative(func, internal)
+    deriv = kt.probability_from_internal_jacobian(internal, constr)
+
+    aaae(deriv, numerical_deriv.derivative, decimal=3)
+
+
 @pytest.mark.parametrize("dim, seed", to_test)
 def test_sdcorr_from_internal_jacobian(dim, seed):  # noqa: ARG001
     internal = get_internal_cholesky(dim)
