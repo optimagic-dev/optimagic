@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from optimagic import build_internal_fun, mark
+from optimagic import Bounds, ScalingOptions, build_internal_fun, mark
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.examples.criterion_functions import sos_scalar
 from optimagic.exceptions import InvalidFunctionError, InvalidNumdiffOptionsError
@@ -68,6 +68,57 @@ def test_build_internal_fun_matches_the_driver_evaluator():
 
     point = np.array([0.5, -0.5, 0.25])
     aaae(worker_fun(point)[0], captured["driver_fun"](point)[0])
+
+
+def test_build_internal_fun_matches_the_driver_evaluator_under_scaling():
+    """With scaling, the worker evaluator still equals the driver's.
+
+    Scaling changes the internal parameter space (here: bounds-scaling maps each
+    parameter to [0, 1]), so a worker that builds its evaluator without the driver's
+    scaling maps the same internal point to different external params. Passing the
+    same `scaling` to build_internal_fun keeps the two callables interchangeable.
+    """
+    captured = {}
+
+    def capturing_batch_evaluator(
+        func, arguments, *, n_cores=1, error_handling="continue", unpack_symbol=None
+    ):
+        captured["driver_fun"] = func
+        return joblib_batch_evaluator(
+            func, arguments, n_cores=n_cores, error_handling=error_handling
+        )
+
+    fun = mark.least_squares(lambda p: p["x"])
+    params = {"x": np.array([1.0, 2.0, 3.0])}
+    bounds = Bounds(
+        lower={"x": np.zeros(3)},
+        upper={"x": np.full(3, 10.0)},
+    )
+    scaling = ScalingOptions(method="bounds")
+
+    minimize(
+        fun=fun,
+        params=params,
+        algorithm="pounders",
+        bounds=bounds,
+        scaling=scaling,
+        batch_evaluator=capturing_batch_evaluator,
+        algo_options={"stopping_maxiter": 1, "n_cores": 2},
+    )
+
+    worker_fun = build_internal_fun(
+        fun=fun,
+        params=params,
+        algorithm="pounders",
+        bounds=bounds,
+        scaling=scaling,
+    )
+
+    point = np.array([0.25, 0.5, 0.75])
+    driver_value, driver_hist, _ = captured["driver_fun"](point)
+    worker_value, worker_hist, _ = worker_fun(point)
+    aaae(worker_value, driver_value)
+    aaae(worker_hist.params["x"], driver_hist.params["x"])
 
 
 def test_minimize_uses_custom_batch_evaluator():

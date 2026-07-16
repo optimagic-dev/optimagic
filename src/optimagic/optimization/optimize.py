@@ -707,6 +707,7 @@ def build_internal_fun(
     algo_options: dict[str, Any] | None = None,
     error_handling: ErrorHandling | ErrorHandlingLiteral = ErrorHandling.RAISE,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
+    scaling: bool | ScalingOptions | ScalingOptionsDict = False,
 ) -> Callable[[NDArray[np.float64]], tuple[Any, Any, Any]]:
     """Build the internal point evaluator that `minimize` uses, without optimizing.
 
@@ -738,6 +739,9 @@ def build_internal_fun(
         algo_options: Algorithm options; only those affecting the converter matter.
         error_handling: `"raise"` or `"continue"`, matching the driver.
         numdiff_options: Numerical-differentiation options, matching the driver.
+        scaling: The scaling passed to `minimize` on the driver. Scaling changes
+            the internal parameter space, so a worker built without the driver's
+            scaling would map the same internal point to different external params.
 
     Returns:
         A callable mapping an internal parameter vector to the
@@ -761,7 +765,7 @@ def build_internal_fun(
         logging=None,
         error_handling=error_handling,
         error_penalty=None,
-        scaling=False,
+        scaling=scaling,
         multistart=False,
         collect_history=True,
         skip_checks=False,
