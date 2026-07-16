@@ -14,10 +14,12 @@ is then passed to `_optimize` which handles the optimization logic.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Sequence, Type, cast
 
 import numpy as np
+from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.batch_evaluators import process_batch_evaluator
@@ -181,7 +183,7 @@ def maximize(
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
         batch_evaluator: Name of a pre-implemented batch evaluator (currently "joblib",
-            "pathos", or "threading") or a callable that conforms to the
+            "pathos", "threading", or "mpi") or a callable that conforms to the
             :class:`optimagic.BatchEvaluator` protocol. It parallelizes the criterion
             evaluations an algorithm requests in a batch (e.g. the sampled points of a
             trust-region optimizer such as tranquilo).
@@ -385,7 +387,7 @@ def minimize(
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
         batch_evaluator: Name of a pre-implemented batch evaluator (currently "joblib",
-            "pathos", or "threading") or a callable that conforms to the
+            "pathos", "threading", or "mpi") or a callable that conforms to the
             :class:`optimagic.BatchEvaluator` protocol. It parallelizes the criterion
             evaluations an algorithm requests in a batch (e.g. the sampled points of a
             trust-region optimizer such as tranquilo).
@@ -496,8 +498,26 @@ def minimize(
     return _optimize(problem)
 
 
-def _optimize(problem: OptimizationProblem) -> OptimizeResult:
-    """Solve an optimization problem."""
+@dataclass(frozen=True)
+class _InternalProblemBundle:
+    """Everything `_optimize` needs after the internal problem has been built."""
+
+    internal_problem: "InternalOptimizationProblem"
+    x: Any
+    converter: Any
+    internal_params: Any
+    first_crit_eval: Any
+    logger: "LogStore[Any, Any] | None"
+
+
+def _build_internal_problem(problem: "OptimizationProblem") -> _InternalProblemBundle:
+    """Build the internal optimization problem from a processed public problem.
+
+    Shared by `_optimize` (which then runs the optimizer) and `build_internal_fun`
+    (which hands the per-point evaluation callable to a distributed worker). Keeping
+    the construction in one place guarantees a worker's converter and value
+    post-processing match the driver's bit-for-bit.
+    """
     # ==================================================================================
     # Split constraints into nonlinear and reparametrization parts
     # ==================================================================================
@@ -665,6 +685,124 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         nonlinear_constraints=internal_nonlinear_constraints,
         logger=logger,
     )
+
+    return _InternalProblemBundle(
+        internal_problem=internal_problem,
+        x=x,
+        converter=converter,
+        internal_params=internal_params,
+        first_crit_eval=first_crit_eval,
+        logger=logger,
+    )
+
+
+def build_internal_fun(
+    fun: FunType | CriterionType | None = None,
+    params: PyTree | None = None,
+    algorithm: AlgorithmType | None = None,
+    *,
+    bounds: Bounds | ScipyBounds | Sequence[tuple[float, float]] | None = None,
+    constraints: ConstraintsType | None = None,
+    fun_kwargs: dict[str, Any] | None = None,
+    algo_options: dict[str, Any] | None = None,
+    error_handling: ErrorHandling | ErrorHandlingLiteral = ErrorHandling.RAISE,
+    numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
+    scaling: bool | ScalingOptions | ScalingOptionsDict = False,
+) -> Callable[[NDArray[np.float64]], tuple[Any, Any, Any]]:
+    """Build the internal point evaluator that `minimize` uses, without optimizing.
+
+    The callable maps an internal parameter vector `x` to the
+    `(value, history_entry, log_entry)` triple that the optimizer's batch machinery
+    consumes:
+
+    - `value` — the aggregated, direction-adjusted value the optimizer reads;
+    - `history_entry` — the entry appended to the in-memory optimization history;
+    - `log_entry` — the row written to the log database.
+
+    This is the seam for evaluating an optimizer's batches on distributed workers.
+    The driver runs `minimize` with a batch evaluator that fans candidate points out;
+    each worker builds this callable on its own resources and evaluates the points the
+    driver broadcasts. Because every worker builds the converter and value
+    post-processing from the same `params`, `bounds`, `constraints`, and `algorithm`,
+    each worker's callable is interchangeable with the driver's — they differ only in
+    which local resources `fun` runs on. Pass the same arguments here that the driver
+    passes to `minimize`.
+
+    Args:
+        fun: The objective function, exactly as passed to `minimize`.
+        params: Start parameters; fix the converter and the history vocabulary.
+        algorithm: The algorithm `minimize` runs on the driver; only its parameter
+            handling (solver type, bounds support) affects the returned callable.
+        bounds: The bounds passed to `minimize` on the driver.
+        constraints: The constraints passed to `minimize` on the driver.
+        fun_kwargs: Extra keyword arguments bound into `fun`.
+        algo_options: Algorithm options; only those affecting the converter matter.
+        error_handling: `"raise"` or `"continue"`, matching the driver.
+        numdiff_options: Numerical-differentiation options, matching the driver.
+        scaling: The scaling passed to `minimize` on the driver. Scaling changes
+            the internal parameter space, so a worker built without the driver's
+            scaling would map the same internal point to different external params.
+
+    Returns:
+        A callable mapping an internal parameter vector to the
+        `(value, history_entry, log_entry)` triple.
+
+    """
+    problem = create_optimization_problem(
+        direction=Direction.MINIMIZE,
+        fun=fun,
+        params=params,
+        algorithm=algorithm,
+        bounds=bounds,
+        fun_kwargs=fun_kwargs,
+        constraints=constraints,
+        algo_options=algo_options,
+        jac=None,
+        jac_kwargs=None,
+        fun_and_jac=None,
+        fun_and_jac_kwargs=None,
+        numdiff_options=numdiff_options,
+        logging=None,
+        error_handling=error_handling,
+        error_penalty=None,
+        scaling=scaling,
+        multistart=False,
+        collect_history=True,
+        skip_checks=False,
+        x0=None,
+        method=None,
+        args=None,
+        hess=None,
+        hessp=None,
+        callback=None,
+        options=None,
+        tol=None,
+        criterion=None,
+        criterion_kwargs=None,
+        derivative=None,
+        derivative_kwargs=None,
+        criterion_and_derivative=None,
+        criterion_and_derivative_kwargs=None,
+        lower_bounds=None,
+        log_options=None,
+        upper_bounds=None,
+        soft_lower_bounds=None,
+        soft_upper_bounds=None,
+        scaling_options=None,
+        multistart_options=None,
+    )
+    return _build_internal_problem(problem).internal_problem._pure_evaluate_fun
+
+
+def _optimize(problem: OptimizationProblem) -> OptimizeResult:
+    """Solve an optimization problem."""
+    bundle = _build_internal_problem(problem)
+    internal_problem = bundle.internal_problem
+    x = bundle.x
+    converter = bundle.converter
+    internal_params = bundle.internal_params
+    first_crit_eval = bundle.first_crit_eval
+    logger = bundle.logger
 
     # ==================================================================================
     # Do actual optimization

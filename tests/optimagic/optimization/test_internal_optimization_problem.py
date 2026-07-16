@@ -1,4 +1,5 @@
 from copy import copy
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -708,6 +709,76 @@ def test_error_in_exploration_fun_maximize(error_max_problem):
     )
     expected = [-np.inf, -np.inf]
     assert np.allclose(got, expected)
+
+
+# ======================================================================================
+# test batch logging
+# ======================================================================================
+
+
+class _RecordingStore:
+    def __init__(self):
+        self.entries = []
+
+    def insert(self, entry):
+        self.entries.append(entry)
+
+
+class _RecordingLogger:
+    def __init__(self):
+        self.iteration_store = _RecordingStore()
+
+
+@pytest.mark.parametrize("n_cores", [1, 2])
+def test_batch_fun_logs_every_point_with_the_running_step(base_problem, n_cores):
+    """Every point in a batch is logged once, stamped with the running step.
+
+    The per-point evaluation is pure, so a point evaluated on a worker process
+    carries its log row back to the process that owns the database and is recorded
+    there with the optimizer's current step — not the worker's unstepped problem.
+    """
+    problem = copy(base_problem)
+    problem._logger = _RecordingLogger()
+    problem = problem.with_step_id(7)
+
+    problem.batch_fun(
+        [np.array([1.0, 2.0, 3.0]), np.array([4.0, 5.0, 6.0])],
+        n_cores=n_cores,
+        batch_size=2,
+    )
+
+    entries = problem._logger.iteration_store.entries
+    assert len(entries) == 2
+    assert [entry.step for entry in entries] == [7, 7]
+    aaae(sorted(entry.scalar_fun for entry in entries), [14, 77])
+
+
+def test_batch_fun_restamps_worker_step_onto_log_rows(base_problem):
+    """A point evaluated on an unstepped worker is logged with the driver's step.
+
+    A worker builds its evaluator without a step, so its log row arrives with
+    `step=None`; the process that records the batch stamps the running step so the
+    row is attributed to the current optimization step rather than left unattributed.
+    """
+
+    def unstepped_worker_evaluator(
+        func, arguments, *, n_cores=1, error_handling="continue", unpack_symbol=None
+    ):
+        out = []
+        for arg in arguments:
+            value, hist_entry, log_entry = func(arg)
+            out.append((value, hist_entry, replace(log_entry, step=None)))
+        return out
+
+    problem = copy(base_problem)
+    problem._logger = _RecordingLogger()
+    problem._batch_evaluator = unstepped_worker_evaluator
+    problem = problem.with_step_id(7)
+
+    problem.batch_fun([np.array([1.0, 2.0, 3.0])], n_cores=1, batch_size=1)
+
+    entries = problem._logger.iteration_store.entries
+    assert [entry.step for entry in entries] == [7]
 
 
 # ======================================================================================

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from optimagic import constraints, mark, sandbox, timing, utilities
 from optimagic.algorithms import algos
+from optimagic.batch_evaluators import executor_batch_evaluator
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,
@@ -41,7 +42,7 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.optimization.history import History
 from optimagic.optimization.multistart_options import MultistartOptions
-from optimagic.optimization.optimize import maximize, minimize
+from optimagic.optimization.optimize import build_internal_fun, maximize, minimize
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.optimizers import pygad
 from optimagic.parameters.bounds import Bounds
@@ -62,6 +63,7 @@ except ImportError:
 
 
 __all__ = [
+    "build_internal_fun",
     "maximize",
     "minimize",
     "utilities",
@@ -87,6 +89,7 @@ __all__ = [
     "MultistartOptions",
     "NumdiffOptions",
     "BatchEvaluator",
+    "executor_batch_evaluator",
     "FunctionValue",
     "LeastSquaresFunctionValue",
     "ScalarFunctionValue",

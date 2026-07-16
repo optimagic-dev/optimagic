@@ -53,6 +53,9 @@ maintainers = [
     { name = "Tim Mensinger", email = "mensingertim@gmail.com" },
 ]
 
+[project.optional-dependencies]
+mpi = ["mpi4py>=3.1"]
+
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
@@ -203,6 +206,7 @@ markers = [
     "wip: Tests that are work-in-progress.",
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
     "jax: Tests that require jax to be installed and are skipped on non-Linux systems.",
+    "mpi: Tests that launch an MPI program via mpiexec and require mpi4py + mpich.",
 ]
 norecursedirs = ["docs", ".tools"]
 
@@ -392,6 +396,8 @@ module = [
     "numba",
     "pathos",
     "pathos.pools",
+    "mpi4py",
+    "mpi4py.futures",
     "optimagic._version",
     "annotated_types",
     "pdbp",
@@ -524,6 +530,19 @@ kaleido = "<0.3"
 bayesian-optimization = "==1.4.0"
 nevergrad = "*"
 
+# --- Feature: mpi (MPI batch evaluator) ----------------------------------------------
+# mpich (not openmpi) avoids the run-as-root / oversubscription headaches in CI.
+# mpich has no Windows build, so the env is Linux-only (CI runs it on ubuntu-latest).
+[tool.pixi.feature.mpi]
+platforms = ["linux-64"]
+
+[tool.pixi.feature.mpi.dependencies]
+mpi4py = ">=3.1"
+mpich = "*"
+
+[tool.pixi.feature.mpi.tasks]
+tests-mpi = { cmd = "pytest -m mpi", description = "Run the MPI batch-evaluator integration tests" }
+
 # --- Environments --------------------------------------------------------------------
 [tool.pixi.environments]
 # Default dev environment (Python 3.14, everything)
@@ -542,6 +561,8 @@ tests-old-plotly = { features = ["tests", "old-plotly", "py312"] }
 tests-nevergrad-py312 = { features = ["tests", "nevergrad", "py312"] }
 tests-nevergrad-py313 = { features = ["tests", "nevergrad", "py313"] }
 tests-nevergrad-py314 = { features = ["tests", "nevergrad", "py314"] }
+# MPI CI (mpi4py + mpich; one env on the latest python)
+tests-mpi-py314 = { features = ["tests", "mpi", "py314"] }
 # Type checking
 type-checking = { features = ["type-checking", "py314"], solve-group = "py314" }
 # Docs

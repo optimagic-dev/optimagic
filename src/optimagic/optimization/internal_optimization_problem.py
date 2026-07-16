@@ -149,17 +149,14 @@ class InternalOptimizationProblem:
         """
         batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
-            func=self._evaluate_fun,
+            func=self._pure_evaluate_fun,
             arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",
         )
-        fun_values = [result[0] for result in batch_result]
-        hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries, batch_size)
-
-        return fun_values
+        self._record_batch(batch_result, batch_size)
+        return [result[0] for result in batch_result]
 
     def batch_jac(
         self,
@@ -184,16 +181,14 @@ class InternalOptimizationProblem:
         batch_size = n_cores if batch_size is None else batch_size
 
         batch_result = self._batch_evaluator(
-            func=self._evaluate_jac,
+            func=self._pure_evaluate_jac_value,
             arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",
         )
-        jac_values = [result[0] for result in batch_result]
-        hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries, batch_size)
-        return jac_values
+        self._record_batch(batch_result, batch_size)
+        return [result[0] for result in batch_result]
 
     def batch_fun_and_jac(
         self,
@@ -218,17 +213,14 @@ class InternalOptimizationProblem:
         """
         batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
-            func=self._evaluate_fun_and_jac,
+            func=self._pure_evaluate_fun_and_jac_value,
             arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",
         )
-        fun_and_jac_values = [result[0] for result in batch_result]
-        hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries, batch_size)
-
-        return fun_and_jac_values
+        self._record_batch(batch_result, batch_size)
+        return [result[0] for result in batch_result]
 
     def exploration_fun(
         self,
@@ -238,17 +230,35 @@ class InternalOptimizationProblem:
     ) -> list[float]:
         batch_size = n_cores if batch_size is None else batch_size
         batch_result = self._batch_evaluator(
-            func=self._evaluate_exploration_fun,
+            func=self._pure_exploration_fun,
             arguments=x_list,
             n_cores=n_cores,
             # This should always be raise because errors are already handled
             error_handling="raise",
         )
-        fun_values = [result[0] for result in batch_result]
-        hist_entries = [result[1] for result in batch_result]
-        self._history.add_batch(hist_entries, batch_size)
+        self._record_batch(batch_result, batch_size)
+        return [result[0] for result in batch_result]
 
-        return fun_values
+    def _record_batch(
+        self,
+        batch_result: list[tuple[Any, HistoryEntry, IterationState]],
+        batch_size: int,
+    ) -> None:
+        """Add a batch's history entries and write its log rows on this process.
+
+        The batch evaluator runs the pure per-point evaluation, which has no logging
+        side effect, so every point — including those evaluated on a remote worker —
+        carries its history entry and log row back here to be recorded once, by the
+        single process that owns the optimization history and log database. The step is
+        stamped from this process so a worker-evaluated point is attributed to the
+        running optimization step rather than the worker's (unstepped) problem.
+        """
+        self._history.add_batch([result[1] for result in batch_result], batch_size)
+        if self._logger:
+            for result in batch_result:
+                self._logger.iteration_store.insert(
+                    replace(result[2], step=self._step_id)
+                )
 
     def with_new_history(self) -> Self:
         new = copy(self)
@@ -385,54 +395,56 @@ class InternalOptimizationProblem:
 
         return fun_value, hist_entry
 
+    def _pure_evaluate_jac_value(
+        self, x: NDArray[np.float64]
+    ) -> tuple[NDArray[np.float64], HistoryEntry, IterationState]:
+        """Evaluate jac with no logging side effect, returning the log entry too."""
+        if self._jac is not None:
+            return self._pure_evaluate_jac(x)
+        if self._fun_and_jac is not None:
+            (_, jac_value), hist_entry, log_entry = self._pure_evaluate_fun_and_jac(x)
+        else:
+            (_, jac_value), hist_entry, log_entry = (
+                self._pure_evaluate_numerical_fun_and_jac(x)
+            )
+        return jac_value, replace(hist_entry, task=EvalTask.JAC), log_entry
+
     def _evaluate_jac(
         self, x: NDArray[np.float64]
     ) -> tuple[NDArray[np.float64], HistoryEntry]:
-        if self._jac is not None:
-            jac_value, hist_entry, log_entry = self._pure_evaluate_jac(x)
-        else:
-            if self._fun_and_jac is not None:
-                (_, jac_value), hist_entry, log_entry = self._pure_evaluate_fun_and_jac(
-                    x
-                )
-            else:
-                (_, jac_value), hist_entry, log_entry = (
-                    self._pure_evaluate_numerical_fun_and_jac(x)
-                )
-
-            hist_entry = replace(hist_entry, task=EvalTask.JAC)
+        jac_value, hist_entry, log_entry = self._pure_evaluate_jac_value(x)
 
         if self._logger:
             self._logger.iteration_store.insert(log_entry)
 
         return jac_value, hist_entry
 
-    def _evaluate_exploration_fun(
+    def _pure_evaluate_fun_and_jac_value(
         self, x: NDArray[np.float64]
-    ) -> tuple[float, HistoryEntry]:
-        fun_value, hist_entry, log_entry = self._pure_exploration_fun(x)
-
-        if self._logger:
-            self._logger.iteration_store.insert(log_entry)
-
-        return fun_value, hist_entry
+    ) -> tuple[
+        tuple[float | NDArray[np.float64], NDArray[np.float64]],
+        HistoryEntry,
+        IterationState,
+    ]:
+        """Evaluate fun and jac with no logging side effect, returning the log entry."""
+        if self._fun_and_jac is not None:
+            return self._pure_evaluate_fun_and_jac(x)
+        if self._jac is not None:
+            fun_value, hist_entry, log_entry_fun = self._pure_evaluate_fun(x)
+            jac_value, _, log_entry_jac = self._pure_evaluate_jac(x)
+            return (
+                (fun_value, jac_value),
+                replace(hist_entry, task=EvalTask.FUN_AND_JAC),
+                log_entry_fun.combine(log_entry_jac),
+            )
+        return self._pure_evaluate_numerical_fun_and_jac(x)
 
     def _evaluate_fun_and_jac(
         self, x: NDArray[np.float64]
     ) -> tuple[tuple[float | NDArray[np.float64], NDArray[np.float64]], HistoryEntry]:
-        if self._fun_and_jac is not None:
-            (fun_value, jac_value), hist_entry, log_entry = (
-                self._pure_evaluate_fun_and_jac(x)
-            )
-        elif self._jac is not None:
-            fun_value, hist_entry, log_entry_fun = self._pure_evaluate_fun(x)
-            jac_value, _, log_entry_jac = self._pure_evaluate_jac(x)
-            hist_entry = replace(hist_entry, task=EvalTask.FUN_AND_JAC)
-            log_entry = log_entry_fun.combine(log_entry_jac)
-        else:
-            (fun_value, jac_value), hist_entry, log_entry = (
-                self._pure_evaluate_numerical_fun_and_jac(x)
-            )
+        (fun_value, jac_value), hist_entry, log_entry = (
+            self._pure_evaluate_fun_and_jac_value(x)
+        )
 
         if self._logger:
             self._logger.iteration_store.insert(log_entry)

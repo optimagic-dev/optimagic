@@ -9,6 +9,11 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 
 - {gh}`684` Adds a user-suppliable `batch_evaluator` argument to `minimize` and
   `maximize` ({ghuser}`hmgaudecker`).
+- {gh}`685` Adds executor-backed and MPI batch evaluators, a `build_internal_fun`
+  helper that exposes the internal per-point evaluation callable for distributed
+  driver/worker setups, and moves per-point batch logging to the process that owns
+  the log database so every point — including those evaluated on a remote worker — is
+  recorded exactly once ({ghuser}`hmgaudecker`).
 
 
 ## 0.5.3

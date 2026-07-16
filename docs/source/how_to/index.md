@@ -23,6 +23,7 @@ how_to_change_plotting_backend
 how_to_scaling
 how_to_logging
 how_to_errors_during_optimization
+how_to_distributed_optimization
 how_to_slice_plot
 how_to_benchmarking
 how_to_add_optimizers
