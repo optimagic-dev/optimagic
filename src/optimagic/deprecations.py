@@ -1,16 +1,35 @@
 import logging
 import warnings
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, ParamSpec, cast
+from typing import TYPE_CHECKING, Any, Callable, ParamSpec, cast
+
+import numpy as np
+import pandas as pd
 
 from optimagic import mark
-from optimagic.constraints import Constraint, InvalidConstraintError
+from optimagic.constraints import (
+    Constraint,
+    DecreasingConstraint,
+    EqualityConstraint,
+    FixedConstraint,
+    FlatCovConstraint,
+    FlatSDCorrConstraint,
+    IncreasingConstraint,
+    InvalidConstraintError,
+    LinearConstraint,
+    NonlinearConstraint,
+    PairwiseEqualityConstraint,
+    ProbabilityConstraint,
+    ResolvedFixedConstraint,
+    identity_selector,
+)
 from optimagic.logging.logger import (
     LogOptions,
     SQLiteLogOptions,
 )
+from optimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from optimagic.optimization.fun_value import (
     LeastSquaresFunctionValue,
     LikelihoodFunctionValue,
@@ -18,6 +37,9 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.bounds import Bounds
 from optimagic.typing import AggregationLevel
+
+if TYPE_CHECKING:
+    from optimagic.parameters.constraints.resolution import ResolutionContext
 
 _logger = logging.getLogger(__name__)
 
@@ -554,16 +576,14 @@ def handle_log_options_throw_deprecated_warning(
 
 def pre_process_constraints(
     constraints: list[Constraint | dict[str, Any]] | Constraint | dict[str, Any] | None,
-) -> list[dict[str, Any]]:
-    """Convert all ways of specifying constraints to a list of dictionaries.
+) -> list[Constraint]:
+    """Convert all ways of specifying constraints to a list of Constraint objects.
 
-    For the optimagic release 0.5.0 we only implemented the new constraint API, but have
-    not overhauled the internal representation of constraints yet. As a result, we
-    convert all ways of specifying constraints, and in particular the new interface, to
-    the old format, that is, a list of dictionaries.
-
-    Once we have refactor the internal representation of constraints, we will be able to
-    go the other way, and convert all formats to the new one.
+    Deprecated dictionary constraints are converted to the corresponding constraint
+    objects. In particular, the deprecated loc, locs, query and queries selection
+    fields are wrapped into equivalent selector functions. This is the only place
+    that knows about dictionary constraints; it can be removed when they become an
+    error in optimagic version 0.6.0.
 
     """
     if constraints is None:
@@ -577,9 +597,9 @@ def pre_process_constraints(
         invalid_types: list[type] = []
         for constr in constraints:
             if isinstance(constr, Constraint):
-                out.append(constr._to_dict())
-            elif isinstance(constr, dict):
                 out.append(constr)
+            elif isinstance(constr, dict):
+                out.append(_constraint_from_dict(constr))
             else:
                 invalid_types.append(type(constr))
 
@@ -600,3 +620,224 @@ def pre_process_constraints(
         raise InvalidConstraintError(msg)
 
     return out
+
+
+@dataclass(frozen=True)
+class FixedValueConstraint(FixedConstraint):
+    """Fix parameters at an explicit value instead of their start value.
+
+    This exists only to support the deprecated dictionary constraint
+    ``{"type": "fixed", "value": ...}`` and is removed together with dictionary
+    constraints. The value must coincide with the start value of the selected
+    parameters, which is checked during constraints processing.
+
+    """
+
+    value: Any = None
+
+    def _to_dict(self) -> dict[str, Any]:
+        return {"type": "fixed", "selector": self.selector, "value": self.value}
+
+    def _resolve(self, context: "ResolutionContext") -> ResolvedFixedConstraint | None:
+        index = context.select(self.selector)
+        if len(index) == 0:
+            return None
+        return ResolvedFixedConstraint(
+            index=index, sources=(context.source,), value=self.value
+        )
+
+
+def _constraint_from_dict(constr: dict[str, Any]) -> Constraint:
+    """Convert a deprecated dictionary constraint to a Constraint object."""
+    type_ = constr.get("type", None)
+
+    valid_types = {
+        "fixed",
+        "increasing",
+        "decreasing",
+        "equality",
+        "probability",
+        "pairwise_equality",
+        "covariance",
+        "sdcorr",
+        "linear",
+        "nonlinear",
+    }
+    if type_ not in valid_types:
+        msg = (
+            f"Invalid constraint type: {type_}. Valid constraint types are "
+            f"{valid_types}. The invalid constraint is:\n{constr}"
+        )
+        raise InvalidConstraintError(msg)
+
+    if type_ == "pairwise_equality":
+        return PairwiseEqualityConstraint(selectors=_get_selectors_from_dict(constr))
+
+    selector = _get_selector_from_dict(constr)
+
+    out: Constraint
+    if type_ == "fixed":
+        if "value" in constr:
+            out = FixedValueConstraint(selector=selector, value=constr["value"])
+        else:
+            out = FixedConstraint(selector=selector)
+    elif type_ == "increasing":
+        out = IncreasingConstraint(selector=selector)
+    elif type_ == "decreasing":
+        out = DecreasingConstraint(selector=selector)
+    elif type_ == "equality":
+        out = EqualityConstraint(selector=selector)
+    elif type_ == "probability":
+        out = ProbabilityConstraint(selector=selector)
+    elif type_ == "covariance":
+        out = FlatCovConstraint(
+            selector=selector, regularization=constr.get("regularization", 0.0)
+        )
+    elif type_ == "sdcorr":
+        out = FlatSDCorrConstraint(
+            selector=selector, regularization=constr.get("regularization", 0.0)
+        )
+    elif type_ == "linear":
+        out = LinearConstraint(
+            selector=selector,
+            weights=constr.get("weights", None),
+            lower_bound=constr.get("lower_bound", None),
+            upper_bound=constr.get("upper_bound", None),
+            value=constr.get("value", None),
+        )
+    else:
+        out = NonlinearConstraint(
+            selector=selector,
+            func=constr.get("func", None),
+            derivative=constr.get("derivative", None),
+            # in the dict representation the bounds were called lower_bounds and
+            # upper_bounds
+            lower_bound=constr.get("lower_bounds", None),
+            upper_bound=constr.get("upper_bounds", None),
+            value=constr.get("value", None),
+            tol=constr.get("tol", CONSTRAINTS_ABSOLUTE_TOLERANCE),
+        )
+
+    return out
+
+
+def _get_selector_from_dict(constr: dict[str, Any]) -> Callable[[Any], Any]:
+    """Extract the selector of a dict constraint with a single parameter selection.
+
+    loc and query selections are wrapped into selector functions that reproduce their
+    behavior. Since the params are not known here, those functions decide at call
+    time how to select, based on the type of params, and raise an
+    InvalidConstraintError for params that do not support loc or query selections.
+
+    """
+    present = [field for field in ("selector", "loc", "query") if field in constr]
+
+    if not present:
+        # nonlinear constraints have always defaulted to selecting all parameters
+        if constr.get("type") == "nonlinear":
+            return identity_selector
+        msg = (
+            "No valid parameter selection field in constraint. Valid selection "
+            "fields are 'selector', 'loc' and 'query', where 'loc' and 'query' are "
+            f"only supported for some params formats. The constraint is:\n{constr}"
+        )
+        raise InvalidConstraintError(msg)
+    elif len(present) > 1:
+        msg = (
+            f"Too many parameter selection fields in constraint: {present}. "
+            "Constraints must have exactly one parameter selection field. The "
+            f"constraint was:\n{constr}"
+        )
+        raise InvalidConstraintError(msg)
+
+    field = present[0]
+    if field == "selector":
+        selector = constr["selector"]
+    elif field == "loc":
+        if constr.get("type") == "nonlinear":
+            selector = _get_loc_selector_for_nonlinear(constr["loc"])
+        else:
+            selector = _get_loc_selector(constr["loc"])
+    else:
+        if constr.get("type") == "nonlinear":
+            selector = _get_query_selector_for_nonlinear(constr["query"])
+        else:
+            selector = _get_query_selector(constr["query"])
+
+    return selector
+
+
+def _get_selectors_from_dict(constr: dict[str, Any]) -> list[Callable[[Any], Any]]:
+    """Extract the selectors of a dict constraint with multiple selections."""
+    present = [field for field in ("selectors", "locs", "queries") if field in constr]
+
+    if not present:
+        msg = (
+            "No valid parameter selection field in constraint. Valid selection "
+            "fields for pairwise equality constraints are 'selectors', 'locs' and "
+            "'queries', where 'locs' and 'queries' are only supported for some "
+            f"params formats. The constraint is:\n{constr}"
+        )
+        raise InvalidConstraintError(msg)
+    elif len(present) > 1:
+        msg = (
+            f"Too many parameter selection fields in constraint: {present}. "
+            "Constraints must have exactly one parameter selection field. The "
+            f"constraint was:\n{constr}"
+        )
+        raise InvalidConstraintError(msg)
+
+    field = present[0]
+    if field == "selectors":
+        selectors = constr["selectors"]
+    elif field == "locs":
+        selectors = [_get_loc_selector(loc) for loc in constr["locs"]]
+    else:
+        selectors = [_get_query_selector(query) for query in constr["queries"]]
+
+    return selectors
+
+
+def _get_loc_selector(loc: Any) -> Callable[[Any], Any]:
+    def selector(params: Any) -> Any:
+        if isinstance(params, pd.DataFrame) and "value" in params:
+            return params.loc[loc, "value"]
+        elif isinstance(params, (pd.Series, np.ndarray)):
+            return params[loc]
+        else:
+            msg = (
+                "loc selections of parameters are only supported if params are a "
+                "DataFrame with a 'value' column, a pandas Series or a numpy array. "
+                "Use a selector function instead."
+            )
+            raise InvalidConstraintError(msg)
+
+    return selector
+
+
+def _get_query_selector(query: str) -> Callable[[Any], Any]:
+    def selector(params: Any) -> Any:
+        if isinstance(params, pd.DataFrame) and "value" in params:
+            return params.query(query)["value"]
+        else:
+            msg = (
+                "query selections of parameters are only supported if params are a "
+                "DataFrame with a 'value' column. Use a selector function instead."
+            )
+            raise InvalidConstraintError(msg)
+
+    return selector
+
+
+def _get_loc_selector_for_nonlinear(loc: Any) -> Callable[[Any], Any]:
+    def selector(params: Any) -> Any:
+        return params.loc[loc]
+
+    return selector
+
+
+def _get_query_selector_for_nonlinear(query: str) -> Callable[[Any], Any]:
+    def selector(params: Any) -> Any:
+        return params.query(query)
+
+    return selector
