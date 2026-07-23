@@ -22,7 +22,6 @@ from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
-from pybaum import tree_just_flatten
 
 from optimagic.constraints import (
     Constraint,
@@ -41,8 +40,8 @@ from optimagic.constraints import (
 )
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.tree_conversion import TreeConverter
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import PyTree
+from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.typing import VALUE_NAMESPACE, PyTree
 
 
 @dataclass(frozen=True)
@@ -52,14 +51,14 @@ class ResolutionContext:
     Attributes:
         helper: Pytree with the same structure as the user provided params whose
             leaves are the positions of the parameters in the flat parameter vector.
-        registry: Pytree registry used to flatten selections on the helper tree.
+        namespace: optree namespace used to flatten selections on the helper tree.
         param_names: Names of the flat parameters. Used for error messages.
         source: Provenance of the constraint that is being resolved.
 
     """
 
     helper: PyTree
-    registry: dict[type, Any]
+    namespace: str
     param_names: list[str]
     source: ConstraintSource
 
@@ -69,7 +68,7 @@ class ResolutionContext:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
                 raw = selector(self.helper)
-                flat = tree_just_flatten(raw, registry=self.registry)
+                flat = tree_leaves(raw, namespace=self.namespace)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -123,7 +122,6 @@ def resolve_constraints(
             the selected parameters.
 
     """
-    registry = get_registry(extended=True)
     n_params = len(tree_converter.params_flatten(params))
     helper = tree_converter.params_unflatten(np.arange(n_params))
 
@@ -131,7 +129,7 @@ def resolve_constraints(
     for position, constraint in enumerate(constraints):
         context = ResolutionContext(
             helper=helper,
-            registry=dict(registry),
+            namespace=VALUE_NAMESPACE,
             param_names=param_names,
             source=ConstraintSource(constraint=constraint, position=position),
         )

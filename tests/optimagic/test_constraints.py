@@ -29,7 +29,7 @@ from optimagic.constraints import (
 )
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.constraints.resolution import ResolutionContext
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.typing import VALUE_NAMESPACE
 
 
 @pytest.fixture
@@ -204,7 +204,7 @@ def make_context(constraint, position=0, n_params=6):
     """Create a resolution context for a flat numpy params vector."""
     return ResolutionContext(
         helper=np.arange(n_params),
-        registry=dict(get_registry(extended=True)),
+        namespace=VALUE_NAMESPACE,
         param_names=list("abcdef"),
         source=ConstraintSource(constraint=constraint, position=position),
     )

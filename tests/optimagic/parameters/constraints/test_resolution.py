@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal as aae
-from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 import optimagic as om
 from optimagic.constraints import (
@@ -16,7 +15,12 @@ from optimagic.parameters.constraints.resolution import (
     to_legacy_dicts,
 )
 from optimagic.parameters.tree_conversion import TreeConverter
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    tree_flatten,
+    tree_leaves,
+    tree_unflatten,
+)
+from optimagic.typing import VALUE_NAMESPACE
 
 
 @pytest.fixture()
@@ -28,15 +32,14 @@ def tree_params():
 
 @pytest.fixture()
 def tree_params_converter(tree_params):
-    registry = get_registry(extended=True)
-    _, treedef = tree_flatten(tree_params, registry=registry)
+    _, treedef = tree_flatten(tree_params, namespace=VALUE_NAMESPACE)
 
     converter = TreeConverter(
         params_flatten=lambda params: np.array(
-            tree_just_flatten(params, registry=registry)
+            tree_leaves(params, namespace=VALUE_NAMESPACE)
         ),
         params_unflatten=lambda x: tree_unflatten(
-            treedef, x.tolist(), registry=registry
+            treedef, x.tolist(), namespace=VALUE_NAMESPACE
         ),
         derivative_flatten=None,
     )

@@ -36,15 +36,14 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import tree_just_flatten
 
 import optimagic as om
 from optimagic import first_derivative
 from optimagic.deprecations import pre_process_constraints
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import AggregationLevel
+from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.typing import VALUE_NAMESPACE, AggregationLevel
 from optimagic.utilities import cov_params_to_matrix, get_rng, sdcorr_params_to_matrix
 
 inf = float("inf")
@@ -75,8 +74,9 @@ class Case:
         Derived from ``params`` rather than spelled out per case: flattening is not what
         these tests exercise, so the flat start values should not be duplicated by hand.
         """
-        registry = get_registry(extended=True)
-        return np.array(tree_just_flatten(self.params, registry=registry), dtype=float)
+        return np.array(
+            tree_leaves(self.params, namespace=VALUE_NAMESPACE), dtype=float
+        )
 
 
 def _all_but_hours(p):
