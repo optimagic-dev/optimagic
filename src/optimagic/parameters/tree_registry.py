@@ -88,6 +88,9 @@ def leaf_names(
     _register_namespaces()
     _check_namespace(namespace)
 
+    if namespace in OPTREE_NAMESPACES:
+        namespace = get_path_names_namespace(namespace)
+
     with optree.dict_insertion_ordered(True, namespace=namespace):
         paths, _, _ = optree.tree_flatten_with_path(
             tree, is_leaf=is_leaf, namespace=namespace
@@ -160,51 +163,73 @@ def _check_namespace(namespace: str) -> None:
         )
 
 
+def get_path_names_namespace(namespace: str) -> str:
+    """Return the internal namespace whose flatten functions build path entries."""
+    return f"{namespace}__names"
+
+
 def _register_namespaces() -> None:
     """Register pytree flatten/unflatten methods for each namespace.
+
+    Each namespace in ``OPTREE_NAMESPACES`` is registered in two variants:
+
+    1. The plain namespace, whose flatten function returns only the leaf values.
+    2. A ``"{namespace}__names"`` variant (see ``get_path_names_namespace``),
+        whose flatten function additionally returns path names for the leaves.
 
     This method must only be called once as each namespace must only be registered
     one time.
     """
     global _are_namespaces_registered  # noqa: PLW0603
-    if _are_namespaces_registered is False:
+    if not _are_namespaces_registered:
         _are_namespaces_registered = True
+
         for namespace in OPTREE_NAMESPACES:
-            optree.register_pytree_node(
-                pd.DataFrame,
-                partial(_flatten_df, data_col=namespace),
-                partial(_unflatten_df, data_col=namespace),
+            _register_namespace(
                 namespace=namespace,
+                data_col=namespace,
+                with_names=False,
+            )
+            _register_namespace(
+                namespace=get_path_names_namespace(namespace),
+                data_col=namespace,
+                with_names=True,
             )
 
-            optree.register_pytree_node(
-                pd.Series,
-                _flatten_series,
-                _unflatten_series,
-                namespace=namespace,
-            )
 
-            optree.register_pytree_node(
-                np.ndarray,
-                _flatten_ndarray,
-                _unflatten_ndarray,
-                namespace=namespace,
-            )
+def _register_namespace(namespace: str, data_col: str, with_names: bool) -> None:
+    """Register flatten/unflatten functions for all supported types in a namespace."""
+    optree.register_pytree_node(
+        pd.DataFrame,
+        partial(_flatten_df, data_col=data_col, with_names=with_names),
+        partial(_unflatten_df, data_col=data_col),
+        namespace=namespace,
+    )
 
-            if IS_JAX_INSTALLED:
-                optree.register_pytree_node(
-                    jaxlib._jax.ArrayImpl,
-                    lambda arr: (
-                        arr.flatten().tolist(),  # type: ignore[attr-defined]
-                        arr.shape,  # type: ignore[attr-defined]
-                        _array_element_names(arr),  # type: ignore[arg-type]
-                    ),
-                    lambda aux_data, leaves: jnp.array(leaves).reshape(aux_data),
-                    namespace=namespace,
-                )
+    optree.register_pytree_node(
+        pd.Series,
+        partial(_flatten_series, with_names=with_names),
+        _unflatten_series,
+        namespace=namespace,
+    )
+
+    optree.register_pytree_node(
+        np.ndarray,
+        partial(_flatten_ndarray, with_names=with_names),
+        _unflatten_ndarray,
+        namespace=namespace,
+    )
+
+    if IS_JAX_INSTALLED:
+        optree.register_pytree_node(
+            jaxlib._jax.ArrayImpl,
+            partial(_flatten_jax_array, with_names=with_names),
+            _unflatten_jax_array,
+            namespace=namespace,
+        )
 
 
-def _flatten_df(df, data_col):
+def _flatten_df(df, data_col, with_names=False):
     """Flatten a dataframe."""
     is_value_df = "value" in df
     if is_value_df:
@@ -216,7 +241,8 @@ def _flatten_df(df, data_col):
         "is_value_df": is_value_df,
         "df": df,
     }
-    return flat, aux_data, _get_df_names(df)
+    entries = _get_df_names(df) if with_names else None
+    return flat, aux_data, entries
 
 
 def _unflatten_df(aux_data, leaves, data_col):
@@ -232,12 +258,13 @@ def _unflatten_df(aux_data, leaves, data_col):
     return out
 
 
-def _flatten_series(series):
+def _flatten_series(series, with_names=False):
     """Flatten a series."""
+    entries = list(series.index.map(_index_element_to_string)) if with_names else None
     return (
         series.tolist(),
         {"index": series.index, "name": series.name},
-        list(series.index.map(_index_element_to_string)),
+        entries,
     )
 
 
@@ -246,9 +273,21 @@ def _unflatten_series(aux_data, leaves):
     return pd.Series(leaves, **aux_data)
 
 
-def _flatten_ndarray(arr):
+def _flatten_ndarray(arr, with_names=False):
     """Flatten a numpy array."""
-    return arr.flatten().tolist(), arr.shape, _array_element_names(arr)
+    entries = _array_element_names(arr) if with_names else None
+    return arr.flatten().tolist(), arr.shape, entries
+
+
+def _flatten_jax_array(arr, with_names=False):
+    """Flatten a jax array."""
+    entries = _array_element_names(arr) if with_names else None
+    return arr.flatten().tolist(), arr.shape, entries
+
+
+def _unflatten_jax_array(aux_data, leaves):
+    """Reconstruct a jax array."""
+    return jnp.array(leaves).reshape(aux_data)
 
 
 def _unflatten_ndarray(aux_data, leaves):
