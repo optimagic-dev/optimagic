@@ -193,7 +193,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     """
     constr_info = constr_info.copy()
-    constr_info["index"] = parnames
+    # as an array, boolean indexing with masks like is_fixed_to_value works below
+    constr_info["index"] = np.array(parnames)
 
     prob_msg = (
         "{} constraints are incompatible with fixes or bounds. "
