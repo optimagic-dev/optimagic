@@ -346,16 +346,19 @@ def test_invalid_start_params():
 
 
 def test_probability_constraint_with_zero_fix_on_selector_element():
-    """Some selected entries are fixed to zero; the remaining simplex is optimised."""
+    """x0 and x2 are fixed to zero; x1, x3 and x4 live on the simplex.
 
-    def criterion(params):
-        # Distances to a target simplex weight away from the fixed entries.
-        target = np.array([0.0, 0.2, 0.0, 0.5, 0.3])
-        return np.sum((params - target) ** 2)
+    The target is infeasible: it puts weight 0.5 on a fixed entry and mass 1.8
+    on the free entries. The solution is the orthogonal projection of the free
+    target onto the plane x1 + x3 + x4 = 1, so each free entry gives up the
+    same surplus share (1.8 - 1) / 3.
+
+    """
+    target = np.array([0.5, 0.8, 0.0, 0.4, 0.6])
 
     res = minimize(
-        fun=criterion,
-        params=np.array([0.0, 0.3, 0.0, 0.3, 0.4]),
+        fun=lambda x: np.sum((x - target) ** 2),
+        params=np.array([0.0, 0.1, 0.0, 0.1, 0.8]),
         algorithm="scipy_lbfgsb",
         constraints=[
             om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3, 4]]),
@@ -363,22 +366,23 @@ def test_probability_constraint_with_zero_fix_on_selector_element():
         ],
     )
 
-    assert res.params[0] == 0.0
-    assert res.params[2] == 0.0
-    aaae(res.params[[1, 3, 4]].sum(), 1.0)
-    aaae(res.params, [0.0, 0.2, 0.0, 0.5, 0.3], decimal=4)
+    aaae(res.params, [0.0, 8 / 15, 0.0, 2 / 15, 5 / 15], decimal=4)
 
 
 def test_probability_constraint_with_non_zero_fix_on_selector_element():
-    """One selected entry is fixed to 0.2; the remaining free entries sum to 0.8."""
+    """x0 is fixed to 0.2; x1, x2 and x3 share the remaining mass of 0.8.
 
-    def criterion(params):
-        target = np.array([0.2, 0.2, 0.3, 0.3])
-        return np.sum((params - target) ** 2)
+    The target is infeasible in both ways: it wants 0.5 on the fixed entry and
+    mass 1.5 on the free entries. The solution is the orthogonal projection of
+    the free target onto the plane x1 + x2 + x3 = 0.8, i.e. each free entry
+    gives up the same surplus share (1.5 - 0.8) / 3.
+
+    """
+    target = np.array([0.5, 0.7, 0.3, 0.5])
 
     res = minimize(
-        fun=criterion,
-        params=np.array([0.2, 0.3, 0.2, 0.3]),
+        fun=lambda x: np.sum((x - target) ** 2),
+        params=np.array([0.2, 0.05, 0.7, 0.05]),
         algorithm="scipy_lbfgsb",
         constraints=[
             om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3]]),
@@ -386,19 +390,43 @@ def test_probability_constraint_with_non_zero_fix_on_selector_element():
         ],
     )
 
-    assert res.params[0] == 0.2
-    aaae(res.params[1:].sum(), 0.8)
-    aaae(res.params, [0.2, 0.2, 0.3, 0.3], decimal=4)
+    aaae(res.params, [0.2, 7 / 15, 1 / 15, 4 / 15], decimal=4)
+
+
+def test_probability_constraint_with_multiple_non_zero_fixes():
+    """x0 = 0.1 and x3 = 0.3 are fixed; x1 and x2 share the remaining 0.6.
+
+    The free target (0.9, 0.5) carries surplus mass 0.8; projecting onto the
+    line x1 + x2 = 0.6 subtracts 0.4 from each free entry.
+
+    """
+    target = np.array([0.4, 0.9, 0.5, 0.0])
+
+    res = minimize(
+        fun=lambda x: np.sum((x - target) ** 2),
+        params=np.array([0.1, 0.1, 0.5, 0.3]),
+        algorithm="scipy_lbfgsb",
+        constraints=[
+            om.ProbabilityConstraint(lambda x: x[[0, 1, 2, 3]]),
+            om.FixedConstraint(lambda x: x[[0, 3]]),
+        ],
+    )
+
+    aaae(res.params, [0.1, 0.5, 0.1, 0.3], decimal=4)
 
 
 def test_probability_constraint_with_fixed_original_pivot():
-    def criterion(params):
-        target = np.array([0.4, 0.4, 0.2])
-        return np.sum((params - target) ** 2)
+    """The pivot entry x2 is fixed to 0.2; x0 and x1 share mass 0.8.
+
+    The solution is the orthogonal projection of the free target (0.8, 0.6)
+    onto the line x0 + x1 = 0.8: both entries give up half of the surplus 0.6.
+
+    """
+    target = np.array([0.8, 0.6, 0.5])
 
     res = minimize(
-        fun=criterion,
-        params=np.array([0.8, 0.0, 0.2]),
+        fun=lambda x: np.sum((x - target) ** 2),
+        params=np.array([0.05, 0.75, 0.2]),
         algorithm="scipy_lbfgsb",
         constraints=[
             om.ProbabilityConstraint(lambda x: x),
@@ -406,7 +434,7 @@ def test_probability_constraint_with_fixed_original_pivot():
         ],
     )
 
-    aaae(res.params, [0.4, 0.4, 0.2], decimal=4)
+    aaae(res.params, [0.5, 0.3, 0.2], decimal=4)
 
 
 def test_covariance_constraint_in_2_by_2_case():
