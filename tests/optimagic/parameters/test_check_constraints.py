@@ -114,6 +114,17 @@ def test_probability_constraint_rejects_too_few_free_after_fold():
         )
 
 
+def test_probability_constraint_rejects_all_zero_free_entries():
+    with pytest.raises(InvalidParamsError, match="at least one strictly positive"):
+        check_constraints(
+            params=np.array([0.995, 0.0, 0.0]),
+            constraints=[
+                om.ProbabilityConstraint(lambda x: x[[0, 1, 2]]),
+                om.FixedConstraint(lambda x: x[[0]]),
+            ],
+        )
+
+
 def test_check_constraints_are_satisfied_type_linear_lower_bound():
     with pytest.raises(InvalidParamsError):
         check_constraints(

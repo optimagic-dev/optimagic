@@ -10,7 +10,7 @@ Check the module docstring of process_constraints for naming conventions.
 import numpy as np
 import pandas as pd
 
-from optimagic.exceptions import InvalidConstraintError
+from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.utilities import (
     fast_numpy_full,
     number_of_triangular_elements_to_dimension,
@@ -311,11 +311,17 @@ def _fold_fixes_into_probability_constraints(
             positive_positions = np.flatnonzero(
                 np.isfinite(free_values) & (free_values > 0)
             )
-            if len(positive_positions) > 0:
-                pivot_position = positive_positions[
-                    np.argmax(free_values[positive_positions])
-                ]
-                free_idx.append(free_idx.pop(pivot_position))
+            if len(positive_positions) == 0:
+                problematic = [param_names[i] for i in free_idx]
+                raise InvalidParamsError(
+                    "The non-fixed parameters of a probability constraint must "
+                    "contain at least one strictly positive value at the start "
+                    f"parameters. This is violated for:\n{problematic}"
+                )
+            pivot_position = positive_positions[
+                np.argmax(free_values[positive_positions])
+            ]
+            free_idx.append(free_idx.pop(pivot_position))
 
         new_constr = {**constr, "index": free_idx}
         if fixed_sum > 0.0:
