@@ -311,22 +311,33 @@ def probability_to_internal_jacobian(external_values, constr):
 
 
 def probability_from_internal(internal_values, constr):
-    """Reparametrize probability constrained parameters from internal."""
-    return internal_values / internal_values.sum()
+    """Reparametrize probability constrained parameters from internal.
+
+    The result is rescaled to sum to ``constr["sum_target"]`` when present
+    (defaults to 1). This supports probability constraints where some of the
+    selected parameters are fixed to non-zero values and the remaining free
+    entries must sum to ``1 - sum(fixed values)``.
+    """
+    sum_target = 1.0 if constr is None else constr.get("sum_target", 1.0)
+    return sum_target * internal_values / internal_values.sum()
 
 
 def probability_from_internal_jacobian(internal_values, constr):
     r"""Jacobian of ``probability_from_internal``.
 
-    Let :math:`x := \text{internal}`. The function ``probability_from_internal``
-    has the following structure
+    Let :math:`x := \text{internal}` and :math:`S := \text{sum\_target}`. The
+    function ``probability_from_internal`` has the following structure
 
-    .. math::`f: \mathbb{R}^m \to \mathbb{R}^m, x \mapsto \frac{1}{x^\top 1} x`
+    .. math::  f: \mathbb{R}^m \to \mathbb{R}^m,
+               x \mapsto \frac{S}{x^\top 1} x
 
     where :math:`1` denotes a vector of all ones and :math:`I_m` the identity
     matrix. The jacobian can be computed as
 
-    .. math::  J(f)(x) = \frac{1}{\sigma} I_m - \frac{1}{\sigma^2} 1 x^\top
+    .. math::  J(f)(x) = \frac{S}{\sigma} I_m - \frac{S}{\sigma^2} x 1^\top
+
+    When ``sum_target`` is absent from ``constr`` (or ``constr`` is ``None``),
+    :math:`S = 1` and the Jacobian reduces to the unscaled form.
 
     Args:
         internal_values (np.ndarray): Internal (positive) values.
@@ -341,7 +352,8 @@ def probability_from_internal_jacobian(internal_values, constr):
     left = np.eye(dim)
     right = (np.ones((dim, dim)) * (internal_values / sigma)).T
 
-    deriv = (left - right) / sigma
+    sum_target = 1.0 if constr is None else constr.get("sum_target", 1.0)
+    deriv = sum_target * (left - right) / sigma
     return deriv
 
 
