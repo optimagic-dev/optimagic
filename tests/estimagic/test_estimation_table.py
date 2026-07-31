@@ -134,7 +134,7 @@ MODELS = [
     _get_models_multiindex_multi_column(),
 ]
 PARAMETRIZATION = [("latex", render_latex, models) for models in MODELS]
-PARAMETRIZATION += [("html", render_html, models) for models in MODELS]
+PARAMETRIZATION += [("html", render_html, models) for models in MODELS]  # ty:ignore[unsupported-operator]
 
 
 @pytest.mark.parametrize("return_type, render_func,models", PARAMETRIZATION)
@@ -250,7 +250,7 @@ def test_convert_model_to_series_without_inference():
 # test create stat series
 def test_create_statistics_sr():
     df = pd.DataFrame(np.empty((10, 3)), columns=["a", "b", "c"])
-    df.index = pd.MultiIndex.from_arrays(np.array([np.arange(10), np.arange(10)]))
+    df.index = pd.MultiIndex.from_arrays(np.array([np.arange(10), np.arange(10)]))  # ty:ignore[invalid-argument-type]
     info = {"rsquared": 0.45, "n_obs": 400, "rsquared_adj": 0.0002}
     number_format = ("{0:.3g}", "{0:.5f}", "{0:.4g}")
     add_trailing_zeros = True
@@ -273,7 +273,7 @@ def test_create_statistics_sr():
     )
     exp = pd.Series(["0.4500", "0.0002", "400"])
     exp.index = pd.MultiIndex.from_arrays(
-        np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
+        np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])  # ty:ignore[invalid-argument-type]
     )
     ase(exp.sort_index(), res.sort_index())
 
@@ -282,7 +282,7 @@ def test_create_statistics_sr():
 def test_process_frame_indices_index():
     df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
     df.index = pd.MultiIndex.from_arrays(
-        np.array([["today", "today", "today"], ["var1", "var2", "var3"]])
+        np.array([["today", "today", "today"], ["var1", "var2", "var3"]])  # ty:ignore[invalid-argument-type]
     )
     df.index.names = ["l1", "l2"]
     par_name_map = {"today": "tomorrow", "var1": "1stvar"}

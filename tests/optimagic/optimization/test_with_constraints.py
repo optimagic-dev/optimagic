@@ -169,7 +169,7 @@ for crit_name in FUNC_INFO:
                         (crit_name, "scipy_lbfgsb", deriv, constr_name, ptype)
                     )
 
-                if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
+                if "root_contributions" in FUNC_INFO[crit_name]["entries"]:  # ty:ignore[unsupported-operator]
                     for deriv in [FUNC_INFO[crit_name].get("ls_jacobian"), None]:
                         test_cases.append(
                             (crit_name, "scipy_ls_dogbox", deriv, constr_name, ptype)
@@ -191,7 +191,7 @@ def test_constrained_minimization(
         params = np.array(START_INFO[constraint_name])
 
     res = minimize(
-        fun=criterion,
+        fun=criterion,  # ty:ignore[invalid-argument-type]
         params=params,
         algorithm=algorithm,
         jac=derivative,
@@ -208,7 +208,7 @@ def test_constrained_minimization(
         f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"]
     )
 
-    aaae(calculated, expected, decimal=4)
+    aaae(calculated, expected, decimal=4)  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.filterwarnings("ignore:Specifying constraints as a dictionary is")
@@ -239,7 +239,7 @@ def test_three_independent_constraints():
         fun=lambda x: x @ x,
         params=params,
         algorithm="scipy_lbfgsb",
-        constraints=constraints,
+        constraints=constraints,  # ty:ignore[invalid-argument-type]
         algo_options={"convergence.ftol_rel": 1e-12},
     )
     expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
@@ -325,7 +325,7 @@ def test_constraint_inheritance():
             fun=lambda x: x @ x,
             params=np.array([0.1, 0.9, 0.9, 0.1]),
             algorithm="scipy_lbfgsb",
-            constraints=constraints,
+            constraints=constraints,  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, [0.5] * 4)
 

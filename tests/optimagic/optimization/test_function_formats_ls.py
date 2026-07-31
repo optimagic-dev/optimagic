@@ -80,7 +80,7 @@ def test_least_squares_minimize(fun, jac, use_fun_and_jac, algorithm):
         params=start_params,
         algorithm=algorithm,
         jac=jac,
-        fun_and_jac=fun_and_jac,
+        fun_and_jac=fun_and_jac,  # ty:ignore[invalid-argument-type]
     )
     aaae(res.params, np.zeros(3))
 
@@ -137,7 +137,7 @@ def test_least_squares_minimize_dict(fun, jac, use_fun_and_jac, algorithm):
         params=start_params,
         algorithm=algorithm,
         jac=jac,
-        fun_and_jac=fun_and_jac,
+        fun_and_jac=fun_and_jac,  # ty:ignore[invalid-argument-type]
     )
 
     for key in start_params:

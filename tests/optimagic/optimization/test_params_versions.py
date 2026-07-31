@@ -84,7 +84,7 @@ def test_tree_params_sos_ls(params, algorithm):
     derivatives = [sos_gradient, sos_ls_jacobian]
     res = minimize(
         fun=sos_ls,
-        jac=derivatives,
+        jac=derivatives,  # ty:ignore[invalid-argument-type]
         params=params,
         algorithm=algorithm,
     )

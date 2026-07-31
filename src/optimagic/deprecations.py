@@ -563,7 +563,7 @@ def handle_log_options_throw_deprecated_warning(
                 log_options = {
                     k: v for k, v in log_options.items() if k != "if_table_exists"
                 }
-            return SQLiteLogOptions(cast(str | Path, logger), **log_options)
+            return SQLiteLogOptions(cast(str | Path, logger), **log_options)  # ty:ignore[redundant-cast]
         elif not log_options_is_compatible:
             raise ValueError(
                 f"Found string or path for logger argument, but parameter"

@@ -53,7 +53,7 @@ def _from_internal(x, return_type="flat"):  # noqa: ARG001
 
 class FakeConverter(NamedTuple):
     has_transforming_constraints: bool = True
-    params_from_internal: callable = _from_internal
+    params_from_internal: callable = _from_internal  # ty:ignore[invalid-type-form]
 
 
 class FakeInternalParams(NamedTuple):
@@ -211,7 +211,7 @@ def test_get_derivative_case():
 
 def test_to_numpy_invalid():
     with pytest.raises(TypeError):
-        _to_numpy(15)
+        _to_numpy(15)  # ty:ignore[missing-argument]
 
 
 def test_calculate_estimation_summary():

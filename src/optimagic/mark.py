@@ -15,51 +15,51 @@ def scalar(func: ScalarFuncT) -> ScalarFuncT:
     """Mark a function as a scalar function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
+        wrapper._problem_type = AggregationLevel.SCALAR  # ty:ignore[unresolved-attribute]
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
 
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
+        def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
-    return wrapper
+        wrapper._problem_type = AggregationLevel.SCALAR  # ty:ignore[unresolved-attribute]
+    return wrapper  # ty:ignore[invalid-return-type]
 
 
 def least_squares(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a least squares function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # ty:ignore[unresolved-attribute]
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
 
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
+        def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
-    return wrapper
+        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # ty:ignore[unresolved-attribute]
+    return wrapper  # ty:ignore[invalid-return-type]
 
 
 def likelihood(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a likelihood function."""
     wrapper = func
     try:
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # ty:ignore[unresolved-attribute]
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception:
 
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
+        def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
-    return wrapper
+        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # ty:ignore[unresolved-attribute]
+    return wrapper  # ty:ignore[invalid-return-type]
 
 
 # TODO: I get an error when adding bound=Algorithm to AlgorithmSubclass. Why?
@@ -137,7 +137,7 @@ def minimizer(
             disable_history=disable_history,
             experimental=experimental,
         )
-        cls.__algo_info__ = algo_info  # type: ignore
+        cls.__algo_info__ = algo_info  # ty:ignore[unresolved-attribute]
         return cls
 
     return decorator

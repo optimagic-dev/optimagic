@@ -203,8 +203,8 @@ def _get_initial_guess_for_lambdas(
 
     lambdas = DampingFactors(
         candidate=lambda_candidate,
-        lower_bound=lambda_lower_bound,
-        upper_bound=lambda_upper_bound,
+        lower_bound=lambda_lower_bound,  # ty:ignore[invalid-argument-type]
+        upper_bound=lambda_upper_bound,  # ty:ignore[invalid-argument-type]
     )
 
     return lambdas

@@ -67,7 +67,7 @@ def test_history_add_entry(history_entries):
     ]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 1, 2]
-    aaae(history.fun, [1, 3, 2])
+    aaae(history.fun, [1, 3, 2])  # ty:ignore[invalid-argument-type]
     aaae(history.start_time, [0.1, 0.2, 0.3])
     aaae(history.stop_time, [0.2, 0.3, 0.4])
 
@@ -90,7 +90,7 @@ def test_history_add_batch(history_entries):
     ]
     assert history.task == [EvalTask.FUN, EvalTask.FUN, EvalTask.FUN]
     assert history.batches == [0, 0, 0]
-    aaae(history.fun, [1, 3, 2])
+    aaae(history.fun, [1, 3, 2])  # ty:ignore[invalid-argument-type]
     aaae(history.start_time, [0.1, 0.2, 0.3])
     aaae(history.stop_time, [0.2, 0.3, 0.4])
 
@@ -112,7 +112,7 @@ def test_history_from_data():
 
     history = History(
         direction=Direction.MAXIMIZE,
-        **data,
+        **data,  # ty:ignore[invalid-argument-type]
     )
 
     assert history.direction == Direction.MAXIMIZE
@@ -120,7 +120,7 @@ def test_history_from_data():
     assert history.params == data["params"]
     assert history.task == data["task"]
     assert history.batches == data["batches"]
-    aaae(history.fun, data["fun"])
+    aaae(history.fun, data["fun"])  # ty:ignore[invalid-argument-type]
     aaae(history.start_time, data["start_time"])
     aaae(history.stop_time, data["stop_time"])
 
@@ -496,7 +496,7 @@ def test_get_total_timings_invalid_cost_model(history: History):
     with pytest.raises(
         TypeError, match="cost_model must be a CostModel or 'wall_time'."
     ):
-        history._get_total_timings(cost_model="invalid")
+        history._get_total_timings(cost_model="invalid")  # ty:ignore[invalid-argument-type]
 
 
 def test_start_time_property(history: History):
@@ -576,14 +576,14 @@ def test_get_flat_param_names_fast_path():
 def test_calculate_monotone_sequence_maximize():
     sequence = [0, 1, 0, 0, 2, 10, 0]
     exp = [0, 1, 1, 1, 2, 10, 10]
-    got = _calculate_monotone_sequence(sequence, direction=Direction.MAXIMIZE)
+    got = _calculate_monotone_sequence(sequence, direction=Direction.MAXIMIZE)  # ty:ignore[invalid-argument-type]
     assert_array_equal(exp, got)
 
 
 def test_calculate_monotone_sequence_minimize():
     sequence = [10, 11, 8, 12, 0, 5]
     exp = [10, 10, 8, 8, 0, 0]
-    got = _calculate_monotone_sequence(sequence, direction=Direction.MINIMIZE)
+    got = _calculate_monotone_sequence(sequence, direction=Direction.MINIMIZE)  # ty:ignore[invalid-argument-type]
     assert_array_equal(exp, got)
 
 
@@ -640,5 +640,7 @@ def test_apply_to_batch_func_with_non_scalar_return():
     batch_ids = [0, 0, 1, 1, 2]
     with pytest.raises(ValueError, match="Function <lambda> did not return a scalar"):
         _apply_reduction_to_batches(
-            data, batch_ids, reduction_function=lambda _list: _list
+            data,
+            batch_ids,
+            reduction_function=lambda _list: _list,  # ty:ignore[invalid-argument-type]
         )

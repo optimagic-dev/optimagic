@@ -18,7 +18,7 @@ def test_get_convergence_report_minimize():
         batches=[0, 1, 2, 3],
     )
 
-    calculated = pd.DataFrame.from_dict(get_convergence_report(hist))
+    calculated = pd.DataFrame.from_dict(get_convergence_report(hist))  # ty:ignore[invalid-argument-type]
 
     expected = np.array([[0.025, 0.25], [0.05, 1.0], [0.1, 1], [0.1, 2.0]])
     aaae(calculated.to_numpy(), expected)
@@ -35,7 +35,7 @@ def test_get_convergence_report_maximize():
         batches=[0, 1, 2, 3],
     )
 
-    calculated = pd.DataFrame.from_dict(get_convergence_report(hist))
+    calculated = pd.DataFrame.from_dict(get_convergence_report(hist))  # ty:ignore[invalid-argument-type]
 
     expected = np.array([[0.025, 0.25], [0.05, 1.0], [0.1, 1], [0.1, 2.0]])
     aaae(calculated.to_numpy(), expected)

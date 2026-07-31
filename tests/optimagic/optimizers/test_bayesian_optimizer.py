@@ -149,7 +149,7 @@ def test_process_acquisition_function_invalid_type():
     """Test processing invalid acquisition function type."""
     with pytest.raises(TypeError, match="acquisition_function must be None, a string"):
         _process_acquisition_function(
-            acquisition_function=123,
+            acquisition_function=123,  # ty:ignore[invalid-argument-type]
             kappa=2.576,
             xi=0.01,
             exploration_decay=None,

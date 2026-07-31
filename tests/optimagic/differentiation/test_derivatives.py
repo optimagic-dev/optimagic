@@ -240,7 +240,7 @@ def test_convert_evaluation_data_to_frame():
     arr = np.arange(4).reshape(2, 2)
     arr2 = arr.reshape(2, 1, 2)
     steps = Steps(pos=arr, neg=-arr)
-    evals = Evals(pos=arr2, neg=-arr2)
+    evals = Evals(pos=arr2, neg=-arr2)  # ty:ignore[invalid-argument-type]
     expected = [
         [1, 0, 0, 0, 0, 0],
         [1, 0, 1, 0, 1, 1],
@@ -393,8 +393,8 @@ def test_numdiff_result_getitem():
     )
     assert res["derivative"] == res.derivative
     assert res["func_value"] == res.func_value
-    assert_frame_equal(res["_func_evals"], res._func_evals)
-    assert_frame_equal(res["_derivative_candidates"], res._derivative_candidates)
+    assert_frame_equal(res["_func_evals"], res._func_evals)  # ty:ignore[invalid-argument-type]
+    assert_frame_equal(res["_derivative_candidates"], res._derivative_candidates)  # ty:ignore[invalid-argument-type]
 
 
 def test_first_and_second_derivative_have_same_type_hints():

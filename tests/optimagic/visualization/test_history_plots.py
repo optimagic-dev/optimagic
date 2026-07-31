@@ -41,7 +41,7 @@ def minimize_result():
                     om.MultistartOptions(n_samples=1000, convergence_max_discoveries=5)
                     if multistart
                     else None
-                ),
+                ),  # ty:ignore[invalid-argument-type]
             )
             res.append(_res)
         out[multistart] = res
@@ -109,7 +109,7 @@ def test_criterion_plot_name_input(minimize_result):
 
 def test_criterion_plot_wrong_results():
     with pytest.raises(TypeError):
-        criterion_plot([10, np.array([1, 2, 3])])
+        criterion_plot([10, np.array([1, 2, 3])])  # ty:ignore[invalid-argument-type]
 
 
 def test_criterion_plot_different_input_types():
@@ -134,17 +134,17 @@ def test_criterion_plot_different_input_types():
 
     results = ["test.db", res]
 
-    criterion_plot(results)
-    criterion_plot(results, monotone=True)
-    criterion_plot(results, stack_multistart=True)
-    criterion_plot(results, monotone=True, stack_multistart=True)
-    criterion_plot(results, show_exploration=True)
+    criterion_plot(results)  # ty:ignore[invalid-argument-type]
+    criterion_plot(results, monotone=True)  # ty:ignore[invalid-argument-type]
+    criterion_plot(results, stack_multistart=True)  # ty:ignore[invalid-argument-type]
+    criterion_plot(results, monotone=True, stack_multistart=True)  # ty:ignore[invalid-argument-type]
+    criterion_plot(results, show_exploration=True)  # ty:ignore[invalid-argument-type]
     criterion_plot("test.db")
 
 
 def test_criterion_plot_wrong_inputs():
     with pytest.raises(ValueError):
-        criterion_plot("bla", names=[1, 2])
+        criterion_plot("bla", names=[1, 2])  # ty:ignore[invalid-argument-type]
 
     with pytest.raises(ValueError):
         criterion_plot(["bla", "bla"], names="blub")
@@ -175,7 +175,7 @@ def test_harmonize_inputs_to_dict_single_result_with_name():
 def test_harmonize_inputs_to_dict_list_results():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
     results = [res, res]
-    assert _harmonize_inputs_to_dict(results=results, names=None) == {
+    assert _harmonize_inputs_to_dict(results=results, names=None) == {  # ty:ignore[invalid-argument-type]
         "0": res,
         "1": res,
     }
@@ -184,7 +184,7 @@ def test_harmonize_inputs_to_dict_list_results():
 def test_harmonize_inputs_to_dict_dict_input():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
     results = {"bla": res, om.algos.scipy_lbfgsb(): res, om.algos.scipy_neldermead: res}
-    got = _harmonize_inputs_to_dict(results=results, names=None)
+    got = _harmonize_inputs_to_dict(results=results, names=None)  # ty:ignore[invalid-argument-type]
     expected = {"bla": res, "scipy_lbfgsb": res, "scipy_neldermead": res}
     assert got == expected
 
@@ -192,7 +192,7 @@ def test_harmonize_inputs_to_dict_dict_input():
 def test_harmonize_inputs_to_dict_dict_input_with_names():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
     results = {"bla": res, "blub": res}
-    got = _harmonize_inputs_to_dict(results=results, names=["a", "b"])
+    got = _harmonize_inputs_to_dict(results=results, names=["a", "b"])  # ty:ignore[invalid-argument-type]
     expected = {"a": res, "b": res}
     assert got == expected
 
@@ -201,7 +201,7 @@ def test_harmonize_inputs_to_dict_invalid_names():
     results = [None]
     names = ["a", "b"]
     with pytest.raises(ValueError):
-        _harmonize_inputs_to_dict(results=results, names=names)
+        _harmonize_inputs_to_dict(results=results, names=names)  # ty:ignore[invalid-argument-type]
 
 
 def test_harmonize_inputs_to_dict_str_input():
@@ -216,7 +216,7 @@ def test_harmonize_inputs_to_dict_path_input():
 def _compare_plotting_multistart_history_with_result(
     data: _PlottingMultistartHistory, res: om.OptimizeResult, res_name: str
 ):
-    assert_array_equal(data.history.fun, res.history.fun)
+    assert_array_equal(data.history.fun, res.history.fun)  # ty:ignore[unresolved-attribute]
     assert data.name == res_name
     assert_array_equal(data.start_params, res.start_params)
     assert data.is_multistart == (res.multistart_info is not None)
@@ -272,12 +272,12 @@ def test_retrieve_data_from_multistart_result(minimize_result, stack_multistart)
     assert isinstance(data, list) and len(data) == 1
 
     assert data[0].is_multistart
-    assert len(data[0].local_histories) == 5
+    assert len(data[0].local_histories) == 5  # ty:ignore[invalid-argument-type]
 
     if stack_multistart:
         assert_array_equal(
-            data[0].stacked_local_histories.fun,
-            np.concatenate([hist.fun for hist in data[0].local_histories]),
+            data[0].stacked_local_histories.fun,  # ty:ignore[unresolved-attribute]
+            np.concatenate([hist.fun for hist in data[0].local_histories]),  # ty:ignore[not-iterable]
         )
     else:
         assert data[0].stacked_local_histories is None

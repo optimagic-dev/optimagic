@@ -68,7 +68,7 @@ class OptimizeLogReader(_OptimizeLogReader):
             " 0.6.0.",
             FutureWarning,
         )
-        super().__init__(path)
+        super().__init__(path)  # ty:ignore[too-many-positional-arguments]
 
 
 @dataclass

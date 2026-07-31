@@ -117,7 +117,7 @@ class LeastSquaresHistory:
             np.ndarray: 1d or 2d array with parameter vectors
 
         """
-        out = self.xs[: self.n_fun]
+        out = self.xs[: self.n_fun]  # ty:ignore[not-subscriptable]
         out = out[index] if index is not None else out
 
         return out
@@ -133,7 +133,7 @@ class LeastSquaresHistory:
             np.ndarray: 1d or 2d array with residuals.
 
         """
-        out = self.residuals[: self.n_fun]
+        out = self.residuals[: self.n_fun]  # ty:ignore[not-subscriptable]
         out = out[index] if index is not None else out
 
         return out
@@ -149,7 +149,7 @@ class LeastSquaresHistory:
             np.ndarray: Float or 1d array with criterion values.
 
         """
-        out = self.critvals[: self.n_fun]
+        out = self.critvals[: self.n_fun]  # ty:ignore[not-subscriptable]
         out = out[index] if index is not None else out
 
         return out
@@ -251,7 +251,7 @@ class LeastSquaresHistory:
         return self.get_critvals(index=self.best_index)
 
     def get_best_centered_entries(self, center_info):
-        return self.get_centered_entries(self, center_info, index=self.best_index)
+        return self.get_centered_entries(self, center_info, index=self.best_index)  # ty:ignore[parameter-already-assigned]
 
 
 def _add_entries_to_array(arr, new, position):

@@ -83,7 +83,7 @@ class IminuitMigrad(Algorithm):
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, params: NDArray[np.float64]
-    ) -> InternalOptimizeResult:
+    ) -> InternalOptimizeResult:  # ty:ignore[invalid-method-override]
         if not IS_IMINUIT_INSTALLED:
             raise NotInstalledError(  # pragma: no cover
                 "To use the 'iminuit_migrad` optimizer you need to install iminuit. "

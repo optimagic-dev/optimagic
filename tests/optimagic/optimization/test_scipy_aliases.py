@@ -189,7 +189,7 @@ def test_jac_equal_true_works_in_minimize():
         fun=lambda x: (x @ x, 2 * x),
         params=np.arange(3),
         algorithm="scipy_lbfgsb",
-        jac=True,
+        jac=True,  # ty:ignore[invalid-argument-type]
     )
     aaae(res.params, np.zeros(3))
 
@@ -199,6 +199,6 @@ def test_jac_equal_true_works_in_maximize():
         fun=lambda x: (-x @ x, -2 * x),
         params=np.arange(3),
         algorithm="scipy_lbfgsb",
-        jac=True,
+        jac=True,  # ty:ignore[invalid-argument-type]
     )
     aaae(res.params, np.zeros(3))

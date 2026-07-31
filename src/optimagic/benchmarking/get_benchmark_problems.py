@@ -197,7 +197,7 @@ def _get_raw_problems(name):
                 problem = v.copy()
                 raw_func = problem["fun"]
 
-                problem["fun"] = wraps(raw_func)(partial(_step_func, raw_func=raw_func))
+                problem["fun"] = wraps(raw_func)(partial(_step_func, raw_func=raw_func))  # ty:ignore[invalid-argument-type, invalid-assignment]
                 raw_problems[f"{k}_with_steps"] = problem
 
         for k, v in CARTIS_ROBERTS_PROBLEMS.items():
@@ -345,16 +345,16 @@ def _process_noise_options(options, is_multiplicative):
         )
 
     std = processed["std"]
-    if std < 0:
+    if std < 0:  # ty:ignore[unsupported-operator]
         raise ValueError(f"std must be non-negative. Not: {std}")
 
     corr = processed["correlation"]
-    if corr < 0:
+    if corr < 0:  # ty:ignore[unsupported-operator]
         raise ValueError(f"corr must be non-negative. Not: {corr}")
 
     if is_multiplicative:
         clipping_value = processed["clipping_value"]
-        if clipping_value < 0:
+        if clipping_value < 0:  # ty:ignore[unsupported-operator]
             raise ValueError(
                 f"clipping_value must be non-negative. Not: {clipping_value}"
             )

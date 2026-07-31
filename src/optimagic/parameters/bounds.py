@@ -152,9 +152,9 @@ def get_internal_bounds(
         raise InvalidBoundsError(msg)
 
     if np.isinf(lower_flat).all():
-        lower_flat = None  # type: ignore[assignment]
+        lower_flat = None
     if np.isinf(upper_flat).all():
-        upper_flat = None  # type: ignore[assignment]
+        upper_flat = None
 
     return lower_flat, upper_flat
 
@@ -189,7 +189,7 @@ def _update_bounds_and_flatten(
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree, strict=False))
 
-        invalid = {"names": [], "bounds": []}  # type: ignore
+        invalid = {"names": [], "bounds": []}
         for bounds_name, bounds_leaf in zip(bounds_names, flat_bounds, strict=False):
             # if a bounds leaf is None we treat it as saying the the corresponding
             # subtree of params has no bounds.

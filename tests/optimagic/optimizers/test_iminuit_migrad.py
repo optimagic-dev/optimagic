@@ -91,5 +91,5 @@ def test_iminuit_migrad():
 
     assert res.success
     aaae(res.x, np.zeros(3), decimal=6)
-    assert res.n_fun_evals > 0
-    assert res.n_jac_evals > 0
+    assert res.n_fun_evals > 0  # ty:ignore[unsupported-operator]
+    assert res.n_jac_evals > 0  # ty:ignore[unsupported-operator]

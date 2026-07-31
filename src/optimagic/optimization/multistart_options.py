@@ -370,7 +370,7 @@ def get_internal_multistart_options_from_public(
         n_samples = len(options.sample)
     else:
         sample = None
-        n_samples = options.n_samples  # type: ignore
+        n_samples = options.n_samples
 
     batch_size = options.n_cores if options.batch_size is None else options.batch_size
     batch_evaluator = process_batch_evaluator(options.batch_evaluator)

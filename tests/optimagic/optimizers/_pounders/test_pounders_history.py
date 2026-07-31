@@ -24,7 +24,7 @@ def test_add_entries_not_initialized(entries, is_center):
 
     if is_center:
         c_info = {"x": np.zeros(3), "residuals": np.zeros(5), "radius": 1}
-        history.add_centered_entries(*entries, c_info)
+        history.add_centered_entries(*entries, c_info)  # ty:ignore[too-many-positional-arguments]
     else:
         history.add_entries(*entries)
 
@@ -51,7 +51,7 @@ def test_add_entries_initialized_with_space(entries, is_center):
 
     if is_center:
         c_info = {"x": np.zeros(3), "residuals": np.zeros(5), "radius": 1}
-        history.add_centered_entries(*entries, c_info)
+        history.add_centered_entries(*entries, c_info)  # ty:ignore[too-many-positional-arguments]
     else:
         history.add_entries(*entries)
 
@@ -74,9 +74,9 @@ def test_add_entries_initialized_with_space(entries, is_center):
 def test_add_entries_initialized_extension_needed():
     history = LeastSquaresHistory()
     history.add_entries(np.ones((4, 3)), np.zeros((4, 5)))
-    history.xs = history.xs[:5]
-    history.residuals = history.residuals[:5]
-    history.critvals = history.critvals[:5]
+    history.xs = history.xs[:5]  # ty:ignore[not-subscriptable]
+    history.residuals = history.residuals[:5]  # ty:ignore[not-subscriptable]
+    history.critvals = history.critvals[:5]  # ty:ignore[not-subscriptable]
 
     history.add_entries(np.arange(12).reshape(4, 3), np.arange(20).reshape(4, 5))
 

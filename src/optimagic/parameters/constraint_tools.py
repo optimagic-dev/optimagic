@@ -35,7 +35,7 @@ def count_free_params(
         upper_bounds=upper_bounds,
     )
 
-    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)  # ty:ignore[invalid-argument-type]
 
     bounds = pre_process_bounds(bounds)
     constraints = deprecations.pre_process_constraints(constraints)

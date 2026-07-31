@@ -53,7 +53,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
     log_hist = reader.read_history()
 
     # We cannot expect the order to be the same
-    aaae(sorted(collected_hist.fun), sorted(log_hist.fun))
+    aaae(sorted(collected_hist.fun), sorted(log_hist.fun))  # ty:ignore[unresolved-attribute]
 
 
 @mark.minimizer(
@@ -150,6 +150,6 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
 
     expected_history = _get_fake_history(batch_size)
 
-    aae(got_history.batches, expected_history["batches"])
-    assert got_history.fun == expected_history["criterion"][: len(got_history.fun)]
-    aaae(got_history.params, expected_history["params"][: len(got_history.params)])
+    aae(got_history.batches, expected_history["batches"])  # ty:ignore[unresolved-attribute]
+    assert got_history.fun == expected_history["criterion"][: len(got_history.fun)]  # ty:ignore[unresolved-attribute]
+    aaae(got_history.params, expected_history["params"][: len(got_history.params)])  # ty:ignore[unresolved-attribute]

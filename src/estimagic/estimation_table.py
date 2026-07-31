@@ -9,7 +9,7 @@ import pandas as pd
 
 from optimagic.shared.compat import pd_df_map
 
-suppress_performance_warnings = np.testing.suppress_warnings()
+suppress_performance_warnings = np.testing.suppress_warnings()  # ty:ignore[deprecated]
 suppress_performance_warnings.filter(category=pd.errors.PerformanceWarning)
 
 
@@ -227,7 +227,7 @@ def estimation_table(
     if return_type.suffix not in (".html", ".tex"):
         return out
     else:
-        return_type.write_text(out)
+        return_type.write_text(out)  # ty:ignore[invalid-argument-type]
 
 
 @suppress_performance_warnings
@@ -952,7 +952,7 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
             else:
                 raise TypeError(
                     f"""Invalid type for custom_col_groups. Can be either list
-                    or dictionary, or NoneType. Not: {type(col_groups)}."""
+                    or dictionary, or NoneType. Not: {type(col_groups)}."""  # ty:ignore[unresolved-reference]
                 )
     else:
         col_groups = default_col_groups
@@ -989,7 +989,7 @@ def _customize_col_names(default_col_names, custom_col_names):
     else:
         raise TypeError(
             f"""Invalid type for custom_col_names.
-            Can be either list or dictionary, or NoneType. Not: {col_names}."""
+            Can be either list or dictionary, or NoneType. Not: {col_names}."""  # ty:ignore[unresolved-reference]
         )
     return col_names
 
@@ -1180,7 +1180,7 @@ def _create_statistics_sr(
     stat_ind = np.concatenate(
         [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind], axis=1
     ).T
-    stat_sr.index = pd.MultiIndex.from_arrays(stat_ind)
+    stat_sr.index = pd.MultiIndex.from_arrays(stat_ind)  # ty:ignore[invalid-argument-type]
     return stat_sr.astype("str").replace("nan", "")
 
 
