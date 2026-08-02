@@ -14,12 +14,18 @@ optionally `@om.mark.scalar`). That mark changes:
    residuals).
 1. **Which specialized optimizers you can use** (for example pounders for least-squares,
    or BHHH for likelihood).
+<<<<<<< HEAD
 1. **How error penalties and derivatives are interpreted** when something goes wrong or
    when a scalar optimizer is used on a specialized problem.
+=======
+3. **How error penalties and derivatives are interpreted** when something goes wrong
+   (see {ref}`how-to-errors`) or when a scalar optimizer is used on a specialized
+   problem.
+>>>>>>> 04ce067 (docs: address review on AggregationLevel explanation)
 
-The same marked function can often still be solved with a normal scalar optimizer;
-optimagic aggregates the vector output when needed (sum of squares for least-squares,
-sum of contributions for likelihood).
+Any marked function can still be solved with a normal scalar optimizer; optimagic
+aggregates the vector output when needed (sum of squares for least-squares, sum of
+contributions for likelihood).
 
 ## Scalar problems
 
@@ -78,8 +84,7 @@ maximum likelihood; optimagic flips the sign internally for the solver. If you p
 Do **not** return only the summed scalar log-likelihood if you want likelihood-specific
 optimizers — they need the contributions.
 
-For estimation workflows built on likelihood functions, see also the estimagic
-tutorials.
+For estimation workflows built on likelihood functions, see also {ref}`estimagic`.
 
 ## How this relates to `AggregationLevel`
 
