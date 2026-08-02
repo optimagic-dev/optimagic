@@ -216,7 +216,10 @@ def maximize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Optional SciPy-style callback with signature ``callback(xk)``, called
+            with the current internal parameter vector whenever the objective function
+            is evaluated. The ``callback(intermediate_result)`` interface is not yet
+            supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -413,7 +416,10 @@ def minimize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Optional SciPy-style callback with signature ``callback(xk)``, called
+            with the current internal parameter vector whenever the objective function
+            is evaluated. The ``callback(intermediate_result)`` interface is not yet
+            supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -653,6 +659,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         linear_constraints=None,
         nonlinear_constraints=internal_nonlinear_constraints,
         logger=logger,
+        callback=problem.callback,
     )
 
     # ==================================================================================

@@ -120,15 +120,23 @@ def test_exception_for_hessp():
         )
 
 
-def test_exception_for_callback():
-    msg = "The callback argument is not yet supported"
-    with pytest.raises(NotImplementedError, match=msg):
-        om.minimize(
-            fun=lambda x: x @ x,
-            x0=np.arange(3),
-            algorithm="scipy_lbfgsb",
-            callback=print,
-        )
+def test_callback_xk_is_called():
+    """SciPy-style callback(xk) is invoked on objective evaluations."""
+    xs = []
+
+    def callback(xk):
+        xs.append(np.asarray(xk).copy())
+
+    res = om.minimize(
+        fun=lambda x: x @ x,
+        x0=np.arange(3, dtype=float),
+        algorithm="scipy_neldermead",
+        callback=callback,
+    )
+
+    assert len(xs) >= 1
+    assert xs[0].shape == (3,)
+    aaae(res.x, np.zeros(3), decimal=5)
 
 
 def test_exception_for_options():

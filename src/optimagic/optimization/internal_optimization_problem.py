@@ -61,6 +61,7 @@ class InternalOptimizationProblem:
         linear_constraints: list[dict[str, Any]] | None,
         nonlinear_constraints: list[dict[str, Any]] | None,
         logger: LogStore[Any, Any] | None,
+        callback: Callable[[NDArray[np.float64]], Any] | None = None,
         # TODO: add hess and hessp
     ):
         self._fun = fun
@@ -78,6 +79,7 @@ class InternalOptimizationProblem:
         self._linear_constraints = linear_constraints
         self._nonlinear_constraints = nonlinear_constraints
         self._logger = logger
+        self._callback = callback
         self._step_id: int | None = None
 
     # ==================================================================================
@@ -264,6 +266,11 @@ class InternalOptimizationProblem:
         new = copy(self)
         new._step_id = step_id
         return new
+
+    def _maybe_call_callback(self, x: NDArray[np.float64]) -> None:
+        """Call the optional SciPy-style ``callback(xk)`` if one was provided."""
+        if self._callback is not None:
+            self._callback(x)
 
     # ==================================================================================
     # Public attributes
@@ -504,6 +511,7 @@ class InternalOptimizationProblem:
             exceptions=traceback,
         )
 
+        self._maybe_call_callback(x)
         return algo_fun_value, hist_entry, log_entry
 
     def _pure_evaluate_jac(
@@ -652,6 +660,7 @@ class InternalOptimizationProblem:
             exceptions=traceback,
         )
 
+        self._maybe_call_callback(x)
         return (algo_fun_value, jac_value), hist_entry, log_entry
 
     def _pure_exploration_fun(
@@ -786,6 +795,7 @@ class InternalOptimizationProblem:
             exceptions=traceback,
         )
 
+        self._maybe_call_callback(x)
         return (algo_fun_value, out_jac), hist_entry, log_entry
 
 
