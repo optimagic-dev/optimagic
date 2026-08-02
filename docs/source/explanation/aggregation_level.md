@@ -12,9 +12,9 @@ optionally `@om.mark.scalar`). That mark changes:
 
 1. **What your function should return** (a single number vs a vector of contributions or
    residuals).
-2. **Which specialized optimizers you can use** (for example pounders for least-squares,
+1. **Which specialized optimizers you can use** (for example pounders for least-squares,
    or BHHH for likelihood).
-3. **How error penalties and derivatives are interpreted** when something goes wrong
+1. **How error penalties and derivatives are interpreted** when something goes wrong
    (see {ref}`how-to-errors`) or when a scalar optimizer is used on a specialized
    problem.
 
