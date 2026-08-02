@@ -11,6 +11,7 @@ from typing import (
     Protocol,
     TypeVar,
     ValuesView,
+    runtime_checkable,
 )
 
 import numpy as np
@@ -103,6 +104,7 @@ class EvalTask(Enum):
     EXPLORATION = "exploration"
 
 
+@runtime_checkable
 class BatchEvaluator(Protocol):
     def __call__(
         self,

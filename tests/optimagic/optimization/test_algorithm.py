@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import numpy as np
 import pytest
 
+from optimagic import mark
+from optimagic.algorithms import ALL_ALGORITHMS
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.optimization.algorithm import AlgoInfo, Algorithm, InternalOptimizeResult
 from optimagic.optimization.history import HistoryEntry
@@ -110,12 +112,28 @@ def test_internal_optimize_result_validation(kwargs):
 # ======================================================================================
 
 
+@mark.minimizer(
+    name="dummy_algorithm",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
 @dataclass(frozen=True)
 class DummyAlgorithm(Algorithm):
     initial_radius: PositiveFloat = 1.0
     max_radius: PositiveFloat = 10.0
     convergence_ftol_rel: NonNegativeFloat = 1e-6
     stopping_maxiter: PositiveInt = 1000
+    n_points: PositiveInt | None = None
 
     def _solve_internal_problem(self, problem, x0):
         hist_entry = HistoryEntry(
@@ -232,3 +250,49 @@ def test_algorithm_does_type_conversion_in_with_option():
 def test_error_with_negative_radius():
     with pytest.raises(Exception):  # noqa: B017
         DummyAlgorithm(initial_radius=-1.0)
+
+
+@pytest.mark.parametrize("candidate", [1, "1", 1.0, np.int32(1), np.float64(1.0)])
+def test_int_like_values_are_converted_to_int(candidate):
+    algo = DummyAlgorithm(stopping_maxiter=candidate)
+    assert isinstance(algo.stopping_maxiter, int)
+    assert algo.stopping_maxiter == 1
+
+
+@pytest.mark.parametrize("candidate", [1, "1", 1.0, "1.0", np.float64(1.0)])
+def test_float_like_values_are_converted_to_float(candidate):
+    algo = DummyAlgorithm(initial_radius=candidate)
+    assert isinstance(algo.initial_radius, float)
+    assert algo.initial_radius == 1.0
+
+
+def test_optional_int_option_is_converted():
+    algo = DummyAlgorithm(n_points=3.0)
+    assert isinstance(algo.n_points, int)
+    assert algo.n_points == 3
+    assert DummyAlgorithm(n_points=None).n_points is None
+
+
+def test_optional_int_option_is_validated():
+    with pytest.raises(InvalidAlgoOptionError):
+        DummyAlgorithm(n_points=-1)
+
+
+def test_error_with_fractional_value_for_int_option():
+    with pytest.raises(InvalidAlgoOptionError):
+        DummyAlgorithm(stopping_maxiter=5.5)
+
+
+def test_error_with_invalid_option_name_in_constructor():
+    with pytest.raises(InvalidAlgoOptionError):
+        DummyAlgorithm(invalid_option=1)
+
+
+def test_all_invalid_options_are_reported_at_once():
+    with pytest.raises(InvalidAlgoOptionError, match="(?s)initial_radius.*max_radius"):
+        DummyAlgorithm(initial_radius=-1.0, max_radius=-1.0)
+
+
+def test_all_algorithms_can_be_instantiated_with_defaults():
+    for cls in ALL_ALGORITHMS.values():
+        cls()
