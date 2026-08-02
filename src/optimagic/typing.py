@@ -1,3 +1,5 @@
+import functools
+import typing
 from dataclasses import dataclass, fields
 from enum import Enum
 from typing import (
@@ -15,6 +17,7 @@ from typing import (
 )
 
 import numpy as np
+import pydantic
 from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
 
@@ -143,6 +146,67 @@ BatchEvaluatorLiteral = Literal["joblib", "pathos", "threading"]
 """Type alias for batch evaluator types, can be 'joblib', 'pathos', or 'threading'."""
 ErrorHandlingLiteral = Literal["raise", "continue"]
 """Type alias for error handling strategies, can be 'raise' or 'continue'."""
+
+
+DataclassT = TypeVar("DataclassT")
+
+OPTION_VALIDATION_CONFIG = pydantic.ConfigDict(
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    validate_default=True,
+)
+"""Pydantic config for user-facing options: coerce generous inputs to strict types."""
+
+STRICT_VALIDATION_CONFIG = pydantic.ConfigDict(
+    strict=True,
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    validate_default=True,
+)
+"""Pydantic config for internal types: reject inputs that need conversion."""
+
+
+def validated_dataclass(
+    config: pydantic.ConfigDict,
+    make_error: Callable[[pydantic.ValidationError], Exception],
+) -> Callable[[type[DataclassT]], type[DataclassT]]:
+    """Create a class decorator that adds pydantic validation to a frozen dataclass.
+
+    The decorated class is re-created as a pydantic dataclass, so field values are
+    validated and converted according to their type annotations on every
+    instantiation (including via ``dataclasses.replace``). Annotations are resolved
+    at runtime, so this also works in modules using
+    ``from __future__ import annotations``.
+
+    Args:
+        config: The pydantic config that controls validation behavior.
+        make_error: Called with the raised ``pydantic.ValidationError`` to build the
+            exception that is raised in its place.
+
+    Returns:
+        A class decorator for frozen dataclasses.
+
+    """
+
+    def decorator(cls: type[DataclassT]) -> type[DataclassT]:
+        out = pydantic.dataclasses.dataclass(frozen=True, config=config)(cls)
+        # pydantic re-creates the class, which loses attributes that tooling and
+        # introspection rely on.
+        out.__doc__ = cls.__doc__
+        out.__annotations__ = dict(cls.__annotations__)
+        original_init = out.__init__
+
+        @functools.wraps(original_init)
+        def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
+            try:
+                original_init(self, *args, **kwargs)
+            except pydantic.ValidationError as e:
+                raise make_error(e) from e
+
+        out.__init__ = __init__  # type: ignore[method-assign]
+        return typing.cast("type[DataclassT]", out)
+
+    return decorator
 
 
 @dataclass(frozen=True)

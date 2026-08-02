@@ -4,12 +4,12 @@ from typing import Any, Callable, ParamSpec, TypeVar, cast
 import pydantic
 
 from optimagic.exceptions import InvalidAlgoOptionError
-from optimagic.optimization.algorithm import (
+from optimagic.optimization.algorithm import AlgoInfo
+from optimagic.typing import (
     OPTION_VALIDATION_CONFIG,
-    AlgoInfo,
+    AggregationLevel,
     validated_dataclass,
 )
-from optimagic.typing import AggregationLevel
 
 P = ParamSpec("P")
 
