@@ -13,15 +13,14 @@ optionally `@om.mark.scalar`). That mark changes:
 1. **What your function should return** (a single number vs a vector of contributions or
    residuals).
 1. **Which specialized optimizers you can use** (for example pounders for least-squares,
-   or BHHH for likelihood).
-<<<<<<< HEAD
+   or BHHH for likelihood). \<<\<<\<<< HEAD
 1. **How error penalties and derivatives are interpreted** when something goes wrong or
-   when a scalar optimizer is used on a specialized problem.
-=======
-3. **How error penalties and derivatives are interpreted** when something goes wrong
+   when a scalar optimizer is used on a specialized problem. =======
+1. **How error penalties and derivatives are interpreted** when something goes wrong
    (see {ref}`how-to-errors`) or when a scalar optimizer is used on a specialized
    problem.
->>>>>>> 04ce067 (docs: address review on AggregationLevel explanation)
+
+> > > > > > > 04ce067 (docs: address review on AggregationLevel explanation)
 
 Any marked function can still be solved with a normal scalar optimizer; optimagic
 aggregates the vector output when needed (sum of squares for least-squares, sum of
