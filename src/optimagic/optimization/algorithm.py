@@ -16,7 +16,7 @@ from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
 from optimagic.typing import (
-    STRICT_VALIDATION_CONFIG,
+    STRICT_PYDANTIC_CONFIG,
     AggregationLevel,
     validated_dataclass,
 )
@@ -32,7 +32,7 @@ def _internal_optimize_result_error(e: pydantic.ValidationError) -> Exception:
     return TypeError(msg)
 
 
-@validated_dataclass(config=STRICT_VALIDATION_CONFIG, make_error=_algo_info_error)
+@validated_dataclass(config=STRICT_PYDANTIC_CONFIG, make_error=_algo_info_error)
 @dataclass(frozen=True)
 class AlgoInfo:
     name: str
@@ -52,7 +52,7 @@ class AlgoInfo:
 
 
 @validated_dataclass(
-    config=STRICT_VALIDATION_CONFIG, make_error=_internal_optimize_result_error
+    config=STRICT_PYDANTIC_CONFIG, make_error=_internal_optimize_result_error
 )
 @dataclass(frozen=True)
 class InternalOptimizeResult:

@@ -150,14 +150,14 @@ ErrorHandlingLiteral = Literal["raise", "continue"]
 
 DataclassT = TypeVar("DataclassT")
 
-OPTION_VALIDATION_CONFIG = pydantic.ConfigDict(
+DEFAULT_PYDANTIC_CONFIG = pydantic.ConfigDict(
     arbitrary_types_allowed=True,
     extra="forbid",
     validate_default=True,
 )
 """Pydantic config for user-facing options: coerce generous inputs to strict types."""
 
-STRICT_VALIDATION_CONFIG = pydantic.ConfigDict(
+STRICT_PYDANTIC_CONFIG = pydantic.ConfigDict(
     strict=True,
     arbitrary_types_allowed=True,
     extra="forbid",

@@ -6,7 +6,7 @@ import pydantic
 from optimagic.exceptions import InvalidAlgoOptionError
 from optimagic.optimization.algorithm import AlgoInfo
 from optimagic.typing import (
-    OPTION_VALIDATION_CONFIG,
+    DEFAULT_PYDANTIC_CONFIG,
     AggregationLevel,
     validated_dataclass,
 )
@@ -153,7 +153,7 @@ def minimizer(
             experimental=experimental,
         )
         out = validated_dataclass(
-            config=OPTION_VALIDATION_CONFIG, make_error=make_error
+            config=DEFAULT_PYDANTIC_CONFIG, make_error=make_error
         )(cast("type[Any]", cls))
         out.__algo_info__ = algo_info
         return cast("AlgorithmSubclass", out)
