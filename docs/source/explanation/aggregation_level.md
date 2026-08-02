@@ -2,19 +2,19 @@
 
 # Problem types (`AggregationLevel`)
 
-optimagic can optimize three kinds of objective functions: **scalar**, **least-squares**,
-and **likelihood**. Internally these are represented by
+optimagic can optimize three kinds of objective functions: **scalar**,
+**least-squares**, and **likelihood**. Internally these are represented by
 {class}`~optimagic.typing.AggregationLevel`.
 
 You tell optimagic which kind you have by marking the objective function with a
-decorator from `optimagic.mark` (`@om.mark.least_squares`, `@om.mark.likelihood`,
-or optionally `@om.mark.scalar`). That mark changes:
+decorator from `optimagic.mark` (`@om.mark.least_squares`, `@om.mark.likelihood`, or
+optionally `@om.mark.scalar`). That mark changes:
 
 1. **What your function should return** (a single number vs a vector of contributions or
    residuals).
-2. **Which specialized optimizers you can use** (for example pounders for least-squares,
+1. **Which specialized optimizers you can use** (for example pounders for least-squares,
    or BHHH for likelihood).
-3. **How error penalties and derivatives are interpreted** when something goes wrong or
+1. **How error penalties and derivatives are interpreted** when something goes wrong or
    when a scalar optimizer is used on a specialized problem.
 
 The same marked function can often still be solved with a normal scalar optimizer;
@@ -53,8 +53,8 @@ def ls_sphere(params):
 ```
 
 **Why mark it?** Specialized least-squares solvers can use the residual structure and
-are often much faster than treating $f(x)=\sum_i r_i(x)^2$ as a black-box scalar. If
-you only return the scalar sum of squares, those solvers cannot be used.
+are often much faster than treating $f(x)=\sum_i r_i(x)^2$ as a black-box scalar. If you
+only return the scalar sum of squares, those solvers cannot be used.
 
 See {ref}`how-to-fun` for a short usage example.
 
@@ -83,11 +83,11 @@ tutorials.
 
 ## How this relates to `AggregationLevel`
 
-| Problem | Decorator | Typical return | `AggregationLevel` |
-|---------|-----------|----------------|--------------------|
-| Scalar | none or `@om.mark.scalar` | `float` | `SCALAR` |
-| Least-squares | `@om.mark.least_squares` | residual vector | `LEAST_SQUARES` |
-| Likelihood | `@om.mark.likelihood` | contribution vector | `LIKELIHOOD` |
+| Problem       | Decorator                 | Typical return      | `AggregationLevel` |
+| ------------- | ------------------------- | ------------------- | ------------------ |
+| Scalar        | none or `@om.mark.scalar` | `float`             | `SCALAR`           |
+| Least-squares | `@om.mark.least_squares`  | residual vector     | `LEAST_SQUARES`    |
+| Likelihood    | `@om.mark.likelihood`     | contribution vector | `LIKELIHOOD`       |
 
 Optimizers are also tagged with a `solver_type` of the same enum (see
 {ref}`internal_optimizer_interface`). Matching the mark on your function to the solver
