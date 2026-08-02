@@ -178,6 +178,16 @@ def validated_dataclass(
     at runtime, so this also works in modules using
     ``from __future__ import annotations``.
 
+    This is deliberately a layer on top of existing dataclasses rather than a
+    replacement for ``pydantic.dataclasses.dataclass`` at the definition site, for
+    two reasons. First, it keeps the classes themselves plain frozen dataclasses,
+    which made adopting pydantic non-breaking: algorithm classes — including ones
+    defined outside optimagic — are still written as regular dataclasses and gain
+    validation through ``mark.minimizer`` without any change to their definition.
+    Second, it raises domain-specific exceptions (built by ``make_error``) instead
+    of ``pydantic.ValidationError``, which preserves optimagic's exception
+    contracts; pydantic itself has no hook to customize the raised exception type.
+
     Args:
         config: The pydantic config that controls validation behavior.
         make_error: Called with the raised ``pydantic.ValidationError`` to build the
