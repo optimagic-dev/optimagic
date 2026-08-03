@@ -14,7 +14,7 @@ from optimagic.optimization.history import History
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.type_conversion import TYPE_CONVERTERS
+from optimagic.type_conversion import TYPE_CONVERTERS, TYPE_CONVERTERS_BY_NAME
 from optimagic.typing import AggregationLevel
 
 
@@ -219,10 +219,16 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
     def __post_init__(self) -> None:
         for field in self.__dataclass_fields__:
             raw_value = getattr(self, field)
-            target_type = typing.cast(type, self.__dataclass_fields__[field].type)
-            if target_type in TYPE_CONVERTERS:
+            target_type = self.__dataclass_fields__[field].type
+            # In modules with `from __future__ import annotations`, field types
+            # are annotation strings rather than type objects.
+            if isinstance(target_type, str):
+                converter = TYPE_CONVERTERS_BY_NAME.get(target_type)
+            else:
+                converter = TYPE_CONVERTERS.get(typing.cast(type, target_type))
+            if converter is not None:
                 try:
-                    value = TYPE_CONVERTERS[target_type](raw_value)
+                    value = converter(raw_value)
                 except (KeyboardInterrupt, SystemExit):
                     raise
                 except Exception as e:

@@ -1,5 +1,7 @@
 """This module implements the POUNDERs algorithm."""
 
+from __future__ import annotations
+
 import functools
 from dataclasses import dataclass
 
@@ -40,13 +42,105 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 )
 @dataclass(frozen=True)
 class TAOPounders(Algorithm):
-    """Implement the POUNDERs algorithm."""
+    r"""Minimize a nonlinear least-squares problem using the POUNDERS algorithm.
+
+    POUNDERS (Practical Optimization Using No Derivatives for sums of Squares,
+    :cite:`Wild2015`) is a derivative-free trust-region algorithm that is tailored
+    to nonlinear least-squares problems. It is part of the Toolkit for Advanced
+    Optimization (TAO, :cite:`Benson2017`), which is distributed together with
+    PETSc, and is wrapped in optimagic via
+    `petsc4py <https://pypi.org/project/petsc4py/>`_.
+
+    Instead of working only with the scalar sum of squares, POUNDERS exploits the
+    availability of the full vector of residuals: it maintains an interpolation-based
+    quadratic model of each residual around the current iterate (building on the
+    minimal norm Hessian models of :cite:`Wild2008`) and combines these models
+    according to the known least-squares structure of the objective. Candidate steps
+    are obtained by minimizing the combined model inside a dynamically resized trust
+    region.
+
+    Use POUNDERS if your criterion function is a nonlinear sum of squares, evaluating
+    the residuals is expensive (e.g., each evaluation requires a simulation),
+    derivatives are not available, and the residuals are possibly slightly noisy.
+    This makes it a useful tool for economists who estimate structural models using
+    indirect inference or the method of simulated moments. Compared to
+    Levenberg-Marquardt style solvers, which need the Jacobian of the residuals
+    (either analytically or via finite differences, which costs many extra
+    evaluations per iteration and is unreliable for noisy functions), POUNDERS gets
+    by without any derivative information. Compared to derivative-free algorithms
+    that ignore the least-squares structure, such as Nelder-Mead, it typically
+    requires far fewer criterion evaluations to arrive at a local optimum. If the
+    residuals are smooth, cheap to evaluate, and derivatives are available, a
+    derivative-based least-squares solver is usually the better choice.
+
+    Scale the problem such that the bounds correspond to the unit hypercube
+    :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that
+    unit changes in the parameters result in similar order-of-magnitude changes in
+    the criterion value(s).
+
+    .. note::
+        This algorithm requires the petsc4py package, which is not available on
+        Windows. Windows users can use optimagic's own ``pounders`` algorithm
+        instead.
+
+    """
 
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    r"""Stop if the norm of the gradient falls below this value.
+
+    .. math::
+
+        \lVert g(X) \rVert \leq \textsf{convergence_gtol_abs}
+
+    This is the absolute gradient tolerance ``gatol`` in the TAO documentation.
+    Set it to zero to disable this criterion.
+
+    """
+
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    r"""Stop if the norm of the gradient relative to the criterion value falls below
+    this value.
+
+    .. math::
+
+        \frac{\lVert g(X) \rVert}{|f(X)|} \leq \textsf{convergence_gtol_rel}
+
+    This is the relative gradient tolerance ``grtol`` in the TAO documentation.
+    Set it to zero to disable this criterion.
+
+    """
+
     convergence_gtol_scaled: NonNegativeFloat = CONVERGENCE_GTOL_SCALED
+    r"""Stop if the norm of the gradient falls below this fraction of the norm of the
+    gradient at the start parameters :math:`X_0`.
+
+    .. math::
+
+        \frac{\lVert g(X) \rVert}{\lVert g(X_0) \rVert} \leq
+        \textsf{convergence_gtol_scaled}
+
+    This is the gradient reduction tolerance ``gttol`` in the TAO documentation.
+    Set it to zero to disable this criterion.
+
+    """
+
     trustregion_initial_radius: NonNegativeFloat | None = None
+    r"""Initial value of the trust region radius. It must be larger than zero.
+
+    If None (the default), the radius is set to
+    :math:`0.1 \max(\lVert x_0 \rVert_\infty, 1)`, where :math:`x_0` are the start
+    parameters.
+
+    """
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Alternative stopping criterion.
+
+    If set, the routine stops after the specified number of iterations or after the
+    step size is sufficiently small. If the variable is set, the default convergence
+    criteria are all ignored.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]

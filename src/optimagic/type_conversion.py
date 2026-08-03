@@ -87,3 +87,17 @@ TYPE_CONVERTERS = {
     NonNegativeFloat: _process_non_negative_float_like,
     GtOneFloat: _process_gt_one_float_like,
 }
+
+# In modules with `from __future__ import annotations`, dataclass field types are
+# annotation strings rather than type objects, so converter lookups need a
+# name-based mapping.
+TYPE_CONVERTERS_BY_NAME = {
+    "float": _process_float_like,
+    "int": _process_int_like,
+    "bool": _process_bool_like,
+    "PositiveInt": _process_positive_int_like,
+    "NonNegativeInt": _process_non_negative_int_like,
+    "PositiveFloat": _process_positive_float_like,
+    "NonNegativeFloat": _process_non_negative_float_like,
+    "GtOneFloat": _process_gt_one_float_like,
+}
