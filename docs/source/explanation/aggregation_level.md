@@ -15,8 +15,7 @@ optionally `@om.mark.scalar`). That mark changes:
 1. **Which specialized optimizers you can use** (for example pounders for least-squares,
    or BHHH for likelihood).
 1. **How error penalties and derivatives are interpreted** when something goes wrong
-   (see {ref}`how-to-errors`) or when a scalar optimizer is used on a specialized
-   problem.
+   (see {ref}`how-to-errors`).
 
 Any marked function can still be solved with a normal scalar optimizer; optimagic
 aggregates the vector output when needed (sum of squares for least-squares, sum of
