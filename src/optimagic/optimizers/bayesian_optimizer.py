@@ -30,6 +30,11 @@ from optimagic.typing import (
 if TYPE_CHECKING:
     from bayes_opt import BayesianOptimization
     from bayes_opt.acquisition import AcquisitionFunction
+else:
+    # AcquisitionFunction is used in field annotations, which pydantic resolves at
+    # runtime, so it needs a fallback that works without bayes_opt and avoids
+    # importing it at optimagic import time.
+    AcquisitionFunction = Any
 
 
 @mark.minimizer(

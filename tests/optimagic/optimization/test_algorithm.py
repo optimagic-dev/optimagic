@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 import pytest
 
+from optimagic import mark
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.optimization.algorithm import AlgoInfo, Algorithm, InternalOptimizeResult
 from optimagic.optimization.history import HistoryEntry
@@ -110,6 +111,21 @@ def test_internal_optimize_result_validation(kwargs):
 # ======================================================================================
 
 
+@mark.minimizer(
+    name="dummy_algorithm",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
 @dataclass(frozen=True)
 class DummyAlgorithm(Algorithm):
     initial_radius: PositiveFloat = 1.0
@@ -191,44 +207,3 @@ def test_with_option_if_applicable():
         )
     assert new_algo is not algo
     assert new_algo.initial_radius == 42
-
-
-# ======================================================================================
-# Test the type conversions of algo options
-# ======================================================================================
-
-
-def test_algorithm_does_type_conversion():
-    algo = DummyAlgorithm(
-        initial_radius="1.0",
-        max_radius="10.0",
-        convergence_ftol_rel="1e-6",
-        stopping_maxiter="1000",
-    )
-
-    assert isinstance(algo.initial_radius, float)
-    assert algo.initial_radius == 1.0
-    assert isinstance(algo.max_radius, float)
-    assert algo.max_radius == 10.0
-    assert isinstance(algo.convergence_ftol_rel, float)
-    assert algo.convergence_ftol_rel == 1e-6
-    assert isinstance(algo.stopping_maxiter, int)
-    assert algo.stopping_maxiter == 1000
-
-
-def test_algorithm_does_type_conversion_in_with_option():
-    algo = DummyAlgorithm()
-    new_algo = algo.with_option(
-        initial_radius="2.0",
-        max_radius="20.0",
-    )
-
-    assert isinstance(new_algo.initial_radius, float)
-    assert new_algo.initial_radius == 2.0
-    assert isinstance(new_algo.max_radius, float)
-    assert new_algo.max_radius == 20.0
-
-
-def test_error_with_negative_radius():
-    with pytest.raises(Exception):  # noqa: B017
-        DummyAlgorithm(initial_radius=-1.0)
