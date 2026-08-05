@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Callable, Literal, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -30,6 +30,20 @@ from optimagic.typing import (
     PositiveFloat,
     PositiveInt,
 )
+
+if TYPE_CHECKING:
+    from fides.hessian_approximation import HessianApproximation
+else:
+    # HessianApproximation is used in a field annotation, which pydantic resolves
+    # at runtime, so it needs a fallback that works without fides and avoids
+    # importing it at optimagic import time.
+    HessianApproximation = Any
+
+HessianUpdateStrategy: TypeAlias = (
+    Literal["bfgs", "bb", "bg", "dfp", "sr1"] | str | HessianApproximation
+)
+"""Hessian update strategies: a case-insensitive name or a HessianApproximation
+instance from fides."""
 
 
 @mark.minimizer(
@@ -76,16 +90,11 @@ class Fides(Algorithm):
 
     """
 
-    hessian_update_strategy: Literal[
-        "bfgs",
-        "bb",
-        "bg",
-        "dfp",
-        "sr1",
-    ] = "bfgs"
+    hessian_update_strategy: HessianUpdateStrategy = "bfgs"
     """Quasi-Newton strategy used to approximate the Hessian of the objective.
 
-    The available strategies are:
+    Can be the (case-insensitive) name of a strategy or an instance of
+    ``fides.hessian_approximation.HessianApproximation``. The available names are:
 
     - ``"bfgs"``: the Broyden-Fletcher-Goldfarb-Shanno update, a rank-2 update that
       preserves symmetry and positive definiteness. This is the default.
@@ -95,12 +104,16 @@ class Fides(Algorithm):
     - ``"bb"``: Broyden's "bad" method, introduced in :cite:`Broyden1965`.
     - ``"bg"``: Broyden's "good" method, introduced in :cite:`Broyden1965`.
 
-    The general Broyden class update, a convex combination of the BFGS and DFP updates
-    controlled by a parameter :math:`\\phi` (:cite:`Nocedal1999`, Chapter 6.3), and the
-    residual-based approximations ``FX``, ``SSM``, ``TSSM`` and ``GNSBFGS`` provided by
-    the ``fides`` package are not available through this option, because they require
-    access to least-squares residuals or an interpolation parameter that optimagic does
-    not pass through.
+    The general Broyden class update is a convex combination of the BFGS and DFP
+    updates controlled by an interpolation parameter :math:`\\phi`
+    (:cite:`Nocedal1999`, Chapter 6.3). It cannot be selected by name because
+    :math:`\\phi` has no default; instead, create an instance of
+    ``fides.hessian_approximation.Broyden`` with the desired :math:`\\phi` and pass
+    it here.
+
+    The residual-based approximations ``FX``, ``SSM``, ``TSSM`` and ``GNSBFGS``
+    provided by the ``fides`` package are not available, because optimagic does not
+    pass least-squares residuals to fides.
 
     """
 
@@ -266,13 +279,7 @@ def fides_internal(
     x: NDArray[np.float64],
     lower_bounds: NDArray[np.float64] | None,
     upper_bounds: NDArray[np.float64] | None,
-    hessian_update_strategy: Literal[
-        "bfgs",
-        "bb",
-        "bg",
-        "dfp",
-        "sr1",
-    ],
+    hessian_update_strategy: HessianUpdateStrategy,
     convergence_ftol_abs: NonNegativeFloat,
     convergence_ftol_rel: NonNegativeFloat,
     convergence_xtol_abs: NonNegativeFloat,

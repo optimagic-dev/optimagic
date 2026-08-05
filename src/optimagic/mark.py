@@ -1,8 +1,15 @@
 from functools import wraps
-from typing import Any, Callable, ParamSpec, TypeVar
+from typing import Any, Callable, ParamSpec, TypeVar, cast
 
+import pydantic
+
+from optimagic.exceptions import InvalidAlgoOptionError
 from optimagic.optimization.algorithm import AlgoInfo
-from optimagic.typing import AggregationLevel
+from optimagic.typing import (
+    DEFAULT_PYDANTIC_CONFIG,
+    AggregationLevel,
+    validated_dataclass,
+)
 
 P = ParamSpec("P")
 
@@ -84,6 +91,10 @@ def minimizer(
 ) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
     """Mark an algorithm as a optimagic minimizer and add AlgoInfo.
 
+    The decorated class is re-created as a pydantic dataclass, so algorithm options
+    are validated and converted according to their type annotations whenever an
+    instance is created.
+
     Args:
         name: The name of the algorithm as a string. Used in error messages, warnings
             and the OptimizeResult.
@@ -120,6 +131,10 @@ def minimizer(
 
     """
 
+    def make_error(e: pydantic.ValidationError) -> Exception:
+        msg = f"The following options of the algorithm {name} are invalid:\n\n{e}"
+        return InvalidAlgoOptionError(msg)
+
     def decorator(cls: AlgorithmSubclass) -> AlgorithmSubclass:
         algo_info = AlgoInfo(
             name=name,
@@ -137,7 +152,10 @@ def minimizer(
             disable_history=disable_history,
             experimental=experimental,
         )
-        cls.__algo_info__ = algo_info  # type: ignore
-        return cls
+        out = validated_dataclass(
+            config=DEFAULT_PYDANTIC_CONFIG, make_error=make_error
+        )(cast("type[Any]", cls))
+        out.__algo_info__ = algo_info
+        return cast("AlgorithmSubclass", out)
 
     return decorator

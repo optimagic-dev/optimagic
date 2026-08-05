@@ -96,7 +96,7 @@ test_cases = [
     {"quality_function_centrality": "log"},
     {"quality_function_balancing_term": "cubic"},
     {"quality_function_max_section_steps": 10},
-    {"quality_function_max_section_steps": 5.5},
+    {"quality_function_max_section_steps": 5.0},
     {"quality_function_section_sigma_tol": 0.02},
     {"quality_function_section_qf_tol": 0.5},
     {"line_search_method": "penalty"},

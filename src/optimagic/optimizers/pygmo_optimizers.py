@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Literal
+from typing import TYPE_CHECKING, Any, List, Literal, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -49,6 +49,13 @@ STOPPING_MAX_ITERATIONS_GENETIC = 250
 
 if TYPE_CHECKING:
     import pygmo as pg
+
+    PygmoAlgorithm: TypeAlias = pg.algorithm
+else:
+    # PygmoAlgorithm is used in a field annotation, which pydantic resolves at
+    # runtime, so it needs a fallback that works without pygmo and avoids importing
+    # it at optimagic import time.
+    PygmoAlgorithm = Any
 
 
 @mark.minimizer(
@@ -1759,7 +1766,7 @@ class PygmoMbh(Algorithm):
 
     """
 
-    inner_algorithm: pg.algorithm | None = None
+    inner_algorithm: PygmoAlgorithm | None = None
     """A pygmo algorithm or a user-defined pygmo algorithm, either C++ or Python,
     that is used for the inner (local) searches.
 

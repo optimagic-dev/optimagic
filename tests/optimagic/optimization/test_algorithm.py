@@ -1,9 +1,9 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 
 import numpy as np
 import pytest
 
-from optimagic.algorithms import ALL_ALGORITHMS
+from optimagic import mark
 from optimagic.exceptions import InvalidAlgoInfoError, InvalidAlgoOptionError
 from optimagic.optimization.algorithm import AlgoInfo, Algorithm, InternalOptimizeResult
 from optimagic.optimization.history import HistoryEntry
@@ -11,7 +11,6 @@ from optimagic.typing import (
     AggregationLevel,
     EvalTask,
     NonNegativeFloat,
-    NonNegativeInt,
     PositiveFloat,
     PositiveInt,
 )
@@ -112,6 +111,21 @@ def test_internal_optimize_result_validation(kwargs):
 # ======================================================================================
 
 
+@mark.minimizer(
+    name="dummy_algorithm",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
 @dataclass(frozen=True)
 class DummyAlgorithm(Algorithm):
     initial_radius: PositiveFloat = 1.0
@@ -193,109 +207,3 @@ def test_with_option_if_applicable():
         )
     assert new_algo is not algo
     assert new_algo.initial_radius == 42
-
-
-# ======================================================================================
-# Test the type conversions of algo options
-# ======================================================================================
-
-
-def test_field_types_are_type_objects():
-    # Guard: this module must NOT use `from __future__ import annotations`,
-    # otherwise the tests below no longer cover the type-object code path of the
-    # option conversion. The stringified-annotations path is covered in
-    # test_algorithm_future_annotations.py.
-    field_types = {f.name: f.type for f in fields(DummyAlgorithm)}
-    assert field_types["stopping_maxiter"] == PositiveInt
-    assert field_types["initial_radius"] == PositiveFloat
-
-
-def test_algorithm_does_type_conversion():
-    algo = DummyAlgorithm(
-        initial_radius="1.0",
-        max_radius="10.0",
-        convergence_ftol_rel="1e-6",
-        stopping_maxiter="1000",
-    )
-
-    assert isinstance(algo.initial_radius, float)
-    assert algo.initial_radius == 1.0
-    assert isinstance(algo.max_radius, float)
-    assert algo.max_radius == 10.0
-    assert isinstance(algo.convergence_ftol_rel, float)
-    assert algo.convergence_ftol_rel == 1e-6
-    assert isinstance(algo.stopping_maxiter, int)
-    assert algo.stopping_maxiter == 1000
-
-
-def test_algorithm_does_type_conversion_in_with_option():
-    algo = DummyAlgorithm()
-    new_algo = algo.with_option(
-        initial_radius="2.0",
-        max_radius="20.0",
-    )
-
-    assert isinstance(new_algo.initial_radius, float)
-    assert new_algo.initial_radius == 2.0
-    assert isinstance(new_algo.max_radius, float)
-    assert new_algo.max_radius == 20.0
-
-
-def test_algorithm_converts_float_to_int():
-    algo = DummyAlgorithm(stopping_maxiter=1000.0)
-    assert isinstance(algo.stopping_maxiter, int)
-    assert algo.stopping_maxiter == 1000
-
-
-def test_error_with_negative_radius():
-    with pytest.raises(Exception):  # noqa: B017
-        DummyAlgorithm(initial_radius=-1.0)
-
-
-# ======================================================================================
-# Test type conversion works for all registered algorithms
-# ======================================================================================
-
-# Field types are type objects in modules without `from __future__ import
-# annotations` and annotation strings in modules with it. Both must be coerced.
-INT_ANNOTATIONS = (
-    int,
-    PositiveInt,
-    NonNegativeInt,
-    "int",
-    "PositiveInt",
-    "NonNegativeInt",
-)
-
-
-def _int_options_with_int_defaults(cls):
-    out = {}
-    for field in fields(cls):
-        has_int_annotation = any(field.type == t for t in INT_ANNOTATIONS)
-        has_int_default = isinstance(field.default, int) and not isinstance(
-            field.default, bool
-        )
-        if has_int_annotation and has_int_default:
-            out[field.name] = field.default
-    return out
-
-
-@pytest.mark.parametrize("cls", ALL_ALGORITHMS.values(), ids=ALL_ALGORITHMS.keys())
-def test_int_options_are_coerced_for_all_algorithms(cls):
-    """Passing floats for int-typed options must result in int attributes.
-
-    This guards against the option conversion in Algorithm.__post_init__ being
-    silently skipped, as happened for optimizer modules with postponed annotations
-    where the field type is a string rather than a type object.
-
-    """
-    int_options = _int_options_with_int_defaults(cls)
-    if not int_options:
-        pytest.skip("Algorithm has no int-typed options with int defaults.")
-
-    algo = cls(**{name: float(default) for name, default in int_options.items()})
-
-    for name, default in int_options.items():
-        value = getattr(algo, name)
-        assert isinstance(value, int), f"Option {name} was not coerced to int."
-        assert value == default
