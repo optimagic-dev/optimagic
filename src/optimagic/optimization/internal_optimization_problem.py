@@ -61,7 +61,7 @@ class InternalOptimizationProblem:
         linear_constraints: list[dict[str, Any]] | None,
         nonlinear_constraints: list[dict[str, Any]] | None,
         logger: LogStore[Any, Any] | None,
-        callback: Callable[[NDArray[np.float64]], Any] | None = None,
+        callback: Callable[[PyTree], None] | None = None,
         # TODO: add hess and hessp
     ):
         self._fun = fun
@@ -99,6 +99,7 @@ class InternalOptimizationProblem:
         """
         fun_value, hist_entry = self._evaluate_fun(x)
         self._history.add_entry(hist_entry)
+        self._maybe_call_callback(hist_entry.params)
         return fun_value
 
     def jac(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -127,6 +128,7 @@ class InternalOptimizationProblem:
         """
         fun_and_jac_value, hist_entry = self._evaluate_fun_and_jac(x)
         self._history.add_entry(hist_entry)
+        self._maybe_call_callback(hist_entry.params)
         return fun_and_jac_value
 
     def batch_fun(
@@ -160,6 +162,8 @@ class InternalOptimizationProblem:
         fun_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
         self._history.add_batch(hist_entries, batch_size)
+        for hist_entry in hist_entries:
+            self._maybe_call_callback(hist_entry.params)
 
         return fun_values
 
@@ -229,6 +233,8 @@ class InternalOptimizationProblem:
         fun_and_jac_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
         self._history.add_batch(hist_entries, batch_size)
+        for hist_entry in hist_entries:
+            self._maybe_call_callback(hist_entry.params)
 
         return fun_and_jac_values
 
@@ -267,10 +273,19 @@ class InternalOptimizationProblem:
         new._step_id = step_id
         return new
 
-    def _maybe_call_callback(self, x: NDArray[np.float64]) -> None:
-        """Call the optional SciPy-style ``callback(xk)`` if one was provided."""
+    def _maybe_call_callback(self, params: PyTree) -> None:
+        """Call the optional SciPy-style ``callback(xk)`` if one was provided.
+
+        Called next to history append (not inside ``_pure_*``) so it runs in the
+        parent process when ``n_cores > 1``. ``params`` are external user-facing
+        parameters (a PyTree), not the internal flat parameter vector.
+
+        Raising ``StopIteration`` from the callback to abort optimization (as in
+        SciPy) is not handled yet.
+
+        """
         if self._callback is not None:
-            self._callback(x)
+            self._callback(params)
 
     # ==================================================================================
     # Public attributes
@@ -511,7 +526,6 @@ class InternalOptimizationProblem:
             exceptions=traceback,
         )
 
-        self._maybe_call_callback(x)
         return algo_fun_value, hist_entry, log_entry
 
     def _pure_evaluate_jac(
@@ -660,7 +674,6 @@ class InternalOptimizationProblem:
             exceptions=traceback,
         )
 
-        self._maybe_call_callback(x)
         return (algo_fun_value, jac_value), hist_entry, log_entry
 
     def _pure_exploration_fun(
@@ -795,7 +808,6 @@ class InternalOptimizationProblem:
             exceptions=traceback,
         )
 
-        self._maybe_call_callback(x)
         return (algo_fun_value, out_jac), hist_entry, log_entry
 
 

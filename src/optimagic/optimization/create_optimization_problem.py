@@ -86,7 +86,7 @@ class OptimizationProblem:
     skip_checks: bool
     direction: Direction
     fun_eval: SpecificFunctionValue
-    callback: Callable[[Any], Any] | None
+    callback: Callable[[PyTree], None] | None
 
 
 def create_optimization_problem(
@@ -521,6 +521,21 @@ def create_optimization_problem(
 
         if not isinstance(collect_history, bool):
             raise ValueError("collect_history must be a boolean")
+
+    # ==================================================================================
+    # process and validate callback
+    # ==================================================================================
+
+    if callback is not None:
+        if not callable(callback):
+            raise InvalidFunctionError("callback must be a callable or None.")
+        # Same signature checks as for fun / jac: one free argument (the params / xk).
+        callback = partial_func_of_params(
+            func=callback,
+            kwargs={},
+            name="callback",
+            skip_checks=skip_checks,
+        )
 
     # ==================================================================================
     # create the problem object

@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 import optimagic as om
-from optimagic.exceptions import AliasError
+from optimagic.exceptions import AliasError, InvalidFunctionError, InvalidKwargsError
 
 
 def test_x0_works_in_minimize():
@@ -137,6 +137,91 @@ def test_callback_xk_is_called():
     assert len(xs) >= 1
     assert xs[0].shape == (3,)
     aaae(res.x, np.zeros(3), decimal=5)
+
+
+def test_callback_receives_external_params():
+    """Callback gets external PyTree params, not the internal flat vector."""
+    received = []
+
+    def callback(xk):
+        received.append(xk)
+
+    params = {"a": np.array([1.0, 2.0]), "b": np.array([3.0])}
+
+    def fun(p):
+        return p["a"] @ p["a"] + p["b"] @ p["b"]
+
+    om.minimize(
+        fun=fun,
+        params=params,
+        algorithm="scipy_neldermead",
+        callback=callback,
+    )
+
+    assert len(received) >= 1
+    assert isinstance(received[0], dict)
+    assert set(received[0]) == {"a", "b"}
+    assert received[0]["a"].shape == (2,)
+    assert received[0]["b"].shape == (1,)
+
+
+def test_callback_not_called_on_jac():
+    """Callback runs next to history on fun, not on jac-only evaluations."""
+    from optimagic.optimization.internal_optimization_problem import (
+        SphereExampleInternalOptimizationProblem,
+    )
+
+    problem = SphereExampleInternalOptimizationProblem()
+    calls = []
+    problem._callback = lambda p: calls.append(np.asarray(p).copy())
+
+    x = np.ones(10)
+    problem.jac(x)
+    assert calls == []
+
+    problem.fun(x)
+    assert len(calls) == 1
+    aaae(calls[0], x)
+
+
+def test_invalid_callback_too_few_arguments():
+    msg = "callback must have at least one free argument"
+
+    def bad_callback():
+        return None
+
+    with pytest.raises(InvalidFunctionError, match=msg):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3, dtype=float),
+            algorithm="scipy_neldermead",
+            callback=bad_callback,
+        )
+
+
+def test_invalid_callback_too_many_required_arguments():
+    msg = "Too few keyword arguments for callback"
+
+    def bad_callback(xk, extra):
+        return None
+
+    with pytest.raises(InvalidKwargsError, match=msg):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3, dtype=float),
+            algorithm="scipy_neldermead",
+            callback=bad_callback,
+        )
+
+
+def test_invalid_callback_not_callable():
+    with pytest.raises(InvalidFunctionError, match="callback must be a callable"):
+        om.minimize(
+            fun=lambda x: x @ x,
+            x0=np.arange(3, dtype=float),
+            algorithm="scipy_neldermead",
+            callback="not-a-callable",
+        )
 
 
 def test_exception_for_options():
