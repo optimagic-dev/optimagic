@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Callable, Literal, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -29,6 +29,20 @@ from optimagic.typing import (
     PositiveInt,
 )
 
+if TYPE_CHECKING:
+    from fides.hessian_approximation import HessianApproximation
+else:
+    # HessianApproximation is used in a field annotation, which pydantic resolves
+    # at runtime, so it needs a fallback that works without fides and avoids
+    # importing it at optimagic import time.
+    HessianApproximation = Any
+
+HessianUpdateStrategy: TypeAlias = (
+    Literal["bfgs", "bb", "bg", "dfp", "sr1"] | str | HessianApproximation
+)
+"""Hessian update strategies: a case-insensitive name or a HessianApproximation
+instance from fides."""
+
 
 @mark.minimizer(
     name="fides",
@@ -47,13 +61,7 @@ from optimagic.typing import (
 )
 @dataclass(frozen=True)
 class Fides(Algorithm):
-    hessian_update_strategy: Literal[
-        "bfgs",
-        "bb",
-        "bg",
-        "dfp",
-        "sr1",
-    ] = "bfgs"
+    hessian_update_strategy: HessianUpdateStrategy = "bfgs"
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
@@ -116,13 +124,7 @@ def fides_internal(
     x: NDArray[np.float64],
     lower_bounds: NDArray[np.float64] | None,
     upper_bounds: NDArray[np.float64] | None,
-    hessian_update_strategy: Literal[
-        "bfgs",
-        "bb",
-        "bg",
-        "dfp",
-        "sr1",
-    ],
+    hessian_update_strategy: HessianUpdateStrategy,
     convergence_ftol_abs: NonNegativeFloat,
     convergence_ftol_rel: NonNegativeFloat,
     convergence_xtol_abs: NonNegativeFloat,
