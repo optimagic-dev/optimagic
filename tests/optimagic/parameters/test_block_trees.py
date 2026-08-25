@@ -146,7 +146,7 @@ def test_hessian_to_block_tree_bijection():
     expected = second_derivative(func, params).derivative
     hessian = block_tree_to_hessian(expected, func(params), params)
     got = hessian_to_block_tree(hessian, func(params), params)
-    _tree_equal_up_to_dtype(expected, got)
+    assert _tree_equal_up_to_dtype(expected, got)
 
 
 def test_block_tree_to_matrix_valueerror():

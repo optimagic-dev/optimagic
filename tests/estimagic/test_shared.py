@@ -247,6 +247,7 @@ def test_calculate_estimation_summary():
     summary = calculate_estimation_summary(summary_data, names, free_names)
 
     # expectations
+    stars_dtype = pd.CategoricalDtype(categories=["***", "**", "*", ""], ordered=True)
     expectation = {
         "a": pd.DataFrame(
             {
@@ -256,7 +257,7 @@ def test_calculate_estimation_summary():
                 "ci_upper": 0.2,
                 "p_value": 0.001,
                 "free": True,
-                "stars": "***",
+                "stars": pd.Categorical(["***"], dtype=stars_dtype),
             },
             index=["i"],
         ),
@@ -266,12 +267,12 @@ def test_calculate_estimation_summary():
                 "standard_error": [0.2, 0.3],
                 "ci_lower": [-0.4, -0.6],
                 "ci_upper": [0.4, 0.6],
-                "p_value": [0.2, 0.7],
+                "p_value": [0.2, 0.07],
                 "free": [True, True],
-                "stars": ["", "*"],
+                "stars": pd.Categorical(["", "*"], dtype=stars_dtype),
             },
             index=pd.MultiIndex.from_tuples([(0, "c1"), (0, "c2")]),
         ),
     }
 
-    tree_equal(summary, expectation)
+    assert tree_equal(summary, expectation)

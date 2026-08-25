@@ -15,7 +15,8 @@ from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES, PyTree
 
 if IS_JAX_INSTALLED:
     import jax.numpy as jnp  # type: ignore[import-not-found]
-    import jaxlib  # type: ignore[import-not-found]
+
+    JAX_ARRAY_TYPE: type = type(jnp.empty(0))
 
 
 _are_namespaces_registered = False
@@ -103,14 +104,10 @@ def tree_equal(
     other: PyTree,
     is_leaf: Callable[[PyTree], bool] | None = None,
     namespace: str = DEFAULT_NAMESPACE,
-    equality_checkers: dict[str, Callable[[Any, Any], bool]] | None = None,
+    equality_checkers: dict[type, Callable[[Any, Any], bool]] | None = None,
 ) -> bool:
     """Check the equality between two trees."""
-    equality_checkers = (
-        _get_equality_checkers()
-        if equality_checkers is None
-        else {**_get_equality_checkers(), **equality_checkers}
-    )
+    equality_checkers = {**_get_equality_checkers(), **(equality_checkers or {})}
 
     first_flat, first_treespec = tree_flatten(
         tree, is_leaf=is_leaf, namespace=namespace
@@ -119,16 +116,11 @@ def tree_equal(
         other, is_leaf=is_leaf, namespace=namespace
     )
 
-    first_names = leaf_names(tree, is_leaf=is_leaf, namespace=namespace)
-    second_names = leaf_names(other, is_leaf=is_leaf, namespace=namespace)
-
-    equal = first_names == second_names and first_treespec == second_treespec
+    equal = first_treespec == second_treespec
 
     if equal:
         for first, second in zip(first_flat, second_flat, strict=True):
-            check_func = equality_checkers.get(
-                type(first).__name__, lambda a, b: a == b
-            )
+            check_func = equality_checkers.get(type(first), lambda a, b: a == b)
             equal = equal and check_func(first, second)
             if not equal:
                 break
@@ -143,12 +135,12 @@ def _get_equality_checkers():
     support simple ``==`` equality (e.g. NumPy arrays, pandas objects).
     """
     equality_checkers = {}
-    equality_checkers[np.ndarray.__name__] = lambda a, b: bool((a == b).all())
-    equality_checkers[pd.Series.__name__] = lambda a, b: a.equals(b)
-    equality_checkers[pd.DataFrame.__name__] = lambda a, b: a.equals(b)
+    equality_checkers[np.ndarray] = lambda a, b: bool((a == b).all())
+    equality_checkers[pd.Series] = lambda a, b: a.equals(b)
+    equality_checkers[pd.DataFrame] = lambda a, b: a.equals(b)
 
     if IS_JAX_INSTALLED:
-        equality_checkers[jnp.ndarray.__name__] = lambda a, b: bool((a == b).all())
+        equality_checkers[JAX_ARRAY_TYPE] = lambda a, b: bool((a == b).all())
 
     return equality_checkers
 
@@ -222,7 +214,7 @@ def _register_namespace(namespace: str, data_col: str, with_names: bool) -> None
 
     if IS_JAX_INSTALLED:
         optree.register_pytree_node(
-            jaxlib._jax.ArrayImpl,
+            JAX_ARRAY_TYPE,
             partial(_flatten_jax_array, with_names=with_names),
             _unflatten_jax_array,
             namespace=namespace,
