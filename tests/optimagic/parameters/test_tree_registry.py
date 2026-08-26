@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,7 +12,7 @@ from optimagic.parameters.tree_registry import (
     tree_map,
     tree_unflatten,
 )
-from optimagic.typing import OPTREE_NAMESPACES, VALUE_NAMESPACE
+from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES, VALUE_NAMESPACE
 
 
 @pytest.fixture()
@@ -169,8 +171,8 @@ def test_leaf_names_with_none():
     assert names == []
 
 
-@pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
-def test_dict_insertion_ordering_is_respected_for_registered_namespaces(namespace):
+@pytest.mark.parametrize("namespace", OPTREE_NAMESPACES + (DEFAULT_NAMESPACE,))
+def test_dict_insertion_ordering_is_respected(namespace):
     params = {"b": [1, 4], "a": [8, 9]}
     leaves, _ = tree_flatten(params, namespace=namespace)
     assert leaves == [1, 4, 8, 9]
@@ -187,20 +189,7 @@ def test_dict_insertion_ordering_is_respected_for_registered_namespaces(namespac
     names = leaf_names(params, namespace=namespace)
     assert names == ["b_0", "b_1", "a_0", "a_1"]
 
-
-def test_dict_insertion_ordering_is_respected_for_default_namespace():
-    params = {"b": [1, 4], "a": [8, 9]}
-    leaves, _ = tree_flatten(params)
-    assert leaves == [1, 4, 8, 9]
-
-    tree = tree_unflatten(params, [1, 4, 8, 9])
-    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
-
-    leaves2 = tree_leaves(params)
-    assert leaves2 == [1, 4, 8, 9]
-
-    tree = tree_map(lambda x: x, params)
-    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
-
-    names = leaf_names(params)
-    assert names == ["b_0", "b_1", "a_0", "a_1"]
+    params = {"b": 8, "a": 5}
+    counter = itertools.count()
+    positions = tree_map(lambda _: next(counter), params, namespace=namespace)
+    assert positions == {"b": 0, "a": 1}

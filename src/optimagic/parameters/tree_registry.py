@@ -59,8 +59,8 @@ def tree_unflatten(
         with optree.dict_insertion_ordered(True, namespace=namespace):
             treedef = optree.tree_structure(treedef, namespace=namespace)
 
-    # Doesn't need to be wrapped with dict_insertion_ordered
-    # because it keeps the insertion order for dictionaries by default.
+    # No dict_insertion_ordered wrapper needed: unflattening takes its key order
+    # from the treespec, which recorded the order used at flatten time.
     return optree.tree_unflatten(treedef, leaves)
 
 
@@ -74,9 +74,8 @@ def tree_map(
     _register_namespaces()
     _check_namespace(namespace)
 
-    # Doesn't need to be wrapped with dict_insertion_ordered
-    # because it keeps the insertion order for dictionaries by default.
-    return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
 
 
 def leaf_names(
