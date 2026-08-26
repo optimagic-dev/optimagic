@@ -1,4 +1,5 @@
 import itertools
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -55,6 +56,17 @@ def test_unflatten_df_with_value_column(value_df):
 def test_leaf_names_df_with_value_column(value_df):
     names = leaf_names(value_df, namespace=VALUE_NAMESPACE)
     assert names == ["alpha", "beta", "gamma"]
+
+
+@pytest.mark.parametrize("namespace", [None, *OPTREE_NAMESPACES])
+def test_leaf_names_of_namedtuple_use_field_names(namespace):
+    class ParamsTuple(NamedTuple):
+        alpha: float
+        beta: float
+
+    kwargs = {} if namespace is None else {"namespace": namespace}
+    params = {"x": ParamsTuple(alpha=1.0, beta=2.0)}
+    assert leaf_names(params, **kwargs) == ["x_alpha", "x_beta"]
 
 
 def test_leaf_names_with_is_leaf():

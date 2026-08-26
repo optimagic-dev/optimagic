@@ -92,10 +92,24 @@ def leaf_names(
         namespace = get_path_names_namespace(namespace)
 
     with optree.dict_insertion_ordered(True, namespace=namespace):
-        paths, _, _ = optree.tree_flatten_with_path(
+        accessors, _, _ = optree.tree_flatten_with_accessor(
             tree, is_leaf=is_leaf, namespace=namespace
         )
-    return [separator.join(str(p) for p in path) for path in paths]
+    return [
+        separator.join(_entry_to_string(entry) for entry in accessor)
+        for accessor in accessors
+    ]
+
+
+def _entry_to_string(entry: optree.PyTreeEntry) -> str:
+    """Return the name of one accessor path entry.
+
+    Namedtuple leaves are named by their field name instead of their position, so
+    that leaf names stay aligned with how users refer to namedtuple parameters.
+    """
+    if isinstance(entry, optree.NamedTupleEntry):
+        return entry.field
+    return str(entry.entry)
 
 
 def tree_equal(
