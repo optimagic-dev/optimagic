@@ -4,10 +4,12 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal
 
 from optimagic.parameters.tree_registry import (
     leaf_names,
+    tree_equal,
     tree_flatten,
     tree_leaves,
     tree_map,
@@ -205,3 +207,41 @@ def test_dict_insertion_ordering_is_respected(namespace):
     counter = itertools.count()
     positions = tree_map(lambda _: next(counter), params, namespace=namespace)
     assert positions == {"b": 0, "a": 1}
+
+
+def test_tree_equal_with_pandas_nodes_in_registered_namespace():
+    tree = {
+        "s": pd.Series([1.0, 2.0], index=["c", "d"]),
+        "df": pd.DataFrame({"value": [1.0, 2.0]}, index=["i", "j"]),
+    }
+    copied = {
+        "s": tree["s"].copy(),
+        "df": tree["df"].copy(deep=True),
+    }
+    assert tree_equal(tree, copied, namespace=VALUE_NAMESPACE) is True
+
+
+def test_tree_equal_detects_different_series_index():
+    first = {"s": pd.Series([1.0], index=["x"])}
+    second = {"s": pd.Series([1.0], index=["y"])}
+    assert tree_equal(first, second, namespace=VALUE_NAMESPACE) is False
+
+
+def test_tree_equal_with_unequal_values_and_structures():
+    assert tree_equal({"a": 1.0}, {"a": 2.0}, namespace=VALUE_NAMESPACE) is False
+    assert tree_equal({"a": 1.0}, {"b": 1.0}, namespace=VALUE_NAMESPACE) is False
+
+
+def test_tree_equal_runs_raising_checkers_on_all_leaves():
+    checkers = {np.ndarray: lambda x, y: aaae(x, y, decimal=5)}
+    first = {"a": np.array([1.0]), "b": np.array([2.0])}
+    second = {"a": np.array([1.0]), "b": np.array([99.0])}
+    with pytest.raises(AssertionError):
+        tree_equal(first, second, equality_checkers=checkers)
+
+
+def test_tree_equal_returns_bool_with_none_returning_checkers():
+    checkers = {np.ndarray: lambda x, y: aaae(x, y, decimal=5)}
+    first = {"a": np.array([1.0]), "b": np.array([2.0])}
+    second = {"a": np.array([1.0]), "b": np.array([2.0])}
+    assert tree_equal(first, second, equality_checkers=checkers) is True

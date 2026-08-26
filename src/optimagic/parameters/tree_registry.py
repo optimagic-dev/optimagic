@@ -119,24 +119,30 @@ def tree_equal(
     namespace: str = DEFAULT_NAMESPACE,
     equality_checkers: dict[type, Callable[[Any, Any], bool]] | None = None,
 ) -> bool:
-    """Check the equality between two trees."""
+    """Check the equality between two trees.
+
+    Two trees are considered equal if their leaf names and their leaves are equal.
+    Leaves are compared with type-specific equality checkers. A checker normally
+    returns a bool; checkers in the style of ``numpy.testing`` functions that raise
+    on mismatch and return None are also supported and count as passing when they
+    do not raise.
+    """
     equality_checkers = {**_get_equality_checkers(), **(equality_checkers or {})}
 
-    first_flat, first_treespec = tree_flatten(
-        tree, is_leaf=is_leaf, namespace=namespace
-    )
-    second_flat, second_treespec = tree_flatten(
-        other, is_leaf=is_leaf, namespace=namespace
-    )
+    first_flat = tree_leaves(tree, is_leaf=is_leaf, namespace=namespace)
+    second_flat = tree_leaves(other, is_leaf=is_leaf, namespace=namespace)
 
-    equal = first_treespec == second_treespec
+    first_names = leaf_names(tree, is_leaf=is_leaf, namespace=namespace)
+    second_names = leaf_names(other, is_leaf=is_leaf, namespace=namespace)
+
+    equal = first_names == second_names
 
     if equal:
         for first, second in zip(first_flat, second_flat, strict=True):
             check_func = equality_checkers.get(type(first), lambda a, b: a == b)
-            equal = equal and check_func(first, second)
-            if not equal:
-                break
+            leaves_equal = check_func(first, second)
+            if leaves_equal is not None:
+                equal = equal and bool(leaves_equal)
 
     return equal
 
