@@ -8,7 +8,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from numpy.typing import NDArray
 from plotly.subplots import make_subplots
-from pybaum import tree_just_flatten
 
 from optimagic import deprecations
 from optimagic.batch_evaluators import process_batch_evaluator
@@ -20,9 +19,9 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import tree_leaves
 from optimagic.shared.process_user_function import infer_aggregation_level
-from optimagic.typing import AggregationLevel
+from optimagic.typing import VALUE_NAMESPACE, AggregationLevel
 
 
 def slice_plot_3d(  # type: ignore[no-untyped-def]
@@ -150,9 +149,8 @@ def slice_plot_3d(  # type: ignore[no-untyped-def]
     selected = np.arange(n_params, dtype=int)
     if selector is not None:
         helper = converter.params_from_internal(selected)
-        registry = get_registry(extended=True)
         selected = np.array(
-            tree_just_flatten(selector(helper), registry=registry), dtype=int
+            tree_leaves(selector(helper), namespace=VALUE_NAMESPACE), dtype=int
         ).reshape(-1)
     n_params = len(selected)
     if not np.isfinite(internal_params.lower_bounds[selected]).all():

@@ -9,12 +9,12 @@ TO-DO:
 """
 
 import numpy as np
-from pybaum import tree_just_flatten
 
 from optimagic import batch_evaluators
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.typing import VALUE_NAMESPACE
 
 
 def run_benchmark(
@@ -180,7 +180,6 @@ def _process_one_result(optimize_result, problem):
         dict: Processed result.
 
     """
-    _registry = get_registry(extended=True)
     _criterion = problem["noise_free_fun"]
     _start_x = problem["inputs"]["params"]
     _start_crit_value = _criterion(_start_x)
@@ -191,7 +190,7 @@ def _process_one_result(optimize_result, problem):
 
     # This will happen if the optimization raised an error
     if isinstance(optimize_result, str):
-        params_history_flat = [tree_just_flatten(_start_x, registry=_registry)]
+        params_history_flat = [tree_leaves(_start_x, namespace=VALUE_NAMESPACE)]
         criterion_history = [_start_crit_value]
         time_history = [np.inf]
         batches_history = [0]
@@ -199,7 +198,7 @@ def _process_one_result(optimize_result, problem):
         history = optimize_result.history
         params_history = history.params
         params_history_flat = [
-            tree_just_flatten(p, registry=_registry) for p in params_history
+            tree_leaves(p, namespace=VALUE_NAMESPACE) for p in params_history
         ]
         if _is_noisy:
             criterion_history = np.array([_criterion(p) for p in params_history])

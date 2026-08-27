@@ -2,10 +2,13 @@
 
 import numpy as np
 import pandas as pd
-from pybaum import tree_flatten, tree_unflatten
-from pybaum import tree_just_flatten as tree_leaves
 
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    tree_flatten,
+    tree_leaves,
+    tree_unflatten,
+)
+from optimagic.typing import VALUE_NAMESPACE
 
 
 def matrix_to_block_tree(matrix, outer_tree, inner_tree):
@@ -329,9 +332,8 @@ def _is_pd_object(obj):
 
 
 def _check_dimensions_matrix(matrix, outer_tree, inner_tree):
-    extended_registry = get_registry(extended=True)
-    flat_outer = tree_leaves(outer_tree, registry=extended_registry)
-    flat_inner = tree_leaves(inner_tree, registry=extended_registry)
+    flat_outer = tree_leaves(outer_tree, namespace=VALUE_NAMESPACE)
+    flat_inner = tree_leaves(inner_tree, namespace=VALUE_NAMESPACE)
 
     if matrix.shape[0] != len(flat_outer):
         raise ValueError("First dimension of matrix does not match that of outer_tree.")
@@ -342,9 +344,8 @@ def _check_dimensions_matrix(matrix, outer_tree, inner_tree):
 
 
 def _check_dimensions_hessian(hessian, f_tree, params_tree):
-    extended_registry = get_registry(extended=True)
-    flat_f = tree_leaves(f_tree, registry=extended_registry)
-    flat_p = tree_leaves(params_tree, registry=extended_registry)
+    flat_f = tree_leaves(f_tree, namespace=VALUE_NAMESPACE)
+    flat_p = tree_leaves(params_tree, namespace=VALUE_NAMESPACE)
 
     if len(flat_f) == 1:
         # consider only dimensions with non trivial size (larger than 1)

@@ -3,7 +3,6 @@ from dataclasses import asdict
 import numpy as np
 import pandas as pd
 import pytest
-from pybaum import tree_equal, tree_just_flatten
 
 from optimagic.logging.logger import (
     LogOptions,
@@ -13,8 +12,11 @@ from optimagic.logging.logger import (
     SQLiteLogReader,
 )
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import Direction
+from optimagic.parameters.tree_registry import (
+    tree_equal,
+    tree_leaves,
+)
+from optimagic.typing import VALUE_NAMESPACE, Direction
 
 
 @pytest.fixture()
@@ -81,10 +83,9 @@ def test_log_reader_read_multistart_history(example_db):
     assert local_history is None
     assert exploration is None
 
-    registry = get_registry(extended=True)
     assert tree_equal(
-        tree_just_flatten(asdict(history), registry=registry),
-        tree_just_flatten(asdict(reader.read_history()), registry=registry),
+        tree_leaves(asdict(history), namespace=VALUE_NAMESPACE),
+        tree_leaves(asdict(reader.read_history()), namespace=VALUE_NAMESPACE),
     )
 
 

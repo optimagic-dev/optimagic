@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from pybaum import leaf_names, tree_equal
 
 from estimagic.shared_covs import (
     _to_numpy,
@@ -15,7 +14,8 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import leaf_names, tree_equal
+from optimagic.typing import VALUE_NAMESPACE
 from optimagic.utilities import get_rng
 
 
@@ -240,14 +240,14 @@ def test_calculate_estimation_summary():
         "free": np.array([True, True, True]),
     }
 
-    registry = get_registry(extended=True)
-    names = leaf_names(summary_data["value"], registry=registry)
+    names = leaf_names(summary_data["value"], namespace=VALUE_NAMESPACE)
     free_names = names
 
     # function call
     summary = calculate_estimation_summary(summary_data, names, free_names)
 
     # expectations
+    stars_dtype = pd.CategoricalDtype(categories=["***", "**", "*", ""], ordered=True)
     expectation = {
         "a": pd.DataFrame(
             {
@@ -257,7 +257,7 @@ def test_calculate_estimation_summary():
                 "ci_upper": 0.2,
                 "p_value": 0.001,
                 "free": True,
-                "stars": "***",
+                "stars": pd.Categorical(["***"], dtype=stars_dtype),
             },
             index=["i"],
         ),
@@ -267,12 +267,12 @@ def test_calculate_estimation_summary():
                 "standard_error": [0.2, 0.3],
                 "ci_lower": [-0.4, -0.6],
                 "ci_upper": [0.4, 0.6],
-                "p_value": [0.2, 0.7],
+                "p_value": [0.2, 0.07],
                 "free": [True, True],
-                "stars": ["", "*"],
+                "stars": pd.Categorical(["", "*"], dtype=stars_dtype),
             },
             index=pd.MultiIndex.from_tuples([(0, "c1"), (0, "c2")]),
         ),
     }
 
-    tree_equal(summary, expectation)
+    assert tree_equal(summary, expectation)

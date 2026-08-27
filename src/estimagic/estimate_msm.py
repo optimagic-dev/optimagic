@@ -9,7 +9,6 @@ from typing import Any, Dict, Union
 
 import numpy as np
 import pandas as pd
-from pybaum import leaf_names, tree_just_flatten
 
 from estimagic.msm_covs import cov_optimal, cov_robust
 from estimagic.msm_sensitivity import (
@@ -51,10 +50,14 @@ from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_blo
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.parameters.tree_registry import (
+    leaf_names,
+    tree_leaves,
+)
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
+from optimagic.typing import VALUE_NAMESPACE
 from optimagic.utilities import get_rng, to_pickle
 
 
@@ -316,8 +319,7 @@ def estimate_msm(
             sim_mom = simulate_moments(params, **simulate_moments_kwargs)
             if isinstance(sim_mom, dict) and "simulated_moments" in sim_mom:
                 sim_mom = sim_mom["simulated_moments"]
-            registry = get_registry(extended=True)
-            out = np.array(tree_just_flatten(sim_mom, registry=registry))
+            out = np.array(tree_leaves(sim_mom, namespace=VALUE_NAMESPACE))
             return out
 
         int_jac = first_derivative(
@@ -420,8 +422,7 @@ def get_msm_optimization_functions(
 
     chol_weights = np.linalg.cholesky(flat_weights)
 
-    registry = get_registry(extended=True)
-    flat_emp_mom = tree_just_flatten(empirical_moments, registry=registry)
+    flat_emp_mom = tree_leaves(empirical_moments, namespace=VALUE_NAMESPACE)
 
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
@@ -432,7 +433,7 @@ def get_msm_optimization_functions(
             simulate_moments=_simulate_moments,
             flat_empirical_moments=flat_emp_mom,
             chol_weights=chol_weights,
-            registry=registry,
+            namespace=VALUE_NAMESPACE,
         )
     )
 
@@ -447,7 +448,7 @@ def get_msm_optimization_functions(
 
 
 def _msm_criterion(
-    params, simulate_moments, flat_empirical_moments, chol_weights, registry
+    params, simulate_moments, flat_empirical_moments, chol_weights, namespace
 ):
     """Calculate msm criterion given parameters and building blocks."""
     simulated = simulate_moments(params)
@@ -456,7 +457,7 @@ def _msm_criterion(
     if isinstance(simulated, np.ndarray) and simulated.ndim == 1:
         simulated_flat = simulated
     else:
-        simulated_flat = np.array(tree_just_flatten(simulated, registry=registry))
+        simulated_flat = np.array(tree_leaves(simulated, namespace=namespace))
 
     deviations = simulated_flat - flat_empirical_moments
     residuals = deviations @ chol_weights
@@ -977,9 +978,8 @@ class MomentsResult:
                 inner_tree=self._empirical_moments,
             )
         elif return_type == "dataframe":
-            registry = get_registry(extended=True)
             row_names = self._internal_estimates.names
-            col_names = leaf_names(self._empirical_moments, registry=registry)
+            col_names = leaf_names(self._empirical_moments, namespace=VALUE_NAMESPACE)
             out = pd.DataFrame(
                 data=raw,
                 index=row_names,

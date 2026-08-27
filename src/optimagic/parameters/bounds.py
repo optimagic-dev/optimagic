@@ -5,13 +5,15 @@ from typing import Any, Literal, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
-from pybaum import leaf_names, tree_map
-from pybaum import tree_just_flatten as tree_leaves
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import PyTree, PyTreeRegistry
+from optimagic.parameters.tree_registry import (
+    leaf_names,
+    tree_leaves,
+    tree_map,
+)
+from optimagic.typing import VALUE_NAMESPACE, PyTree
 from optimagic.utilities import fast_numpy_full
 
 
@@ -75,7 +77,7 @@ def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
 def get_internal_bounds(
     params: PyTree,
     bounds: Bounds | None = None,
-    registry: PyTreeRegistry | None = None,
+    namespace: str = VALUE_NAMESPACE,
     add_soft_bounds: bool = False,
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
@@ -92,7 +94,7 @@ def get_internal_bounds(
     Args:
         params: The parameter pytree.
         bounds: The lower and upper bounds.
-        registry: pybaum registry.
+        namespace: optree namespace.
         add_soft_bounds: If True, the element-wise maximum (minimum) of the lower and
             soft_lower (upper and soft_upper) bounds are taken. If False, the lower
             (upper) bounds are returned.
@@ -116,12 +118,11 @@ def get_internal_bounds(
     # None-valued bounds are replaced with arrays of np.inf and -np.inf, and then
     # translated back to None if all entries are non-finite.
 
-    registry = get_registry(extended=True) if registry is None else registry
-    n_params = len(tree_leaves(params, registry=registry))
+    n_params = len(tree_leaves(params, namespace=namespace))
 
     # Fill leaves with np.nan. If params contains a data frame with bounds as a column,
     # that column is NOT overwritten (as long as an extended registry is used).
-    nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)  # noqa: ARG005
+    nan_tree = tree_map(lambda leaf: np.nan, params, namespace=namespace)  # noqa: ARG005
 
     lower_flat = _update_bounds_and_flatten(nan_tree, bounds.lower, kind="lower_bound")
     upper_flat = _update_bounds_and_flatten(nan_tree, bounds.upper, kind="upper_bound")
@@ -176,16 +177,17 @@ def _update_bounds_and_flatten(
         np.ndarray: The updated and flattened bounds.
 
     """
-    registry = get_registry(extended=True, data_col=kind)
-    flat_nan_tree = tree_leaves(nan_tree, registry=registry)
-
+    flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
     if bounds is not None:
-        registry = get_registry(extended=True)
-        flat_bounds = tree_leaves(bounds, registry=registry)
+        flat_bounds = tree_leaves(bounds, namespace=VALUE_NAMESPACE)
 
         seperator = 10 * "$"
-        params_names = leaf_names(nan_tree, registry=registry, separator=seperator)
-        bounds_names = leaf_names(bounds, registry=registry, separator=seperator)
+        params_names = leaf_names(
+            nan_tree, namespace=VALUE_NAMESPACE, separator=seperator
+        )
+        bounds_names = leaf_names(
+            bounds, namespace=VALUE_NAMESPACE, separator=seperator
+        )
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree, strict=False))
 

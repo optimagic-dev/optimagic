@@ -1,50 +1,247 @@
-"""Wrapper around pybaum get_registry to tailor it to optimagic."""
+"""Wrapper around optree to tailor it to optimagic."""
 
+import warnings
 from functools import partial
 from itertools import product
+from typing import Any, Callable, Iterable
 
 import numpy as np
+import optree
 import pandas as pd
-from pybaum import get_registry as get_pybaum_registry
+from optree.pytree import PyTreeSpec
+
+from optimagic.config import IS_JAX_INSTALLED
+from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES, PyTree
+
+if IS_JAX_INSTALLED:
+    import jax.numpy as jnp  # type: ignore[import-not-found]
+
+    JAX_ARRAY_TYPE: type = type(jnp.empty(0))
 
 
-def get_registry(extended=False, data_col="value"):
-    """Return pytree registry.
+_are_namespaces_registered = False
 
-    Special Rules
-    -------------
-    If extended is True the registry contains pd.DataFrame. In optimagic a data frame
-    can represent a 1d object with extra information, instead of a 2d object. This is
-    only allowed for params data frames, in which case they contain a 'value' column.
-    The extra information of such an object can be accessed using the data_col argument.
-    By default the 'value' column is extracted. If data_col is not 'value' but the data
-    frame contains a 'value' column, a list of np.nan is returned.
 
-    Args:
-        extended (bool): If True appends types 'numpy.ndarray', 'pandas.Series' and
-            'pandas.DataFrame' to the registry.
-        data_col (str): This column is used as the data source in a data frame when
-            flattening and unflattening a pytree. Defaults to 'value'; see special rules
-            above for behavior with non-default values.
+def tree_flatten(
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> tuple[list, PyTreeSpec]:
+    """Flatten a pytree."""
+    _register_namespaces()
+    _check_namespace(namespace)
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
 
-    Returns:
-        dict: The pytree registry.
 
+def tree_leaves(
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> list:
+    """Get the leaves of a pytree."""
+    _register_namespaces()
+    _check_namespace(namespace)
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        return optree.tree_leaves(tree, is_leaf=is_leaf, namespace=namespace)
+
+
+def tree_unflatten(
+    treedef: PyTree | PyTreeSpec,
+    leaves: Iterable,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> PyTree:
+    """Reconstruct a pytree from the tree definition and the leaves."""
+    _register_namespaces()
+
+    if not isinstance(treedef, PyTreeSpec):
+        _check_namespace(namespace)
+        with optree.dict_insertion_ordered(True, namespace=namespace):
+            treedef = optree.tree_structure(treedef, namespace=namespace)
+
+    # No dict_insertion_ordered wrapper needed: unflattening takes its key order
+    # from the treespec, which recorded the order used at flatten time.
+    return optree.tree_unflatten(treedef, leaves)
+
+
+def tree_map(
+    func: Callable[[PyTree], PyTree],
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+) -> PyTree:
+    """Map an input function over pytree args to produce a new pytree."""
+    _register_namespaces()
+    _check_namespace(namespace)
+
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
+
+
+def leaf_names(
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+    separator: str = "_",
+) -> list[str]:
+    """Get the path names for tree leaves."""
+    _register_namespaces()
+    _check_namespace(namespace)
+
+    if namespace in OPTREE_NAMESPACES:
+        namespace = get_path_names_namespace(namespace)
+
+    with optree.dict_insertion_ordered(True, namespace=namespace):
+        accessors, _, _ = optree.tree_flatten_with_accessor(
+            tree, is_leaf=is_leaf, namespace=namespace
+        )
+    return [
+        separator.join(_entry_to_string(entry) for entry in accessor)
+        for accessor in accessors
+    ]
+
+
+def _entry_to_string(entry: optree.PyTreeEntry) -> str:
+    """Return the name of one accessor path entry.
+
+    Namedtuple leaves are named by their field name instead of their position, so
+    that leaf names stay aligned with how users refer to namedtuple parameters.
     """
-    types = (
-        ["numpy.ndarray", "pandas.Series", "jax.numpy.ndarray"] if extended else None
+    if isinstance(entry, optree.NamedTupleEntry):
+        return entry.field
+    return str(entry.entry)
+
+
+def tree_equal(
+    tree: PyTree,
+    other: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
+    namespace: str = DEFAULT_NAMESPACE,
+    equality_checkers: dict[type, Callable[[Any, Any], bool]] | None = None,
+) -> bool:
+    """Check the equality between two trees.
+
+    Two trees are considered equal if their leaf names and their leaves are equal.
+    Leaves are compared with type-specific equality checkers. A checker normally
+    returns a bool; checkers in the style of ``numpy.testing`` functions that raise
+    on mismatch and return None are also supported and count as passing when they
+    do not raise.
+    """
+    equality_checkers = {**_get_equality_checkers(), **(equality_checkers or {})}
+
+    first_flat = tree_leaves(tree, is_leaf=is_leaf, namespace=namespace)
+    second_flat = tree_leaves(other, is_leaf=is_leaf, namespace=namespace)
+
+    first_names = leaf_names(tree, is_leaf=is_leaf, namespace=namespace)
+    second_names = leaf_names(other, is_leaf=is_leaf, namespace=namespace)
+
+    equal = first_names == second_names
+
+    if equal:
+        for first, second in zip(first_flat, second_flat, strict=True):
+            check_func = equality_checkers.get(type(first), lambda a, b: a == b)
+            leaves_equal = check_func(first, second)
+            if leaves_equal is not None:
+                equal = equal and bool(leaves_equal)
+
+    return equal
+
+
+def _get_equality_checkers():
+    """Return type-specific equality checkers for array and DataFrame leaves.
+
+    These are used during pytree operations to compare leaves that don't
+    support simple ``==`` equality (e.g. NumPy arrays, pandas objects).
+    """
+    equality_checkers = {}
+    equality_checkers[np.ndarray] = lambda a, b: bool((a == b).all())
+    equality_checkers[pd.Series] = lambda a, b: a.equals(b)
+    equality_checkers[pd.DataFrame] = lambda a, b: a.equals(b)
+
+    if IS_JAX_INSTALLED:
+        equality_checkers[JAX_ARRAY_TYPE] = lambda a, b: bool((a == b).all())
+
+    return equality_checkers
+
+
+def _check_namespace(namespace: str) -> None:
+    """Checks if the namespace is registered and raise a warning."""
+    if namespace != DEFAULT_NAMESPACE and namespace not in OPTREE_NAMESPACES:
+        warnings.warn(
+            f"Namespace '{namespace}' is not registered. "
+            f"Registered namespaces are: {','.join(OPTREE_NAMESPACES)}. "
+            "Pytree method is being parsed with the default optree namespace."
+        )
+
+
+def get_path_names_namespace(namespace: str) -> str:
+    """Return the internal namespace whose flatten functions build path entries."""
+    return f"{namespace}__names"
+
+
+def _register_namespaces() -> None:
+    """Register pytree flatten/unflatten methods for each namespace.
+
+    Each namespace in ``OPTREE_NAMESPACES`` is registered in two variants:
+
+    1. The plain namespace, whose flatten function returns only the leaf values.
+    2. A ``"{namespace}__names"`` variant (see ``get_path_names_namespace``),
+        whose flatten function additionally returns path names for the leaves.
+
+    This method must only be called once as each namespace must only be registered
+    one time.
+    """
+    global _are_namespaces_registered  # noqa: PLW0603
+    if not _are_namespaces_registered:
+        _are_namespaces_registered = True
+
+        for namespace in OPTREE_NAMESPACES:
+            _register_namespace(
+                namespace=namespace,
+                data_col=namespace,
+                with_names=False,
+            )
+            _register_namespace(
+                namespace=get_path_names_namespace(namespace),
+                data_col=namespace,
+                with_names=True,
+            )
+
+
+def _register_namespace(namespace: str, data_col: str, with_names: bool) -> None:
+    """Register flatten/unflatten functions for all supported types in a namespace."""
+    optree.register_pytree_node(
+        pd.DataFrame,
+        partial(_flatten_df, data_col=data_col, with_names=with_names),
+        partial(_unflatten_df, data_col=data_col),
+        namespace=namespace,
     )
-    registry = get_pybaum_registry(types=types)
-    if extended:
-        registry[pd.DataFrame] = {
-            "flatten": partial(_flatten_df, data_col=data_col),
-            "unflatten": partial(_unflatten_df, data_col=data_col),
-            "names": _get_df_names,
-        }
-    return registry
+
+    optree.register_pytree_node(
+        pd.Series,
+        partial(_flatten_series, with_names=with_names),
+        _unflatten_series,
+        namespace=namespace,
+    )
+
+    optree.register_pytree_node(
+        np.ndarray,
+        partial(_flatten_ndarray, with_names=with_names),
+        _unflatten_ndarray,
+        namespace=namespace,
+    )
+
+    if IS_JAX_INSTALLED:
+        optree.register_pytree_node(
+            JAX_ARRAY_TYPE,
+            partial(_flatten_jax_array, with_names=with_names),
+            _unflatten_jax_array,
+            namespace=namespace,
+        )
 
 
-def _flatten_df(df, data_col):
+def _flatten_df(df, data_col, with_names=False):
+    """Flatten a dataframe."""
     is_value_df = "value" in df
     if is_value_df:
         flat = df.get(data_col, default=np.full(len(df), np.nan)).tolist()
@@ -55,10 +252,12 @@ def _flatten_df(df, data_col):
         "is_value_df": is_value_df,
         "df": df,
     }
-    return flat, aux_data
+    entries = _get_df_names(df) if with_names else None
+    return flat, aux_data, entries
 
 
 def _unflatten_df(aux_data, leaves, data_col):
+    """Reconstruct a dataframe."""
     if aux_data["is_value_df"]:
         out = aux_data["df"].assign(**{data_col: leaves})
     else:
@@ -70,7 +269,45 @@ def _unflatten_df(aux_data, leaves, data_col):
     return out
 
 
-def _get_df_names(df):
+def _flatten_series(series, with_names=False):
+    """Flatten a series."""
+    entries = list(series.index.map(_index_element_to_string)) if with_names else None
+    return (
+        series.tolist(),
+        {"index": series.index, "name": series.name},
+        entries,
+    )
+
+
+def _unflatten_series(aux_data, leaves):
+    """Reconstruct a series."""
+    return pd.Series(leaves, **aux_data)
+
+
+def _flatten_ndarray(arr, with_names=False):
+    """Flatten a numpy array."""
+    entries = _array_element_names(arr) if with_names else None
+    return arr.flatten().tolist(), arr.shape, entries
+
+
+def _flatten_jax_array(arr, with_names=False):
+    """Flatten a jax array."""
+    entries = _array_element_names(arr) if with_names else None
+    return arr.flatten().tolist(), arr.shape, entries
+
+
+def _unflatten_jax_array(aux_data, leaves):
+    """Reconstruct a jax array."""
+    return jnp.array(leaves).reshape(aux_data)
+
+
+def _unflatten_ndarray(aux_data, leaves):
+    """Reconstrut a numpy array."""
+    return np.array(leaves).reshape(aux_data)
+
+
+def _get_df_names(df: pd.DataFrame) -> list[str]:
+    """Get string names for dataframe leaf paths."""
     index_strings = list(df.index.map(_index_element_to_string))
     if "value" in df:
         out = index_strings
@@ -80,7 +317,8 @@ def _get_df_names(df):
     return out
 
 
-def _index_element_to_string(element):
+def _index_element_to_string(element: Any) -> str:
+    """Convert an index element to its string representation."""
     if isinstance(element, (tuple, list)):
         as_strings = [str(entry) for entry in element]
         res_string = "_".join(as_strings)
@@ -88,3 +326,10 @@ def _index_element_to_string(element):
         res_string = str(element)
 
     return res_string
+
+
+def _array_element_names(arr: np.ndarray) -> list[str]:
+    """Get string names for array like element leaf paths."""
+    dim_names = [map(str, range(n)) for n in arr.shape]
+    names = list(map("_".join, product(*dim_names)))
+    return names

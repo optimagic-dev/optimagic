@@ -4,7 +4,6 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
-from pybaum import tree_map
 
 import optimagic as om
 from optimagic.optimization.history import (
@@ -19,6 +18,7 @@ from optimagic.optimization.history import (
     _task_to_categorical,
     _validate_args_are_all_none_or_lists_of_same_length,
 )
+from optimagic.parameters.tree_registry import tree_map
 from optimagic.typing import Direction, EvalTask
 
 # ======================================================================================
