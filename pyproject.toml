@@ -147,6 +147,8 @@ extend-ignore = [
   "E731",
   # Too many arguments to function call
   "PLR0913",
+  # Too many positional arguments
+  "PLR0917",
   # Too many returns
   "PLR0911",
   # Too many branches
