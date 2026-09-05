@@ -276,12 +276,12 @@ class InternalOptimizationProblem:
     def _maybe_call_callback(self, params: PyTree) -> None:
         """Call the optional SciPy-style ``callback(xk)`` if one was provided.
 
-        Called next to history append (not inside ``_pure_*``) so it runs in the
-        parent process when ``n_cores > 1``. ``params`` are external user-facing
-        parameters (a PyTree), not the internal flat parameter vector.
+        Args:
+            params: Current external (user-facing) parameters as a PyTree.
 
-        Raising ``StopIteration`` from the callback to abort optimization (as in
-        SciPy) is not handled yet.
+        Notes:
+            Raising ``StopIteration`` from the callback to abort optimization (as in
+            SciPy) is not handled yet.
 
         """
         if self._callback is not None:

@@ -76,7 +76,6 @@ ConstraintsType = Constraint | list[Constraint] | dict[str, Any] | list[dict[str
 JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]
-# SciPy-style callback(xk); xk is the external parameter PyTree. Returns None.
 CallbackType = Callable[[PyTree], None]
 
 CriterionType = Callable[..., float | dict[str, Any]]
@@ -216,12 +215,10 @@ def maximize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Optional SciPy-style callback with signature ``callback(xk)``, where
-            ``xk`` is the current **external** parameter value (a PyTree; for array
-            ``params`` this is a numpy array). Called next to history collection after
-            objective evaluations (not inside parallel worker ``_pure_*`` functions, and
-            not on derivative-only evaluations). Raising ``StopIteration`` to abort
-            optimization (as in SciPy) is not handled yet. The
+        callback: Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` is the current parameter value
+            (a PyTree; a numpy array if ``params`` is an array). Raising
+            ``StopIteration`` to abort optimization is not yet supported. The
             ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
@@ -419,12 +416,10 @@ def minimize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Optional SciPy-style callback with signature ``callback(xk)``, where
-            ``xk`` is the current **external** parameter value (a PyTree; for array
-            ``params`` this is a numpy array). Called next to history collection after
-            objective evaluations (not inside parallel worker ``_pure_*`` functions, and
-            not on derivative-only evaluations). Raising ``StopIteration`` to abort
-            optimization (as in SciPy) is not handled yet. The
+        callback: Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` is the current parameter value
+            (a PyTree; a numpy array if ``params`` is an array). Raising
+            ``StopIteration`` to abort optimization is not yet supported. The
             ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
