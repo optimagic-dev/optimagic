@@ -61,6 +61,7 @@ class InternalOptimizationProblem:
         linear_constraints: list[dict[str, Any]] | None,
         nonlinear_constraints: list[dict[str, Any]] | None,
         logger: LogStore[Any, Any] | None,
+        callback: Callable[[PyTree], None] | None = None,
         # TODO: add hess and hessp
     ):
         self._fun = fun
@@ -78,6 +79,7 @@ class InternalOptimizationProblem:
         self._linear_constraints = linear_constraints
         self._nonlinear_constraints = nonlinear_constraints
         self._logger = logger
+        self._callback = callback
         self._step_id: int | None = None
 
     # ==================================================================================
@@ -97,6 +99,7 @@ class InternalOptimizationProblem:
         """
         fun_value, hist_entry = self._evaluate_fun(x)
         self._history.add_entry(hist_entry)
+        self._maybe_call_callback(hist_entry.params)
         return fun_value
 
     def jac(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -125,6 +128,7 @@ class InternalOptimizationProblem:
         """
         fun_and_jac_value, hist_entry = self._evaluate_fun_and_jac(x)
         self._history.add_entry(hist_entry)
+        self._maybe_call_callback(hist_entry.params)
         return fun_and_jac_value
 
     def batch_fun(
@@ -158,6 +162,8 @@ class InternalOptimizationProblem:
         fun_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
         self._history.add_batch(hist_entries, batch_size)
+        for hist_entry in hist_entries:
+            self._maybe_call_callback(hist_entry.params)
 
         return fun_values
 
@@ -227,6 +233,8 @@ class InternalOptimizationProblem:
         fun_and_jac_values = [result[0] for result in batch_result]
         hist_entries = [result[1] for result in batch_result]
         self._history.add_batch(hist_entries, batch_size)
+        for hist_entry in hist_entries:
+            self._maybe_call_callback(hist_entry.params)
 
         return fun_and_jac_values
 
@@ -264,6 +272,20 @@ class InternalOptimizationProblem:
         new = copy(self)
         new._step_id = step_id
         return new
+
+    def _maybe_call_callback(self, params: PyTree) -> None:
+        """Call the optional SciPy-style ``callback(xk)`` if one was provided.
+
+        Args:
+            params: Current external (user-facing) parameters as a PyTree.
+
+        Notes:
+            Raising ``StopIteration`` from the callback to abort optimization (as in
+            SciPy) is not handled yet.
+
+        """
+        if self._callback is not None:
+            self._callback(params)
 
     # ==================================================================================
     # Public attributes

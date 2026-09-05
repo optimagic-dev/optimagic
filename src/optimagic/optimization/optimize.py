@@ -76,8 +76,7 @@ ConstraintsType = Constraint | list[Constraint] | dict[str, Any] | list[dict[str
 JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]
-# TODO: refine this type
-CallbackType = Callable[..., Any]
+CallbackType = Callable[[PyTree], None]
 
 CriterionType = Callable[..., float | dict[str, Any]]
 CriterionAndDerivativeType = Callable[..., tuple[float | dict[str, Any], PyTree]]
@@ -216,7 +215,11 @@ def maximize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` is the current parameter value
+            (a PyTree; a numpy array if ``params`` is an array). Raising
+            ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -413,7 +416,11 @@ def minimize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` is the current parameter value
+            (a PyTree; a numpy array if ``params`` is an array). Raising
+            ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -653,6 +660,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         linear_constraints=None,
         nonlinear_constraints=internal_nonlinear_constraints,
         logger=logger,
+        callback=problem.callback,
     )
 
     # ==================================================================================

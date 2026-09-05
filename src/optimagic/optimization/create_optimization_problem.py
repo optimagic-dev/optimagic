@@ -86,6 +86,7 @@ class OptimizationProblem:
     skip_checks: bool
     direction: Direction
     fun_eval: SpecificFunctionValue
+    callback: Callable[[PyTree], None] | None
 
 
 def create_optimization_problem(
@@ -300,14 +301,6 @@ def create_optimization_problem(
             "The hessp argument is not yet supported in optimagic. Creat an issue on "
             "https://github.com/optimagic-dev/optimagic/ if you have urgent need "
             "for this feature."
-        )
-        raise NotImplementedError(msg)
-
-    if callback is not None:
-        msg = (
-            "The callback argument is not yet supported in optimagic. Creat an issue "
-            "on https://github.com/optimagic-dev/optimagic/ if you have urgent "
-            "need for this feature."
         )
         raise NotImplementedError(msg)
 
@@ -530,6 +523,21 @@ def create_optimization_problem(
             raise ValueError("collect_history must be a boolean")
 
     # ==================================================================================
+    # process and validate callback
+    # ==================================================================================
+
+    if callback is not None:
+        if not callable(callback):
+            raise InvalidFunctionError("callback must be a callable or None.")
+        # Same signature checks as for fun / jac: one free argument (the params / xk).
+        callback = partial_func_of_params(
+            func=callback,
+            kwargs={},
+            name="callback",
+            skip_checks=skip_checks,
+        )
+
+    # ==================================================================================
     # create the problem object
     # ==================================================================================
 
@@ -551,6 +559,7 @@ def create_optimization_problem(
         skip_checks=skip_checks,
         direction=direction,
         fun_eval=fun_eval,
+        callback=callback,
     )
 
     return problem

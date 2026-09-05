@@ -120,17 +120,6 @@ def test_exception_for_hessp():
         )
 
 
-def test_exception_for_callback():
-    msg = "The callback argument is not yet supported"
-    with pytest.raises(NotImplementedError, match=msg):
-        om.minimize(
-            fun=lambda x: x @ x,
-            x0=np.arange(3),
-            algorithm="scipy_lbfgsb",
-            callback=print,
-        )
-
-
 def test_exception_for_options():
     msg = "The options argument is not supported"
     with pytest.raises(NotImplementedError, match=msg):
