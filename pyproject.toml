@@ -16,7 +16,7 @@ dependencies = [
     "annotated-types>=0.4",
     "pydantic>=2.6",
     "typing-extensions>=4.5",
-		"optree>=0.19",
+    "optree>=0.19",
 ]
 dynamic = ["version"]
 keywords = [

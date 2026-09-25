@@ -13,7 +13,7 @@ from optimagic.parameters.tree_registry import (
     tree_leaves,
     tree_map,
 )
-from optimagic.typing import VALUE_NAMESPACE, PyTree
+from optimagic.typing import VALUE_NAMESPACE, PyTree, PyTreeNamespace
 from optimagic.utilities import fast_numpy_full
 
 
@@ -77,7 +77,7 @@ def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
 def get_internal_bounds(
     params: PyTree,
     bounds: Bounds | None = None,
-    namespace: str = VALUE_NAMESPACE,
+    namespace: PyTreeNamespace = VALUE_NAMESPACE,
     add_soft_bounds: bool = False,
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
@@ -94,7 +94,7 @@ def get_internal_bounds(
     Args:
         params: The parameter pytree.
         bounds: The lower and upper bounds.
-        namespace: optree namespace.
+        namespace: Pytree namespace used to flatten params.
         add_soft_bounds: If True, the element-wise maximum (minimum) of the lower and
             soft_lower (upper and soft_upper) bounds are taken. If False, the lower
             (upper) bounds are returned.
@@ -160,6 +160,14 @@ def get_internal_bounds(
     return lower_flat, upper_flat
 
 
+_BOUNDS_NAMESPACES: dict[str, PyTreeNamespace] = {
+    "lower_bound": "optimagic.lower_bound",
+    "upper_bound": "optimagic.upper_bound",
+    "soft_lower_bound": "optimagic.soft_lower_bound",
+    "soft_upper_bound": "optimagic.soft_upper_bound",
+}
+
+
 def _update_bounds_and_flatten(
     nan_tree: PyTree,
     bounds: PyTree,
@@ -177,7 +185,7 @@ def _update_bounds_and_flatten(
         np.ndarray: The updated and flattened bounds.
 
     """
-    flat_nan_tree = tree_leaves(nan_tree, namespace=kind)
+    flat_nan_tree = tree_leaves(nan_tree, namespace=_BOUNDS_NAMESPACES[kind])
     if bounds is not None:
         flat_bounds = tree_leaves(bounds, namespace=VALUE_NAMESPACE)
 

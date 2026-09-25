@@ -1,7 +1,9 @@
 import itertools
+import threading
 from typing import NamedTuple
 
 import numpy as np
+import optree
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
@@ -135,7 +137,8 @@ def test_tree_methods_with_default_namespace(bounds_df):
 
 @pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
 def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
-    expected_leaves = bounds_df[namespace].tolist()
+    data_col = namespace.removeprefix(f"{DEFAULT_NAMESPACE}.")
+    expected_leaves = bounds_df[data_col].tolist()
 
     leaves, treedef = tree_flatten(bounds_df, namespace=namespace)
     assert leaves == expected_leaves
@@ -152,24 +155,31 @@ def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
     tree = tree_map(lambda x: x * 2, bounds_df, namespace=namespace)
     doubled = [v * 2 for v in expected_leaves]
     expected = bounds_df.copy()
-    expected[namespace] = doubled
+    expected[data_col] = doubled
     assert_frame_equal(tree, expected)
 
 
-def test_tree_methods_raise_warning_with_unregisted_namespace():
-    unregistered_namespace = "unregistered_namespace"
-    tree, leaves = [0], [0]
-    match_str = "is not registered."
-    with pytest.warns(match=match_str):
-        tree_flatten(tree, namespace=unregistered_namespace)
-    with pytest.warns(match=match_str):
-        tree_leaves(tree, namespace=unregistered_namespace)
-    with pytest.warns(match=match_str):
-        tree_unflatten(tree, leaves, namespace=unregistered_namespace)
-    with pytest.warns(match=match_str):
-        leaf_names(tree, namespace=unregistered_namespace)
-    with pytest.warns(match=match_str):
-        tree_map(lambda x: x * 2, tree, namespace=unregistered_namespace)
+@pytest.mark.parametrize(
+    "func",
+    [
+        lambda ns: tree_flatten([0], namespace=ns),
+        lambda ns: tree_leaves([0], namespace=ns),
+        lambda ns: tree_unflatten([0], [0], namespace=ns),
+        lambda ns: leaf_names([0], namespace=ns),
+        lambda ns: tree_map(lambda x: x * 2, [0], namespace=ns),
+        lambda ns: tree_equal([0], [0], namespace=ns),
+    ],
+)
+@pytest.mark.parametrize("namespace", ["unregistered", "value", ""])
+def test_tree_methods_raise_with_invalid_namespace(func, namespace):
+    with pytest.raises(ValueError, match="Invalid pytree namespace"):
+        func(namespace)
+
+
+def test_tree_unflatten_with_treedef_raises_with_invalid_namespace():
+    _, treedef = tree_flatten([0])
+    with pytest.raises(ValueError, match="Invalid pytree namespace"):
+        tree_unflatten(treedef, [0], namespace="unregistered")
 
 
 def test_tree_flatten_and_unflatten_with_None():
@@ -245,3 +255,52 @@ def test_tree_equal_returns_bool_with_none_returning_checkers():
     first = {"a": np.array([1.0]), "b": np.array([2.0])}
     second = {"a": np.array([1.0]), "b": np.array([2.0])}
     assert tree_equal(first, second, equality_checkers=checkers) is True
+
+
+@pytest.mark.parametrize("namespace", OPTREE_NAMESPACES + (DEFAULT_NAMESPACE,))
+def test_dict_insertion_ordering_is_thread_safe(namespace, monkeypatch):
+    # Force the interleaving that breaks a per-call toggle of optree's process-wide
+    # dict ordering mode: thread "a" is inside tree_leaves when thread "b" enters
+    # it, and "a" returns before "b" reaches optree.
+    tree = {"b": 1, "a": 2}
+    a_inside, b_inside, a_done = (threading.Event() for _ in range(3))
+    real_tree_leaves = optree.tree_leaves
+
+    def paused_tree_leaves(*args, **kwargs):
+        if threading.current_thread().name == "a":
+            a_inside.set()
+            b_inside.wait(timeout=5)
+        else:
+            b_inside.set()
+            a_done.wait(timeout=5)
+        return real_tree_leaves(*args, **kwargs)
+
+    monkeypatch.setattr(optree, "tree_leaves", paused_tree_leaves)
+    results = {}
+
+    def run_a():
+        results["a"] = tree_leaves(tree, namespace=namespace)
+        a_done.set()
+
+    def run_b():
+        a_inside.wait(timeout=5)
+        results["b"] = tree_leaves(tree, namespace=namespace)
+
+    threads = [
+        threading.Thread(target=run_a, name="a"),
+        threading.Thread(target=run_b, name="b"),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert results == {"a": [1, 2], "b": [1, 2]}
+
+
+def test_leaf_names_and_leaves_are_aligned_for_all_namespaces(bounds_df):
+    tree = {"df": bounds_df, "arr": np.arange(2), "b": 1}
+    for namespace in OPTREE_NAMESPACES:
+        assert len(leaf_names(tree, namespace=namespace)) == len(
+            tree_leaves(tree, namespace=namespace)
+        )

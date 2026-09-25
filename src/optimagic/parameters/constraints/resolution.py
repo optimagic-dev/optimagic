@@ -41,7 +41,7 @@ from optimagic.constraints import (
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import tree_leaves
-from optimagic.typing import VALUE_NAMESPACE, PyTree
+from optimagic.typing import VALUE_NAMESPACE, PyTree, PyTreeNamespace
 
 
 @dataclass(frozen=True)
@@ -51,14 +51,14 @@ class ResolutionContext:
     Attributes:
         helper: Pytree with the same structure as the user provided params whose
             leaves are the positions of the parameters in the flat parameter vector.
-        namespace: optree namespace used to flatten selections on the helper tree.
+        namespace: Pytree namespace used to flatten selections on the helper tree.
         param_names: Names of the flat parameters. Used for error messages.
         source: Provenance of the constraint that is being resolved.
 
     """
 
     helper: PyTree
-    namespace: str
+    namespace: PyTreeNamespace
     param_names: list[str]
     source: ConstraintSource
 

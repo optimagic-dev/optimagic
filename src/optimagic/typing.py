@@ -6,6 +6,7 @@ from typing import (
     Annotated,
     Any,
     Callable,
+    Final,
     ItemsView,
     Iterator,
     KeysView,
@@ -250,12 +251,29 @@ class MultiStartIterationHistory(TupleLikeAccess):
     exploration: IterationHistory | None = None
 
 
-DEFAULT_NAMESPACE = "optimagic_namespace"
-OPTREE_NAMESPACES = (
-    "value",
-    "lower_bound",
-    "upper_bound",
-    "soft_lower_bound",
-    "soft_upper_bound",
+PyTreeNamespace = Literal[
+    "optimagic",
+    "optimagic.value",
+    "optimagic.lower_bound",
+    "optimagic.upper_bound",
+    "optimagic.soft_lower_bound",
+    "optimagic.soft_upper_bound",
+]
+"""Optree namespaces used by optimagic's pytree functions.
+
+In the default namespace "optimagic", numpy arrays, pandas objects and jax arrays are
+leaves. In all other namespaces they are internal nodes and a params DataFrame with a
+"value" column contributes the entries of the column named after the namespace suffix
+(e.g. "lower_bound" for "optimagic.lower_bound").
+
+"""
+
+DEFAULT_NAMESPACE: Final = "optimagic"
+VALUE_NAMESPACE: Final = "optimagic.value"
+OPTREE_NAMESPACES: Final[tuple[PyTreeNamespace, ...]] = (
+    VALUE_NAMESPACE,
+    "optimagic.lower_bound",
+    "optimagic.upper_bound",
+    "optimagic.soft_lower_bound",
+    "optimagic.soft_upper_bound",
 )
-VALUE_NAMESPACE = OPTREE_NAMESPACES[0]
