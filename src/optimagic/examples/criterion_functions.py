@@ -17,7 +17,7 @@ from optimagic.optimization.fun_value import (
     FunctionValue,
 )
 from optimagic.parameters.block_trees import matrix_to_block_tree
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     tree_flatten,
     tree_unflatten,
 )

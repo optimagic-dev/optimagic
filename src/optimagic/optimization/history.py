@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     leaf_names,
     tree_leaves,
 )

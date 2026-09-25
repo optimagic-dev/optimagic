@@ -9,7 +9,7 @@ from optimagic.differentiation.derivatives import first_derivative
 from optimagic.exceptions import InvalidConstraintError, InvalidFunctionError
 from optimagic.optimization.algo_options import CONSTRAINTS_ABSOLUTE_TOLERANCE
 from optimagic.parameters.block_trees import block_tree_to_matrix
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     tree_flatten,
     tree_leaves,
     tree_unflatten,

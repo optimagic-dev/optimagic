@@ -14,7 +14,7 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic.parameters.tree_registry import leaf_names, tree_equal
+from optimagic.pytree import leaf_names, tree_equal
 from optimagic.typing import PyTreeNamespace
 from optimagic.utilities import get_rng
 

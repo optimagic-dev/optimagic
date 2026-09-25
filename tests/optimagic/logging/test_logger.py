@@ -12,7 +12,7 @@ from optimagic.logging.logger import (
     SQLiteLogReader,
 )
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     tree_equal,
     tree_leaves,
 )

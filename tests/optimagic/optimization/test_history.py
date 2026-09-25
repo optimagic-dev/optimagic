@@ -18,7 +18,7 @@ from optimagic.optimization.history import (
     _task_to_categorical,
     _validate_args_are_all_none_or_lists_of_same_length,
 )
-from optimagic.parameters.tree_registry import tree_map
+from optimagic.pytree import tree_map
 from optimagic.typing import Direction, EvalTask
 
 # ======================================================================================

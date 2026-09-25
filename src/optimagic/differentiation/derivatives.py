@@ -20,7 +20,7 @@ from optimagic.differentiation.generate_steps import generate_steps
 from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     tree_flatten,
     tree_leaves,
     tree_unflatten,

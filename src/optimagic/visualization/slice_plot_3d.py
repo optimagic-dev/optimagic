@@ -19,7 +19,7 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.bounds import pre_process_bounds
 from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel, PyTreeNamespace
 

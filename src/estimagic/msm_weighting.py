@@ -6,7 +6,7 @@ from scipy.linalg import block_diag
 
 from estimagic.bootstrap import bootstrap
 from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_block_tree
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTreeNamespace
 from optimagic.utilities import robust_inverse
 

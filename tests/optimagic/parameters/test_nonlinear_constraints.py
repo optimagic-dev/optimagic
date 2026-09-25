@@ -21,7 +21,7 @@ from optimagic.parameters.nonlinear_constraints import (
     process_nonlinear_constraints,
     vector_as_list_of_scalar_constraints,
 )
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTreeNamespace
 
 

@@ -20,7 +20,7 @@ from optimagic.examples.criterion_functions import (
 from optimagic.logging.logger import SQLiteLogOptions
 from optimagic.logging.types import ExistenceStrategy
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTreeNamespace
 
 

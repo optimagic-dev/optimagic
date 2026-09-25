@@ -10,7 +10,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal
 
 from optimagic.config import IS_JAX_INSTALLED
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     leaf_names,
     tree_equal,
     tree_flatten,

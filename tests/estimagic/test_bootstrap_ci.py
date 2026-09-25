@@ -6,7 +6,7 @@ import pytest
 
 from estimagic.bootstrap_ci import calculate_ci, check_inputs
 from estimagic.bootstrap_samples import get_bootstrap_indices
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTreeNamespace
 from optimagic.utilities import get_rng
 

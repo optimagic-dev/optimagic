@@ -13,7 +13,7 @@ import numpy as np
 from optimagic import batch_evaluators
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTreeNamespace
 
 

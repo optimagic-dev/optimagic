@@ -5,7 +5,7 @@ import pandas as pd
 import scipy
 
 from optimagic.parameters.block_trees import matrix_to_block_tree
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     tree_leaves,
     tree_structure,
     tree_unflatten,

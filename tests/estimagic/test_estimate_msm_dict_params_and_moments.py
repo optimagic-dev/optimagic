@@ -5,7 +5,7 @@ import pandas as pd
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.estimate_msm import estimate_msm
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTreeNamespace
 
 

@@ -40,7 +40,7 @@ from optimagic.constraints import (
 )
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.tree_conversion import TreeConverter
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTree, PyTreeNamespace
 
 

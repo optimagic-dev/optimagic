@@ -11,7 +11,7 @@ from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     leaf_names,
     tree_flatten,
     tree_leaves,

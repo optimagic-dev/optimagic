@@ -15,7 +15,7 @@ from optimagic.parameters.constraints.resolution import (
     to_legacy_dicts,
 )
 from optimagic.parameters.tree_conversion import TreeConverter
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     tree_flatten,
     tree_leaves,
     tree_unflatten,

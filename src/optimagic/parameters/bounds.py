@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     leaf_names,
     tree_leaves,
     tree_map,

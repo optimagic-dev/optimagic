@@ -42,7 +42,7 @@ from optimagic import first_derivative
 from optimagic.deprecations import pre_process_constraints
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.parameters.conversion import get_converter
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import AggregationLevel, PyTreeNamespace
 from optimagic.utilities import cov_params_to_matrix, get_rng, sdcorr_params_to_matrix
 

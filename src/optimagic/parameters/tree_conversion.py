@@ -5,7 +5,7 @@ import numpy as np
 from optimagic.exceptions import InvalidFunctionError
 from optimagic.parameters.block_trees import block_tree_to_matrix
 from optimagic.parameters.bounds import get_internal_bounds
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     leaf_names,
     tree_flatten,
     tree_leaves,

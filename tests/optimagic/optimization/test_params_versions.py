@@ -10,7 +10,7 @@ from optimagic.examples.criterion_functions import (
     sos_scalar,
 )
 from optimagic.optimization.optimize import minimize
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import PyTreeNamespace
 
 PARAMS = [

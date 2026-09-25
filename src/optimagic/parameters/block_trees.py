@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     tree_flatten,
     tree_leaves,
     tree_unflatten,

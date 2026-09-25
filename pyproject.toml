@@ -296,7 +296,6 @@ module = [
     "optimagic.parameters.process_constraints",
     "optimagic.parameters.space_conversion",
     "optimagic.parameters.tree_conversion",
-    "optimagic.parameters.tree_registry",
 
 
     "optimagic.shared",
@@ -317,6 +316,7 @@ module = [
     "optimagic.decorators",
     "optimagic.exceptions",
     "optimagic.utilities",
+    "optimagic.pytree",
     "optimagic.deprecations",
 
     "estimagic",

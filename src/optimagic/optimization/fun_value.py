@@ -7,7 +7,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from optimagic.exceptions import InvalidFunctionError
-from optimagic.parameters.tree_registry import tree_leaves
+from optimagic.pytree import tree_leaves
 from optimagic.typing import AggregationLevel, PyTree, PyTreeNamespace, Scalar
 from optimagic.utilities import isscalar
 

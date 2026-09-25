@@ -50,7 +50,7 @@ from optimagic.parameters.block_trees import block_tree_to_matrix, matrix_to_blo
 from optimagic.parameters.bounds import Bounds, pre_process_bounds
 from optimagic.parameters.conversion import Converter, get_converter
 from optimagic.parameters.space_conversion import InternalParams
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     leaf_names,
     tree_leaves,
 )

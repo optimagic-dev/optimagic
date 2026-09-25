@@ -12,7 +12,7 @@ from estimagic.bootstrap_outcomes import get_bootstrap_outcomes
 from estimagic.shared_covs import calculate_estimation_summary
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.parameters.block_trees import matrix_to_block_tree
-from optimagic.parameters.tree_registry import (
+from optimagic.pytree import (
     leaf_names,
     tree_flatten,
     tree_leaves,
