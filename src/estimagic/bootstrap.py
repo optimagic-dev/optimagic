@@ -169,10 +169,7 @@ class BootstrapResult:
         """
         _, treedef = tree_flatten(self._base_outcome, namespace=PyTreeNamespace.VALUE)
 
-        outcomes = [
-            tree_unflatten(treedef, out, namespace=PyTreeNamespace.VALUE)
-            for out in self._internal_outcomes
-        ]
+        outcomes = [tree_unflatten(treedef, out) for out in self._internal_outcomes]
         return outcomes
 
     def se(self):
@@ -188,7 +185,7 @@ class BootstrapResult:
 
         _, treedef = tree_flatten(self._base_outcome, namespace=PyTreeNamespace.VALUE)
 
-        se = tree_unflatten(treedef, se, namespace=PyTreeNamespace.VALUE)
+        se = tree_unflatten(treedef, se)
         return se
 
     def cov(self, return_type="pytree"):
@@ -246,8 +243,8 @@ class BootstrapResult:
             base_outcome_flat, self._internal_outcomes, ci_method, ci_level
         )
 
-        lower = tree_unflatten(treedef, lower_flat, namespace=PyTreeNamespace.VALUE)
-        upper = tree_unflatten(treedef, upper_flat, namespace=PyTreeNamespace.VALUE)
+        lower = tree_unflatten(treedef, lower_flat)
+        upper = tree_unflatten(treedef, upper_flat)
         return lower, upper
 
     def p_values(self):

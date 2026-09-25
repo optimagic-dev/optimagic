@@ -7,6 +7,7 @@ import scipy
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
     tree_leaves,
+    tree_structure,
     tree_unflatten,
 )
 from optimagic.typing import PyTreeNamespace
@@ -169,9 +170,8 @@ def calculate_estimation_summary(
     # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(
-        summary_data["value"], names, namespace=PyTreeNamespace.VALUE
-    )
+    treedef = tree_structure(summary_data["value"], namespace=PyTreeNamespace.VALUE)
+    indices = tree_unflatten(treedef, names)
 
     estimates_flat = tree_leaves(summary_data["value"])
     indices_flat = tree_leaves(indices)
@@ -215,7 +215,7 @@ def calculate_estimation_summary(
 
         summary_flat.append(df_chunk)
 
-    summary = tree_unflatten(summary_data["value"], summary_flat)
+    summary = tree_unflatten(tree_structure(summary_data["value"]), summary_flat)
     return summary
 
 
@@ -354,7 +354,8 @@ def transform_free_values_to_params_tree(values, free_params, params):
     mask = free_params.free_mask
     flat = np.full(len(mask), np.nan)
     flat[np.ix_(mask)] = values
-    pytree = tree_unflatten(params, flat, namespace=PyTreeNamespace.VALUE)
+    treedef = tree_structure(params, namespace=PyTreeNamespace.VALUE)
+    pytree = tree_unflatten(treedef, flat)
     return pytree
 
 

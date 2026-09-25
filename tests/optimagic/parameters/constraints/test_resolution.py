@@ -38,9 +38,7 @@ def tree_params_converter(tree_params):
         params_flatten=lambda params: np.array(
             tree_leaves(params, namespace=PyTreeNamespace.VALUE)
         ),
-        params_unflatten=lambda x: tree_unflatten(
-            treedef, x.tolist(), namespace=PyTreeNamespace.VALUE
-        ),
+        params_unflatten=lambda x: tree_unflatten(treedef, x.tolist()),
         derivative_flatten=None,
     )
     return converter

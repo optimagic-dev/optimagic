@@ -591,9 +591,7 @@ def _extract_params_plot_lines(
 
     if selector is not None:
         flat, treedef = tree_flatten(start_params, namespace=PyTreeNamespace.VALUE)
-        helper = tree_unflatten(
-            treedef, list(range(len(flat))), namespace=PyTreeNamespace.VALUE
-        )
+        helper = tree_unflatten(treedef, list(range(len(flat))))
         selected = np.array(
             tree_leaves(selector(helper), namespace=PyTreeNamespace.VALUE)
         )

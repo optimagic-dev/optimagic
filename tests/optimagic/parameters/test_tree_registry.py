@@ -16,6 +16,7 @@ from optimagic.parameters.tree_registry import (
     tree_flatten,
     tree_leaves,
     tree_map,
+    tree_structure,
     tree_unflatten,
 )
 from optimagic.typing import PyTreeNamespace
@@ -60,7 +61,7 @@ def test_flatten_df_with_value_column(value_df):
 
 def test_unflatten_df_with_value_column(value_df):
     _, treedef = tree_flatten(value_df, namespace=PyTreeNamespace.VALUE)
-    unflat = tree_unflatten(treedef, [10, 11, 12], namespace=PyTreeNamespace.VALUE)
+    unflat = tree_unflatten(treedef, [10, 11, 12])
     assert unflat.equals(value_df.assign(value=[10, 11, 12]))
 
 
@@ -98,9 +99,7 @@ def test_flatten_partially_numeric_df(other_df):
 
 def test_unflatten_partially_numeric_df(other_df):
     _, treedef = tree_flatten(other_df, namespace=PyTreeNamespace.VALUE)
-    unflat = tree_unflatten(
-        treedef, [1, 2, 3, 4, 5, 6], namespace=PyTreeNamespace.VALUE
-    )
+    unflat = tree_unflatten(treedef, [1, 2, 3, 4, 5, 6])
     other_df = other_df.assign(b=[1, 3, 5], c=[2, 4, 6])
     assert_frame_equal(unflat, other_df, check_dtype=False)
 
@@ -155,7 +154,7 @@ def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
     leaves = tree_leaves(bounds_df, namespace=namespace)
     assert leaves == expected_leaves
 
-    tree = tree_unflatten(treedef, leaves, namespace=namespace)
+    tree = tree_unflatten(treedef, leaves)
     assert_frame_equal(tree, bounds_df)
 
     names = leaf_names(bounds_df, namespace=namespace)
@@ -173,7 +172,7 @@ def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
     [
         lambda ns: tree_flatten([0], namespace=ns),
         lambda ns: tree_leaves([0], namespace=ns),
-        lambda ns: tree_unflatten([0], [0], namespace=ns),
+        lambda ns: tree_structure([0], namespace=ns),
         lambda ns: leaf_names([0], namespace=ns),
         lambda ns: tree_map(lambda x: x * 2, [0], namespace=ns),
         lambda ns: tree_equal([0], [0], namespace=ns),
@@ -187,10 +186,17 @@ def test_tree_methods_raise_with_invalid_namespace(func, namespace):
         func(namespace)
 
 
-def test_tree_unflatten_with_treedef_raises_with_invalid_namespace():
-    _, treedef = tree_flatten([0])
-    with pytest.raises(TypeError, match="Invalid pytree namespace"):
-        tree_unflatten(treedef, [0], namespace="optimagic")
+@pytest.mark.parametrize("treedef", [[0], {"a": 0}, None, np.zeros(1)])
+def test_tree_unflatten_raises_if_treedef_is_not_a_treespec(treedef):
+    with pytest.raises(TypeError, match="treedef must be a tree definition"):
+        tree_unflatten(treedef, [0])
+
+
+@pytest.mark.parametrize("namespace", list(PyTreeNamespace))
+def test_tree_structure_equals_treedef_from_tree_flatten(namespace, bounds_df):
+    tree = {"b": bounds_df, "a": [np.arange(2), 1.0]}
+    _, treedef = tree_flatten(tree, namespace=namespace)
+    assert tree_structure(tree, namespace=namespace) == treedef
 
 
 def test_namespace_data_col():
@@ -223,7 +229,7 @@ def test_dict_insertion_ordering_is_respected(namespace):
     leaves, _ = tree_flatten(params, namespace=namespace)
     assert leaves == [1, 4, 8, 9]
 
-    tree = tree_unflatten(params, [1, 4, 8, 9], namespace=namespace)
+    tree = tree_unflatten(tree_structure(params, namespace=namespace), [1, 4, 8, 9])
     assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
 
     leaves2 = tree_leaves(params, namespace=namespace)
@@ -333,7 +339,7 @@ TREE_FUNCS_THAT_FLATTEN = {
     "tree_leaves": lambda tree, ns: tree_leaves(tree, namespace=ns),
     "tree_map": lambda tree, ns: tree_map(lambda x: x, tree, namespace=ns),
     "leaf_names": lambda tree, ns: leaf_names(tree, namespace=ns),
-    "tree_unflatten": lambda tree, ns: tree_unflatten(tree, [1.0, 2.0], namespace=ns),
+    "tree_structure": lambda tree, ns: tree_structure(tree, namespace=ns),
 }
 
 
@@ -373,7 +379,7 @@ def test_grad_through_unflatten_with_traced_leaves():
     _, treedef = tree_flatten(params, namespace=PyTreeNamespace.VALUE)
 
     def f(x):
-        tree = tree_unflatten(treedef, list(x), namespace=PyTreeNamespace.VALUE)
+        tree = tree_unflatten(treedef, list(x))
         return (tree["a"] ** 2).sum() + tree["b"]
 
     aaae(jax.grad(f)(jnp.array([1.0, 2.0, 3.0])), np.array([2.0, 4.0, 1.0]))

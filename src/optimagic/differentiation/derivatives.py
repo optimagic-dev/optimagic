@@ -292,7 +292,7 @@ def first_derivative(
     if not is_fast_path:
         evaluation_points = [
             # entries are either a numpy.ndarray or np.nan
-            _unflatten_if_not_nan(p, params_treedef, PyTreeNamespace.VALUE)
+            _unflatten_if_not_nan(p, params_treedef)
             for p in evaluation_points
         ]
 
@@ -633,10 +633,7 @@ def second_derivative(
     if not is_fast_path:
         evaluation_points = {
             # entries are either a numpy.ndarray or np.nan, we unflatten only
-            step_type: [
-                _unflatten_if_not_nan(p, params_treedef, PyTreeNamespace.VALUE)
-                for p in points
-            ]
+            step_type: [_unflatten_if_not_nan(p, params_treedef) for p in points]
             for step_type, points in evaluation_points.items()
         }
 
@@ -1217,9 +1214,9 @@ def _is_scalar_nan(value):
     return isinstance(value, float) and np.isnan(value)
 
 
-def _unflatten_if_not_nan(leaves, treedef, namespace):
+def _unflatten_if_not_nan(leaves, treedef):
     if isinstance(leaves, np.ndarray):
-        out = tree_unflatten(treedef, leaves, namespace=namespace)
+        out = tree_unflatten(treedef, leaves)
     else:
         out = leaves
     return out

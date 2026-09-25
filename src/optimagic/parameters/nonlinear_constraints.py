@@ -368,9 +368,7 @@ def _get_selection_indices(params, selector):
     flat_params, params_treedef = tree_flatten(params, namespace=PyTreeNamespace.VALUE)
     n_params = len(flat_params)
     indices = np.arange(n_params, dtype=int)
-    params_indices = tree_unflatten(
-        params_treedef, indices, namespace=PyTreeNamespace.VALUE
-    )
+    params_indices = tree_unflatten(params_treedef, indices)
     selected = selector(params_indices)
     selection_indices = np.array(
         tree_leaves(selected, namespace=PyTreeNamespace.VALUE), dtype=int

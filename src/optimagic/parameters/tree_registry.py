@@ -67,29 +67,47 @@ def tree_leaves(
     return leaves
 
 
-def tree_unflatten(
-    treedef: PyTree | PyTreeSpec,
-    leaves: Iterable[Any],
+def tree_structure(
+    tree: PyTree,
+    is_leaf: Callable[[PyTree], bool] | None = None,
     namespace: PyTreeNamespace = PyTreeNamespace.DEFAULT,
-) -> PyTree:
+) -> PyTreeSpec:
+    """Get the tree definition of a pytree.
+
+    This flattens the tree. If the tree is flattened anyway, use the tree definition
+    returned by ``tree_flatten`` instead.
+
+    Args:
+        tree: The pytree.
+        is_leaf: Optional function that returns True for subtrees that should be
+            treated as leaves.
+        namespace: The namespace that determines which types are internal nodes.
+
+    Returns:
+        The tree definition.
+
+    """
+    _, treedef = tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
+    return treedef
+
+
+def tree_unflatten(treedef: PyTreeSpec, leaves: Iterable[Any]) -> PyTree:
     """Reconstruct a pytree from the tree definition and the leaves.
 
     Args:
-        treedef: A tree definition as returned by ``tree_flatten`` or a pytree with
-            the desired structure.
+        treedef: A tree definition as returned by ``tree_flatten`` or
+            ``tree_structure``. It carries the namespace it was created in.
         leaves: The leaves of the new tree.
-        namespace: The namespace that determines which types are internal nodes.
-            Only used if treedef is a pytree; a tree definition carries its own
-            namespace.
 
     Returns:
         The reconstructed pytree.
 
     """
-    _check_namespace(namespace)
     if not isinstance(treedef, PyTreeSpec):
-        treedef_leaves, treedef = optree.tree_flatten(treedef, namespace=namespace)
-        _fail_if_traced(treedef_leaves, namespace)
+        raise TypeError(
+            "treedef must be a tree definition as returned by tree_flatten or "
+            f"tree_structure, not {type(treedef).__name__}."
+        )
     return optree.tree_unflatten(treedef, leaves)
 
 

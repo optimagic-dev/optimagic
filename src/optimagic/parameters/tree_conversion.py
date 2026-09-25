@@ -79,9 +79,7 @@ def get_tree_converter(
     )
 
     _params_flatten = _get_params_flatten(namespace=PyTreeNamespace.VALUE)
-    _params_unflatten = _get_params_unflatten(
-        namespace=PyTreeNamespace.VALUE, treedef=_params_treedef
-    )
+    _params_unflatten = _get_params_unflatten(treedef=_params_treedef)
 
     _derivative_flatten = _get_derivative_flatten(
         namespace=PyTreeNamespace.VALUE,
@@ -107,9 +105,9 @@ def _get_params_flatten(namespace):
     return params_flatten
 
 
-def _get_params_unflatten(namespace, treedef):
+def _get_params_unflatten(treedef):
     def params_unflatten(x):
-        return tree_unflatten(treedef=treedef, leaves=list(x), namespace=namespace)
+        return tree_unflatten(treedef, list(x))
 
     return params_unflatten
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
+from optree.pytree import PyTreeSpec
 
 from optimagic import mark
 from optimagic.optimization.fun_value import (
@@ -17,7 +18,7 @@ from optimagic.optimization.fun_value import (
 )
 from optimagic.parameters.block_trees import matrix_to_block_tree
 from optimagic.parameters.tree_registry import (
-    tree_leaves,
+    tree_flatten,
     tree_unflatten,
 )
 from optimagic.typing import PyTree, PyTreeNamespace
@@ -33,13 +34,13 @@ def trid_scalar(params: PyTree) -> float:
 @mark.scalar
 def trid_gradient(params: PyTree) -> PyTree:
     """Calculate gradient of trid function."""
-    x = _get_x(params)
+    x, treedef = _flatten_params(params)
     l1 = np.insert(x, 0, 0)
     l1 = np.delete(l1, [-1])
     l2 = np.append(x, 0)
     l2 = np.delete(l2, [0])
     flat = 2 * (x - 1) - l1 - l2
-    return _unflatten_gradient(flat, params)
+    return _unflatten_gradient(flat, treedef)
 
 
 @mark.scalar
@@ -63,9 +64,9 @@ def rhe_scalar(params: PyTree) -> float:
 @mark.scalar
 def rhe_gradient(params: PyTree) -> PyTree:
     """Calculate gradient of rotated_hyper_ellipsoid function."""
-    x = _get_x(params)
+    x, treedef = _flatten_params(params)
     flat = np.arange(2 * len(x), 0, -2) * x
-    return _unflatten_gradient(flat, params)
+    return _unflatten_gradient(flat, treedef)
 
 
 @mark.scalar
@@ -104,14 +105,14 @@ def rosenbrock_scalar(params: PyTree) -> float:
 @mark.scalar
 def rosenbrock_gradient(params: PyTree) -> PyTree:
     """Calculate gradient of rosenbrock function."""
-    x = _get_x(params)
+    x, treedef = _flatten_params(params)
     l1 = np.append(np.delete(x, [-1]), 0)
     l2 = np.delete(np.insert(x, 0, 0), [1])
     l3 = np.delete(np.insert(x, 0, 0), [-1])
     l4 = np.append(np.delete(x, [0]), 0)
     l5 = np.append(np.full((len(x) - 1), 2), 0)
     flat = 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
-    return _unflatten_gradient(flat, params)
+    return _unflatten_gradient(flat, treedef)
 
 
 @mark.scalar
@@ -158,8 +159,9 @@ def sos_scalar(params: PyTree) -> float:
 @mark.scalar
 def sos_gradient(params: PyTree) -> PyTree:
     """Calculate the gradient of the sum of squares function."""
-    flat = 2 * _get_x(params)
-    return _unflatten_gradient(flat, params)
+    x, treedef = _flatten_params(params)
+    flat = 2 * x
+    return _unflatten_gradient(flat, treedef)
 
 
 @mark.likelihood
@@ -211,15 +213,27 @@ sos_derivatives = [sos_gradient, sos_likelihood_jacobian, sos_ls_jacobian]
 
 
 def _get_x(params: PyTree) -> NDArray[np.float64]:
-    if isinstance(params, np.ndarray) and params.ndim == 1:
-        x = params.astype(float)
-    else:
-        x = np.array(
-            tree_leaves(params, namespace=PyTreeNamespace.VALUE), dtype=np.float64
-        )
+    x, _ = _flatten_params(params)
     return x
 
 
-def _unflatten_gradient(flat: NDArray[np.float64], params: PyTree) -> PyTree:
-    out = tree_unflatten(params, flat.tolist(), namespace=PyTreeNamespace.VALUE)
-    return out
+def _flatten_params(
+    params: PyTree,
+) -> tuple[NDArray[np.float64], PyTreeSpec | None]:
+    """Flatten params into a float array and return the tree definition.
+
+    The tree definition is None if params is a 1d array, which needs no unflattening.
+
+    """
+    if isinstance(params, np.ndarray) and params.ndim == 1:
+        return params.astype(float), None
+    leaves, treedef = tree_flatten(params, namespace=PyTreeNamespace.VALUE)
+    return np.array(leaves, dtype=np.float64), treedef
+
+
+def _unflatten_gradient(
+    flat: NDArray[np.float64], treedef: PyTreeSpec | None
+) -> PyTree:
+    if treedef is None:
+        return flat
+    return tree_unflatten(treedef, flat.tolist())
