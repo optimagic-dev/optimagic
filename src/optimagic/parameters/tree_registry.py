@@ -3,7 +3,7 @@
 import contextlib
 from functools import partial
 from itertools import product
-from typing import Any, Callable, Iterable, get_args
+from typing import Any, Callable, Iterable
 
 import numpy as np
 import optree
@@ -11,12 +11,7 @@ import pandas as pd
 from optree.pytree import PyTreeSpec
 
 from optimagic.config import IS_JAX_INSTALLED
-from optimagic.typing import (
-    DEFAULT_NAMESPACE,
-    OPTREE_NAMESPACES,
-    PyTree,
-    PyTreeNamespace,
-)
+from optimagic.typing import PyTree, PyTreeNamespace
 
 if IS_JAX_INSTALLED:
     import jax
@@ -29,7 +24,7 @@ if IS_JAX_INSTALLED:
 def tree_flatten(
     tree: PyTree,
     is_leaf: Callable[[PyTree], bool] | None = None,
-    namespace: PyTreeNamespace = DEFAULT_NAMESPACE,
+    namespace: PyTreeNamespace = PyTreeNamespace.DEFAULT,
 ) -> tuple[list[Any], PyTreeSpec]:
     """Flatten a pytree.
 
@@ -52,7 +47,7 @@ def tree_flatten(
 def tree_leaves(
     tree: PyTree,
     is_leaf: Callable[[PyTree], bool] | None = None,
-    namespace: PyTreeNamespace = DEFAULT_NAMESPACE,
+    namespace: PyTreeNamespace = PyTreeNamespace.DEFAULT,
 ) -> list[Any]:
     """Get the leaves of a pytree.
 
@@ -75,7 +70,7 @@ def tree_leaves(
 def tree_unflatten(
     treedef: PyTree | PyTreeSpec,
     leaves: Iterable[Any],
-    namespace: PyTreeNamespace = DEFAULT_NAMESPACE,
+    namespace: PyTreeNamespace = PyTreeNamespace.DEFAULT,
 ) -> PyTree:
     """Reconstruct a pytree from the tree definition and the leaves.
 
@@ -102,7 +97,7 @@ def tree_map(
     func: Callable[[Any], Any],
     tree: PyTree,
     is_leaf: Callable[[PyTree], bool] | None = None,
-    namespace: PyTreeNamespace = DEFAULT_NAMESPACE,
+    namespace: PyTreeNamespace = PyTreeNamespace.DEFAULT,
 ) -> PyTree:
     """Apply a function to each leaf of a pytree.
 
@@ -124,7 +119,7 @@ def tree_map(
 def leaf_names(
     tree: PyTree,
     is_leaf: Callable[[PyTree], bool] | None = None,
-    namespace: PyTreeNamespace = DEFAULT_NAMESPACE,
+    namespace: PyTreeNamespace = PyTreeNamespace.DEFAULT,
     separator: str = "_",
 ) -> list[str]:
     """Get the path names of the leaves of a pytree.
@@ -178,7 +173,7 @@ def tree_equal(
     tree: PyTree,
     other: PyTree,
     is_leaf: Callable[[PyTree], bool] | None = None,
-    namespace: PyTreeNamespace = DEFAULT_NAMESPACE,
+    namespace: PyTreeNamespace = PyTreeNamespace.DEFAULT,
     equality_checkers: dict[type, Callable[[Any, Any], bool]] | None = None,
 ) -> bool:
     """Check the equality between two trees.
@@ -236,13 +231,17 @@ def _get_equality_checkers():
     return equality_checkers
 
 
-def _check_namespace(namespace: str) -> None:
-    """Raise a ValueError if the namespace is not one of optimagic's namespaces."""
-    valid = get_args(PyTreeNamespace)
-    if namespace not in valid:
-        raise ValueError(
-            f"Invalid pytree namespace '{namespace}'. Must be one of: "
-            f"{', '.join(valid)}."
+def _check_namespace(namespace: PyTreeNamespace) -> None:
+    """Raise a TypeError if the namespace is not a PyTreeNamespace member.
+
+    Plain strings are rejected even if they equal a member's value, so that callers
+    cannot bypass the enum.
+
+    """
+    if not isinstance(namespace, PyTreeNamespace):
+        raise TypeError(
+            f"Invalid pytree namespace {namespace!r}. Must be a member of "
+            "PyTreeNamespace."
         )
 
 
@@ -256,7 +255,7 @@ def _fail_if_traced(leaves: list[Any], namespace: PyTreeNamespace) -> None:
     become a single leaf and change the number of leaves.
 
     """
-    if not IS_JAX_INSTALLED or namespace == DEFAULT_NAMESPACE:
+    if not IS_JAX_INSTALLED or not namespace.is_extended:
         return
     leaf_types = set(map(type, leaves))
     if any(issubclass(leaf_type, JAX_TRACER_TYPE) for leaf_type in leaf_types):
@@ -273,15 +272,15 @@ def _get_names_namespace(namespace: PyTreeNamespace) -> str:
 
     The default namespace registers no custom nodes and therefore needs no variant.
     """
-    if namespace == DEFAULT_NAMESPACE:
-        return namespace
-    return f"{namespace}.names"
+    if not namespace.is_extended:
+        return namespace.value
+    return f"{namespace.value}.names"
 
 
 def _register_namespaces() -> contextlib.ExitStack:
     """Register flatten/unflatten functions and dict ordering for all namespaces.
 
-    Each namespace in ``OPTREE_NAMESPACES`` is registered in two variants:
+    Each extended namespace is registered in two variants:
 
     1. The plain namespace, whose flatten functions return only the leaf values.
     2. A names variant (see ``_get_names_namespace``), whose flatten functions
@@ -301,16 +300,17 @@ def _register_namespaces() -> contextlib.ExitStack:
         sorted dict ordering.
 
     """
-    for namespace in OPTREE_NAMESPACES:
-        data_col = namespace.removeprefix(f"{DEFAULT_NAMESPACE}.")
-        _register_namespace(namespace, data_col=data_col, with_names=False)
-        _register_namespace(
-            _get_names_namespace(namespace), data_col=data_col, with_names=True
-        )
+    for namespace in PyTreeNamespace:
+        if namespace.is_extended:
+            data_col = namespace.data_col
+            _register_namespace(namespace.value, data_col=data_col, with_names=False)
+            _register_namespace(
+                _get_names_namespace(namespace), data_col=data_col, with_names=True
+            )
 
     stack = contextlib.ExitStack()
-    for namespace in get_args(PyTreeNamespace):
-        for ns in {namespace, _get_names_namespace(namespace)}:
+    for namespace in PyTreeNamespace:
+        for ns in {namespace.value, _get_names_namespace(namespace)}:
             stack.enter_context(optree.dict_insertion_ordered(True, namespace=ns))
     return stack
 

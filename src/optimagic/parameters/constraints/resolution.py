@@ -41,7 +41,7 @@ from optimagic.constraints import (
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.tree_conversion import TreeConverter
 from optimagic.parameters.tree_registry import tree_leaves
-from optimagic.typing import VALUE_NAMESPACE, PyTree, PyTreeNamespace
+from optimagic.typing import PyTree, PyTreeNamespace
 
 
 @dataclass(frozen=True)
@@ -129,7 +129,7 @@ def resolve_constraints(
     for position, constraint in enumerate(constraints):
         context = ResolutionContext(
             helper=helper,
-            namespace=VALUE_NAMESPACE,
+            namespace=PyTreeNamespace.VALUE,
             param_names=param_names,
             source=ConstraintSource(constraint=constraint, position=position),
         )

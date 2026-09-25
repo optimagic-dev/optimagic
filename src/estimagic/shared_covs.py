@@ -9,7 +9,7 @@ from optimagic.parameters.tree_registry import (
     tree_leaves,
     tree_unflatten,
 )
-from optimagic.typing import VALUE_NAMESPACE
+from optimagic.typing import PyTreeNamespace
 
 
 def transform_covariance(
@@ -150,7 +150,7 @@ def calculate_estimation_summary(
     # ==================================================================================
 
     flat_data = {
-        key: tree_leaves(val, namespace=VALUE_NAMESPACE)
+        key: tree_leaves(val, namespace=PyTreeNamespace.VALUE)
         for key, val in summary_data.items()
     }
 
@@ -169,7 +169,9 @@ def calculate_estimation_summary(
     # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(summary_data["value"], names, namespace=VALUE_NAMESPACE)
+    indices = tree_unflatten(
+        summary_data["value"], names, namespace=PyTreeNamespace.VALUE
+    )
 
     estimates_flat = tree_leaves(summary_data["value"])
     indices_flat = tree_leaves(indices)
@@ -318,7 +320,7 @@ def calculate_free_estimates(estimates, internal_estimates):
     mask = internal_estimates.free_mask
     names = internal_estimates.names
 
-    external_flat = np.array(tree_leaves(estimates, namespace=VALUE_NAMESPACE))
+    external_flat = np.array(tree_leaves(estimates, namespace=PyTreeNamespace.VALUE))
 
     free_estimates = FreeParams(
         values=external_flat[mask],
@@ -352,7 +354,7 @@ def transform_free_values_to_params_tree(values, free_params, params):
     mask = free_params.free_mask
     flat = np.full(len(mask), np.nan)
     flat[np.ix_(mask)] = values
-    pytree = tree_unflatten(params, flat, namespace=VALUE_NAMESPACE)
+    pytree = tree_unflatten(params, flat, namespace=PyTreeNamespace.VALUE)
     return pytree
 
 

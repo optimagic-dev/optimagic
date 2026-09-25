@@ -6,7 +6,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.estimate_msm import estimate_msm
 from optimagic.parameters.tree_registry import tree_leaves
-from optimagic.typing import VALUE_NAMESPACE
+from optimagic.typing import PyTreeNamespace
 
 
 def test_estimate_msm_dict_params_and_moments():
@@ -98,7 +98,7 @@ def assert_almost_equal(x, y, decimal=6):
         x_flat = x
         y_flat = y
     else:
-        x_flat = np.array(tree_leaves(x, namespace=VALUE_NAMESPACE))
-        y_flat = np.array(tree_leaves(y, namespace=VALUE_NAMESPACE))
+        x_flat = np.array(tree_leaves(x, namespace=PyTreeNamespace.VALUE))
+        y_flat = np.array(tree_leaves(y, namespace=PyTreeNamespace.VALUE))
 
     aaae(x_flat, y_flat, decimal=decimal)

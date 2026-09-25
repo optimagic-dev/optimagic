@@ -20,7 +20,7 @@ from optimagic.parameters.tree_registry import (
     tree_leaves,
     tree_unflatten,
 )
-from optimagic.typing import VALUE_NAMESPACE
+from optimagic.typing import PyTreeNamespace
 
 
 @pytest.fixture()
@@ -32,14 +32,14 @@ def tree_params():
 
 @pytest.fixture()
 def tree_params_converter(tree_params):
-    _, treedef = tree_flatten(tree_params, namespace=VALUE_NAMESPACE)
+    _, treedef = tree_flatten(tree_params, namespace=PyTreeNamespace.VALUE)
 
     converter = TreeConverter(
         params_flatten=lambda params: np.array(
-            tree_leaves(params, namespace=VALUE_NAMESPACE)
+            tree_leaves(params, namespace=PyTreeNamespace.VALUE)
         ),
         params_unflatten=lambda x: tree_unflatten(
-            treedef, x.tolist(), namespace=VALUE_NAMESPACE
+            treedef, x.tolist(), namespace=PyTreeNamespace.VALUE
         ),
         derivative_flatten=None,
     )

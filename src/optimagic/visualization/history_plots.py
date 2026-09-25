@@ -17,7 +17,7 @@ from optimagic.parameters.tree_registry import (
     tree_leaves,
     tree_unflatten,
 )
-from optimagic.typing import VALUE_NAMESPACE, IterationHistory, PyTree
+from optimagic.typing import IterationHistory, PyTree, PyTreeNamespace
 from optimagic.visualization.backends import line_plot
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
@@ -584,15 +584,19 @@ def _extract_params_plot_lines(
         history = data.history.params
     start_params = data.start_params
 
-    hist_arr = np.array([tree_leaves(p, namespace=VALUE_NAMESPACE) for p in history]).T
-    names = leaf_names(start_params, namespace=VALUE_NAMESPACE)
+    hist_arr = np.array(
+        [tree_leaves(p, namespace=PyTreeNamespace.VALUE) for p in history]
+    ).T
+    names = leaf_names(start_params, namespace=PyTreeNamespace.VALUE)
 
     if selector is not None:
-        flat, treedef = tree_flatten(start_params, namespace=VALUE_NAMESPACE)
+        flat, treedef = tree_flatten(start_params, namespace=PyTreeNamespace.VALUE)
         helper = tree_unflatten(
-            treedef, list(range(len(flat))), namespace=VALUE_NAMESPACE
+            treedef, list(range(len(flat))), namespace=PyTreeNamespace.VALUE
         )
-        selected = np.array(tree_leaves(selector(helper), namespace=VALUE_NAMESPACE))
+        selected = np.array(
+            tree_leaves(selector(helper), namespace=PyTreeNamespace.VALUE)
+        )
         names = [names[i] for i in selected]
         hist_arr = hist_arr[selected]
 

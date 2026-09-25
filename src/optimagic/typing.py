@@ -1,12 +1,11 @@
 import functools
 import typing
 from dataclasses import dataclass, fields
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import (
     Annotated,
     Any,
     Callable,
-    Final,
     ItemsView,
     Iterator,
     KeysView,
@@ -251,29 +250,32 @@ class MultiStartIterationHistory(TupleLikeAccess):
     exploration: IterationHistory | None = None
 
 
-PyTreeNamespace = Literal[
-    "optimagic",
-    "optimagic.value",
-    "optimagic.lower_bound",
-    "optimagic.upper_bound",
-    "optimagic.soft_lower_bound",
-    "optimagic.soft_upper_bound",
-]
-"""Optree namespaces used by optimagic's pytree functions.
+class PyTreeNamespace(StrEnum):
+    """Optree namespaces used by optimagic's pytree functions.
 
-In the default namespace "optimagic", numpy arrays, pandas objects and jax arrays are
-leaves. In all other namespaces they are internal nodes and a params DataFrame with a
-"value" column contributes the entries of the column named after the namespace suffix
-(e.g. "lower_bound" for "optimagic.lower_bound").
+    In the default namespace, numpy arrays, pandas objects and jax arrays are leaves.
+    In all extended namespaces they are internal nodes and a params DataFrame with a
+    "value" column contributes the entries of the column given by ``data_col``.
 
-"""
+    """
 
-DEFAULT_NAMESPACE: Final = "optimagic"
-VALUE_NAMESPACE: Final = "optimagic.value"
-OPTREE_NAMESPACES: Final[tuple[PyTreeNamespace, ...]] = (
-    VALUE_NAMESPACE,
-    "optimagic.lower_bound",
-    "optimagic.upper_bound",
-    "optimagic.soft_lower_bound",
-    "optimagic.soft_upper_bound",
-)
+    DEFAULT = "optimagic"
+    VALUE = "optimagic.value"
+    LOWER_BOUND = "optimagic.lower_bound"
+    UPPER_BOUND = "optimagic.upper_bound"
+    SOFT_LOWER_BOUND = "optimagic.soft_lower_bound"
+    SOFT_UPPER_BOUND = "optimagic.soft_upper_bound"
+
+    @property
+    def is_extended(self) -> bool:
+        """Whether arrays and pandas objects are internal nodes in this namespace."""
+        return self is not PyTreeNamespace.DEFAULT
+
+    @property
+    def data_col(self) -> str:
+        """The params DataFrame column that is flattened in this namespace."""
+        if not self.is_extended:
+            raise ValueError(
+                "The default namespace has no data column; DataFrames are leaves."
+            )
+        return self.value.removeprefix(f"{PyTreeNamespace.DEFAULT.value}.")

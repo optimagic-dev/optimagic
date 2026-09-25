@@ -20,7 +20,7 @@ from optimagic.parameters.tree_registry import (
     tree_leaves,
     tree_unflatten,
 )
-from optimagic.typing import VALUE_NAMESPACE, PyTree
+from optimagic.typing import PyTree, PyTreeNamespace
 
 
 @mark.scalar
@@ -214,10 +214,12 @@ def _get_x(params: PyTree) -> NDArray[np.float64]:
     if isinstance(params, np.ndarray) and params.ndim == 1:
         x = params.astype(float)
     else:
-        x = np.array(tree_leaves(params, namespace=VALUE_NAMESPACE), dtype=np.float64)
+        x = np.array(
+            tree_leaves(params, namespace=PyTreeNamespace.VALUE), dtype=np.float64
+        )
     return x
 
 
 def _unflatten_gradient(flat: NDArray[np.float64], params: PyTree) -> PyTree:
-    out = tree_unflatten(params, flat.tolist(), namespace=VALUE_NAMESPACE)
+    out = tree_unflatten(params, flat.tolist(), namespace=PyTreeNamespace.VALUE)
     return out

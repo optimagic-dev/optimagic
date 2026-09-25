@@ -25,7 +25,7 @@ from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.space_conversion import InternalParams
 from optimagic.parameters.tree_registry import tree_leaves
 from optimagic.shared.process_user_function import infer_aggregation_level
-from optimagic.typing import VALUE_NAMESPACE, AggregationLevel, PyTree
+from optimagic.typing import AggregationLevel, PyTree, PyTreeNamespace
 from optimagic.visualization.backends import grid_line_plot, line_plot
 from optimagic.visualization.plotting_utilities import LineData, MarkerData
 
@@ -249,7 +249,7 @@ def _get_plot_data(
     if selector is not None:
         helper = converter.params_from_internal(selected)
         selected = np.array(
-            tree_leaves(selector(helper), namespace=VALUE_NAMESPACE), dtype=int
+            tree_leaves(selector(helper), namespace=PyTreeNamespace.VALUE), dtype=int
         ).ravel()  # Ensure the result is a 1D array
 
     if not np.isfinite(internal_params.lower_bounds[selected]).all():

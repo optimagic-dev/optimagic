@@ -18,7 +18,7 @@ from optimagic.parameters.tree_registry import (
     tree_leaves,
     tree_unflatten,
 )
-from optimagic.typing import VALUE_NAMESPACE
+from optimagic.typing import PyTreeNamespace
 from optimagic.utilities import get_rng
 
 
@@ -108,7 +108,8 @@ def bootstrap(
     # ==================================================================================
 
     flat_outcomes = [
-        tree_leaves(_outcome, namespace=VALUE_NAMESPACE) for _outcome in all_outcomes
+        tree_leaves(_outcome, namespace=PyTreeNamespace.VALUE)
+        for _outcome in all_outcomes
     ]
     internal_outcomes = np.array(flat_outcomes)
 
@@ -166,10 +167,10 @@ class BootstrapResult:
             List[Any]: The boostrap outcomes as a list of pytrees.
 
         """
-        _, treedef = tree_flatten(self._base_outcome, namespace=VALUE_NAMESPACE)
+        _, treedef = tree_flatten(self._base_outcome, namespace=PyTreeNamespace.VALUE)
 
         outcomes = [
-            tree_unflatten(treedef, out, namespace=VALUE_NAMESPACE)
+            tree_unflatten(treedef, out, namespace=PyTreeNamespace.VALUE)
             for out in self._internal_outcomes
         ]
         return outcomes
@@ -185,9 +186,9 @@ class BootstrapResult:
         cov = self._internal_cov
         se = np.sqrt(np.diagonal(cov))
 
-        _, treedef = tree_flatten(self._base_outcome, namespace=VALUE_NAMESPACE)
+        _, treedef = tree_flatten(self._base_outcome, namespace=PyTreeNamespace.VALUE)
 
-        se = tree_unflatten(treedef, se, namespace=VALUE_NAMESPACE)
+        se = tree_unflatten(treedef, se, namespace=PyTreeNamespace.VALUE)
         return se
 
     def cov(self, return_type="pytree"):
@@ -208,7 +209,9 @@ class BootstrapResult:
         cov = self._internal_cov
 
         if return_type == "dataframe":
-            names = np.array(leaf_names(self._base_outcome, namespace=VALUE_NAMESPACE))
+            names = np.array(
+                leaf_names(self._base_outcome, namespace=PyTreeNamespace.VALUE)
+            )
             cov = pd.DataFrame(cov, columns=names, index=names)
         elif return_type == "pytree":
             cov = matrix_to_block_tree(cov, self._base_outcome, self._base_outcome)
@@ -236,15 +239,15 @@ class BootstrapResult:
 
         """
         base_outcome_flat, treedef = tree_flatten(
-            self._base_outcome, namespace=VALUE_NAMESPACE
+            self._base_outcome, namespace=PyTreeNamespace.VALUE
         )
 
         lower_flat, upper_flat = calculate_ci(
             base_outcome_flat, self._internal_outcomes, ci_method, ci_level
         )
 
-        lower = tree_unflatten(treedef, lower_flat, namespace=VALUE_NAMESPACE)
-        upper = tree_unflatten(treedef, upper_flat, namespace=VALUE_NAMESPACE)
+        lower = tree_unflatten(treedef, lower_flat, namespace=PyTreeNamespace.VALUE)
+        upper = tree_unflatten(treedef, upper_flat, namespace=PyTreeNamespace.VALUE)
         return lower, upper
 
     def p_values(self):
@@ -273,7 +276,7 @@ class BootstrapResult:
                 Soon this will be a pytree.
 
         """
-        names = leaf_names(self.base_outcome, namespace=VALUE_NAMESPACE)
+        names = leaf_names(self.base_outcome, namespace=PyTreeNamespace.VALUE)
         summary_data = _calulcate_summary_data_bootstrap(
             self, ci_method=ci_method, ci_level=ci_level
         )

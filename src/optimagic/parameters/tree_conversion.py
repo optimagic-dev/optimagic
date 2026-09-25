@@ -11,7 +11,7 @@ from optimagic.parameters.tree_registry import (
     tree_leaves,
     tree_unflatten,
 )
-from optimagic.typing import VALUE_NAMESPACE, AggregationLevel
+from optimagic.typing import AggregationLevel, PyTreeNamespace
 
 
 def get_tree_converter(
@@ -49,25 +49,25 @@ def get_tree_converter(
         FlatParams: NamedTuple of 1d arrays with flattened bounds and param names.
 
     """
-    _params_vec, _params_treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
+    _params_vec, _params_treedef = tree_flatten(params, namespace=PyTreeNamespace.VALUE)
     _params_vec = np.array(_params_vec).astype(float)
     _lower, _upper = get_internal_bounds(
         params=params,
         bounds=bounds,
-        namespace=VALUE_NAMESPACE,
+        namespace=PyTreeNamespace.VALUE,
     )
 
     if add_soft_bounds:
         _soft_lower, _soft_upper = get_internal_bounds(
             params=params,
             bounds=bounds,
-            namespace=VALUE_NAMESPACE,
+            namespace=PyTreeNamespace.VALUE,
             add_soft_bounds=add_soft_bounds,
         )
     else:
         _soft_lower, _soft_upper = None, None
 
-    _param_names = leaf_names(params, namespace=VALUE_NAMESPACE)
+    _param_names = leaf_names(params, namespace=PyTreeNamespace.VALUE)
 
     flat_params = FlatParams(
         values=_params_vec,
@@ -78,13 +78,13 @@ def get_tree_converter(
         soft_upper_bounds=_soft_upper,
     )
 
-    _params_flatten = _get_params_flatten(namespace=VALUE_NAMESPACE)
+    _params_flatten = _get_params_flatten(namespace=PyTreeNamespace.VALUE)
     _params_unflatten = _get_params_unflatten(
-        namespace=VALUE_NAMESPACE, treedef=_params_treedef
+        namespace=PyTreeNamespace.VALUE, treedef=_params_treedef
     )
 
     _derivative_flatten = _get_derivative_flatten(
-        namespace=VALUE_NAMESPACE,
+        namespace=PyTreeNamespace.VALUE,
         solver_type=solver_type,
         params=params,
         func_eval=func_eval,

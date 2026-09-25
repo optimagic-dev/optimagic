@@ -57,7 +57,7 @@ from optimagic.parameters.tree_registry import (
 from optimagic.shared.check_option_dicts import (
     check_optimization_options,
 )
-from optimagic.typing import VALUE_NAMESPACE
+from optimagic.typing import PyTreeNamespace
 from optimagic.utilities import get_rng, to_pickle
 
 
@@ -319,7 +319,7 @@ def estimate_msm(
             sim_mom = simulate_moments(params, **simulate_moments_kwargs)
             if isinstance(sim_mom, dict) and "simulated_moments" in sim_mom:
                 sim_mom = sim_mom["simulated_moments"]
-            out = np.array(tree_leaves(sim_mom, namespace=VALUE_NAMESPACE))
+            out = np.array(tree_leaves(sim_mom, namespace=PyTreeNamespace.VALUE))
             return out
 
         int_jac = first_derivative(
@@ -422,7 +422,7 @@ def get_msm_optimization_functions(
 
     chol_weights = np.linalg.cholesky(flat_weights)
 
-    flat_emp_mom = tree_leaves(empirical_moments, namespace=VALUE_NAMESPACE)
+    flat_emp_mom = tree_leaves(empirical_moments, namespace=PyTreeNamespace.VALUE)
 
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
@@ -433,7 +433,7 @@ def get_msm_optimization_functions(
             simulate_moments=_simulate_moments,
             flat_empirical_moments=flat_emp_mom,
             chol_weights=chol_weights,
-            namespace=VALUE_NAMESPACE,
+            namespace=PyTreeNamespace.VALUE,
         )
     )
 
@@ -979,7 +979,9 @@ class MomentsResult:
             )
         elif return_type == "dataframe":
             row_names = self._internal_estimates.names
-            col_names = leaf_names(self._empirical_moments, namespace=VALUE_NAMESPACE)
+            col_names = leaf_names(
+                self._empirical_moments, namespace=PyTreeNamespace.VALUE
+            )
             out = pd.DataFrame(
                 data=raw,
                 index=row_names,

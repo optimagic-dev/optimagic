@@ -43,7 +43,7 @@ from optimagic.deprecations import pre_process_constraints
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.parameters.conversion import get_converter
 from optimagic.parameters.tree_registry import tree_leaves
-from optimagic.typing import VALUE_NAMESPACE, AggregationLevel
+from optimagic.typing import AggregationLevel, PyTreeNamespace
 from optimagic.utilities import cov_params_to_matrix, get_rng, sdcorr_params_to_matrix
 
 inf = float("inf")
@@ -75,7 +75,7 @@ class Case:
         these tests exercise, so the flat start values should not be duplicated by hand.
         """
         return np.array(
-            tree_leaves(self.params, namespace=VALUE_NAMESPACE), dtype=float
+            tree_leaves(self.params, namespace=PyTreeNamespace.VALUE), dtype=float
         )
 
 
