@@ -79,12 +79,13 @@ def test_multistart_optimization_with_sum_of_squares_at_defaults(
 
     assert hasattr(res, "multistart_info")
     ms_info = res.multistart_info
-    assert len(ms_info.exploration_sample) == 400  # ty:ignore[unresolved-attribute]
-    assert isinstance(ms_info.exploration_results, list)  # ty:ignore[unresolved-attribute]
-    assert len(ms_info.exploration_results) == 400  # ty:ignore[unresolved-attribute]
-    assert all(isinstance(entry, float) for entry in ms_info.exploration_results)  # ty:ignore[unresolved-attribute]
-    assert all(isinstance(entry, OptimizeResult) for entry in ms_info.local_optima)  # ty:ignore[unresolved-attribute]
-    assert all(isinstance(entry, pd.DataFrame) for entry in ms_info.start_parameters)  # ty:ignore[unresolved-attribute]
+    assert ms_info is not None
+    assert len(ms_info.exploration_sample) == 400
+    assert isinstance(ms_info.exploration_results, list)
+    assert len(ms_info.exploration_results) == 400
+    assert all(isinstance(entry, float) for entry in ms_info.exploration_results)
+    assert all(isinstance(entry, OptimizeResult) for entry in ms_info.local_optima)
+    assert all(isinstance(entry, pd.DataFrame) for entry in ms_info.start_parameters)
     assert np.allclose(res.fun, 0)
     aaae(res.params["value"], np.zeros(4))
 
@@ -100,11 +101,12 @@ def test_multistart_with_existing_sample(params):
         multistart=options,
     )
 
+    assert res.multistart_info is not None
     assert all(
         got.equals(expected)
         for expected, got in zip(
             sample,
-            res.multistart_info.exploration_sample,  # ty:ignore[unresolved-attribute]
+            res.multistart_info.exploration_sample,
             strict=False,
         )
     )
@@ -123,7 +125,8 @@ def test_convergence_via_max_discoveries_works(params):
         multistart=options,
     )
 
-    assert len(res.multistart_info.local_optima) == 2  # ty:ignore[unresolved-attribute]
+    assert res.multistart_info is not None
+    assert len(res.multistart_info.local_optima) == 2
 
 
 def test_steps_are_logged_as_skipped_if_convergence(tmp_path, params):

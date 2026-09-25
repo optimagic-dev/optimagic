@@ -103,7 +103,8 @@ def test_callback_not_called_on_jac():
     )
 
     aae(xs, [np.arange(3) + 2.0])
-    assert len(res.history.params) == 3  # ty:ignore[unresolved-attribute]
+    assert res.history is not None
+    assert len(res.history.params) == 3
 
 
 def test_invalid_callback_too_few_arguments():

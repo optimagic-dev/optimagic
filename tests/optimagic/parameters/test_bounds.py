@@ -42,8 +42,9 @@ def test_pre_process_bounds_none_case():
 def test_pre_process_bounds_sequence():
     got = pre_process_bounds([(0, 1), (None, 1)])
     expected = Bounds(lower=[0, -np.inf], upper=[1, 1])
-    assert_array_equal(got.lower, expected.lower)  # ty:ignore[unresolved-attribute]
-    assert_array_equal(got.upper, expected.upper)  # ty:ignore[unresolved-attribute]
+    assert got is not None
+    assert_array_equal(got.lower, expected.lower)
+    assert_array_equal(got.upper, expected.upper)
 
 
 def test_pre_process_bounds_invalid_type():
@@ -64,8 +65,10 @@ def test_get_bounds_subdataframe(pytree_params):
 
     lb, ub = get_internal_bounds(pytree_params, bounds=bounds)
 
-    assert np.all(lb[1:3] == np.ones(2))  # ty:ignore[not-subscriptable]
-    assert np.all(ub[2:4] == 2 * np.ones(2))  # ty:ignore[not-subscriptable]
+    assert lb is not None
+    assert ub is not None
+    assert np.all(lb[1:3] == np.ones(2))
+    assert np.all(ub[2:4] == 2 * np.ones(2))
 
 
 TEST_CASES = [

@@ -705,8 +705,9 @@ def test_deprecated_dict_access_of_multistart_info():
         bounds=om.Bounds(lower=np.full(3, -1), upper=np.full(3, 2)),
     )
     msg = "The dictionary access for 'local_optima' is deprecated and will be removed"
+    assert res.multistart_info is not None
     with pytest.warns(FutureWarning, match=msg):
-        _ = res.multistart_info["local_optima"]  # ty:ignore[not-subscriptable]
+        _ = res.multistart_info["local_optima"]
 
 
 def test_base_steps_in_first_derivatives_is_deprecated():

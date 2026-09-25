@@ -40,8 +40,8 @@ def minimize_result():
                 multistart=(
                     om.MultistartOptions(n_samples=1000, convergence_max_discoveries=5)
                     if multistart
-                    else None
-                ),  # ty:ignore[invalid-argument-type]
+                    else False
+                ),
             )
             res.append(_res)
         out[multistart] = res
@@ -222,7 +222,8 @@ def test_harmonize_inputs_to_dict_path_input():
 def _compare_plotting_multistart_history_with_result(
     data: _PlottingMultistartHistory, res: om.OptimizeResult, res_name: str
 ):
-    assert_array_equal(data.history.fun, res.history.fun)  # ty:ignore[unresolved-attribute]
+    assert res.history is not None
+    assert_array_equal(data.history.fun, res.history.fun)
     assert data.name == res_name
     assert_array_equal(data.start_params, res.start_params)
     assert data.is_multistart == (res.multistart_info is not None)
@@ -278,12 +279,14 @@ def test_retrieve_data_from_multistart_result(minimize_result, stack_multistart)
     assert isinstance(data, list) and len(data) == 1
 
     assert data[0].is_multistart
-    assert len(data[0].local_histories) == 5  # ty:ignore[invalid-argument-type]
+    assert data[0].local_histories is not None
+    assert len(data[0].local_histories) == 5
 
     if stack_multistart:
+        assert data[0].stacked_local_histories is not None
         assert_array_equal(
-            data[0].stacked_local_histories.fun,  # ty:ignore[unresolved-attribute]
-            np.concatenate([hist.fun for hist in data[0].local_histories]),  # ty:ignore[not-iterable]
+            data[0].stacked_local_histories.fun,
+            np.concatenate([hist.fun for hist in data[0].local_histories]),
         )
     else:
         assert data[0].stacked_local_histories is None
