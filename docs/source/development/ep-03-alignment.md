@@ -99,7 +99,8 @@ relevant:
   is the current parameter PyTree. In contrast to SciPy, the callback is called after
   each objective evaluation and not after each iteration. The
   `callback(intermediate_result)` interface and stopping an optimization by raising
-  `StopIteration` are not yet supported.
+  `StopIteration` are not yet supported. Callback support is experimental and its
+  behavior might change in upcoming releases.
 - If a user sets `jac=True` we raise and error and explain how to use `fun_and_jac`
   instead.
 
