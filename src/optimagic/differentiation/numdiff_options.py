@@ -39,7 +39,7 @@ class NumdiffOptions:
     scaling_factor: float = 1
     min_steps: float | None = None
     n_cores: int = DEFAULT_N_CORES
-    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib"  # type: ignore
+    batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib"
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
@@ -53,7 +53,7 @@ class NumdiffOptionsDict(TypedDict):
     scaling_factor: NotRequired[float]
     min_steps: NotRequired[float | None]
     n_cores: NotRequired[int]
-    batch_evaluator: NotRequired[BatchEvaluatorLiteral | Callable]  # type: ignore
+    batch_evaluator: NotRequired[BatchEvaluatorLiteral | Callable]
 
 
 def pre_process_numdiff_options(

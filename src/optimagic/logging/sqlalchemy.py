@@ -7,7 +7,8 @@ from functools import cached_property
 from typing import Any, Sequence, Type, cast
 
 import sqlalchemy as sql
-from sqlalchemy import Column, Integer, PickleType, String
+import sqlalchemy.event
+from sqlalchemy import Column, Integer, PickleType, Row, String
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.sql.base import Executable
 from sqlalchemy.sql.schema import MetaData
@@ -82,7 +83,7 @@ class SQLAlchemyConfig:
             inspector: Any, table: sql.Table, column_info: dict[str, Any]
         ) -> None:  # noqa: ARG001
             if isinstance(column_info["type"], sql.BLOB):
-                column_info["type"] = sql.PickleType(pickler=RobustPickler)  # type:ignore
+                column_info["type"] = sql.PickleType(pickler=RobustPickler)
 
 
 @dataclass
@@ -160,17 +161,17 @@ class _SQLAlchemyStoreMixin:
     def engine(self) -> Engine:
         return self._engine
 
-    def _select_row_by_key(self, key: int) -> list[Any]:
+    def _select_row_by_key(self, key: int) -> Sequence[Row[Any]]:
         stmt = self._table.select().where(
             getattr(self._table.c, self._table_config.primary_key) == key
         )
         return self._execute_read_statement(stmt)
 
-    def _select_all_rows(self) -> list[Any]:
+    def _select_all_rows(self) -> Sequence[Row[Any]]:
         stmt = self._table.select()
         return self._execute_read_statement(stmt)
 
-    def _select_last_rows(self, n_rows: int) -> list[Any]:
+    def _select_last_rows(self, n_rows: int) -> Sequence[Row[Any]]:
         stmt = (
             self._table.select()
             .order_by(getattr(self._table.c, self._table_config.primary_key).desc())
@@ -183,7 +184,7 @@ class _SQLAlchemyStoreMixin:
         stmt = self._table.insert().values(**insert_values)
         self._execute_write_statement(stmt)
 
-    def _execute_read_statement(self, statement: Executable) -> list[Any]:
+    def _execute_read_statement(self, statement: Executable) -> Sequence[Row[Any]]:
         with self._engine.connect() as connection:
             return connection.execute(statement).fetchall()
 
@@ -230,7 +231,7 @@ class SQLAlchemySimpleStore(
         super().__init__(input_type, output_type, primary_key)
         columns = [
             sql.Column(primary_key, sql.Integer, primary_key=True, autoincrement=True),
-            sql.Column(self._value_column, sql.PickleType(pickler=RobustPickler)),  # type:ignore
+            sql.Column(self._value_column, sql.PickleType(pickler=RobustPickler)),
         ]
         table_config = TableConfig(table_name, columns, self.primary_key)
 
@@ -280,7 +281,7 @@ class SQLAlchemySimpleStore(
         result = self._select_last_rows(n_rows)
         return self._post_process(result)
 
-    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:  # type:ignore
+    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:
         output_list = []
         for row in results:
             row_dict = {self.primary_key: row[0]}
@@ -370,7 +371,7 @@ class SQLAlchemyTableStore(
         result = self._select_last_rows(n_rows)
         return self._post_process(result)
 
-    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:  # type:ignore
+    def _post_process(self, results: Sequence[sql.Row]) -> list[OutputType]:
         return [
             self._output_type(**dict(zip(self.column_names, row, strict=False)))
             for row in results
@@ -460,7 +461,7 @@ class ProblemStore(
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
             Column("direction", String),
-            Column("params", PickleType(pickler=RobustPickler)),  # type:ignore
+            Column("params", PickleType(pickler=RobustPickler)),
         ]
 
         table_config = TableConfig(

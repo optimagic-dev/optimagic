@@ -1,5 +1,6 @@
 import logging
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from functools import wraps
 from pathlib import Path
@@ -384,7 +385,10 @@ def throw_key_warning_in_derivatives():
 
 
 def throw_dict_constraints_future_warning_if_required(
-    constraints: list[dict[str, Any]] | dict[str, Any],
+    constraints: Constraint
+    | dict[str, Any]
+    | Sequence[Constraint | dict[str, Any]]
+    | None,
 ) -> None:
     replacements = {
         "fixed": "optimagic.FixedConstraint",
@@ -399,12 +403,13 @@ def throw_dict_constraints_future_warning_if_required(
         "nonlinear": "optimagic.NonlinearConstraint",
     }
 
-    if not isinstance(constraints, list):
-        constraints = [constraints]
+    candidates: list[Any] = (
+        list(constraints) if isinstance(constraints, Sequence) else [constraints]
+    )
 
     types_or_none = [
         constraint.get("type", None) if isinstance(constraint, dict) else None
-        for constraint in constraints
+        for constraint in candidates
     ]
     types = [t for t in types_or_none if t is not None]
 
@@ -563,7 +568,7 @@ def handle_log_options_throw_deprecated_warning(
                 log_options = {
                     k: v for k, v in log_options.items() if k != "if_table_exists"
                 }
-            return SQLiteLogOptions(cast(str | Path, logger), **log_options)
+            return SQLiteLogOptions(cast(str | Path, logger), **log_options)  # ty:ignore[redundant-cast]
         elif not log_options_is_compatible:
             raise ValueError(
                 f"Found string or path for logger argument, but parameter"
@@ -575,7 +580,10 @@ def handle_log_options_throw_deprecated_warning(
 
 
 def pre_process_constraints(
-    constraints: list[Constraint | dict[str, Any]] | Constraint | dict[str, Any] | None,
+    constraints: Constraint
+    | dict[str, Any]
+    | Sequence[Constraint | dict[str, Any]]
+    | None,
 ) -> list[Constraint]:
     """Convert all ways of specifying constraints to a list of Constraint objects.
 
@@ -589,33 +597,35 @@ def pre_process_constraints(
     if constraints is None:
         return []
 
+    # The types of the elements are validated below.
+    candidates: list[Any]
     if isinstance(constraints, dict | Constraint):
-        constraints = [constraints]
-
-    if isinstance(constraints, list):
-        out = []
-        invalid_types: list[type] = []
-        for constr in constraints:
-            if isinstance(constr, Constraint):
-                out.append(constr)
-            elif isinstance(constr, dict):
-                out.append(_constraint_from_dict(constr))
-            else:
-                invalid_types.append(type(constr))
-
-        if invalid_types:
-            msg = (
-                f"Invalid constraint types: {set(invalid_types)}. Must be a constraint "
-                "object imported from `optimagic`."
-            )
-            raise InvalidConstraintError(msg)
-
+        candidates = [constraints]
+    elif isinstance(constraints, Sequence) and not isinstance(constraints, str):
+        candidates = list(constraints)
     else:
         msg = (
             f"Invalid constraint type: {type(constraints)}. Must be a constraint "
             "object or list thereof imported from `optimagic`. For more details see "
             "the documentation: "
             "https://optimagic.readthedocs.io/en/latest/how_to/how_to_constraints.html"
+        )
+        raise InvalidConstraintError(msg)
+
+    out = []
+    invalid_types: list[type] = []
+    for constr in candidates:
+        if isinstance(constr, Constraint):
+            out.append(constr)
+        elif isinstance(constr, dict):
+            out.append(_constraint_from_dict(constr))
+        else:
+            invalid_types.append(type(constr))
+
+    if invalid_types:
+        msg = (
+            f"Invalid constraint types: {set(invalid_types)}. Must be a constraint "
+            "object imported from `optimagic`."
         )
         raise InvalidConstraintError(msg)
 

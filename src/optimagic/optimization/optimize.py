@@ -72,7 +72,7 @@ from optimagic.typing import (
 
 FunType = Callable[..., float | PyTree | FunctionValue]
 AlgorithmType = str | Algorithm | Type[Algorithm]
-ConstraintsType = Constraint | list[Constraint] | dict[str, Any] | list[dict[str, Any]]
+ConstraintsType = Constraint | dict[str, Any] | Sequence[Constraint | dict[str, Any]]
 JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]

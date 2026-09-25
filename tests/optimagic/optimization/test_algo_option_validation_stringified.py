@@ -55,19 +55,19 @@ def test_field_types_are_annotation_strings():
 
 
 def test_str_option_is_converted():
-    algo = DummyAlgorithm(initial_radius="2.0")
+    algo = DummyAlgorithm(initial_radius="2.0")  # ty:ignore[invalid-argument-type]
     assert isinstance(algo.initial_radius, float)
     assert algo.initial_radius == 2.0
 
 
 def test_float_option_is_converted_to_int():
-    algo = DummyAlgorithm(stopping_maxiter=500.0)
+    algo = DummyAlgorithm(stopping_maxiter=500.0)  # ty:ignore[invalid-argument-type]
     assert isinstance(algo.stopping_maxiter, int)
     assert algo.stopping_maxiter == 500
 
 
 def test_optional_option_is_converted():
-    algo = DummyAlgorithm(n_points=3.0)
+    algo = DummyAlgorithm(n_points=3.0)  # ty:ignore[invalid-argument-type]
     assert isinstance(algo.n_points, int)
     assert algo.n_points == 3
     assert DummyAlgorithm(n_points=None).n_points is None
@@ -80,7 +80,7 @@ def test_invalid_option_value_raises_error():
 
 def test_invalid_option_name_raises_error():
     with pytest.raises(InvalidAlgoOptionError):
-        DummyAlgorithm(this_is_not_an_option=1)
+        DummyAlgorithm(this_is_not_an_option=1)  # ty:ignore[unknown-argument]
 
 
 def test_conversion_works_in_with_option():

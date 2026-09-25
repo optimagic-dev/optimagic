@@ -34,22 +34,22 @@ def test_pre_process_numdiff_options_dict_case():
 
 def test_pre_process_numdiff_options_invalid_type():
     with pytest.raises(InvalidNumdiffOptionsError):
-        pre_process_numdiff_options(numdiff_options="invalid")
+        pre_process_numdiff_options(numdiff_options="invalid")  # ty:ignore[invalid-argument-type]
 
 
 def test_pre_process_numdiff_options_invalid_dict_key():
     with pytest.raises(InvalidNumdiffOptionsError, match="Invalid numdiff options"):
-        pre_process_numdiff_options(numdiff_options={"wrong_key": "central"})
+        pre_process_numdiff_options(numdiff_options={"wrong_key": "central"})  # ty:ignore[invalid-argument-type, invalid-key]
 
 
 def test_pre_process_numdiff_options_invalid_dict_value():
     with pytest.raises(InvalidNumdiffOptionsError, match="Invalid numdiff `method`:"):
-        pre_process_numdiff_options(numdiff_options={"method": "invalid"})
+        pre_process_numdiff_options(numdiff_options={"method": "invalid"})  # ty:ignore[invalid-argument-type]
 
 
 def test_numdiff_options_invalid_method():
     with pytest.raises(InvalidNumdiffOptionsError, match="Invalid numdiff `method`:"):
-        NumdiffOptions(method="invalid")
+        NumdiffOptions(method="invalid")  # ty:ignore[invalid-argument-type]
 
 
 def test_numdiff_options_invalid_step_size():
@@ -82,4 +82,4 @@ def test_numdiff_options_invalid_batch_evaluator():
     with pytest.raises(
         InvalidNumdiffOptionsError, match="Invalid batch evaluator: invalid"
     ):
-        NumdiffOptions(batch_evaluator="invalid")
+        NumdiffOptions(batch_evaluator="invalid")  # ty:ignore[invalid-argument-type]

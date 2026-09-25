@@ -9,18 +9,18 @@ from optimagic.typing import DictLikeAccess
 def test_key_value_store_raise_errors():
     class NoDataClass(NonUpdatableKeyValueStore):
         def __init__(self):
-            super().__init__({1}, [], "key")
+            super().__init__({1}, [], "key")  # ty:ignore[invalid-argument-type]
 
         def insert(self, value: InputType) -> None:
             pass
 
-        def _select_by_key(self, key: int) -> list[OutputType]:
+        def _select_by_key(self, key: int) -> list[OutputType]:  # ty:ignore[empty-body]
             pass
 
-        def _select_all(self) -> list[OutputType]:
+        def _select_all(self) -> list[OutputType]:  # ty:ignore[empty-body]
             pass
 
-        def select_last_rows(self, n_rows: int) -> list[OutputType]:
+        def select_last_rows(self, n_rows: int) -> list[OutputType]:  # ty:ignore[empty-body]
             pass
 
     class WrongPrimaryKey(NonUpdatableKeyValueStore):
@@ -41,13 +41,13 @@ def test_key_value_store_raise_errors():
         def insert(self, value: InputType) -> None:
             pass
 
-        def _select_by_key(self, key: int) -> list[OutputType]:
+        def _select_by_key(self, key: int) -> list[OutputType]:  # ty:ignore[empty-body]
             pass
 
-        def _select_all(self) -> list[OutputType]:
+        def _select_all(self) -> list[OutputType]:  # ty:ignore[empty-body]
             pass
 
-        def select_last_rows(self, n_rows: int) -> list[OutputType]:
+        def select_last_rows(self, n_rows: int) -> list[OutputType]:  # ty:ignore[empty-body]
             pass
 
     with pytest.raises(ValueError):

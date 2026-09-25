@@ -32,6 +32,7 @@ from optimagic import second_derivative as _second_derivative
 from optimagic import slice_plot as _slice_plot
 from optimagic import traceback_report as _traceback_report
 from optimagic.decorators import deprecated
+from optimagic.logging import SQLiteLogReader as _SQLiteLogReader
 
 MSG = (
     "estimagic.{name} has been deprecated in version 0.5.0. Use optimagic.{name} "
@@ -61,14 +62,16 @@ params_plot = deprecated(_params_plot, MSG.format(name="params_plot"))
 
 
 class OptimizeLogReader(_OptimizeLogReader):
-    def __init__(self, path):
+    # The parent class returns a SQLiteLogReader from __new__, so __init__ of this
+    # class would never run. Hence, the warning needs to be raised in __new__.
+    def __new__(cls, *args, **kwargs) -> _SQLiteLogReader:
         warnings.warn(
             "estimagic.OptimizeLogReader has been deprecated in version 0.5.0. Use "
             "optimagic.OptimizeLogReader instead. This class will be removed in version"
             " 0.6.0.",
             FutureWarning,
         )
-        super().__init__(path)
+        return super().__new__(cls, *args, **kwargs)
 
 
 @dataclass

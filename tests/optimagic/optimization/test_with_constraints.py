@@ -169,7 +169,7 @@ for crit_name in FUNC_INFO:
                         (crit_name, "scipy_lbfgsb", deriv, constr_name, ptype)
                     )
 
-                if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
+                if "root_contributions" in FUNC_INFO[crit_name]["entries"]:  # ty:ignore[unsupported-operator]
                     for deriv in [FUNC_INFO[crit_name].get("ls_jacobian"), None]:
                         test_cases.append(
                             (crit_name, "scipy_ls_dogbox", deriv, constr_name, ptype)
@@ -191,7 +191,7 @@ def test_constrained_minimization(
         params = np.array(START_INFO[constraint_name])
 
     res = minimize(
-        fun=criterion,
+        fun=criterion,  # ty:ignore[invalid-argument-type]
         params=params,
         algorithm=algorithm,
         jac=derivative,
@@ -208,7 +208,7 @@ def test_constrained_minimization(
         f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"]
     )
 
-    aaae(calculated, expected, decimal=4)
+    aaae(calculated, expected, decimal=4)  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.filterwarnings("ignore:Specifying constraints as a dictionary is")
@@ -248,6 +248,21 @@ def test_three_independent_constraints():
     # to the re-written L-BFGS-B algorithm in SciPy 1.15.
     # See https://github.com/optimagic-dev/optimagic/issues/556.
     aaae(res.params, expected, decimal=3)
+
+
+def test_constraints_as_tuple():
+    constraints = (
+        om.FixedConstraint(lambda x: x[[0]]),
+        om.IncreasingConstraint(lambda x: x[[1, 2]]),
+    )
+
+    res = minimize(
+        fun=lambda x: x @ x,
+        params=np.array([1.0, 2.0, 3.0]),
+        algorithm="scipy_lbfgsb",
+        constraints=constraints,
+    )
+    aaae(res.params, [1, 0, 0], decimal=4)
 
 
 INVALID_CONSTRAINT_COMBIS = [

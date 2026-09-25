@@ -161,7 +161,7 @@ def test_documentation_example(algorithm):
             selector=lambda x: x[:-1],
             value=1.0,
         ),
-        **kwargs,
+        **kwargs,  # ty:ignore[invalid-argument-type]
     )
 
 

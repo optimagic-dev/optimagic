@@ -39,7 +39,7 @@ def tree_params_converter(tree_params):
             tree_leaves(params, namespace=PyTreeNamespace.VALUE)
         ),
         params_unflatten=lambda x: tree_unflatten(treedef, x.tolist()),
-        derivative_flatten=None,
+        derivative_flatten=None,  # ty:ignore[invalid-argument-type]
     )
     return converter
 
@@ -116,9 +116,9 @@ def test_provenance_is_attached(np_params_converter):
         param_names=PARAM_NAMES,
     )
     for position, resolved in enumerate(calculated):
-        assert len(resolved.sources) == 1
-        assert resolved.sources[0].position == position
-        assert resolved.sources[0].constraint is constraints[position]
+        assert len(resolved.sources) == 1  # ty:ignore[unresolved-attribute]
+        assert resolved.sources[0].position == position  # ty:ignore[unresolved-attribute]
+        assert resolved.sources[0].constraint is constraints[position]  # ty:ignore[unresolved-attribute]
 
 
 def test_empty_selections_are_dropped(np_params_converter):

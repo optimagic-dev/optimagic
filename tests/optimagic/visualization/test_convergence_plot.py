@@ -80,7 +80,7 @@ def test_convergence_plot_stopping_criterion_none(benchmark_results):
             problems=problems,
             results=results,
             problem_subset=["bard_good_start"],
-            stopping_criterion=None,
+            stopping_criterion=None,  # ty:ignore[invalid-argument-type]
         )
 
 

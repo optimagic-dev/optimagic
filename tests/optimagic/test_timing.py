@@ -10,5 +10,5 @@ def test_invalid_aggregate_batch_time():
             jac=None,
             fun_and_jac=None,
             label="label",
-            aggregate_batch_time="Not callable",
+            aggregate_batch_time="Not callable",  # ty:ignore[invalid-argument-type]
         )

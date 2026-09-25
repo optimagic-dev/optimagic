@@ -103,7 +103,7 @@ def test_callback_not_called_on_jac():
     )
 
     aae(xs, [np.arange(3) + 2.0])
-    assert len(res.history.params) == 3
+    assert len(res.history.params) == 3  # ty:ignore[unresolved-attribute]
 
 
 def test_invalid_callback_too_few_arguments():
@@ -117,7 +117,7 @@ def test_invalid_callback_too_few_arguments():
             fun=lambda x: x @ x,
             x0=np.arange(3, dtype=float),
             algorithm="scipy_neldermead",
-            callback=bad_callback,
+            callback=bad_callback,  # ty:ignore[invalid-argument-type]
         )
 
 
@@ -132,7 +132,7 @@ def test_invalid_callback_too_many_required_arguments():
             fun=lambda x: x @ x,
             x0=np.arange(3, dtype=float),
             algorithm="scipy_neldermead",
-            callback=bad_callback,
+            callback=bad_callback,  # ty:ignore[invalid-argument-type]
         )
 
 
@@ -142,7 +142,7 @@ def test_invalid_callback_not_callable():
             fun=lambda x: x @ x,
             x0=np.arange(3, dtype=float),
             algorithm="scipy_neldermead",
-            callback="not-a-callable",
+            callback="not-a-callable",  # ty:ignore[invalid-argument-type]
         )
 
 

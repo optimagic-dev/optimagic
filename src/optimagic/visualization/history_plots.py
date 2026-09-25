@@ -1,5 +1,6 @@
 import inspect
 import itertools
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Literal
@@ -44,7 +45,7 @@ ResultOrPath = OptimizeResult | str | Path
 
 
 def criterion_plot(
-    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
+    results: ResultOrPath | Sequence[ResultOrPath] | Mapping[Any, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
     backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
@@ -118,7 +119,7 @@ def criterion_plot(
 
 
 def _harmonize_inputs_to_dict(
-    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
+    results: ResultOrPath | Sequence[ResultOrPath] | Mapping[Any, ResultOrPath],
     names: list[str] | str | None,
 ) -> dict[str, ResultOrPath]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
@@ -133,11 +134,10 @@ def _harmonize_inputs_to_dict(
         raise ValueError("len(results) needs to be equal to len(names).")
 
     # handle dict case
-    if isinstance(results, dict):
+    if isinstance(results, Mapping):
+        results_dict = dict(results)
         if names is not None:
-            results_dict = dict(zip(names, list(results.values()), strict=False))
-        else:
-            results_dict = results
+            results_dict = dict(zip(names, results_dict.values(), strict=False))
 
     # unlabeled iterable of results
     else:
@@ -364,10 +364,10 @@ def _retrieve_optimization_data_from_result_object(
                     fun=fun,
                     params=params,
                     # TODO: This needs to be fixed
-                    start_time=len(fun) * [None],  # type: ignore
-                    stop_time=len(fun) * [None],  # type: ignore
-                    batches=len(fun) * [None],  # type: ignore
-                    task=len(fun) * [None],  # type: ignore
+                    start_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+                    stop_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+                    batches=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+                    task=len(fun) * [None],  # ty:ignore[invalid-argument-type]
                 )
         else:
             stacked = None
@@ -420,8 +420,8 @@ def _retrieve_optimization_data_from_database(
     if stack_multistart and local_histories is not None:
         stacked = _get_stacked_local_histories(local_histories, direction, _history)
         if show_exploration:
-            stacked["params"] = exploration["params"][::-1] + stacked["params"]  # type: ignore
-            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]  # type: ignore
+            stacked["params"] = exploration["params"][::-1] + stacked["params"]  # ty:ignore[invalid-assignment]
+            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]  # ty:ignore[invalid-assignment]
     else:
         stacked = None
 
@@ -432,8 +432,8 @@ def _retrieve_optimization_data_from_database(
         start_time=_history["time"],
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(_history["fun"]) * [None],  # type: ignore
-        task=len(_history["fun"]) * [None],  # type: ignore
+        stop_time=len(_history["fun"]) * [None],  # ty:ignore[invalid-argument-type]
+        task=len(_history["fun"]) * [None],  # ty:ignore[invalid-argument-type]
         batches=list(range(len(_history["fun"]))),
     )
 
@@ -480,8 +480,8 @@ def _get_stacked_local_histories(
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available for the
         # IterationHistory.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(stacked["criterion"]) * [None],  # type: ignore
-        task=len(stacked["criterion"]) * [None],  # type: ignore
+        stop_time=len(stacked["criterion"]) * [None],  # ty:ignore[invalid-argument-type]
+        task=len(stacked["criterion"]) * [None],  # ty:ignore[invalid-argument-type]
         batches=list(range(len(stacked["criterion"]))),
     )
 

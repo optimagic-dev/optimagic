@@ -160,8 +160,7 @@ def example_db(tmp_path):
 
 
 def test_estimagic_log_reader_is_deprecated(example_db):
-    msg = "OptimizeLogReader is deprecated and will be removed in a future "
-    "version. Please use optimagic.logging.SQLiteLogger instead."
+    msg = "estimagic.OptimizeLogReader has been deprecated"
     with pytest.warns(FutureWarning, match=msg):
         OptimizeLogReader(example_db)
 
@@ -565,8 +564,8 @@ def test_old_bounds_are_deprecated_in_slice_plot():
         om.slice_plot(
             lambda x: x @ x,
             np.arange(3),
-            lower_bounds=np.full(3, -1),
-            upper_bounds=np.full(3, 2),
+            lower_bounds=np.full(3, -1),  # ty:ignore[invalid-argument-type]
+            upper_bounds=np.full(3, 2),  # ty:ignore[invalid-argument-type]
         )
 
 
@@ -707,7 +706,7 @@ def test_deprecated_dict_access_of_multistart_info():
     )
     msg = "The dictionary access for 'local_optima' is deprecated and will be removed"
     with pytest.warns(FutureWarning, match=msg):
-        _ = res.multistart_info["local_optima"]
+        _ = res.multistart_info["local_optima"]  # ty:ignore[not-subscriptable]
 
 
 def test_base_steps_in_first_derivatives_is_deprecated():
@@ -808,7 +807,7 @@ def test_jac_dicts_are_deprecated_in_minimize():
             lambda x: x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            jac={"value": lambda x: 2 * x},
+            jac={"value": lambda x: 2 * x},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -820,7 +819,7 @@ def test_jac_dicts_are_deprecated_in_maximize():
             lambda x: -x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            jac={"value": lambda x: -2 * x},
+            jac={"value": lambda x: -2 * x},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -832,7 +831,7 @@ def test_fun_and_jac_dicts_are_deprecated_in_minimize():
             lambda x: x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            fun_and_jac={"value": lambda x: (x @ x, 2 * x)},
+            fun_and_jac={"value": lambda x: (x @ x, 2 * x)},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -844,7 +843,7 @@ def test_fun_and_jac_dicts_are_deprecated_in_maximize():
             lambda x: -x @ x,
             np.arange(3),
             algorithm="scipy_lbfgsb",
-            fun_and_jac={"value": lambda x: (-x @ x, -2 * x)},
+            fun_and_jac={"value": lambda x: (-x @ x, -2 * x)},  # ty:ignore[invalid-argument-type]
         )
         aaae(res.params, np.zeros(3))
 
@@ -1085,6 +1084,18 @@ def test_pre_process_constraints_list_of_constraints(dummy_func):
     assert pre_process_constraints(constraints) == expected
 
 
+def test_pre_process_constraints_tuple_of_constraints(dummy_func):
+    constraints = (
+        om.FixedConstraint(selector=dummy_func),
+        {"type": "increasing", "selector": dummy_func},
+    )
+    expected = [
+        om.FixedConstraint(selector=dummy_func),
+        om.IncreasingConstraint(selector=dummy_func),
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
 def test_pre_process_constraints_none_case():
     assert pre_process_constraints(None) == []
 
@@ -1111,7 +1122,7 @@ def test_pre_process_constraints_invalid_case():
     constraints = "invalid"
     msg = "Invalid constraint type: <class 'str'>"
     with pytest.raises(InvalidConstraintError, match=msg):
-        pre_process_constraints(constraints)
+        pre_process_constraints(constraints)  # ty:ignore[invalid-argument-type]
 
 
 def test_pre_process_constraints_invalid_mixed_case():
@@ -1122,7 +1133,7 @@ def test_pre_process_constraints_invalid_mixed_case():
     ]
     msg = "Invalid constraint types: {<class 'str'>}"
     with pytest.raises(InvalidConstraintError, match=msg):
-        pre_process_constraints(constraints)
+        pre_process_constraints(constraints)  # ty:ignore[invalid-argument-type]
 
 
 # ======================================================================================
@@ -1206,7 +1217,7 @@ def test_nonlinear_dict_without_selection_field_selects_all_params():
     func = lambda x: x @ x  # noqa: E731
     got = pre_process_constraints([{"type": "nonlinear", "func": func, "value": 1}])
     params = np.arange(3)
-    assert got[0].selector(params) is params
+    assert got[0].selector(params) is params  # ty:ignore[unresolved-attribute]
 
 
 def test_nonlinear_dict_loc_selector_has_no_value_indexing(df_params):
@@ -1221,7 +1232,7 @@ def test_nonlinear_dict_loc_selector_has_no_value_indexing(df_params):
             }
         ]
     )
-    selected = got[0].selector(df_params)
+    selected = got[0].selector(df_params)  # ty:ignore[unresolved-attribute]
     pd.testing.assert_frame_equal(selected, df_params.loc[["b", "e"]])
 
 
@@ -1230,7 +1241,7 @@ def test_pairwise_equality_dict_with_selectors_is_converted():
     got = pre_process_constraints(
         [{"type": "pairwise_equality", "selectors": selectors}]
     )
-    assert got == [om.PairwiseEqualityConstraint(selectors=selectors)]
+    assert got == [om.PairwiseEqualityConstraint(selectors=selectors)]  # ty:ignore[invalid-argument-type]
 
 
 def test_loc_on_numpy_params():

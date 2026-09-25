@@ -212,7 +212,7 @@ def validated_dataclass(
             except pydantic.ValidationError as e:
                 raise make_error(e) from e
 
-        out.__init__ = __init__  # type: ignore[method-assign]
+        out.__init__ = __init__
         return typing.cast("type[DataclassT]", out)
 
     return decorator

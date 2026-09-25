@@ -275,14 +275,14 @@ def test_tree_equal_runs_raising_checkers_on_all_leaves():
     first = {"a": np.array([1.0]), "b": np.array([2.0])}
     second = {"a": np.array([1.0]), "b": np.array([99.0])}
     with pytest.raises(AssertionError):
-        tree_equal(first, second, equality_checkers=checkers)
+        tree_equal(first, second, equality_checkers=checkers)  # ty:ignore[invalid-argument-type]
 
 
 def test_tree_equal_returns_bool_with_none_returning_checkers():
     checkers = {np.ndarray: lambda x, y: aaae(x, y, decimal=5)}
     first = {"a": np.array([1.0]), "b": np.array([2.0])}
     second = {"a": np.array([1.0]), "b": np.array([2.0])}
-    assert tree_equal(first, second, equality_checkers=checkers) is True
+    assert tree_equal(first, second, equality_checkers=checkers) is True  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("namespace", list(PyTreeNamespace))

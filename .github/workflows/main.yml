@@ -119,8 +119,8 @@ jobs:
         run: >-
           pixi run -e tests-linux-py314
           python -m doctest -v docs/source/how_to/how_to_constraints.md
-  run-mypy:
-    name: Run mypy
+  run-ty:
+    name: Run ty
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -131,6 +131,6 @@ jobs:
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
           environments: type-checking
-      - name: Run mypy
+      - name: Run ty
         shell: bash -el {0}
-        run: pixi run -e type-checking mypy
+        run: pixi run -e type-checking ty --output-format github

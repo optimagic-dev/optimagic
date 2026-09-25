@@ -15,7 +15,7 @@ from optimagic.typing import PyTree, PyTreeNamespace
 
 if IS_JAX_INSTALLED:
     import jax
-    import jax.numpy as jnp  # type: ignore[import-not-found]
+    import jax.numpy as jnp
 
     JAX_ARRAY_TYPE: type = type(jnp.empty(0))
     JAX_TRACER_TYPE: type = jax.core.Tracer

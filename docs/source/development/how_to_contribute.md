@@ -64,7 +64,7 @@ For regular contributors: **Clone** the [repository](https://github.com/optimagi
    use:
 
    ```console
-   $ pixi run mypy
+   $ pixi run ty
    ```
 
    To see all available pixi tasks, run:
