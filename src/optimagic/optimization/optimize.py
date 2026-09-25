@@ -216,9 +216,11 @@ def maximize(
         hess: Not yet supported.
         hessp: Not yet supported.
         callback: Optional callable called after each objective evaluation with
-            signature ``callback(xk)``, where ``xk`` is the current parameter value
-            (a PyTree; a numpy array if ``params`` is an array). Raising
-            ``StopIteration`` to abort optimization is not yet supported. The
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
             ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
@@ -417,9 +419,11 @@ def minimize(
         hess: Not yet supported.
         hessp: Not yet supported.
         callback: Optional callable called after each objective evaluation with
-            signature ``callback(xk)``, where ``xk`` is the current parameter value
-            (a PyTree; a numpy array if ``params`` is an array). Raising
-            ``StopIteration`` to abort optimization is not yet supported. The
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
             ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.

@@ -61,7 +61,7 @@ class InternalOptimizationProblem:
         linear_constraints: list[dict[str, Any]] | None,
         nonlinear_constraints: list[dict[str, Any]] | None,
         logger: LogStore[Any, Any] | None,
-        callback: Callable[[PyTree], None] | None = None,
+        callback: Callable[[PyTree], None] | None,
         # TODO: add hess and hessp
     ):
         self._fun = fun
@@ -980,6 +980,7 @@ class SphereExampleInternalOptimizationProblem(InternalOptimizationProblem):
             linear_constraints=linear_constraints,
             nonlinear_constraints=nonlinear_constraints,
             logger=logger,
+            callback=None,
         )
 
 
@@ -1118,4 +1119,5 @@ class SphereExampleInternalOptimizationProblemWithConverter(
             linear_constraints=linear_constraints,
             nonlinear_constraints=nonlinear_constraints,
             logger=logger,
+            callback=None,
         )

@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
 from numpy.testing import assert_array_equal as aae
 
 import optimagic as om
@@ -15,31 +14,12 @@ from optimagic.optimization.optimize import minimize
 from optimagic.typing import AggregationLevel
 
 
-def test_callback_xk_is_called():
-    """SciPy-style callback(xk) is invoked on objective evaluations."""
-    xs = []
-
-    def callback(xk):
-        xs.append(np.asarray(xk))
-
-    res = om.minimize(
-        fun=lambda x: x @ x,
-        x0=np.arange(3, dtype=float),
-        algorithm="scipy_neldermead",
-        callback=callback,
-    )
-
-    assert len(xs) >= 1
-    assert xs[0].shape == (3,)
-    aaae(res.x, np.zeros(3), decimal=5)
-
-
 def test_callback_matches_history_params():
     """Callback parameters match the collected optimization history."""
     xs = []
 
     def callback(xk):
-        xs.append(np.asarray(xk))
+        xs.append(xk)
 
     res = om.minimize(
         fun=lambda x: x @ x,
@@ -50,8 +30,7 @@ def test_callback_matches_history_params():
 
     assert res.history is not None
     assert len(xs) == len(res.history.params)
-    for got, expected in zip(xs, res.history.params, strict=True):
-        aaae(got, expected)
+    aae(xs, res.history.params)
 
 
 def test_callback_receives_external_params():
@@ -83,27 +62,48 @@ def test_callback_receives_external_params():
     assert len(received) == len(res.history.params)
     for got, expected in zip(received, res.history.params, strict=True):
         assert set(got) == set(expected)
-        aaae(got["a"], expected["a"])
-        aaae(got["b"], expected["b"])
+        aae(got["a"], expected["a"])
+        aae(got["b"], expected["b"])
+
+
+@mark.minimizer(
+    name="dummy_callback_jac",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=True,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class _DummyJacOptimizer(Algorithm):
+    def _solve_internal_problem(self, problem, x0):
+        problem.jac(x0)
+        problem.jac(x0 + 1)
+        problem.fun(x0 + 2)
+
+        return InternalOptimizeResult(x=x0 + 2, fun=0.0, success=True)
 
 
 def test_callback_not_called_on_jac():
-    """Callback runs next to history on fun, not on jac-only evaluations."""
-    from optimagic.optimization.internal_optimization_problem import (
-        SphereExampleInternalOptimizationProblem,
+    """Callback runs on objective evaluations but not on jac-only evaluations."""
+    xs = []
+
+    res = minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(3, dtype=float),
+        algorithm=_DummyJacOptimizer,
+        callback=xs.append,
     )
 
-    problem = SphereExampleInternalOptimizationProblem()
-    calls = []
-    problem._callback = lambda p: calls.append(np.asarray(p))
-
-    x = np.ones(10)
-    problem.jac(x)
-    assert calls == []
-
-    problem.fun(x)
-    assert len(calls) == 1
-    aaae(calls[0], x)
+    aae(xs, [np.arange(3) + 2.0])
+    assert len(res.history.params) == 3
 
 
 def test_invalid_callback_too_few_arguments():
@@ -192,7 +192,7 @@ def test_callback_history_with_parallel_optimizer():
     collected = []
 
     def callback(xk):
-        collected.append(np.asarray(xk))
+        collected.append(xk)
 
     res = minimize(
         fun=lambda x: 5.0,
