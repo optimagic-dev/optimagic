@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import warnings
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -98,7 +99,7 @@ class ResolutionContext:
 
 
 def resolve_constraints(
-    constraints: list[Constraint],
+    constraints: Sequence[Constraint],
     params: PyTree,
     tree_converter: TreeConverter,
     param_names: list[str],

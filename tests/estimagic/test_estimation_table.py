@@ -433,6 +433,18 @@ def test_customize_col_names_list():
     assert exp == res
 
 
+def test_customize_col_groups_invalid_type():
+    default = ["a_name", "a_name", "third_name"]
+    with pytest.raises(TypeError, match="Invalid type for custom_col_groups"):
+        _customize_col_groups(default, "invalid")
+
+
+def test_customize_col_names_invalid_type():
+    default = list("abc")
+    with pytest.raises(TypeError, match="Invalid type for custom_col_names"):
+        _customize_col_names(default_col_names=default, custom_col_names="invalid")
+
+
 def test_get_params_frames_with_common_index():
     m1 = {
         "params": pd.DataFrame(np.ones(5), index=list("abcde")),

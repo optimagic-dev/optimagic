@@ -952,7 +952,7 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
             else:
                 raise TypeError(
                     f"""Invalid type for custom_col_groups. Can be either list
-                    or dictionary, or NoneType. Not: {type(col_groups)}."""  # ty:ignore[unresolved-reference]
+                    or dictionary, or NoneType. Not: {type(custom_col_groups)}."""
                 )
     else:
         col_groups = default_col_groups
@@ -988,8 +988,8 @@ def _customize_col_names(default_col_names, custom_col_names):
         col_names = custom_col_names
     else:
         raise TypeError(
-            f"""Invalid type for custom_col_names.
-            Can be either list or dictionary, or NoneType. Not: {col_names}."""  # ty:ignore[unresolved-reference]
+            f"""Invalid type for custom_col_names. Can be either list or
+            dictionary, or NoneType. Not: {type(custom_col_names)}."""
         )
     return col_names
 

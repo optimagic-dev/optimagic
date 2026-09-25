@@ -134,11 +134,11 @@ def test_criterion_plot_different_input_types():
 
     results = ["test.db", res]
 
-    criterion_plot(results)  # ty:ignore[invalid-argument-type]
-    criterion_plot(results, monotone=True)  # ty:ignore[invalid-argument-type]
-    criterion_plot(results, stack_multistart=True)  # ty:ignore[invalid-argument-type]
-    criterion_plot(results, monotone=True, stack_multistart=True)  # ty:ignore[invalid-argument-type]
-    criterion_plot(results, show_exploration=True)  # ty:ignore[invalid-argument-type]
+    criterion_plot(results)
+    criterion_plot(results, monotone=True)
+    criterion_plot(results, stack_multistart=True)
+    criterion_plot(results, monotone=True, stack_multistart=True)
+    criterion_plot(results, show_exploration=True)
     criterion_plot("test.db")
 
 
@@ -175,16 +175,22 @@ def test_harmonize_inputs_to_dict_single_result_with_name():
 def test_harmonize_inputs_to_dict_list_results():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
     results = [res, res]
-    assert _harmonize_inputs_to_dict(results=results, names=None) == {  # ty:ignore[invalid-argument-type]
+    assert _harmonize_inputs_to_dict(results=results, names=None) == {
         "0": res,
         "1": res,
     }
 
 
+def test_harmonize_inputs_to_dict_tuple_results():
+    res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
+    got = _harmonize_inputs_to_dict(results=(res, res), names=["a", "b"])
+    assert got == {"a": res, "b": res}
+
+
 def test_harmonize_inputs_to_dict_dict_input():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
     results = {"bla": res, om.algos.scipy_lbfgsb(): res, om.algos.scipy_neldermead: res}
-    got = _harmonize_inputs_to_dict(results=results, names=None)  # ty:ignore[invalid-argument-type]
+    got = _harmonize_inputs_to_dict(results=results, names=None)
     expected = {"bla": res, "scipy_lbfgsb": res, "scipy_neldermead": res}
     assert got == expected
 
@@ -192,7 +198,7 @@ def test_harmonize_inputs_to_dict_dict_input():
 def test_harmonize_inputs_to_dict_dict_input_with_names():
     res = minimize(fun=lambda x: x @ x, params=np.arange(5), algorithm="scipy_lbfgsb")
     results = {"bla": res, "blub": res}
-    got = _harmonize_inputs_to_dict(results=results, names=["a", "b"])  # ty:ignore[invalid-argument-type]
+    got = _harmonize_inputs_to_dict(results=results, names=["a", "b"])
     expected = {"a": res, "b": res}
     assert got == expected
 

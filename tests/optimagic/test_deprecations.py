@@ -160,8 +160,7 @@ def example_db(tmp_path):
 
 
 def test_estimagic_log_reader_is_deprecated(example_db):
-    msg = "OptimizeLogReader is deprecated and will be removed in a future "
-    "version. Please use optimagic.logging.SQLiteLogger instead."
+    msg = "estimagic.OptimizeLogReader has been deprecated"
     with pytest.warns(FutureWarning, match=msg):
         OptimizeLogReader(example_db)
 
@@ -1082,7 +1081,19 @@ def test_pre_process_constraints_list_of_constraints(dummy_func):
         om.FixedConstraint(selector=dummy_func),
         om.IncreasingConstraint(selector=dummy_func),
     ]
-    assert pre_process_constraints(constraints) == expected  # ty:ignore[invalid-argument-type]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_tuple_of_constraints(dummy_func):
+    constraints = (
+        om.FixedConstraint(selector=dummy_func),
+        {"type": "increasing", "selector": dummy_func},
+    )
+    expected = [
+        om.FixedConstraint(selector=dummy_func),
+        om.IncreasingConstraint(selector=dummy_func),
+    ]
+    assert pre_process_constraints(constraints) == expected
 
 
 def test_pre_process_constraints_none_case():
@@ -1098,7 +1109,7 @@ def test_pre_process_constraints_mixed_case(dummy_func):
         om.FixedConstraint(selector=dummy_func),
         om.IncreasingConstraint(selector=dummy_func),
     ]
-    assert pre_process_constraints(constraints) == expected  # ty:ignore[invalid-argument-type]
+    assert pre_process_constraints(constraints) == expected
 
 
 def test_pre_process_constraints_dict_case(dummy_func):
@@ -1427,7 +1438,7 @@ def test_different_lengths_in_locs_raise():
 def test_deprecated_log_reader(example_db):
     with pytest.warns(FutureWarning, match="SQLiteLogReader"):
         reader = OptimizeLogReader(example_db)
-        res = reader.read_start_params()  # ty:ignore[unresolved-attribute]
+        res = reader.read_start_params()
         assert res == {"a": 1, "b": 2, "c": 3}
 
 

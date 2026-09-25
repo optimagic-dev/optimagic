@@ -250,9 +250,6 @@ class LeastSquaresHistory:
     def get_best_critval(self):
         return self.get_critvals(index=self.best_index)
 
-    def get_best_centered_entries(self, center_info):
-        return self.get_centered_entries(self, center_info, index=self.best_index)  # ty:ignore[parameter-already-assigned]
-
 
 def _add_entries_to_array(arr, new, position):
     if arr is None:

@@ -170,7 +170,7 @@ def estimate_ml(
         if hessian_numdiff_options is None:
             hessian_numdiff_options = numdiff_options
 
-    deprecations.throw_dict_constraints_future_warning_if_required(constraints)  # ty:ignore[invalid-argument-type]
+    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
 
     # ==================================================================================
     # Check and process inputs

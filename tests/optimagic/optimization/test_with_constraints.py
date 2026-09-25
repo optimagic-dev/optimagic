@@ -239,7 +239,7 @@ def test_three_independent_constraints():
         fun=lambda x: x @ x,
         params=params,
         algorithm="scipy_lbfgsb",
-        constraints=constraints,  # ty:ignore[invalid-argument-type]
+        constraints=constraints,
         algo_options={"convergence.ftol_rel": 1e-12},
     )
     expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
@@ -248,6 +248,21 @@ def test_three_independent_constraints():
     # to the re-written L-BFGS-B algorithm in SciPy 1.15.
     # See https://github.com/optimagic-dev/optimagic/issues/556.
     aaae(res.params, expected, decimal=3)
+
+
+def test_constraints_as_tuple():
+    constraints = (
+        om.FixedConstraint(lambda x: x[[0]]),
+        om.IncreasingConstraint(lambda x: x[[1, 2]]),
+    )
+
+    res = minimize(
+        fun=lambda x: x @ x,
+        params=np.array([1.0, 2.0, 3.0]),
+        algorithm="scipy_lbfgsb",
+        constraints=constraints,
+    )
+    aaae(res.params, [1, 0, 0], decimal=4)
 
 
 INVALID_CONSTRAINT_COMBIS = [
@@ -325,7 +340,7 @@ def test_constraint_inheritance():
             fun=lambda x: x @ x,
             params=np.array([0.1, 0.9, 0.9, 0.1]),
             algorithm="scipy_lbfgsb",
-            constraints=constraints,  # ty:ignore[invalid-argument-type]
+            constraints=constraints,
         )
         aaae(res.params, [0.5] * 4)
 

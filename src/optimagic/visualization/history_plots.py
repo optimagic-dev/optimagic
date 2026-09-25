@@ -1,5 +1,6 @@
 import inspect
 import itertools
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Literal
@@ -44,7 +45,7 @@ ResultOrPath = OptimizeResult | str | Path
 
 
 def criterion_plot(
-    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
+    results: ResultOrPath | Sequence[ResultOrPath] | Mapping[Any, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
     backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
@@ -118,7 +119,7 @@ def criterion_plot(
 
 
 def _harmonize_inputs_to_dict(
-    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
+    results: ResultOrPath | Sequence[ResultOrPath] | Mapping[Any, ResultOrPath],
     names: list[str] | str | None,
 ) -> dict[str, ResultOrPath]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
@@ -133,11 +134,10 @@ def _harmonize_inputs_to_dict(
         raise ValueError("len(results) needs to be equal to len(names).")
 
     # handle dict case
-    if isinstance(results, dict):
+    if isinstance(results, Mapping):
+        results_dict = dict(results)
         if names is not None:
-            results_dict = dict(zip(names, list(results.values()), strict=False))
-        else:
-            results_dict = results
+            results_dict = dict(zip(names, results_dict.values(), strict=False))
 
     # unlabeled iterable of results
     else:
