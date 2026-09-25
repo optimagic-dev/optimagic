@@ -6,11 +6,13 @@ from typing import Any, Callable, Iterable, Literal
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import leaf_names, tree_just_flatten
 
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.pytree import (
+    leaf_names,
+    tree_leaves,
+)
 from optimagic.timing import CostModel
-from optimagic.typing import Direction, EvalTask, PyTree
+from optimagic.typing import Direction, EvalTask, PyTree, PyTreeNamespace
 
 
 @dataclass(frozen=True)
@@ -398,8 +400,7 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
     if fast_path:
         flatten = lambda x: x.tolist()
     else:
-        registry = get_registry(extended=True)
-        flatten = partial(tree_just_flatten, registry=registry)
+        flatten = partial(tree_leaves, namespace=PyTreeNamespace.VALUE)
 
     return [flatten(p) for p in params]
 
@@ -409,8 +410,7 @@ def _get_flat_param_names(param: PyTree) -> list[str]:
     if fast_path:
         return np.arange(param.size).astype(str).tolist()
 
-    registry = get_registry(extended=True)
-    return leaf_names(param, registry=registry)
+    return leaf_names(param, namespace=PyTreeNamespace.VALUE)
 
 
 def _is_1d_array(param: PyTree) -> bool:

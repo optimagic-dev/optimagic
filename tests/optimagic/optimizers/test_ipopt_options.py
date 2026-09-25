@@ -96,7 +96,7 @@ test_cases = [
     {"quality_function_centrality": "log"},
     {"quality_function_balancing_term": "cubic"},
     {"quality_function_max_section_steps": 10},
-    {"quality_function_max_section_steps": 5.5},
+    {"quality_function_max_section_steps": 5.0},
     {"quality_function_section_sigma_tol": 0.02},
     {"quality_function_section_qf_tol": 0.5},
     {"line_search_method": "penalty"},
@@ -185,6 +185,7 @@ test_cases = [
     # linear solver
     # using ma27, ma57, ma77, ma86 leads to remaining at the start values
     # using ma97 leads to segmentation fault
+    {"linear_solver_options": {"linear_scaling_on_demand": True}},
     {"linear_solver_options": {"mumps_pivtol": 1e-5}},
     {"linear_solver_options": {"linear_system_scaling": None}},
     {"linear_solver_options": {"ma86_scaling": None}},

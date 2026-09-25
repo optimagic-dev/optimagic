@@ -1,5 +1,7 @@
+import functools
+import typing
 from dataclasses import dataclass, fields
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import (
     Annotated,
     Any,
@@ -11,14 +13,15 @@ from typing import (
     Protocol,
     TypeVar,
     ValuesView,
+    runtime_checkable,
 )
 
 import numpy as np
+import pydantic
 from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
 
 PyTree = Any
-PyTreeRegistry = dict[type | str, dict[str, Callable[[Any], Any]]]
 Scalar = Any
 
 T = TypeVar("T")
@@ -103,6 +106,7 @@ class EvalTask(Enum):
     EXPLORATION = "exploration"
 
 
+@runtime_checkable
 class BatchEvaluator(Protocol):
     def __call__(
         self,
@@ -143,6 +147,77 @@ ErrorHandlingLiteral = Literal["raise", "continue"]
 """Type alias for error handling strategies, can be 'raise' or 'continue'."""
 
 
+DataclassT = TypeVar("DataclassT")
+
+DEFAULT_PYDANTIC_CONFIG = pydantic.ConfigDict(
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    validate_default=True,
+)
+"""Pydantic config for user-facing options: coerce generous inputs to strict types."""
+
+STRICT_PYDANTIC_CONFIG = pydantic.ConfigDict(
+    strict=True,
+    arbitrary_types_allowed=True,
+    extra="forbid",
+    validate_default=True,
+)
+"""Pydantic config for internal types: reject inputs that need conversion."""
+
+
+def validated_dataclass(
+    config: pydantic.ConfigDict,
+    make_error: Callable[[pydantic.ValidationError], Exception],
+) -> Callable[[type[DataclassT]], type[DataclassT]]:
+    """Create a class decorator that adds pydantic validation to a frozen dataclass.
+
+    The decorated class is re-created as a pydantic dataclass, so field values are
+    validated and converted according to their type annotations on every
+    instantiation (including via ``dataclasses.replace``). Annotations are resolved
+    at runtime, so this also works in modules using
+    ``from __future__ import annotations``.
+
+    This is deliberately a layer on top of existing dataclasses rather than a
+    replacement for ``pydantic.dataclasses.dataclass`` at the definition site, for
+    two reasons. First, it keeps the classes themselves plain frozen dataclasses,
+    which made adopting pydantic non-breaking: algorithm classes — including ones
+    defined outside optimagic — are still written as regular dataclasses and gain
+    validation through ``mark.minimizer`` without any change to their definition.
+    Second, it raises domain-specific exceptions (built by ``make_error``) instead
+    of ``pydantic.ValidationError``, which preserves optimagic's exception
+    contracts; pydantic itself has no hook to customize the raised exception type.
+
+    Args:
+        config: The pydantic config that controls validation behavior.
+        make_error: Called with the raised ``pydantic.ValidationError`` to build the
+            exception that is raised in its place.
+
+    Returns:
+        A class decorator for frozen dataclasses.
+
+    """
+
+    def decorator(cls: type[DataclassT]) -> type[DataclassT]:
+        out = pydantic.dataclasses.dataclass(frozen=True, config=config)(cls)
+        # pydantic re-creates the class, which loses attributes that tooling and
+        # introspection rely on.
+        out.__doc__ = cls.__doc__
+        out.__annotations__ = dict(cls.__annotations__)
+        original_init = out.__init__
+
+        @functools.wraps(original_init)
+        def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
+            try:
+                original_init(self, *args, **kwargs)
+            except pydantic.ValidationError as e:
+                raise make_error(e) from e
+
+        out.__init__ = __init__
+        return typing.cast("type[DataclassT]", out)
+
+    return decorator
+
+
 @dataclass(frozen=True)
 class IterationHistory(DictLikeAccess):
     """History of iterations in a process.
@@ -173,3 +248,34 @@ class MultiStartIterationHistory(TupleLikeAccess):
     history: IterationHistory
     local_histories: list[IterationHistory] | None = None
     exploration: IterationHistory | None = None
+
+
+class PyTreeNamespace(StrEnum):
+    """Optree namespaces used by optimagic's pytree functions.
+
+    In the default namespace, numpy arrays, pandas objects and jax arrays are leaves.
+    In all extended namespaces they are internal nodes and a params DataFrame with a
+    "value" column contributes the entries of the column given by ``data_col``.
+
+    """
+
+    DEFAULT = "optimagic"
+    VALUE = "optimagic.value"
+    LOWER_BOUND = "optimagic.lower_bound"
+    UPPER_BOUND = "optimagic.upper_bound"
+    SOFT_LOWER_BOUND = "optimagic.soft_lower_bound"
+    SOFT_UPPER_BOUND = "optimagic.soft_upper_bound"
+
+    @property
+    def is_extended(self) -> bool:
+        """Whether arrays and pandas objects are internal nodes in this namespace."""
+        return self is not PyTreeNamespace.DEFAULT
+
+    @property
+    def data_col(self) -> str:
+        """The params DataFrame column that is flattened in this namespace."""
+        if not self.is_extended:
+            raise ValueError(
+                "The default namespace has no data column; DataFrames are leaves."
+            )
+        return self.value.removeprefix(f"{PyTreeNamespace.DEFAULT.value}.")

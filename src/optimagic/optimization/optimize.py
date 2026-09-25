@@ -76,8 +76,7 @@ ConstraintsType = Constraint | list[Constraint] | dict[str, Any] | list[dict[str
 JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]
-# TODO: refine this type
-CallbackType = Callable[..., Any]
+CallbackType = Callable[[PyTree], None]
 
 CriterionType = Callable[..., float | dict[str, Any]]
 CriterionAndDerivativeType = Callable[..., tuple[float | dict[str, Any], PyTree]]
@@ -216,7 +215,14 @@ def maximize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -413,7 +419,14 @@ def minimize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -653,6 +666,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         linear_constraints=None,
         nonlinear_constraints=internal_nonlinear_constraints,
         logger=logger,
+        callback=problem.callback,
     )
 
     # ==================================================================================

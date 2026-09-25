@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -70,7 +70,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -109,7 +109,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
@@ -126,7 +126,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
-          pixi-version: v0.65.0
+          pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true

@@ -5,6 +5,53 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
 
+## Unreleased
+
+This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
+**optree** for pytree handling and uses **pydantic** to validate algorithm options.
+
+- {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
+  `maximize`. The callback is called after each objective evaluation; its behavior might
+  change in upcoming releases ({ghuser}`Pragati5-DEBUG`).
+- {gh}`696` Uses pydantic to validate algorithm options, `AlgoInfo` and
+  `InternalOptimizeResult`. Options of algorithms defined in modules with
+  `from __future__ import annotations` and options of previously unvalidated types
+  (e.g. unions, Literals, optional types) are now validated. Fractional floats for
+  integer options raise instead of being silently truncated ({ghuser}`janosg`).
+- {gh}`693` Adds an explanation page on problem types (`AggregationLevel`)
+  ({ghuser}`Pragati5-DEBUG`).
+- {gh}`679` Replaces pybaum by optree for all pytree operations. `get_registry` is
+  removed; extended pytree handling is selected via a `namespace` argument instead
+  ({ghuser}`abelaba`).
+
+
+## 0.5.4
+
+This release allows **fixed entries in probability constraints**, adds support for
+**tranquilo 0.1.1**, and contains a major internal **refactoring of the constraints
+pipeline** towards typed constraint objects. The development environment was migrated
+from conda/micromamba to **pixi**.
+
+- {gh}`688` Refactors constraint resolution to work on typed constraint objects
+  ({ghuser}`janosg`).
+- {gh}`687` Converts constraint dictionaries to typed constraint objects during
+  processing ({ghuser}`janosg`).
+- {gh}`686` Adds characterization tests for the constraint pipeline
+  ({ghuser}`janosg`).
+- {gh}`683` Allows a `FixedConstraint` pinning selected elements to any value in
+  `[0, 1)` (with their sum strictly less than one) to coexist with a
+  `ProbabilityConstraint` on the same parameters. The fixed entries are held at their
+  values and the remaining free entries are optimised on a simplex summing to
+  `1 - sum(fixed values)` ({ghuser}`hmgaudecker`).
+- {gh}`678` Fixes grammar in the style guide ({ghuser}`abelaba`).
+- {gh}`676` Cleans up pre-commit hooks and switches from pre-commit to prek
+  ({ghuser}`timmens`).
+- {gh}`674` Migrates the development environment from conda/micromamba to pixi
+  ({ghuser}`timmens`).
+- {gh}`671` Updates the README ({ghuser}`timmens`).
+- {gh}`661` Adds support for tranquilo 0.1.1 ({ghuser}`timmens`).
+
+
 ## 0.5.3
 
 This release introduces **multi-backend plotting** with support for matplotlib, bokeh,
