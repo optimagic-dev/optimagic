@@ -104,14 +104,14 @@ def _get_all_algorithms(modules: list[ModuleType]) -> dict[str, Type[Algorithm]]
 def _get_algorithms_in_module(module: ModuleType) -> dict[str, Type[Algorithm]]:
     """Collect all algorithms in a single module."""
     candidate_dict = dict(inspect.getmembers(module, inspect.isclass))
-    candidate_dict = {
-        k: v for k, v in candidate_dict.items() if hasattr(v, "__algo_info__")
-    }
     algos = {}
     for candidate in candidate_dict.values():
-        name = candidate.algo_info.name  # ty:ignore[unresolved-attribute]
-        if issubclass(candidate, Algorithm) and candidate is not Algorithm:
-            algos[name] = candidate
+        if (
+            issubclass(candidate, Algorithm)
+            and candidate is not Algorithm
+            and candidate.__algo_info__ is not None
+        ):
+            algos[candidate.__algo_info__.name] = candidate
     return algos
 
 
