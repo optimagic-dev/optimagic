@@ -5,6 +5,26 @@ chronological order. We follow [semantic versioning](https://semver.org/) and al
 releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/optimagic).
 
 
+## Unreleased
+
+This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
+**optree** for pytree handling and uses **pydantic** to validate algorithm options.
+
+- {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
+  `maximize`. The callback is called after each objective evaluation; its behavior might
+  change in upcoming releases ({ghuser}`Pragati5-DEBUG`).
+- {gh}`696` Uses pydantic to validate algorithm options, `AlgoInfo` and
+  `InternalOptimizeResult`. Options of algorithms defined in modules with
+  `from __future__ import annotations` and options of previously unvalidated types
+  (e.g. unions, Literals, optional types) are now validated. Fractional floats for
+  integer options raise instead of being silently truncated ({ghuser}`janosg`).
+- {gh}`693` Adds an explanation page on problem types (`AggregationLevel`)
+  ({ghuser}`Pragati5-DEBUG`).
+- {gh}`679` Replaces pybaum by optree for all pytree operations. `get_registry` is
+  removed; extended pytree handling is selected via a `namespace` argument instead
+  ({ghuser}`abelaba`).
+
+
 ## 0.5.4
 
 This release allows **fixed entries in probability constraints**, adds support for

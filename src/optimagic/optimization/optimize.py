@@ -215,7 +215,8 @@ def maximize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Optional callable called after each objective evaluation with
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
             signature ``callback(xk)``, where ``xk`` holds the current parameters (a
             PyTree with the same structure as ``params``). ``xk`` is not copied, so
             the callback must not modify it in place. The callback is not called
@@ -418,7 +419,8 @@ def minimize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Optional callable called after each objective evaluation with
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
             signature ``callback(xk)``, where ``xk`` holds the current parameters (a
             PyTree with the same structure as ``params``). ``xk`` is not copied, so
             the callback must not modify it in place. The callback is not called
