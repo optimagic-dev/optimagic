@@ -1,0 +1,385 @@
+import itertools
+import threading
+from typing import NamedTuple
+
+import numpy as np
+import optree
+import pandas as pd
+import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+from pandas.testing import assert_frame_equal
+
+from optimagic.config import IS_JAX_INSTALLED
+from optimagic.pytree import (
+    leaf_names,
+    tree_equal,
+    tree_flatten,
+    tree_leaves,
+    tree_map,
+    tree_structure,
+    tree_unflatten,
+)
+from optimagic.typing import PyTreeNamespace
+
+if IS_JAX_INSTALLED:
+    import jax
+    import jax.numpy as jnp
+
+EXTENDED_NAMESPACES = [ns for ns in PyTreeNamespace if ns.is_extended]
+
+
+@pytest.fixture()
+def value_df():
+    df = pd.DataFrame(
+        np.arange(6).reshape(3, 2),
+        columns=["a", "value"],
+        index=["alpha", "beta", "gamma"],
+    )
+    return df
+
+
+@pytest.fixture()
+def other_df():
+    df = pd.DataFrame(index=["alpha", "beta", "gamma"])
+    df["b"] = np.arange(3).astype(np.int16)
+    df["c"] = 3.14
+    return df
+
+
+@pytest.fixture
+def example_tree():
+    return (
+        [0, np.array([1, 2]), {"a": pd.Series([3, 4], index=["c", "d"]), "b": 5}],
+        6,
+    )
+
+
+def test_flatten_df_with_value_column(value_df):
+    flat, _ = tree_flatten(value_df, namespace=PyTreeNamespace.VALUE)
+    assert flat == [1, 3, 5]
+
+
+def test_unflatten_df_with_value_column(value_df):
+    _, treedef = tree_flatten(value_df, namespace=PyTreeNamespace.VALUE)
+    unflat = tree_unflatten(treedef, [10, 11, 12])
+    assert unflat.equals(value_df.assign(value=[10, 11, 12]))
+
+
+def test_leaf_names_df_with_value_column(value_df):
+    names = leaf_names(value_df, namespace=PyTreeNamespace.VALUE)
+    assert names == ["alpha", "beta", "gamma"]
+
+
+@pytest.mark.parametrize("namespace", [None, *EXTENDED_NAMESPACES])
+def test_leaf_names_of_namedtuple_use_field_names(namespace):
+    class ParamsTuple(NamedTuple):
+        alpha: float
+        beta: float
+
+    kwargs = {} if namespace is None else {"namespace": namespace}
+    params = {"x": ParamsTuple(alpha=1.0, beta=2.0)}
+    assert leaf_names(params, **kwargs) == ["x_alpha", "x_beta"]
+
+
+def test_leaf_names_with_is_leaf():
+    params = {"a": 1, "b": np.array([0, 1])}
+    names = leaf_names(
+        params,
+        is_leaf=lambda tree: isinstance(tree, np.ndarray),
+        namespace=PyTreeNamespace.VALUE,
+    )
+    expected_names = ["a", "b"]
+    assert names == expected_names
+
+
+def test_flatten_partially_numeric_df(other_df):
+    flat, _ = tree_flatten(other_df, namespace=PyTreeNamespace.VALUE)
+    assert flat == [0, 3.14, 1, 3.14, 2, 3.14]
+
+
+def test_unflatten_partially_numeric_df(other_df):
+    _, treedef = tree_flatten(other_df, namespace=PyTreeNamespace.VALUE)
+    unflat = tree_unflatten(treedef, [1, 2, 3, 4, 5, 6])
+    other_df = other_df.assign(b=[1, 3, 5], c=[2, 4, 6])
+    assert_frame_equal(unflat, other_df, check_dtype=False)
+
+
+def test_leaf_names_partially_numeric_df(other_df):
+    names = leaf_names(other_df, namespace=PyTreeNamespace.VALUE)
+    assert names == ["alpha_b", "alpha_c", "beta_b", "beta_c", "gamma_b", "gamma_c"]
+
+
+@pytest.fixture()
+def bounds_df():
+    return pd.DataFrame(
+        {
+            "value": [1, 2, 3],
+            "lower_bound": [0, 0, 0],
+            "upper_bound": [10, 20, 30],
+            "soft_lower_bound": [0.5, 0.5, 0.5],
+            "soft_upper_bound": [9, 19, 29],
+        },
+        index=["alpha", "beta", "gamma"],
+    )
+
+
+def test_tree_methods_with_default_namespace(bounds_df):
+    leaves, treedef = tree_flatten(bounds_df)
+    assert len(leaves) == 1
+    assert_frame_equal(leaves[0], bounds_df)
+
+    leaves = tree_leaves(bounds_df)
+    assert len(leaves) == 1
+    assert_frame_equal(leaves[0], bounds_df)
+
+    tree = tree_unflatten(treedef, leaves)
+    assert_frame_equal(tree, bounds_df)
+
+    names = leaf_names(bounds_df)
+    expected_names = [""]
+    assert names == expected_names
+
+    tree = tree_map(lambda x: x * 2, bounds_df)
+    assert_frame_equal(tree, bounds_df * 2)
+
+
+@pytest.mark.parametrize("namespace", EXTENDED_NAMESPACES)
+def test_tree_methods_with_registered_namespaces(namespace, bounds_df):
+    data_col = namespace.data_col
+    expected_leaves = bounds_df[data_col].tolist()
+
+    leaves, treedef = tree_flatten(bounds_df, namespace=namespace)
+    assert leaves == expected_leaves
+
+    leaves = tree_leaves(bounds_df, namespace=namespace)
+    assert leaves == expected_leaves
+
+    tree = tree_unflatten(treedef, leaves)
+    assert_frame_equal(tree, bounds_df)
+
+    names = leaf_names(bounds_df, namespace=namespace)
+    assert names == ["alpha", "beta", "gamma"]
+
+    tree = tree_map(lambda x: x * 2, bounds_df, namespace=namespace)
+    doubled = [v * 2 for v in expected_leaves]
+    expected = bounds_df.copy()
+    expected[data_col] = doubled
+    assert_frame_equal(tree, expected)
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        lambda ns: tree_flatten([0], namespace=ns),
+        lambda ns: tree_leaves([0], namespace=ns),
+        lambda ns: tree_structure([0], namespace=ns),
+        lambda ns: leaf_names([0], namespace=ns),
+        lambda ns: tree_map(lambda x: x * 2, [0], namespace=ns),
+        lambda ns: tree_equal([0], [0], namespace=ns),
+    ],
+)
+@pytest.mark.parametrize(
+    "namespace", ["unregistered", "value", "", None, "optimagic", "optimagic.value"]
+)
+def test_tree_methods_raise_with_invalid_namespace(func, namespace):
+    with pytest.raises(TypeError, match="Invalid pytree namespace"):
+        func(namespace)
+
+
+@pytest.mark.parametrize("treedef", [[0], {"a": 0}, None, np.zeros(1)])
+def test_tree_unflatten_raises_if_treedef_is_not_a_treespec(treedef):
+    with pytest.raises(TypeError, match="treedef must be a tree definition"):
+        tree_unflatten(treedef, [0])
+
+
+@pytest.mark.parametrize("namespace", list(PyTreeNamespace))
+def test_tree_structure_equals_treedef_from_tree_flatten(namespace, bounds_df):
+    tree = {"b": bounds_df, "a": [np.arange(2), 1.0]}
+    _, treedef = tree_flatten(tree, namespace=namespace)
+    assert tree_structure(tree, namespace=namespace) == treedef
+
+
+def test_namespace_data_col():
+    assert PyTreeNamespace.VALUE.data_col == "value"
+    assert PyTreeNamespace.SOFT_UPPER_BOUND.data_col == "soft_upper_bound"
+
+
+def test_default_namespace_has_no_data_col():
+    assert not PyTreeNamespace.DEFAULT.is_extended
+    with pytest.raises(ValueError, match="no data column"):
+        _ = PyTreeNamespace.DEFAULT.data_col
+
+
+def test_tree_flatten_and_unflatten_with_None():
+    params = [None]
+    leaves, treespec = tree_flatten(params)
+    assert leaves == []
+    tree = tree_unflatten(treespec, leaves)
+    assert tree == [None]
+
+
+def test_leaf_names_with_none():
+    names = leaf_names(None)
+    assert names == []
+
+
+@pytest.mark.parametrize("namespace", list(PyTreeNamespace))
+def test_dict_insertion_ordering_is_respected(namespace):
+    params = {"b": [1, 4], "a": [8, 9]}
+    leaves, _ = tree_flatten(params, namespace=namespace)
+    assert leaves == [1, 4, 8, 9]
+
+    tree = tree_unflatten(tree_structure(params, namespace=namespace), [1, 4, 8, 9])
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    leaves2 = tree_leaves(params, namespace=namespace)
+    assert leaves2 == [1, 4, 8, 9]
+
+    tree = tree_map(lambda x: x, params, namespace=namespace)
+    assert list(tree.items()) == [("b", [1, 4]), ("a", [8, 9])]
+
+    names = leaf_names(params, namespace=namespace)
+    assert names == ["b_0", "b_1", "a_0", "a_1"]
+
+    params = {"b": 8, "a": 5}
+    counter = itertools.count()
+    positions = tree_map(lambda _: next(counter), params, namespace=namespace)
+    assert positions == {"b": 0, "a": 1}
+
+
+def test_tree_equal_with_pandas_nodes_in_registered_namespace():
+    tree = {
+        "s": pd.Series([1.0, 2.0], index=["c", "d"]),
+        "df": pd.DataFrame({"value": [1.0, 2.0]}, index=["i", "j"]),
+    }
+    copied = {
+        "s": tree["s"].copy(),
+        "df": tree["df"].copy(deep=True),
+    }
+    assert tree_equal(tree, copied, namespace=PyTreeNamespace.VALUE) is True
+
+
+def test_tree_equal_detects_different_series_index():
+    first = {"s": pd.Series([1.0], index=["x"])}
+    second = {"s": pd.Series([1.0], index=["y"])}
+    assert tree_equal(first, second, namespace=PyTreeNamespace.VALUE) is False
+
+
+def test_tree_equal_with_unequal_values_and_structures():
+    assert tree_equal({"a": 1.0}, {"a": 2.0}, namespace=PyTreeNamespace.VALUE) is False
+    assert tree_equal({"a": 1.0}, {"b": 1.0}, namespace=PyTreeNamespace.VALUE) is False
+
+
+def test_tree_equal_runs_raising_checkers_on_all_leaves():
+    checkers = {np.ndarray: lambda x, y: aaae(x, y, decimal=5)}
+    first = {"a": np.array([1.0]), "b": np.array([2.0])}
+    second = {"a": np.array([1.0]), "b": np.array([99.0])}
+    with pytest.raises(AssertionError):
+        tree_equal(first, second, equality_checkers=checkers)
+
+
+def test_tree_equal_returns_bool_with_none_returning_checkers():
+    checkers = {np.ndarray: lambda x, y: aaae(x, y, decimal=5)}
+    first = {"a": np.array([1.0]), "b": np.array([2.0])}
+    second = {"a": np.array([1.0]), "b": np.array([2.0])}
+    assert tree_equal(first, second, equality_checkers=checkers) is True
+
+
+@pytest.mark.parametrize("namespace", list(PyTreeNamespace))
+def test_dict_insertion_ordering_is_thread_safe(namespace, monkeypatch):
+    # Force the interleaving that breaks a per-call toggle of optree's process-wide
+    # dict ordering mode: thread "a" is inside tree_leaves when thread "b" enters
+    # it, and "a" returns before "b" reaches optree.
+    tree = {"b": 1, "a": 2}
+    a_inside, b_inside, a_done = (threading.Event() for _ in range(3))
+    real_tree_leaves = optree.tree_leaves
+
+    def paused_tree_leaves(*args, **kwargs):
+        if threading.current_thread().name == "a":
+            a_inside.set()
+            b_inside.wait(timeout=5)
+        else:
+            b_inside.set()
+            a_done.wait(timeout=5)
+        return real_tree_leaves(*args, **kwargs)
+
+    monkeypatch.setattr(optree, "tree_leaves", paused_tree_leaves)
+    results = {}
+
+    def run_a():
+        results["a"] = tree_leaves(tree, namespace=namespace)
+        a_done.set()
+
+    def run_b():
+        a_inside.wait(timeout=5)
+        results["b"] = tree_leaves(tree, namespace=namespace)
+
+    threads = [
+        threading.Thread(target=run_a, name="a"),
+        threading.Thread(target=run_b, name="b"),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert results == {"a": [1, 2], "b": [1, 2]}
+
+
+def test_leaf_names_and_leaves_are_aligned_for_all_namespaces(bounds_df):
+    tree = {"df": bounds_df, "arr": np.arange(2), "b": 1}
+    for namespace in EXTENDED_NAMESPACES:
+        assert len(leaf_names(tree, namespace=namespace)) == len(
+            tree_leaves(tree, namespace=namespace)
+        )
+
+
+TREE_FUNCS_THAT_FLATTEN = {
+    "tree_flatten": lambda tree, ns: tree_flatten(tree, namespace=ns),
+    "tree_leaves": lambda tree, ns: tree_leaves(tree, namespace=ns),
+    "tree_map": lambda tree, ns: tree_map(lambda x: x, tree, namespace=ns),
+    "leaf_names": lambda tree, ns: leaf_names(tree, namespace=ns),
+    "tree_structure": lambda tree, ns: tree_structure(tree, namespace=ns),
+}
+
+
+@pytest.mark.jax
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="jax is not installed.")
+@pytest.mark.parametrize("namespace", EXTENDED_NAMESPACES)
+@pytest.mark.parametrize("transformation", ["jit", "grad", "vmap"])
+@pytest.mark.parametrize("func_name", list(TREE_FUNCS_THAT_FLATTEN))
+def test_flattening_traced_jax_arrays_raises(func_name, transformation, namespace):
+    func = TREE_FUNCS_THAT_FLATTEN[func_name]
+
+    def f(x):
+        func({"a": x}, namespace)
+        return x.sum()
+
+    transformed = {"jit": jax.jit, "grad": jax.grad, "vmap": jax.vmap}[transformation]
+    x = jnp.ones((2, 2)) if transformation == "vmap" else jnp.ones(2)
+    with pytest.raises(TypeError, match="Cannot flatten a pytree that contains traced"):
+        transformed(f)(x)
+
+
+@pytest.mark.jax
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="jax is not installed.")
+def test_traced_jax_arrays_are_leaves_in_default_namespace():
+    def f(x):
+        leaves = tree_leaves({"a": x, "b": 1.0})
+        assert len(leaves) == 2
+        return leaves[0].sum()
+
+    aaae(jax.grad(f)(jnp.ones(3)), np.ones(3))
+
+
+@pytest.mark.jax
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="jax is not installed.")
+def test_grad_through_unflatten_with_traced_leaves():
+    params = {"a": jnp.array([1.0, 2.0]), "b": jnp.array(3.0)}
+    _, treedef = tree_flatten(params, namespace=PyTreeNamespace.VALUE)
+
+    def f(x):
+        tree = tree_unflatten(treedef, list(x))
+        return (tree["a"] ** 2).sum() + tree["b"]
+
+    aaae(jax.grad(f)(jnp.array([1.0, 2.0, 3.0])), np.array([2.0, 4.0, 1.0]))

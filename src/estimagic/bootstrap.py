@@ -5,7 +5,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
 from estimagic.bootstrap_ci import calculate_ci
 from estimagic.bootstrap_helpers import check_inputs
@@ -13,7 +12,13 @@ from estimagic.bootstrap_outcomes import get_bootstrap_outcomes
 from estimagic.shared_covs import calculate_estimation_summary
 from optimagic.batch_evaluators import joblib_batch_evaluator
 from optimagic.parameters.block_trees import matrix_to_block_tree
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.pytree import (
+    leaf_names,
+    tree_flatten,
+    tree_leaves,
+    tree_unflatten,
+)
+from optimagic.typing import PyTreeNamespace
 from optimagic.utilities import get_rng
 
 
@@ -102,9 +107,9 @@ def bootstrap(
     # Process results
     # ==================================================================================
 
-    registry = get_registry(extended=True)
     flat_outcomes = [
-        tree_just_flatten(_outcome, registry=registry) for _outcome in all_outcomes
+        tree_leaves(_outcome, namespace=PyTreeNamespace.VALUE)
+        for _outcome in all_outcomes
     ]
     internal_outcomes = np.array(flat_outcomes)
 
@@ -162,13 +167,9 @@ class BootstrapResult:
             List[Any]: The boostrap outcomes as a list of pytrees.
 
         """
-        registry = get_registry(extended=True)
-        _, treedef = tree_flatten(self._base_outcome, registry=registry)
+        _, treedef = tree_flatten(self._base_outcome, namespace=PyTreeNamespace.VALUE)
 
-        outcomes = [
-            tree_unflatten(treedef, out, registry=registry)
-            for out in self._internal_outcomes
-        ]
+        outcomes = [tree_unflatten(treedef, out) for out in self._internal_outcomes]
         return outcomes
 
     def se(self):
@@ -182,10 +183,9 @@ class BootstrapResult:
         cov = self._internal_cov
         se = np.sqrt(np.diagonal(cov))
 
-        registry = get_registry(extended=True)
-        _, treedef = tree_flatten(self._base_outcome, registry=registry)
+        _, treedef = tree_flatten(self._base_outcome, namespace=PyTreeNamespace.VALUE)
 
-        se = tree_unflatten(treedef, se, registry=registry)
+        se = tree_unflatten(treedef, se)
         return se
 
     def cov(self, return_type="pytree"):
@@ -206,8 +206,9 @@ class BootstrapResult:
         cov = self._internal_cov
 
         if return_type == "dataframe":
-            registry = get_registry(extended=True)
-            names = np.array(leaf_names(self._base_outcome, registry=registry))
+            names = np.array(
+                leaf_names(self._base_outcome, namespace=PyTreeNamespace.VALUE)
+            )
             cov = pd.DataFrame(cov, columns=names, index=names)
         elif return_type == "pytree":
             cov = matrix_to_block_tree(cov, self._base_outcome, self._base_outcome)
@@ -234,15 +235,16 @@ class BootstrapResult:
                 bounds of confidence intervals.
 
         """
-        registry = get_registry(extended=True)
-        base_outcome_flat, treedef = tree_flatten(self._base_outcome, registry=registry)
+        base_outcome_flat, treedef = tree_flatten(
+            self._base_outcome, namespace=PyTreeNamespace.VALUE
+        )
 
         lower_flat, upper_flat = calculate_ci(
             base_outcome_flat, self._internal_outcomes, ci_method, ci_level
         )
 
-        lower = tree_unflatten(treedef, lower_flat, registry=registry)
-        upper = tree_unflatten(treedef, upper_flat, registry=registry)
+        lower = tree_unflatten(treedef, lower_flat)
+        upper = tree_unflatten(treedef, upper_flat)
         return lower, upper
 
     def p_values(self):
@@ -271,8 +273,7 @@ class BootstrapResult:
                 Soon this will be a pytree.
 
         """
-        registry = get_registry(extended=True)
-        names = leaf_names(self.base_outcome, registry=registry)
+        names = leaf_names(self.base_outcome, namespace=PyTreeNamespace.VALUE)
         summary_data = _calulcate_summary_data_bootstrap(
             self, ci_method=ci_method, ci_level=ci_level
         )
