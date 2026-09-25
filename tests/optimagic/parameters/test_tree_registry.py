@@ -9,6 +9,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal
 
+from optimagic.config import IS_JAX_INSTALLED
 from optimagic.parameters.tree_registry import (
     leaf_names,
     tree_equal,
@@ -18,6 +19,10 @@ from optimagic.parameters.tree_registry import (
     tree_unflatten,
 )
 from optimagic.typing import DEFAULT_NAMESPACE, OPTREE_NAMESPACES, VALUE_NAMESPACE
+
+if IS_JAX_INSTALLED:
+    import jax
+    import jax.numpy as jnp
 
 
 @pytest.fixture()
@@ -304,3 +309,54 @@ def test_leaf_names_and_leaves_are_aligned_for_all_namespaces(bounds_df):
         assert len(leaf_names(tree, namespace=namespace)) == len(
             tree_leaves(tree, namespace=namespace)
         )
+
+
+TREE_FUNCS_THAT_FLATTEN = {
+    "tree_flatten": lambda tree, ns: tree_flatten(tree, namespace=ns),
+    "tree_leaves": lambda tree, ns: tree_leaves(tree, namespace=ns),
+    "tree_map": lambda tree, ns: tree_map(lambda x: x, tree, namespace=ns),
+    "leaf_names": lambda tree, ns: leaf_names(tree, namespace=ns),
+    "tree_unflatten": lambda tree, ns: tree_unflatten(tree, [1.0, 2.0], namespace=ns),
+}
+
+
+@pytest.mark.jax
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="jax is not installed.")
+@pytest.mark.parametrize("namespace", OPTREE_NAMESPACES)
+@pytest.mark.parametrize("transformation", ["jit", "grad", "vmap"])
+@pytest.mark.parametrize("func_name", list(TREE_FUNCS_THAT_FLATTEN))
+def test_flattening_traced_jax_arrays_raises(func_name, transformation, namespace):
+    func = TREE_FUNCS_THAT_FLATTEN[func_name]
+
+    def f(x):
+        func({"a": x}, namespace)
+        return x.sum()
+
+    transformed = {"jit": jax.jit, "grad": jax.grad, "vmap": jax.vmap}[transformation]
+    x = jnp.ones((2, 2)) if transformation == "vmap" else jnp.ones(2)
+    with pytest.raises(TypeError, match="Cannot flatten a pytree that contains traced"):
+        transformed(f)(x)
+
+
+@pytest.mark.jax
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="jax is not installed.")
+def test_traced_jax_arrays_are_leaves_in_default_namespace():
+    def f(x):
+        leaves = tree_leaves({"a": x, "b": 1.0})
+        assert len(leaves) == 2
+        return leaves[0].sum()
+
+    aaae(jax.grad(f)(jnp.ones(3)), np.ones(3))
+
+
+@pytest.mark.jax
+@pytest.mark.skipif(not IS_JAX_INSTALLED, reason="jax is not installed.")
+def test_grad_through_unflatten_with_traced_leaves():
+    params = {"a": jnp.array([1.0, 2.0]), "b": jnp.array(3.0)}
+    _, treedef = tree_flatten(params, namespace=VALUE_NAMESPACE)
+
+    def f(x):
+        tree = tree_unflatten(treedef, list(x), namespace=VALUE_NAMESPACE)
+        return (tree["a"] ** 2).sum() + tree["b"]
+
+    aaae(jax.grad(f)(jnp.array([1.0, 2.0, 3.0])), np.array([2.0, 4.0, 1.0]))

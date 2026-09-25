@@ -19,9 +19,11 @@ from optimagic.typing import (
 )
 
 if IS_JAX_INSTALLED:
+    import jax
     import jax.numpy as jnp  # type: ignore[import-not-found]
 
     JAX_ARRAY_TYPE: type = type(jnp.empty(0))
+    JAX_TRACER_TYPE: type = jax.core.Tracer
 
 
 def tree_flatten(
@@ -42,7 +44,9 @@ def tree_flatten(
 
     """
     _check_namespace(namespace)
-    return optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
+    leaves, treedef = optree.tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
+    _fail_if_traced(leaves, namespace)
+    return leaves, treedef
 
 
 def tree_leaves(
@@ -63,7 +67,9 @@ def tree_leaves(
 
     """
     _check_namespace(namespace)
-    return optree.tree_leaves(tree, is_leaf=is_leaf, namespace=namespace)
+    leaves = optree.tree_leaves(tree, is_leaf=is_leaf, namespace=namespace)
+    _fail_if_traced(leaves, namespace)
+    return leaves
 
 
 def tree_unflatten(
@@ -87,7 +93,8 @@ def tree_unflatten(
     """
     _check_namespace(namespace)
     if not isinstance(treedef, PyTreeSpec):
-        treedef = optree.tree_structure(treedef, namespace=namespace)
+        treedef_leaves, treedef = optree.tree_flatten(treedef, namespace=namespace)
+        _fail_if_traced(treedef_leaves, namespace)
     return optree.tree_unflatten(treedef, leaves)
 
 
@@ -110,8 +117,8 @@ def tree_map(
         A pytree with the same structure as tree and transformed leaves.
 
     """
-    _check_namespace(namespace)
-    return optree.tree_map(func, tree, is_leaf=is_leaf, namespace=namespace)
+    leaves, treedef = tree_flatten(tree, is_leaf=is_leaf, namespace=namespace)
+    return optree.tree_unflatten(treedef, [func(leaf) for leaf in leaves])
 
 
 def leaf_names(
@@ -148,6 +155,7 @@ def _flatten_with_names(
     accessors, leaves, _ = optree.tree_flatten_with_accessor(
         tree, is_leaf=is_leaf, namespace=_get_names_namespace(namespace)
     )
+    _fail_if_traced(leaves, namespace)
     names = [
         separator.join(_entry_to_string(entry) for entry in accessor)
         for accessor in accessors
@@ -235,6 +243,28 @@ def _check_namespace(namespace: str) -> None:
         raise ValueError(
             f"Invalid pytree namespace '{namespace}'. Must be one of: "
             f"{', '.join(valid)}."
+        )
+
+
+def _fail_if_traced(leaves: list[Any], namespace: PyTreeNamespace) -> None:
+    """Raise a TypeError if a leaf is a JAX array traced by a JAX transformation.
+
+    Outside of the default namespace, JAX arrays are internal nodes whose entries are
+    converted to Python scalars, which is impossible for traced arrays (e.g. inside
+    ``jax.jit``, ``jax.grad`` or ``jax.vmap``). Since optree matches node types
+    exactly and tracers have their own types, a traced array would otherwise silently
+    become a single leaf and change the number of leaves.
+
+    """
+    if not IS_JAX_INSTALLED or namespace == DEFAULT_NAMESPACE:
+        return
+    leaf_types = set(map(type, leaves))
+    if any(issubclass(leaf_type, JAX_TRACER_TYPE) for leaf_type in leaf_types):
+        raise TypeError(
+            f"Cannot flatten a pytree that contains traced JAX arrays in namespace "
+            f"'{namespace}'. This happens when optimagic's pytree functions are "
+            "called inside a JAX transformation such as jax.jit, jax.grad or "
+            "jax.vmap. Call them outside of JAX transformations instead."
         )
 
 
