@@ -1,6 +1,7 @@
 import re
+import warnings
 from copy import deepcopy
-from functools import partial
+from functools import partial, wraps
 from pathlib import Path
 from warnings import warn
 
@@ -9,8 +10,17 @@ import pandas as pd
 
 from optimagic.shared.compat import pd_df_map
 
-suppress_performance_warnings = np.testing.suppress_warnings()  # ty:ignore[deprecated]
-suppress_performance_warnings.filter(category=pd.errors.PerformanceWarning)
+
+def suppress_performance_warnings(func):
+    """Suppress pandas PerformanceWarnings raised while calling func."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+            return func(*args, **kwargs)
+
+    return wrapper
 
 
 @suppress_performance_warnings

@@ -1,6 +1,7 @@
 """History class for pounders and similar optimizers."""
 
 import numpy as np
+from numpy.typing import NDArray
 
 
 class LeastSquaresHistory:
@@ -24,11 +25,13 @@ class LeastSquaresHistory:
     """
 
     def __init__(self):
-        self.xs = None
-        self.best_x = None
-        self.residuals = None
-        self.best_residuals = None
-        self.critvals = None
+        # The arrays are created when the first entries are added because their
+        # shape is only known then.
+        self.xs: NDArray[np.float64] | None = None
+        self.best_x: NDArray[np.float64] | None = None
+        self.residuals: NDArray[np.float64] | None = None
+        self.best_residuals: NDArray[np.float64] | None = None
+        self.critvals: NDArray[np.float64] | None = None
         self.n_fun = 0
         self.best_index = 0
         self.best_critval = np.inf
@@ -96,9 +99,9 @@ class LeastSquaresHistory:
             np.ndarray: Float or 1d array with criterion values.
 
         """
-        names = ["xs", "residuals", "critvals"]
+        arrays = [self.xs, self.residuals, self.critvals]
 
-        out = (getattr(self, name)[: self.n_fun] for name in names)
+        out = (_get_first_n_entries(arr, self.n_fun) for arr in arrays)
 
         # Reducing arrays to length n_fun ensures that invalid indices raise IndexError
         if index is not None:
@@ -117,7 +120,7 @@ class LeastSquaresHistory:
             np.ndarray: 1d or 2d array with parameter vectors
 
         """
-        out = self.xs[: self.n_fun]  # ty:ignore[not-subscriptable]
+        out = _get_first_n_entries(self.xs, self.n_fun)
         out = out[index] if index is not None else out
 
         return out
@@ -133,7 +136,7 @@ class LeastSquaresHistory:
             np.ndarray: 1d or 2d array with residuals.
 
         """
-        out = self.residuals[: self.n_fun]  # ty:ignore[not-subscriptable]
+        out = _get_first_n_entries(self.residuals, self.n_fun)
         out = out[index] if index is not None else out
 
         return out
@@ -149,7 +152,7 @@ class LeastSquaresHistory:
             np.ndarray: Float or 1d array with criterion values.
 
         """
-        out = self.critvals[: self.n_fun]  # ty:ignore[not-subscriptable]
+        out = _get_first_n_entries(self.critvals, self.n_fun)
         out = out[index] if index is not None else out
 
         return out
@@ -249,6 +252,14 @@ class LeastSquaresHistory:
 
     def get_best_critval(self):
         return self.get_critvals(index=self.best_index)
+
+
+def _get_first_n_entries(
+    arr: NDArray[np.float64] | None, n: int
+) -> NDArray[np.float64]:
+    if arr is None:
+        raise ValueError("No entries have been added to the history yet.")
+    return arr[:n]
 
 
 def _add_entries_to_array(arr, new, position):

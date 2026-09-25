@@ -1,5 +1,6 @@
 import io
 import textwrap
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,7 @@ from estimagic.estimation_table import (
     estimation_table,
     render_html,
     render_latex,
+    suppress_performance_warnings,
 )
 
 
@@ -134,7 +136,7 @@ MODELS = [
     _get_models_multiindex_multi_column(),
 ]
 PARAMETRIZATION = [("latex", render_latex, models) for models in MODELS]
-PARAMETRIZATION += [("html", render_html, models) for models in MODELS]  # ty:ignore[unsupported-operator]
+PARAMETRIZATION += [("html", render_html, models) for models in MODELS]
 
 
 @pytest.mark.parametrize("return_type, render_func,models", PARAMETRIZATION)
@@ -507,3 +509,14 @@ def test_manual_extra_info():
     for i, r in footer.iterrows():
         res = _center_align_integers_and_non_numeric_strings(r)
         ase(exp.loc[i], res)
+
+
+def test_suppress_performance_warnings():
+    @suppress_performance_warnings
+    def raise_performance_warning():
+        warnings.warn("slow", pd.errors.PerformanceWarning)
+        return 1
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert raise_performance_warning() == 1

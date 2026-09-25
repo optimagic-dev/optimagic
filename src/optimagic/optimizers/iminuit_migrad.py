@@ -82,8 +82,8 @@ class IminuitMigrad(Algorithm):
     """
 
     def _solve_internal_problem(
-        self, problem: InternalOptimizationProblem, params: NDArray[np.float64]
-    ) -> InternalOptimizeResult:  # ty:ignore[invalid-method-override]
+        self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
+    ) -> InternalOptimizeResult:
         if not IS_IMINUIT_INSTALLED:
             raise NotInstalledError(  # pragma: no cover
                 "To use the 'iminuit_migrad` optimizer you need to install iminuit. "
@@ -96,7 +96,7 @@ class IminuitMigrad(Algorithm):
         def wrapped_objective(x: NDArray[np.float64]) -> float:
             return float(problem.fun(x))
 
-        m = Minuit(wrapped_objective, params, grad=problem.jac)
+        m = Minuit(wrapped_objective, x0, grad=problem.jac)
 
         bounds = _convert_bounds_to_minuit_limits(
             problem.bounds.lower, problem.bounds.upper

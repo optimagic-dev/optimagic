@@ -1,4 +1,5 @@
 from functools import partial, wraps
+from typing import Any
 
 import numpy as np
 
@@ -328,7 +329,12 @@ def _sample_from_distribution(distribution, mean, std, size, rng, correlation=0)
 def _process_noise_options(options, is_multiplicative):
     options = {} if options is None else options
 
-    defaults = {"std": 0.01, "distribution": "normal", "correlation": 0, "mean": 0}
+    defaults: dict[str, Any] = {
+        "std": 0.01,
+        "distribution": "normal",
+        "correlation": 0,
+        "mean": 0,
+    }
     if is_multiplicative:
         defaults["clipping_value"] = 1
 
@@ -345,16 +351,16 @@ def _process_noise_options(options, is_multiplicative):
         )
 
     std = processed["std"]
-    if std < 0:  # ty:ignore[unsupported-operator]
+    if std < 0:
         raise ValueError(f"std must be non-negative. Not: {std}")
 
     corr = processed["correlation"]
-    if corr < 0:  # ty:ignore[unsupported-operator]
+    if corr < 0:
         raise ValueError(f"corr must be non-negative. Not: {corr}")
 
     if is_multiplicative:
         clipping_value = processed["clipping_value"]
-        if clipping_value < 0:  # ty:ignore[unsupported-operator]
+        if clipping_value < 0:
             raise ValueError(
                 f"clipping_value must be non-negative. Not: {clipping_value}"
             )

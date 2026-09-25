@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -61,10 +61,10 @@ class OptimizeResult:
 
     history: History | None = None
 
-    convergence_report: Dict | None = None  # ty:ignore[unsupported-operator]
+    convergence_report: dict[str, Any] | None = None
 
     multistart_info: Optional["MultistartInfo"] = None
-    algorithm_output: Dict[str, Any] | None = None
+    algorithm_output: dict[str, Any] | None = None
     logger: LogReader | None = None
 
     # ==================================================================================

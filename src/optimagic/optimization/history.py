@@ -485,6 +485,8 @@ def _apply_reduction_to_batches(
     """
     batch_starts, batch_stops = _get_batch_starts_and_stops(batch_ids)
 
+    func_name = getattr(reduction_function, "__name__", repr(reduction_function))
+
     batch_results: list[float] = []
 
     for start, stop in zip(batch_starts, batch_stops, strict=True):
@@ -498,9 +500,9 @@ def _apply_reduction_to_batches(
                 reduced = reduction_function(batch_data)
         except Exception as e:
             msg = (
-                f"Calling function {reduction_function.__name__} on batch {batch_id} "  # ty:ignore[unresolved-attribute]
+                f"Calling function {func_name} on batch {batch_id} "
                 "of the History raised an Exception. Please verify that "
-                f"{reduction_function.__name__} is well-defined, takes an iterable of "  # ty:ignore[unresolved-attribute]
+                f"{func_name} is well-defined, takes an iterable of "
                 "floats as input and returns a scalar. The function must be able to "
                 "handle NaN's."
             )
@@ -508,8 +510,8 @@ def _apply_reduction_to_batches(
 
         if not np.isscalar(reduced):
             msg = (
-                f"Function {reduction_function.__name__} did not return a scalar for "  # ty:ignore[unresolved-attribute]
-                f"batch {batch_id}. Please verify that {reduction_function.__name__} "  # ty:ignore[unresolved-attribute]
+                f"Function {func_name} did not return a scalar for "
+                f"batch {batch_id}. Please verify that {func_name} "
                 "returns a scalar when called on an iterable of floats. The function "
                 "must be able to handle NaN's."
             )
