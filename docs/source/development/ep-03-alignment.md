@@ -95,9 +95,11 @@ relevant:
 - `hess` and `hessp`: Currently we don't support closed form hessians. If we support
   them they will be called `hess`. In the meantime, this can raise a
   `NotImplementedError`.
-- `callback`: Currently we do not support `callback`s. If we support them they will be
-  called `callback` and be as compatible with SciPy as possible. In the meantime we can
-  raise a `NotImplementedError`.
+- `callback`: We support SciPy-style callbacks with signature `callback(xk)`, where `xk`
+  is the current parameter PyTree. In contrast to SciPy, the callback is called after
+  each objective evaluation and not after each iteration. The
+  `callback(intermediate_result)` interface and stopping an optimization by raising
+  `StopIteration` are not yet supported.
 - If a user sets `jac=True` we raise and error and explain how to use `fun_and_jac`
   instead.
 
