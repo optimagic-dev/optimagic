@@ -58,10 +58,11 @@ def test_with_optional_fun_argument():
     aaae(res.x, expected)
 
 
-def test_fun_and_jac_list():
+@pytest.mark.parametrize("container", [list, tuple])
+def test_fun_and_jac_sequence_without_fun(container):
     with pytest.raises(NotImplementedError):
         minimize(
-            fun_and_jac=[lambda x: (x @ x, 2 * x)],  # ty:ignore[invalid-argument-type]
+            fun_and_jac=container([lambda x: (x @ x, 2 * x)]),
             params=np.arange(5),
             algorithm="scipy_lbfgsb",
         )

@@ -15,7 +15,7 @@ is then passed to `_optimize` which handles the optimization logic.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Sequence, Type, cast
+from typing import Any, Callable, Literal, Sequence, Type, cast
 
 import numpy as np
 from scipy.optimize import Bounds as ScipyBounds
@@ -94,9 +94,12 @@ def maximize(
     constraints: ConstraintsType | None = None,
     fun_kwargs: dict[str, Any] | None = None,
     algo_options: dict[str, Any] | None = None,
-    jac: JacType | list[JacType] | None = None,
+    jac: JacType | Sequence[JacType] | Literal[True] | None = None,
     jac_kwargs: dict[str, Any] | None = None,
-    fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
+    fun_and_jac: FunAndJacType
+    | CriterionAndDerivativeType
+    | Sequence[FunAndJacType]
+    | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
     # TODO: add typed-dict support?
@@ -167,12 +170,16 @@ def maximize(
         jac: The first derivative of `fun`. Providing a closed form derivative can be
             a great way to speed up your optimization. The easiest way to get
             a derivative for your objective function are autodiff frameworks like
-            JAX. For details and examples see :ref:`how-to-jac`.
+            JAX. If you provide a sequence of derivatives, the one that matches the
+            aggregation level of the algorithm is used. For compatibility with scipy,
+            `jac=True` means that `fun` returns a tuple of the function value and its
+            derivative. For details and examples see :ref:`how-to-jac`.
         jac_kwargs: Additional keyword arguments for `jac`.
         fun_and_jac: A function that returns both the objective value and the
             derivative. This can be used do exploit synergies in the calculation of the
-            function value and its derivative. For details and examples see
-            :ref:`how-to-jac`.
+            function value and its derivative. If you provide a sequence, the element
+            that matches the aggregation level of the algorithm is used and `fun` must
+            also be provided. For details and examples see :ref:`how-to-jac`.
         fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
@@ -197,7 +204,7 @@ def maximize(
             To choose which heuristic is used and to customize the scaling, provide
             a dictionary or an instance of :class:`optimagic.ScalingOptions`.
             For details and examples see :ref:`scaling`.
-        multistart: If None or False, no multistart approach is used. If True, the
+        multistart: If False, no multistart approach is used. If True, the
             optimization is restarted from multiple starting points. Note that this
             requires finite bounds or soft bounds for all parameters. To customize the
             multistart approach, provide a dictionary or an instance of
@@ -298,9 +305,12 @@ def minimize(
     constraints: ConstraintsType | None = None,
     fun_kwargs: dict[str, Any] | None = None,
     algo_options: dict[str, Any] | None = None,
-    jac: JacType | list[JacType] | None = None,
+    jac: JacType | Sequence[JacType] | Literal[True] | None = None,
     jac_kwargs: dict[str, Any] | None = None,
-    fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
+    fun_and_jac: FunAndJacType
+    | CriterionAndDerivativeType
+    | Sequence[FunAndJacType]
+    | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
     # TODO: add typed-dict support?
@@ -371,12 +381,16 @@ def minimize(
         jac: The first derivative of `fun`. Providing a closed form derivative can be
             a great way to speed up your optimization. The easiest way to get
             a derivative for your objective function are autodiff frameworks like
-            JAX. For details and examples see :ref:`how-to-jac`.
+            JAX. If you provide a sequence of derivatives, the one that matches the
+            aggregation level of the algorithm is used. For compatibility with scipy,
+            `jac=True` means that `fun` returns a tuple of the function value and its
+            derivative. For details and examples see :ref:`how-to-jac`.
         jac_kwargs: Additional keyword arguments for `jac`.
         fun_and_jac: A function that returns both the objective value and the
             derivative. This can be used do exploit synergies in the calculation of the
-            function value and its derivative. For details and examples see
-            :ref:`how-to-jac`.
+            function value and its derivative. If you provide a sequence, the element
+            that matches the aggregation level of the algorithm is used and `fun` must
+            also be provided. For details and examples see :ref:`how-to-jac`.
         fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
@@ -401,7 +415,7 @@ def minimize(
             To choose which heuristic is used and to customize the scaling, provide
             a dictionary or an instance of :class:`optimagic.ScalingOptions`.
             For details and examples see :ref:`scaling`.
-        multistart: If None or False, no multistart approach is used. If True, the
+        multistart: If False, no multistart approach is used. If True, the
             optimization is restarted from multiple starting points. Note that this
             requires finite bounds or soft bounds for all parameters. To customize the
             multistart approach, provide a dictionary or an instance of
