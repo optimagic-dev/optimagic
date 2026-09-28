@@ -5,6 +5,7 @@ from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
+import pydantic
 from numpy.typing import NDArray
 from typing_extensions import Self
 
@@ -14,10 +15,24 @@ from optimagic.optimization.history import History
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.type_conversion import TYPE_CONVERTERS
-from optimagic.typing import AggregationLevel
+from optimagic.typing import (
+    STRICT_PYDANTIC_CONFIG,
+    AggregationLevel,
+    validated_dataclass,
+)
 
 
+def _algo_info_error(e: pydantic.ValidationError) -> Exception:
+    msg = f"The following arguments to AlgoInfo or `mark.minimizer` are invalid:\n\n{e}"
+    return InvalidAlgoInfoError(msg)
+
+
+def _internal_optimize_result_error(e: pydantic.ValidationError) -> Exception:
+    msg = f"The following arguments to InternalOptimizeResult are invalid:\n\n{e}"
+    return TypeError(msg)
+
+
+@validated_dataclass(config=STRICT_PYDANTIC_CONFIG, make_error=_algo_info_error)
 @dataclass(frozen=True)
 class AlgoInfo:
     name: str
@@ -35,43 +50,10 @@ class AlgoInfo:
     disable_history: bool = False
     experimental: bool = False
 
-    def __post_init__(self) -> None:
-        report: list[str] = []
-        if not isinstance(self.name, str):
-            report.append("name must be a string")
-        if not isinstance(self.solver_type, AggregationLevel):
-            report.append("problem_type must be an AggregationLevel")
-        if not isinstance(self.is_available, bool):
-            report.append("is_available must be a bool")
-        if not isinstance(self.is_global, bool):
-            report.append("is_global must be a bool")
-        if not isinstance(self.needs_jac, bool):
-            report.append("needs_jac must be a bool")
-        if not isinstance(self.needs_hess, bool):
-            report.append("needs_hess must be a bool")
-        if not isinstance(self.needs_bounds, bool):
-            report.append("needs_bounds must be a bool")
-        if not isinstance(self.supports_parallelism, bool):
-            report.append("supports_parallelism must be a bool")
-        if not isinstance(self.supports_bounds, bool):
-            report.append("supports_bounds must be a bool")
-        if not isinstance(self.supports_infinite_bounds, bool):
-            report.append("supports_infinite_bounds must be a bool")
-        if not isinstance(self.supports_linear_constraints, bool):
-            report.append("supports_linear_constraints must be a bool")
-        if not isinstance(self.supports_nonlinear_constraints, bool):
-            report.append("supports_nonlinear_constraints must be a bool")
-        if not isinstance(self.disable_history, bool):
-            report.append("disable_history must be a bool")
 
-        if report:
-            msg = (
-                "The following arguments to AlgoInfo or `mark.minimizer` are "
-                "invalid:\n" + "\n".join(report)
-            )
-            raise InvalidAlgoInfoError(msg)
-
-
+@validated_dataclass(
+    config=STRICT_PYDANTIC_CONFIG, make_error=_internal_optimize_result_error
+)
 @dataclass(frozen=True)
 class InternalOptimizeResult:
     """Internal representation of the result of an optimization problem.
@@ -111,64 +93,6 @@ class InternalOptimizeResult:
     info: dict[str, typing.Any] | None = None
     history: History | None = None
     multistart_info: dict[str, typing.Any] | None = None
-
-    def __post_init__(self) -> None:
-        report: list[str] = []
-        if not isinstance(self.x, np.ndarray):
-            report.append("x must be a numpy array")
-
-        if not (isinstance(self.fun, np.ndarray) or np.isscalar(self.fun)):
-            report.append("fun must be a numpy array or scalar")
-
-        if self.success is not None and not isinstance(self.success, bool):
-            report.append("success must be a bool or None")
-
-        if self.message is not None and not isinstance(self.message, str):
-            report.append("message must be a string or None")
-
-        if self.n_fun_evals is not None and not isinstance(self.n_fun_evals, int):
-            report.append("n_fun_evals must be an int or None")
-
-        if self.n_jac_evals is not None and not isinstance(self.n_jac_evals, int):
-            report.append("n_jac_evals must be an int or None")
-
-        if self.n_hess_evals is not None and not isinstance(self.n_hess_evals, int):
-            report.append("n_hess_evals must be an int or None")
-
-        if self.n_iterations is not None and not isinstance(self.n_iterations, int):
-            report.append("n_iterations must be an int or None")
-
-        if self.jac is not None and not isinstance(self.jac, np.ndarray):
-            report.append("jac must be a numpy array or None")
-
-        if self.hess is not None and not isinstance(self.hess, np.ndarray):
-            report.append("hess must be a numpy array or None")
-
-        if self.hess_inv is not None and not isinstance(self.hess_inv, np.ndarray):
-            report.append("hess_inv must be a numpy array or None")
-
-        if self.max_constraint_violation is not None and not np.isscalar(
-            self.max_constraint_violation
-        ):
-            report.append("max_constraint_violation must be a scalar or None")
-
-        if self.info is not None and not isinstance(self.info, dict):
-            report.append("info must be a dictionary or None")
-
-        if self.status is not None and not isinstance(self.status, int):
-            report.append("status must be an int or None")
-
-        if self.max_constraint_violation and not isinstance(
-            self.max_constraint_violation, float
-        ):
-            report.append("max_constraint_violation must be a float or None")
-
-        if report:
-            msg = (
-                "The following arguments to InternalOptimizeResult are invalid:\n"
-                + "\n".join(report)
-            )
-            raise TypeError(msg)
 
 
 class AlgorithmMeta(ABCMeta):
@@ -215,24 +139,6 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         pass
-
-    def __post_init__(self) -> None:
-        for field in self.__dataclass_fields__:
-            raw_value = getattr(self, field)
-            target_type = typing.cast(type, self.__dataclass_fields__[field].type)
-            if target_type in TYPE_CONVERTERS:
-                try:
-                    value = TYPE_CONVERTERS[target_type](raw_value)
-                except (KeyboardInterrupt, SystemExit):
-                    raise
-                except Exception as e:
-                    msg = (
-                        f"Could not convert the value of the field {field} to the "
-                        f"expected type {target_type}."
-                    )
-                    raise InvalidAlgoOptionError(msg) from e
-
-                object.__setattr__(self, field, value)
 
     def with_option(self, **kwargs: Any) -> Self:
         """Create a modified copy with the given options."""

@@ -394,22 +394,22 @@ class Ipopt(Algorithm):
             if key in linear_solver_options_with_none:
                 linear_solver_options[key] = _convert_none_to_str(val)
         boolean_linear_solver_options = [
-            "linear_scaling_on_demand"
-            "ma27_skip_inertia_check"
-            "ma27_ignore_singularity"
-            "ma57_automatic_scaling"
-            "ma97_solve_blas3"
-            "pardiso_redo_symbolic_fact_only_if_inertia_wrong"
-            "pardiso_repeated_perturbation_means_singular"
-            "pardiso_skip_inertia_check"
-            "pardiso_iterative"
-            "pardisomkl_redo_symbolic_fact_only_if_inertia_wrong"
-            "pardisomkl_repeated_perturbation_means_singular"
-            "pardisomkl_skip_inertia_check"
-            "spral_ignore_numa"
-            "spral_use_gpu"
-            "wsmp_skip_inertia_check"
-            "wsmp_no_pivoting"
+            "linear_scaling_on_demand",
+            "ma27_skip_inertia_check",
+            "ma27_ignore_singularity",
+            "ma57_automatic_scaling",
+            "ma97_solve_blas3",
+            "pardiso_redo_symbolic_fact_only_if_inertia_wrong",
+            "pardiso_repeated_perturbation_means_singular",
+            "pardiso_skip_inertia_check",
+            "pardiso_iterative",
+            "pardisomkl_redo_symbolic_fact_only_if_inertia_wrong",
+            "pardisomkl_repeated_perturbation_means_singular",
+            "pardisomkl_skip_inertia_check",
+            "spral_ignore_numa",
+            "spral_use_gpu",
+            "wsmp_skip_inertia_check",
+            "wsmp_no_pivoting",
         ]
         for key, val in linear_solver_options.items():
             if key in boolean_linear_solver_options:

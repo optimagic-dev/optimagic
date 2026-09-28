@@ -7,6 +7,7 @@ optimagic. It is completely optional and not necessary if you are just starting 
 ---
 maxdepth: 1
 ---
+aggregation_level
 implementation_of_constraints
 internal_optimizers
 why_optimization_is_hard.ipynb

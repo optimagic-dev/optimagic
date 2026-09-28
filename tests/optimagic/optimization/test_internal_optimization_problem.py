@@ -74,6 +74,7 @@ def base_problem():
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        callback=None,
     )
 
     return problem
@@ -481,6 +482,7 @@ def pytree_problem(base_problem):
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        callback=None,
     )
 
     return problem
@@ -605,6 +607,7 @@ def error_min_problem():
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        callback=None,
     )
 
     return problem

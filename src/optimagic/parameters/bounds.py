@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Sequence
+from typing import Any, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
-from pybaum import leaf_names, tree_map
-from pybaum import tree_just_flatten as tree_leaves
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import PyTree, PyTreeRegistry
+from optimagic.pytree import (
+    leaf_names,
+    tree_leaves,
+    tree_map,
+)
+from optimagic.typing import PyTree, PyTreeNamespace
 from optimagic.utilities import fast_numpy_full
 
 
@@ -75,7 +77,7 @@ def _process_bounds_sequence(bounds: Sequence[tuple[float, float]]) -> Bounds:
 def get_internal_bounds(
     params: PyTree,
     bounds: Bounds | None = None,
-    registry: PyTreeRegistry | None = None,
+    namespace: PyTreeNamespace = PyTreeNamespace.VALUE,
     add_soft_bounds: bool = False,
 ) -> tuple[NDArray[np.float64] | None, NDArray[np.float64] | None]:
     """Create consolidated and flattened bounds for params.
@@ -92,7 +94,7 @@ def get_internal_bounds(
     Args:
         params: The parameter pytree.
         bounds: The lower and upper bounds.
-        registry: pybaum registry.
+        namespace: Pytree namespace used to flatten params.
         add_soft_bounds: If True, the element-wise maximum (minimum) of the lower and
             soft_lower (upper and soft_upper) bounds are taken. If False, the lower
             (upper) bounds are returned.
@@ -116,15 +118,18 @@ def get_internal_bounds(
     # None-valued bounds are replaced with arrays of np.inf and -np.inf, and then
     # translated back to None if all entries are non-finite.
 
-    registry = get_registry(extended=True) if registry is None else registry
-    n_params = len(tree_leaves(params, registry=registry))
+    n_params = len(tree_leaves(params, namespace=namespace))
 
     # Fill leaves with np.nan. If params contains a data frame with bounds as a column,
     # that column is NOT overwritten (as long as an extended registry is used).
-    nan_tree = tree_map(lambda leaf: np.nan, params, registry=registry)  # noqa: ARG005
+    nan_tree = tree_map(lambda leaf: np.nan, params, namespace=namespace)  # noqa: ARG005
 
-    lower_flat = _update_bounds_and_flatten(nan_tree, bounds.lower, kind="lower_bound")
-    upper_flat = _update_bounds_and_flatten(nan_tree, bounds.upper, kind="upper_bound")
+    lower_flat = _update_bounds_and_flatten(
+        nan_tree, bounds.lower, PyTreeNamespace.LOWER_BOUND
+    )
+    upper_flat = _update_bounds_and_flatten(
+        nan_tree, bounds.upper, PyTreeNamespace.UPPER_BOUND
+    )
 
     if len(lower_flat) != n_params:
         raise InvalidBoundsError("lower_bounds do not match dimension of params.")
@@ -136,13 +141,13 @@ def get_internal_bounds(
 
     if add_soft_bounds:
         lower_flat_soft = _update_bounds_and_flatten(
-            nan_tree, bounds.soft_lower, kind="soft_lower_bound"
+            nan_tree, bounds.soft_lower, PyTreeNamespace.SOFT_LOWER_BOUND
         )
         lower_flat_soft[np.isnan(lower_flat_soft)] = -np.inf
         lower_flat = np.maximum(lower_flat, lower_flat_soft)
 
         upper_flat_soft = _update_bounds_and_flatten(
-            nan_tree, bounds.soft_upper, kind="soft_upper_bound"
+            nan_tree, bounds.soft_upper, PyTreeNamespace.SOFT_UPPER_BOUND
         )
         upper_flat_soft[np.isnan(upper_flat_soft)] = np.inf
         upper_flat = np.minimum(upper_flat, upper_flat_soft)
@@ -162,30 +167,31 @@ def get_internal_bounds(
 def _update_bounds_and_flatten(
     nan_tree: PyTree,
     bounds: PyTree,
-    kind: Literal["lower_bound", "upper_bound", "soft_lower_bound", "soft_upper_bound"],
+    namespace: PyTreeNamespace,
 ) -> NDArray[np.float64]:
     """Flatten bounds array and update it with bounds from params.
 
     Args:
         nan_tree: Pytree with the same structure as params, filled with nans.
         bounds: The candidate bounds to be updated and flattened.
-        kind: One of "lower_bound", "upper_bound", "soft_lower_bound",
-            "soft_upper_bound".
+        namespace: The bounds namespace (e.g. PyTreeNamespace.LOWER_BOUND). Its
+            data column is extracted from params DataFrames.
 
     Returns:
         np.ndarray: The updated and flattened bounds.
 
     """
-    registry = get_registry(extended=True, data_col=kind)
-    flat_nan_tree = tree_leaves(nan_tree, registry=registry)
-
+    flat_nan_tree = tree_leaves(nan_tree, namespace=namespace)
     if bounds is not None:
-        registry = get_registry(extended=True)
-        flat_bounds = tree_leaves(bounds, registry=registry)
+        flat_bounds = tree_leaves(bounds, namespace=PyTreeNamespace.VALUE)
 
         seperator = 10 * "$"
-        params_names = leaf_names(nan_tree, registry=registry, separator=seperator)
-        bounds_names = leaf_names(bounds, registry=registry, separator=seperator)
+        params_names = leaf_names(
+            nan_tree, namespace=PyTreeNamespace.VALUE, separator=seperator
+        )
+        bounds_names = leaf_names(
+            bounds, namespace=PyTreeNamespace.VALUE, separator=seperator
+        )
 
         flat_nan_dict = dict(zip(params_names, flat_nan_tree, strict=False))
 
@@ -202,9 +208,9 @@ def _update_bounds_and_flatten(
 
         if invalid["bounds"]:
             msg = (
-                f"{kind} could not be matched to params pytree. The bounds "
-                f"{invalid['bounds']} with names {invalid['names']} are not part of "
-                "params."
+                f"{namespace.data_col} could not be matched to params pytree. The "
+                f"bounds {invalid['bounds']} with names {invalid['names']} are not "
+                "part of params."
             )
             raise InvalidBoundsError(msg)
 

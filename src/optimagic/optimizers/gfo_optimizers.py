@@ -6,6 +6,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 from optimagic import mark
@@ -27,12 +28,12 @@ from optimagic.typing import (
     NonNegativeFloat,
     PositiveFloat,
     PositiveInt,
+    ProbabilityFloat,
     PyTree,
+    UnitIntervalFloat,
 )
-from optimagic.typing import UnitIntervalFloat as ProbabilityFloat
 
 if TYPE_CHECKING:
-    import pandas as pd
     from gradient_free_optimizers.optimizers.base_optimizer import BaseOptimizer
 
 
@@ -255,7 +256,7 @@ class GFOStochasticHillClimbing(Algorithm, GFOCommonOptions):
 
     """
 
-    p_accept: ProbabilityFloat = 0.5
+    p_accept: UnitIntervalFloat = 0.5
     """The probability factor used in the equation to calculate if a worse position is
     accepted as the new position.
 
@@ -871,7 +872,7 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
     population_size: PositiveInt | None = None
     """Size of the population."""
 
-    mutation_rate: ProbabilityFloat = 0.5
+    mutation_rate: UnitIntervalFloat = 0.5
     """Probability of a mutation event occurring in an individual of the population.
     Mutation helps in maintaining genetic diversity within the population and prevents
     the algorithm from getting stuck in local optima. Bits are randomly altered with.
@@ -888,7 +889,7 @@ class GFOGeneticAlgorithm(Algorithm, GFOCommonOptions):
 
     """
 
-    crossover_rate: ProbabilityFloat = 0.5
+    crossover_rate: UnitIntervalFloat = 0.5
     """Probability of a crossover event occurring between two parents. A higher
     crossover rate increases the diversity of the offspring, which can help in exploring
     the search space more effectively. Crossover happens with.
@@ -1006,10 +1007,10 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
     stopping_maxiter: PositiveInt = STOPPING_MAXFUN_GLOBAL
     """Maximum number of iterations."""
 
-    mutation_rate: ProbabilityFloat = 0.7
+    mutation_rate: UnitIntervalFloat = 0.7
     """Probability of a mutation event occurring in an individual."""
 
-    crossover_rate: ProbabilityFloat = 0.3
+    crossover_rate: UnitIntervalFloat = 0.3
     """Probability of an individual to perform a crossover with the best individual in
     the population."""
 
@@ -1085,7 +1086,7 @@ class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
     population_size: PositiveInt | None = None
     """Size of the population."""
 
-    mutation_rate: ProbabilityFloat = 0.9
+    mutation_rate: UnitIntervalFloat = 0.9
     r"""Probability of a mutation event occurring in an individual.
 
     The mutation rate influences the algorithm's ability to explore the search space.
@@ -1100,7 +1101,7 @@ class GFODifferentialEvolution(Algorithm, GFOCommonOptions):
 
     """
 
-    crossover_rate: ProbabilityFloat = 0.9
+    crossover_rate: UnitIntervalFloat = 0.9
     """Probability of a crossover event occurring between two parents. It determines how
     much of the trial vector inherits its components from the mutant individual versus
     the target individual. A high crossover rate means that more components will come

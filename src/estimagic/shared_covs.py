@@ -3,10 +3,14 @@ from typing import NamedTuple
 import numpy as np
 import pandas as pd
 import scipy
-from pybaum import tree_just_flatten, tree_unflatten
 
 from optimagic.parameters.block_trees import matrix_to_block_tree
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.pytree import (
+    tree_leaves,
+    tree_structure,
+    tree_unflatten,
+)
+from optimagic.typing import PyTreeNamespace
 
 
 def transform_covariance(
@@ -146,9 +150,8 @@ def calculate_estimation_summary(
     # Flatten summary and construct data frame for flat estimates
     # ==================================================================================
 
-    registry = get_registry(extended=True)
     flat_data = {
-        key: tree_just_flatten(val, registry=registry)
+        key: tree_leaves(val, namespace=PyTreeNamespace.VALUE)
         for key, val in summary_data.items()
     }
 
@@ -167,10 +170,11 @@ def calculate_estimation_summary(
     # ==================================================================================
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(summary_data["value"], names, registry=registry)
+    treedef = tree_structure(summary_data["value"], namespace=PyTreeNamespace.VALUE)
+    indices = tree_unflatten(treedef, names)
 
-    estimates_flat = tree_just_flatten(summary_data["value"])
-    indices_flat = tree_just_flatten(indices)
+    estimates_flat = tree_leaves(summary_data["value"])
+    indices_flat = tree_leaves(indices)
 
     # use index chunks in indices_flat to access the corresponding sub data frame of df,
     # and use the index information stored in estimates_flat to form the correct (multi)
@@ -211,7 +215,7 @@ def calculate_estimation_summary(
 
         summary_flat.append(df_chunk)
 
-    summary = tree_unflatten(summary_data["value"], summary_flat)
+    summary = tree_unflatten(tree_structure(summary_data["value"]), summary_flat)
     return summary
 
 
@@ -316,8 +320,7 @@ def calculate_free_estimates(estimates, internal_estimates):
     mask = internal_estimates.free_mask
     names = internal_estimates.names
 
-    registry = get_registry(extended=True)
-    external_flat = np.array(tree_just_flatten(estimates, registry=registry))
+    external_flat = np.array(tree_leaves(estimates, namespace=PyTreeNamespace.VALUE))
 
     free_estimates = FreeParams(
         values=external_flat[mask],
@@ -351,8 +354,8 @@ def transform_free_values_to_params_tree(values, free_params, params):
     mask = free_params.free_mask
     flat = np.full(len(mask), np.nan)
     flat[np.ix_(mask)] = values
-    registry = get_registry(extended=True)
-    pytree = tree_unflatten(params, flat, registry=registry)
+    treedef = tree_structure(params, namespace=PyTreeNamespace.VALUE)
+    pytree = tree_unflatten(treedef, flat)
     return pytree
 
 

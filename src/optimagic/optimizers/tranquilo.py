@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Literal
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -34,6 +34,19 @@ if TYPE_CHECKING:
         SubsolverOptions,
         VarianceEstimatorOptions,
     )
+else:
+    # The tranquilo option types are used in field annotations, which pydantic
+    # resolves at runtime, so they need a fallback that works without tranquilo and
+    # avoids importing it at optimagic import time.
+    AcceptanceOptions = Any
+    FilterOptions = Any
+    FitterOptions = Any
+    NoiseAdaptationOptions = Any
+    RadiusOptions = Any
+    SamplerOptions = Any
+    StagnationOptions = Any
+    SubsolverOptions = Any
+    VarianceEstimatorOptions = Any
 
 if IS_TRANQUILO_INSTALLED:
     import tranquilo

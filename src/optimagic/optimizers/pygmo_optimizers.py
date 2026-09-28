@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Literal
+from typing import TYPE_CHECKING, Any, List, Literal, TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -49,6 +49,13 @@ STOPPING_MAX_ITERATIONS_GENETIC = 250
 
 if TYPE_CHECKING:
     import pygmo as pg
+
+    PygmoAlgorithm: TypeAlias = pg.algorithm
+else:
+    # PygmoAlgorithm is used in a field annotation, which pydantic resolves at
+    # runtime, so it needs a fallback that works without pygmo and avoids importing
+    # it at optimagic import time.
+    PygmoAlgorithm = Any
 
 
 @mark.minimizer(
@@ -913,7 +920,7 @@ class PygmoMbh(Algorithm):
     population_size: int | None = None
     seed: int | None = None
     discard_start_params: bool = False
-    inner_algorithm: pg.algorithm | None = None
+    inner_algorithm: PygmoAlgorithm | None = None
     # this is 30 instead of 5 in pygmo for our sum of squares test to pass
     stopping_max_inner_runs_without_improvement: PositiveInt = 30
     perturbation: float = 0.01

@@ -21,7 +21,7 @@ import numpy as np
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.constraints import Constraint
+from optimagic.constraints import Constraint, NonlinearConstraint
 from optimagic.differentiation.numdiff_options import NumdiffOptions, NumdiffOptionsDict
 from optimagic.exceptions import (
     IncompleteBoundsError,
@@ -76,8 +76,7 @@ ConstraintsType = Constraint | list[Constraint] | dict[str, Any] | list[dict[str
 JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]
-# TODO: refine this type
-CallbackType = Callable[..., Any]
+CallbackType = Callable[[PyTree], None]
 
 CriterionType = Callable[..., float | dict[str, Any]]
 CriterionAndDerivativeType = Callable[..., tuple[float | dict[str, Any], PyTree]]
@@ -216,7 +215,14 @@ def maximize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -413,7 +419,14 @@ def minimize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -487,7 +500,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # ==================================================================================
     constraints = problem.constraints
 
-    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
+    nonlinear_constraints = [
+        c for c in constraints if isinstance(c, NonlinearConstraint)
+    ]
 
     if nonlinear_constraints:
         if not problem.algorithm.algo_info.supports_nonlinear_constraints:
@@ -497,7 +512,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
             )
 
     # the following constraints will be handled via reparametrization
-    constraints = [c for c in constraints if c["type"] != "nonlinear"]
+    constraints = [c for c in constraints if not isinstance(c, NonlinearConstraint)]
 
     # ==================================================================================
     # Do first evaluation of user provided functions
@@ -607,9 +622,10 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         direction=problem.direction,
     )
 
-    # process nonlinear constraints:
+    # process nonlinear constraints; converting to dicts is a temporary seam during
+    # the constraints refactoring, as the processing is still dict-based
     internal_nonlinear_constraints = process_nonlinear_constraints(
-        nonlinear_constraints=nonlinear_constraints,
+        nonlinear_constraints=[c._to_dict() for c in nonlinear_constraints],
         params=problem.params,
         bounds=problem.bounds,
         converter=converter,
@@ -650,6 +666,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         linear_constraints=None,
         nonlinear_constraints=internal_nonlinear_constraints,
         logger=logger,
+        callback=problem.callback,
     )
 
     # ==================================================================================

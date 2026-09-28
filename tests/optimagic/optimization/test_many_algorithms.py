@@ -12,7 +12,11 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from optimagic import mark
-from optimagic.algorithms import AVAILABLE_ALGORITHMS, GLOBAL_ALGORITHMS
+from optimagic.algorithms import (
+    ALL_ALGORITHMS,
+    AVAILABLE_ALGORITHMS,
+    GLOBAL_ALGORITHMS,
+)
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
@@ -173,3 +177,10 @@ def test_sum_of_squares_on_global_and_bounded_algorithms(algorithm, algo):
     )
     assert res.success in [True, None]
     aaae(res.params, expected, decimal)
+
+
+def test_all_algorithms_can_be_instantiated_with_defaults():
+    # Guards against defaults that violate their own type annotation and against
+    # field annotations that pydantic cannot resolve at runtime.
+    for cls in ALL_ALGORITHMS.values():
+        cls()
