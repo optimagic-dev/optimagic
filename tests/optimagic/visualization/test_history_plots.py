@@ -139,6 +139,7 @@ def test_criterion_plot_different_input_types():
     criterion_plot(results, stack_multistart=True)
     criterion_plot(results, monotone=True, stack_multistart=True)
     criterion_plot(results, show_exploration=True)
+    criterion_plot(results, stack_multistart=True, show_exploration=True)
     criterion_plot("test.db")
 
 

@@ -356,18 +356,10 @@ def _retrieve_optimization_data_from_result_object(
         if stack_multistart:
             stacked = _get_stacked_local_histories(local_histories, res.direction)
             if show_exploration:
-                fun = res.multistart_info.exploration_results[::-1] + stacked.fun
-                params = res.multistart_info.exploration_sample[::-1] + stacked.params
-
-                stacked = History(
-                    direction=stacked.direction,
-                    fun=fun,
-                    params=params,
-                    # TODO: This needs to be fixed
-                    start_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
-                    stop_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
-                    batches=len(fun) * [None],  # ty:ignore[invalid-argument-type]
-                    task=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+                stacked = _prepend_exploration(
+                    stacked,
+                    exploration_fun=res.multistart_info.exploration_results,
+                    exploration_params=res.multistart_info.exploration_sample,
                 )
         else:
             stacked = None
@@ -419,9 +411,12 @@ def _retrieve_optimization_data_from_database(
 
     if stack_multistart and local_histories is not None:
         stacked = _get_stacked_local_histories(local_histories, direction, _history)
-        if show_exploration:
-            stacked["params"] = exploration["params"][::-1] + stacked["params"]  # ty:ignore[invalid-assignment]
-            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]  # ty:ignore[invalid-assignment]
+        if show_exploration and exploration is not None:
+            stacked = _prepend_exploration(
+                stacked,
+                exploration_fun=exploration.fun,
+                exploration_params=exploration.params,
+            )
     else:
         stacked = None
 
@@ -483,6 +478,31 @@ def _get_stacked_local_histories(
         stop_time=len(stacked["criterion"]) * [None],  # ty:ignore[invalid-argument-type]
         task=len(stacked["criterion"]) * [None],  # ty:ignore[invalid-argument-type]
         batches=list(range(len(stacked["criterion"]))),
+    )
+
+
+def _prepend_exploration(
+    history: History,
+    exploration_fun: list[float],
+    exploration_params: list[PyTree],
+) -> History:
+    """Prepend the exploration samples in reverse order to a stacked history.
+
+    The exploration samples are sorted from best to worst, so reversing them puts the
+    best samples right before the local optimizations.
+
+    """
+    fun = exploration_fun[::-1] + history.fun
+    params = exploration_params[::-1] + history.params
+    return History(
+        direction=history.direction,
+        fun=fun,
+        params=params,
+        # TODO: This needs to be fixed
+        start_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+        stop_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+        batches=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+        task=len(fun) * [None],  # ty:ignore[invalid-argument-type]
     )
 
 
