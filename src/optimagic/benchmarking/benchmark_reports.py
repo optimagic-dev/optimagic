@@ -180,7 +180,7 @@ def traceback_report(problems, results, return_type="dataframe"):
                 tracebacks[algorithm_name] = tracebacks.setdefault(algorithm_name, {})
                 tracebacks[algorithm_name][problem_name] = result["solution"]
 
-        report = pd.DataFrame.from_dict(tracebacks, orient="index").stack().to_frame()
+        report = pd.DataFrame.from_dict(tracebacks, orient="index").stack().to_frame()  # ty:ignore[call-non-callable]
         report.index.set_names(["algorithm", "problem"], inplace=True)
         report.columns = ["traceback"]
         report["dimensionality"] = 0

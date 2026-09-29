@@ -43,7 +43,7 @@ class StrictOptions:
 
 
 def test_values_are_coerced_to_annotated_types():
-    options = Options(n_points="2", share=1)
+    options = Options(n_points="2", share=1)  # ty:ignore[invalid-argument-type]
     assert isinstance(options.n_points, int)
     assert options.n_points == 2
     assert isinstance(options.share, float)
@@ -52,7 +52,7 @@ def test_values_are_coerced_to_annotated_types():
 
 def test_fractional_float_for_int_field_raises():
     with pytest.raises(CustomError):
-        Options(n_points=2.5)
+        Options(n_points=2.5)  # ty:ignore[invalid-argument-type]
 
 
 def test_constraint_violations_raise_the_translated_error():
@@ -68,12 +68,12 @@ def test_original_validation_error_is_chained():
 
 def test_unknown_keyword_arguments_raise_the_translated_error():
     with pytest.raises(CustomError):
-        Options(this_is_not_an_option=1)
+        Options(this_is_not_an_option=1)  # ty:ignore[unknown-argument]
 
 
 def test_all_invalid_fields_are_reported_at_once():
     with pytest.raises(CustomError, match="(?s)n_points.*share"):
-        Options(n_points=0, share="not a number")
+        Options(n_points=0, share="not a number")  # ty:ignore[invalid-argument-type]
 
 
 def test_defaults_are_validated():
@@ -90,7 +90,7 @@ def test_defaults_are_coerced():
     @validated_dataclass(config=DEFAULT_PYDANTIC_CONFIG, make_error=_make_error)
     @dataclass(frozen=True)
     class CoercibleDefault:
-        n_points: PositiveInt = 2.0  # type: ignore[assignment]
+        n_points: PositiveInt = 2.0  # ty:ignore[invalid-assignment]
 
     assert isinstance(CoercibleDefault().n_points, int)
     assert CoercibleDefault().n_points == 2
@@ -106,7 +106,7 @@ def test_replace_revalidates():
 def test_decorated_class_is_frozen():
     options = Options()
     with pytest.raises(FrozenInstanceError):
-        options.n_points = 2
+        options.n_points = 2  # ty:ignore[invalid-assignment]
 
 
 def test_docstring_and_annotations_are_preserved():
@@ -125,7 +125,7 @@ def test_fields_inherited_from_a_base_dataclass_are_validated():
     class Child(Base):
         share: float = 0.5
 
-    assert Child(n_points="2").n_points == 2
+    assert Child(n_points="2").n_points == 2  # ty:ignore[invalid-argument-type]
     with pytest.raises(CustomError):
         Child(n_points=0)
 
@@ -133,6 +133,6 @@ def test_fields_inherited_from_a_base_dataclass_are_validated():
 def test_strict_config_rejects_values_that_need_conversion():
     assert StrictOptions(n_points=2, label="b").n_points == 2
     with pytest.raises(CustomError):
-        StrictOptions(n_points="2")
+        StrictOptions(n_points="2")  # ty:ignore[invalid-argument-type]
     with pytest.raises(CustomError):
-        StrictOptions(label=3)
+        StrictOptions(label=3)  # ty:ignore[invalid-argument-type]

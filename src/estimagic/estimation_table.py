@@ -1,6 +1,7 @@
 import re
+import warnings
 from copy import deepcopy
-from functools import partial
+from functools import partial, wraps
 from pathlib import Path
 from warnings import warn
 
@@ -9,8 +10,17 @@ import pandas as pd
 
 from optimagic.shared.compat import pd_df_map
 
-suppress_performance_warnings = np.testing.suppress_warnings()
-suppress_performance_warnings.filter(category=pd.errors.PerformanceWarning)
+
+def suppress_performance_warnings(func):
+    """Suppress pandas PerformanceWarnings raised while calling func."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+            return func(*args, **kwargs)
+
+    return wrapper
 
 
 @suppress_performance_warnings
@@ -227,7 +237,7 @@ def estimation_table(
     if return_type.suffix not in (".html", ".tex"):
         return out
     else:
-        return_type.write_text(out)
+        return_type.write_text(out)  # ty:ignore[invalid-argument-type]
 
 
 @suppress_performance_warnings
@@ -952,7 +962,7 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
             else:
                 raise TypeError(
                     f"""Invalid type for custom_col_groups. Can be either list
-                    or dictionary, or NoneType. Not: {type(col_groups)}."""
+                    or dictionary, or NoneType. Not: {type(custom_col_groups)}."""
                 )
     else:
         col_groups = default_col_groups
@@ -988,8 +998,8 @@ def _customize_col_names(default_col_names, custom_col_names):
         col_names = custom_col_names
     else:
         raise TypeError(
-            f"""Invalid type for custom_col_names.
-            Can be either list or dictionary, or NoneType. Not: {col_names}."""
+            f"""Invalid type for custom_col_names. Can be either list or
+            dictionary, or NoneType. Not: {type(custom_col_names)}."""
         )
     return col_names
 
@@ -1180,7 +1190,7 @@ def _create_statistics_sr(
     stat_ind = np.concatenate(
         [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind], axis=1
     ).T
-    stat_sr.index = pd.MultiIndex.from_arrays(stat_ind)
+    stat_sr.index = pd.MultiIndex.from_arrays(stat_ind)  # ty:ignore[invalid-argument-type]
     return stat_sr.astype("str").replace("nan", "")
 
 

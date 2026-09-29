@@ -24,7 +24,7 @@ def test_add_entries_not_initialized(entries, is_center):
 
     if is_center:
         c_info = {"x": np.zeros(3), "residuals": np.zeros(5), "radius": 1}
-        history.add_centered_entries(*entries, c_info)
+        history.add_centered_entries(*entries, c_info)  # ty:ignore[too-many-positional-arguments]
     else:
         history.add_entries(*entries)
 
@@ -51,7 +51,7 @@ def test_add_entries_initialized_with_space(entries, is_center):
 
     if is_center:
         c_info = {"x": np.zeros(3), "residuals": np.zeros(5), "radius": 1}
-        history.add_centered_entries(*entries, c_info)
+        history.add_centered_entries(*entries, c_info)  # ty:ignore[too-many-positional-arguments]
     else:
         history.add_entries(*entries)
 
@@ -74,6 +74,9 @@ def test_add_entries_initialized_with_space(entries, is_center):
 def test_add_entries_initialized_extension_needed():
     history = LeastSquaresHistory()
     history.add_entries(np.ones((4, 3)), np.zeros((4, 5)))
+    assert history.xs is not None
+    assert history.residuals is not None
+    assert history.critvals is not None
     history.xs = history.xs[:5]
     history.residuals = history.residuals[:5]
     history.critvals = history.critvals[:5]
@@ -131,3 +134,10 @@ def test_get_centered_entries():
     aaae(residuals, np.arange(1, -4, -1))
     assert critvals == 15
     assert history.get_n_fun() == 4
+
+
+@pytest.mark.parametrize("getter", ["get_entries", "get_xs", "get_residuals"])
+def test_get_entries_from_empty_history_raises(getter):
+    history = LeastSquaresHistory()
+    with pytest.raises(ValueError, match="No entries have been added"):
+        getattr(history, getter)()

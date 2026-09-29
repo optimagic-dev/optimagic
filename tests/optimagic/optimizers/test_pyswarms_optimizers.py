@@ -181,11 +181,11 @@ def test_resolve_topology_config_by_instance(
 def test_resolve_topology_config_invalid_string():
     """Test topology resolution with invalid string."""
     with pytest.raises(ValueError, match="Unknown topology string: 'invalid'"):
-        _resolve_topology_config("invalid")
+        _resolve_topology_config("invalid")  # ty:ignore[invalid-argument-type]
 
 
 @pytest.mark.skipif(not IS_PYSWARMS_INSTALLED, reason="PySwarms not installed")
 def test_resolve_topology_config_invalid_type():
     """Test topology resolution with invalid type."""
     with pytest.raises(TypeError, match="Unsupported topology configuration type"):
-        _resolve_topology_config(123)
+        _resolve_topology_config(123)  # ty:ignore[invalid-argument-type]

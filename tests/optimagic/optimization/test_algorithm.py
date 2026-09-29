@@ -57,7 +57,7 @@ def test_algo_info_validation(kwargs):
     combined_kwargs = {**valid_kwargs, **kwargs}
     msg = "The following arguments to AlgoInfo or `mark.minimizer` are invalid"
     with pytest.raises(InvalidAlgoInfoError, match=msg):
-        AlgoInfo(**combined_kwargs)
+        AlgoInfo(**combined_kwargs)  # ty:ignore[invalid-argument-type]
 
 
 # ======================================================================================
@@ -103,7 +103,7 @@ def test_internal_optimize_result_validation(kwargs):
     combined_kwargs = {**valid_kwargs, **kwargs}
     msg = "The following arguments to InternalOptimizeResult are invalid"
     with pytest.raises(TypeError, match=msg):
-        InternalOptimizeResult(**combined_kwargs)
+        InternalOptimizeResult(**combined_kwargs)  # ty:ignore[invalid-argument-type]
 
 
 # ======================================================================================
@@ -139,7 +139,7 @@ class DummyAlgorithm(Algorithm):
             fun=0.0,
             start_time=0.0,
             task=EvalTask.FUN,
-        )
+        )  # ty:ignore[missing-argument]
         problem.history.add_entry(hist_entry)
         return InternalOptimizeResult(x=x0, fun=0.0, success=True)
 

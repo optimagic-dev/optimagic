@@ -27,7 +27,7 @@ DECIMALS = 5
 
 def _tree_equal_numpy_leaves(tree1, tree2):
     equality_checkers = {np.ndarray: lambda x, y: aaae(x, y, decimal=DECIMALS)}
-    tree_equal(tree1, tree2, equality_checkers=equality_checkers)
+    tree_equal(tree1, tree2, equality_checkers=equality_checkers)  # ty:ignore[invalid-argument-type]
 
 
 def _compute_testable_optimagic_and_jax_derivatives(func, params, func_jax=None):

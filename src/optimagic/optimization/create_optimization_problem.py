@@ -1,4 +1,5 @@
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Type
@@ -164,9 +165,9 @@ def create_optimization_problem(
         raise MissingInputError(msg)
 
     if fun_and_jac is not None and fun is None and criterion is None:
-        if isinstance(fun_and_jac, list):
+        if isinstance(fun_and_jac, Sequence):
             raise NotImplementedError(
-                "If `fun_and_jac` is a list of callables, `fun` is not optional. "
+                "If `fun_and_jac` is a sequence of callables, `fun` is not optional. "
             )
         fun = split_fun_and_jac(fun_and_jac, target="fun")
 

@@ -257,6 +257,7 @@ def test_resolve_empty_selection_returns_none(constraint):
 def test_resolve_fixed_constraint_has_no_explicit_value():
     constr = FixedConstraint(selector=lambda x: x[[0, 2]])
     resolved = constr._resolve(make_context(constr))
+    assert isinstance(resolved, ResolvedFixedConstraint)
     assert resolved.value is None
 
 
@@ -306,6 +307,7 @@ def test_resolve_linear_constraint_aligns_weight_sequence():
         selector=lambda x: x[[0, 2, 4]], weights=[1, 2, 3], upper_bound=5
     )
     resolved = constr._resolve(make_context(constr))
+    assert isinstance(resolved, ResolvedLinearConstraint)
     aae(resolved.index, np.array([0, 2, 4]))
     aae(resolved.weights, np.array([1.0, 2.0, 3.0]))
 
@@ -313,6 +315,7 @@ def test_resolve_linear_constraint_aligns_weight_sequence():
 def test_resolve_linear_constraint_fills_absent_bounds_with_sentinels():
     constr = LinearConstraint(selector=lambda x: x[[0, 2]], weights=1, lower_bound=1)
     resolved = constr._resolve(make_context(constr))
+    assert isinstance(resolved, ResolvedLinearConstraint)
     assert resolved.lower_bound == 1
     assert resolved.upper_bound == np.inf
     assert np.isnan(resolved.value)
