@@ -1,4 +1,5 @@
 from functools import partial, wraps
+from typing import Any
 
 import numpy as np
 
@@ -197,7 +198,7 @@ def _get_raw_problems(name):
                 problem = v.copy()
                 raw_func = problem["fun"]
 
-                problem["fun"] = wraps(raw_func)(partial(_step_func, raw_func=raw_func))
+                problem["fun"] = wraps(raw_func)(partial(_step_func, raw_func=raw_func))  # ty:ignore[invalid-argument-type, invalid-assignment]
                 raw_problems[f"{k}_with_steps"] = problem
 
         for k, v in CARTIS_ROBERTS_PROBLEMS.items():
@@ -328,7 +329,12 @@ def _sample_from_distribution(distribution, mean, std, size, rng, correlation=0)
 def _process_noise_options(options, is_multiplicative):
     options = {} if options is None else options
 
-    defaults = {"std": 0.01, "distribution": "normal", "correlation": 0, "mean": 0}
+    defaults: dict[str, Any] = {
+        "std": 0.01,
+        "distribution": "normal",
+        "correlation": 0,
+        "mean": 0,
+    }
     if is_multiplicative:
         defaults["clipping_value"] = 1
 

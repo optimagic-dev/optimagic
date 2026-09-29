@@ -389,7 +389,7 @@ def first_derivative(
             step_size, evals, updated_candidates, target="first_derivative"
         )
         result = {**result, **info}
-    return NumdiffResult(**result)
+    return NumdiffResult(**result)  # ty:ignore[invalid-argument-type]
 
 
 def second_derivative(
@@ -597,7 +597,7 @@ def second_derivative(
     step_size = cast(NDArray[np.float64], step_size)
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
-    evaluation_points = {  # type: ignore
+    evaluation_points = {
         "one_step": [],
         "two_step": [],
         "cross_step": [],
@@ -728,7 +728,7 @@ def second_derivative(
             step_size, evals, updated_candidates, target="second_derivative"
         )
         result = {**result, **info}
-    return NumdiffResult(**result)
+    return NumdiffResult(**result)  # ty:ignore[invalid-argument-type]
 
 
 def _is_1d_array(candidate: Any) -> bool:

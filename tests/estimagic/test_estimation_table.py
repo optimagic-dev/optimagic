@@ -1,5 +1,6 @@
 import io
 import textwrap
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,7 @@ from estimagic.estimation_table import (
     estimation_table,
     render_html,
     render_latex,
+    suppress_performance_warnings,
 )
 
 
@@ -250,7 +252,7 @@ def test_convert_model_to_series_without_inference():
 # test create stat series
 def test_create_statistics_sr():
     df = pd.DataFrame(np.empty((10, 3)), columns=["a", "b", "c"])
-    df.index = pd.MultiIndex.from_arrays(np.array([np.arange(10), np.arange(10)]))
+    df.index = pd.MultiIndex.from_arrays(np.array([np.arange(10), np.arange(10)]))  # ty:ignore[invalid-argument-type]
     info = {"rsquared": 0.45, "n_obs": 400, "rsquared_adj": 0.0002}
     number_format = ("{0:.3g}", "{0:.5f}", "{0:.4g}")
     add_trailing_zeros = True
@@ -273,7 +275,7 @@ def test_create_statistics_sr():
     )
     exp = pd.Series(["0.4500", "0.0002", "400"])
     exp.index = pd.MultiIndex.from_arrays(
-        np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
+        np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])  # ty:ignore[invalid-argument-type]
     )
     ase(exp.sort_index(), res.sort_index())
 
@@ -282,7 +284,7 @@ def test_create_statistics_sr():
 def test_process_frame_indices_index():
     df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
     df.index = pd.MultiIndex.from_arrays(
-        np.array([["today", "today", "today"], ["var1", "var2", "var3"]])
+        np.array([["today", "today", "today"], ["var1", "var2", "var3"]])  # ty:ignore[invalid-argument-type]
     )
     df.index.names = ["l1", "l2"]
     par_name_map = {"today": "tomorrow", "var1": "1stvar"}
@@ -433,6 +435,18 @@ def test_customize_col_names_list():
     assert exp == res
 
 
+def test_customize_col_groups_invalid_type():
+    default = ["a_name", "a_name", "third_name"]
+    with pytest.raises(TypeError, match="Invalid type for custom_col_groups"):
+        _customize_col_groups(default, "invalid")
+
+
+def test_customize_col_names_invalid_type():
+    default = list("abc")
+    with pytest.raises(TypeError, match="Invalid type for custom_col_names"):
+        _customize_col_names(default_col_names=default, custom_col_names="invalid")
+
+
 def test_get_params_frames_with_common_index():
     m1 = {
         "params": pd.DataFrame(np.ones(5), index=list("abcde")),
@@ -495,3 +509,14 @@ def test_manual_extra_info():
     for i, r in footer.iterrows():
         res = _center_align_integers_and_non_numeric_strings(r)
         ase(exp.loc[i], res)
+
+
+def test_suppress_performance_warnings():
+    @suppress_performance_warnings
+    def raise_performance_warning():
+        warnings.warn("slow", pd.errors.PerformanceWarning)
+        return 1
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert raise_performance_warning() == 1

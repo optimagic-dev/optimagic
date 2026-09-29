@@ -48,7 +48,7 @@ def test_get_search_space_gfo():
         "x0": 5,
         "x1": 5,
     }
-    got = _get_search_space_gfo(bounds, n_grid_points, problem.converter)
+    got = _get_search_space_gfo(bounds, n_grid_points, problem.converter)  # ty:ignore[invalid-argument-type]
     expected = {
         "x0": np.array([-10.0, -5.0, 0.0, 5.0, 10.0]),
         "x1": np.array([-10.0, -5.0, 0.0, 5.0, 10.0]),

@@ -47,6 +47,8 @@ def test_get_scale_converter_active(method, expected):
     )
 
     aaae(scaled.values, expected.values)
+    assert scaled.lower_bounds is not None
+    assert scaled.upper_bounds is not None
     aaae(scaled.lower_bounds, expected.lower_bounds)
     aaae(scaled.upper_bounds, expected.upper_bounds)
 

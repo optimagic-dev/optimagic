@@ -1653,6 +1653,13 @@ access to currently internal objects such as the MSM objective function.
 
 We choose mypy as static type checker and run it as part of our continuous integration.
 
+```{note}
+We have since replaced mypy by [ty](https://docs.astral.sh/ty/). ty is much faster and
+also checks the bodies of unannotated functions and our tests. Its configuration lives
+in the `[tool.ty]` section of `pyproject.toml`. The mypy settings below are kept for
+reference.
+```
+
 Once this enhancement proposal is fully implemented, we want to use the following
 settings:
 

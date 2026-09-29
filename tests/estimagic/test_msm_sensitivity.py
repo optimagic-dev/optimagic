@@ -78,7 +78,7 @@ def func_kwargs():
 @pytest.fixture()
 def jac(params, func_kwargs):
     derivative_dict = first_derivative(
-        func=simulate_aggregated_moments,
+        func=simulate_aggregated_moments,  # ty:ignore[invalid-argument-type]
         params=params,
         func_kwargs=func_kwargs,
     )

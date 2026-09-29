@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -15,13 +14,14 @@ def run(cmd: list[str], **kwargs: Any) -> None:
     subprocess.check_call(cmd, cwd=ROOT, **kwargs)
 
 
-def ensure_optimagic_is_locally_installed() -> None:
-    if importlib.util.find_spec("optimagic") is None:
-        run(["uv", "pip", "install", "--python", sys.executable, "-e", "."])
+def install_optimagic_locally() -> None:
+    # Always (re)install so that dependencies added after the hook environment was
+    # created are picked up. This is fast if nothing changed.
+    run(["uv", "pip", "install", "--quiet", "--python", sys.executable, "-e", "."])
 
 
 def main() -> int:
-    ensure_optimagic_is_locally_installed()
+    install_optimagic_locally()
     run(PYTHON + [".tools/create_algo_selection_code.py"])
 
     ruff_args = [

@@ -8,6 +8,7 @@ from typing import Any, Generic, Type, TypeVar, cast
 import numpy as np
 import pandas as pd
 import sqlalchemy as sql
+import sqlalchemy.event
 from sqlalchemy.engine import Engine
 
 from optimagic.logging.base import (
@@ -51,7 +52,7 @@ class LogOptions:
 
     def __init_subclass__(
         cls: Type[LogOptions], abstract: bool = False, **kwargs: dict[Any, Any]
-    ):
+    ) -> None:
         if not abstract:
             LogOptions._subclass_registry.append(cls)
         super().__init_subclass__(**kwargs)
