@@ -53,6 +53,7 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
     log_hist = reader.read_history()
 
     # We cannot expect the order to be the same
+    assert collected_hist is not None
     aaae(sorted(collected_hist.fun), sorted(log_hist.fun))
 
 
@@ -147,6 +148,7 @@ def test_history_collection_with_dummy_optimizer(n_cores, batch_size):
     )
 
     got_history = res.history
+    assert got_history is not None
 
     expected_history = _get_fake_history(batch_size)
 

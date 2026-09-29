@@ -101,13 +101,13 @@ def test_batch_evaluator_with_dict_unpacking(batch_evaluator, n_cores):
 
 def test_get_batch_evaluator_invalid_value():
     with pytest.raises(ValueError):
-        process_batch_evaluator("bla")
+        process_batch_evaluator("bla")  # ty:ignore[invalid-argument-type]
 
 
 def test_get_batch_evaluator_invalid_type():
     with pytest.raises(TypeError):
-        process_batch_evaluator(3)
+        process_batch_evaluator(3)  # ty:ignore[invalid-argument-type]
 
 
 def test_get_batch_evaluator_with_callable():
-    assert callable(process_batch_evaluator(lambda x: x))
+    assert callable(process_batch_evaluator(lambda x: x))  # ty:ignore[invalid-argument-type]

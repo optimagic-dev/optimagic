@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Any, Callable, ParamSpec, TypeVar, cast
+from typing import Any, Callable, ParamSpec, Protocol, TypeVar, cast
 
 import pydantic
 
@@ -16,57 +16,43 @@ P = ParamSpec("P")
 
 ScalarFuncT = TypeVar("ScalarFuncT", bound=Callable[..., Any])
 VectorFuncT = TypeVar("VectorFuncT", bound=Callable[..., Any])
+FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
 
 def scalar(func: ScalarFuncT) -> ScalarFuncT:
     """Mark a function as a scalar function."""
-    wrapper = func
-    try:
-        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception:
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            return func(*args, **kwargs)
-
-        wrapper._problem_type = AggregationLevel.SCALAR  # type: ignore
-    return wrapper
+    return _mark_problem_type(func, AggregationLevel.SCALAR)
 
 
 def least_squares(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a least squares function."""
-    wrapper = func
-    try:
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception:
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
-            return func(*args, **kwargs)
-
-        wrapper._problem_type = AggregationLevel.LEAST_SQUARES  # type: ignore
-    return wrapper
+    return _mark_problem_type(func, AggregationLevel.LEAST_SQUARES)
 
 
 def likelihood(func: VectorFuncT) -> VectorFuncT:
     """Mark a function as a likelihood function."""
-    wrapper = func
+    return _mark_problem_type(func, AggregationLevel.LIKELIHOOD)
+
+
+class _MarkedFunction(Protocol):
+    """A callable that carries the problem type set by the mark decorators."""
+
+    _problem_type: AggregationLevel
+
+
+def _mark_problem_type(func: FuncT, problem_type: AggregationLevel) -> FuncT:
+    """Attach problem_type to func or, if that fails, to a wrapper around func."""
     try:
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
-    except (KeyboardInterrupt, SystemExit):
-        raise
+        cast(_MarkedFunction, func)._problem_type = problem_type
     except Exception:
 
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return func(*args, **kwargs)
 
-        wrapper._problem_type = AggregationLevel.LIKELIHOOD  # type: ignore
-    return wrapper
+        cast(_MarkedFunction, wrapper)._problem_type = problem_type
+        return cast(FuncT, wrapper)
+    return func
 
 
 # TODO: I get an error when adding bound=Algorithm to AlgorithmSubclass. Why?

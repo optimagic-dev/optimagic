@@ -1,4 +1,6 @@
 ---
+permissions:
+  contents: read
 name: main
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
@@ -22,8 +24,10 @@ jobs:
           - '313'
           - '314'
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e  # v0.10.2
         with:
           pixi-version: v0.71.2
           cache: true
@@ -35,7 +39,7 @@ jobs:
         run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
       - name: Upload coverage report.
         if: matrix.python-version == '312'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   run-tests-win-and-mac:
@@ -52,8 +56,10 @@ jobs:
           - '313'
           - '314'
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e  # v0.10.2
         with:
           pixi-version: v0.71.2
           cache: true
@@ -67,8 +73,10 @@ jobs:
     name: Run tests on ubuntu-latest with plotly < 6
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e  # v0.10.2
         with:
           pixi-version: v0.71.2
           cache: true
@@ -89,8 +97,10 @@ jobs:
           - '313'
           - '314'
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e  # v0.10.2
         with:
           pixi-version: v0.71.2
           cache: true
@@ -106,8 +116,10 @@ jobs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e  # v0.10.2
         with:
           pixi-version: v0.71.2
           cache: true
@@ -119,18 +131,20 @@ jobs:
         run: >-
           pixi run -e tests-linux-py314
           python -m doctest -v docs/source/how_to/how_to_constraints.md
-  run-mypy:
-    name: Run mypy
+  run-ty:
+    name: Run ty
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: prefix-dev/setup-pixi@v0.9.4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e  # v0.10.2
         with:
           pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
           environments: type-checking
-      - name: Run mypy
+      - name: Run ty
         shell: bash -el {0}
-        run: pixi run -e type-checking mypy
+        run: pixi run -e type-checking ty --output-format github

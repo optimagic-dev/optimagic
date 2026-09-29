@@ -352,7 +352,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b8/cb/861b41341d6f1245e6ca80b1c1a8c4dfce43255b03df034429089ca2a2c5/scikit_learn-1.8.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c2/8b/ecdad52d0b38d4b8f514be603e69ccd5eacf4e7241f972e37e79792212ec/orjson-3.11.7-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/16/d905e7f53e661ce2c24686c38048d8e2b750ffc4350009d41c4e6c6c9826/h5py-3.16.0-cp314-cp314-manylinux_2_28_x86_64.whl
@@ -628,7 +627,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/1e/745565dca749813db9a093c5ebc4bac1a9475c64d54b95654336ac3ed961/orjson-3.11.7-cp314-cp314-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
@@ -917,7 +915,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -1295,7 +1292,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b8/cb/861b41341d6f1245e6ca80b1c1a8c4dfce43255b03df034429089ca2a2c5/scikit_learn-1.8.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c2/8b/ecdad52d0b38d4b8f514be603e69ccd5eacf4e7241f972e37e79792212ec/orjson-3.11.7-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/16/d905e7f53e661ce2c24686c38048d8e2b750ffc4350009d41c4e6c6c9826/h5py-3.16.0-cp314-cp314-manylinux_2_28_x86_64.whl
@@ -1608,7 +1604,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/c9/11ccfaacd8bbc0398a113d9f7ca3592b18ec15a37e77fe7f9496a6d9f5f0/intersphinx_registry-0.2602.2-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/1e/745565dca749813db9a093c5ebc4bac1a9475c64d54b95654336ac3ed961/orjson-3.11.7-cp314-cp314-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
@@ -1934,7 +1929,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/c9/11ccfaacd8bbc0398a113d9f7ca3592b18ec15a37e77fe7f9496a6d9f5f0/intersphinx_registry-0.2602.2-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -2325,7 +2319,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/dc/91/98a52415059db3f374757d0b7f0f16e3b5cd5976c90d1c2b56acaea039e6/orjson-3.11.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -2716,7 +2709,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bd/98/ef2b6fe2903e377cbe870c3b2800d62552f1e3dbe81ce49e1923c53d1c5c/h5py-3.16.0-cp313-cp313-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/ec/c68e3b9021a31d9ec15a94931db1410136af862955854ed5dd7e7e4f5bff/orjson-3.11.7-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -3107,7 +3099,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c2/8b/ecdad52d0b38d4b8f514be603e69ccd5eacf4e7241f972e37e79792212ec/orjson-3.11.7-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/d8/09bfa816572a4d83bccd6750df1926f79158b1c36c5f73786e26dbe4ee38/greenlet-3.3.2-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/16/d905e7f53e661ce2c24686c38048d8e2b750ffc4350009d41c4e6c6c9826/h5py-3.16.0-cp314-cp314-manylinux_2_28_x86_64.whl
@@ -3453,7 +3444,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bb/49/9ff8fad1b56e1f98a2fa5e068b8bcc0e58bc7a1473081e6897693e600300/directsearch-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/dc/91/98a52415059db3f374757d0b7f0f16e3b5cd5976c90d1c2b56acaea039e6/orjson-3.11.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -3729,7 +3719,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bb/49/9ff8fad1b56e1f98a2fa5e068b8bcc0e58bc7a1473081e6897693e600300/directsearch-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/91/a42ae716f8925e9659df2da21ba941f158686856107a61cc97a95e7647a3/sqlalchemy-2.0.48-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -4017,7 +4006,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bb/49/9ff8fad1b56e1f98a2fa5e068b8bcc0e58bc7a1473081e6897693e600300/directsearch-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f2/af/c3c7e1f3a2b383155a16454df62ae8c62a30dd238e42e68c24cebebbfae6/sqlalchemy-2.0.48-cp312-cp312-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -4361,7 +4349,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bd/98/ef2b6fe2903e377cbe870c3b2800d62552f1e3dbe81ce49e1923c53d1c5c/h5py-3.16.0-cp313-cp313-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/ec/c68e3b9021a31d9ec15a94931db1410136af862955854ed5dd7e7e4f5bff/orjson-3.11.7-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fa/b6/3127540ecdf1464a00e5a01ee60a1b09175f6913f0644ac748494d9c4b21/pytest_timeout-2.4.0-py3-none-any.whl
@@ -4638,7 +4625,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bb/49/9ff8fad1b56e1f98a2fa5e068b8bcc0e58bc7a1473081e6897693e600300/directsearch-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/c6/569dc8bf3cd375abc5907e82235923e986799f301cd79a903f784b996fca/sqlalchemy-2.0.48-cp313-cp313-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fa/b6/3127540ecdf1464a00e5a01ee60a1b09175f6913f0644ac748494d9c4b21/pytest_timeout-2.4.0-py3-none-any.whl
@@ -4927,7 +4913,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bb/49/9ff8fad1b56e1f98a2fa5e068b8bcc0e58bc7a1473081e6897693e600300/directsearch-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c3/d9/a27997f84341fc0dfcdd1fe4179b6ba6c32a7aa880fdb8c514d4dad6fba3/h5py-3.16.0-cp313-cp313-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/fa/b6/3127540ecdf1464a00e5a01ee60a1b09175f6913f0644ac748494d9c4b21/pytest_timeout-2.4.0-py3-none-any.whl
@@ -5269,7 +5254,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c2/8b/ecdad52d0b38d4b8f514be603e69ccd5eacf4e7241f972e37e79792212ec/orjson-3.11.7-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d2/d8/09bfa816572a4d83bccd6750df1926f79158b1c36c5f73786e26dbe4ee38/greenlet-3.3.2-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/16/d905e7f53e661ce2c24686c38048d8e2b750ffc4350009d41c4e6c6c9826/h5py-3.16.0-cp314-cp314-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/f2/5e/327428a034407651a048f5e624361adf3f9fbac9d0fa98e981e9c6ff2f5e/sqlalchemy-2.0.48-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -5546,7 +5530,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bb/49/9ff8fad1b56e1f98a2fa5e068b8bcc0e58bc7a1473081e6897693e600300/directsearch-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/1e/745565dca749813db9a093c5ebc4bac1a9475c64d54b95654336ac3ed961/orjson-3.11.7-cp314-cp314-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -5837,7 +5820,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bb/49/9ff8fad1b56e1f98a2fa5e068b8bcc0e58bc7a1473081e6897693e600300/directsearch-1.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f3/ca/2101ca3d9223a1dc125140dbc063644dca76df6ff356531eb27bc267b446/greenlet-3.3.2-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -6176,7 +6158,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ae/b3/a0f0f4faac229b0011d8c4a7ee6da7c2dca0b6fd08039c95920846f23ca4/kaleido-0.2.1-py2.py3-none-manylinux1_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -6445,7 +6426,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b0/42/c84efcc1d4caebafb1ecd8be4643f39c85c47a80fe254d92b8b43b1eadaf/h5py-3.16.0-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/91/a42ae716f8925e9659df2da21ba941f158686856107a61cc97a95e7647a3/sqlalchemy-2.0.48-cp312-cp312-macosx_11_0_arm64.whl
@@ -6727,7 +6707,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f2/af/c3c7e1f3a2b383155a16454df62ae8c62a30dd238e42e68c24cebebbfae6/sqlalchemy-2.0.48-cp312-cp312-win_amd64.whl
@@ -7069,7 +7048,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/dc/91/98a52415059db3f374757d0b7f0f16e3b5cd5976c90d1c2b56acaea039e6/orjson-3.11.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
@@ -7343,7 +7321,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b0/42/c84efcc1d4caebafb1ecd8be4643f39c85c47a80fe254d92b8b43b1eadaf/h5py-3.16.0-cp312-cp312-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/91/a42ae716f8925e9659df2da21ba941f158686856107a61cc97a95e7647a3/sqlalchemy-2.0.48-cp312-cp312-macosx_11_0_arm64.whl
@@ -7629,7 +7606,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f2/af/c3c7e1f3a2b383155a16454df62ae8c62a30dd238e42e68c24cebebbfae6/sqlalchemy-2.0.48-cp312-cp312-win_amd64.whl
@@ -7971,7 +7947,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bd/98/ef2b6fe2903e377cbe870c3b2800d62552f1e3dbe81ce49e1923c53d1c5c/h5py-3.16.0-cp313-cp313-manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c9/ec/c68e3b9021a31d9ec15a94931db1410136af862955854ed5dd7e7e4f5bff/orjson-3.11.7-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -8246,7 +8221,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/c6/569dc8bf3cd375abc5907e82235923e986799f301cd79a903f784b996fca/sqlalchemy-2.0.48-cp313-cp313-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -8533,7 +8507,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c3/d9/a27997f84341fc0dfcdd1fe4179b6ba6c32a7aa880fdb8c514d4dad6fba3/h5py-3.16.0-cp313-cp313-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -8874,7 +8847,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/b8/cb/861b41341d6f1245e6ca80b1c1a8c4dfce43255b03df034429089ca2a2c5/scikit_learn-1.8.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c2/8b/ecdad52d0b38d4b8f514be603e69ccd5eacf4e7241f972e37e79792212ec/orjson-3.11.7-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/16/d905e7f53e661ce2c24686c38048d8e2b750ffc4350009d41c4e6c6c9826/h5py-3.16.0-cp314-cp314-manylinux_2_28_x86_64.whl
@@ -9150,7 +9122,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/1e/745565dca749813db9a093c5ebc4bac1a9475c64d54b95654336ac3ed961/orjson-3.11.7-cp314-cp314-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
@@ -9439,7 +9410,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -9553,7 +9523,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/mpfr-4.2.1-h90cbb55_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/mumps-include-5.8.2-h5a610fb_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/mumps-seq-5.8.2-hc1b3267_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/mypy-1.19.1-py314h5bd0f2a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/nlopt-2.10.1-np2py314h6477eea_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/numba-0.64.0-py314h8169c2f_0.conda
@@ -9573,7 +9542,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pygmo-2.19.7-py314h26074fa_7.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyside6-6.10.2-py314hf36963e_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.14.3-h32b2ec7_101_cp314.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/python-librt-0.8.1-py314h0f05182_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pytorch-2.10.0-cpu_mkl_py314_h6018c46_103.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pytorch-cpu-2.10.0-cpu_mkl_hd61e0f4_103.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyyaml-6.0.3-py314h67df5f8_1.conda
@@ -9590,6 +9558,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tbb-2022.3.0-hb700be7_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tk-8.6.13-noxft_h366c992_103.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tornado-6.5.3-py314h5bd0f2a_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/ty-0.0.59-h4e94fc0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/unicodedata2-17.0.1-py314h5bd0f2a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/wayland-1.24.0-hd6090a7_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/xcb-util-0.4.1-h4f16b4b_2.conda
@@ -9694,7 +9663,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.2.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mpmath-1.3.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/munkres-1.1.4-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/mypy_extensions-1.1.0-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/narwhals-2.17.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbclient-0.10.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbconvert-core-7.17.0-pyhcf101f3_0.conda
@@ -9706,7 +9674,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.6-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pathspec-1.0.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pexpect-4.9.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.9.2-pyhcf101f3_0.conda
@@ -9775,7 +9742,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/62/ae/cb215ab25b76228bc90c90444b87e323ffba58c212321a53d5bc92903098/sqlalchemy_stubs-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/2f/f91e4eee21585ff548e83358332d5632ee49f6b2dcd96cb5dca4e0468951/pandas_stubs-3.0.0.260204-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
@@ -9787,7 +9753,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/c2/8b/ecdad52d0b38d4b8f514be603e69ccd5eacf4e7241f972e37e79792212ec/orjson-3.11.7-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c8/15/4564f173d031f64bf56964d192b6b705e679fc23c02704b84ccbcb809396/types_cffi-1.17.0.20260307-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f1/16/d905e7f53e661ce2c24686c38048d8e2b750ffc4350009d41c4e6c6c9826/h5py-3.16.0-cp314-cp314-manylinux_2_28_x86_64.whl
@@ -9865,7 +9830,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.2.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mpmath-1.3.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/munkres-1.1.4-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/mypy_extensions-1.1.0-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/narwhals-2.17.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbclient-0.10.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbconvert-core-7.17.0-pyhcf101f3_0.conda
@@ -9878,7 +9842,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.6-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pathspec-1.0.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pexpect-4.9.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.9.2-pyhcf101f3_0.conda
@@ -10007,7 +9970,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/mpfr-4.2.1-hb693164_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/mumps-include-5.8.2-h2ca763e_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/mumps-seq-5.8.2-h49d0c1d_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/mypy-1.19.1-py314hbdd0d06_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ncurses-6.5-h5e97a16_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/nlopt-2.10.1-np2py314hdd732f0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/numba-0.64.0-py314hb38061f_0.conda
@@ -10025,7 +9987,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyobjc-core-12.1-py314h3a4d195_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyobjc-framework-cocoa-12.1-py314h36abed7_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-3.14.3-h4c637c5_101_cp314.conda
-      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-librt-0.8.1-py314ha14b1ff_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pytorch-2.10.0-cpu_generic_py314_he36690f_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pytorch-cpu-2.10.0-cpu_generic_hcc7c195_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pyyaml-6.0.3-py314h6e9b3f0_1.conda
@@ -10041,6 +10002,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tbb-2022.3.0-h4ddebb9_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tk-8.6.13-h010d191_3.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/tornado-6.5.4-py314h0612a62_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ty-0.0.59-hdfcc030_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/unicodedata2-17.0.1-py314h6c2aa35_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/xorg-libxau-1.0.12-hc919400_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/xorg-libxdmcp-1.1.5-hc919400_1.conda
@@ -10058,7 +10020,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/62/ae/cb215ab25b76228bc90c90444b87e323ffba58c212321a53d5bc92903098/sqlalchemy_stubs-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/6a/b7/9366ed44ced9b7ef357ab48c94205280276db9d7f064aa3012a97227e966/h5py-3.16.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/7c/2f/f91e4eee21585ff548e83358332d5632ee49f6b2dcd96cb5dca4e0468951/pandas_stubs-3.0.0.260204-py3-none-any.whl
@@ -10070,7 +10031,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bc/d6/b8effb1c48539260a5eb4196afc55efac4ea1684a4991977555eb266b2ef/types_MarkupSafe-1.1.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/15/4564f173d031f64bf56964d192b6b705e679fc23c02704b84ccbcb809396/types_cffi-1.17.0.20260307-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e9/1e/745565dca749813db9a093c5ebc4bac1a9475c64d54b95654336ac3ed961/orjson-3.11.7-cp314-cp314-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl
@@ -10153,7 +10113,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.2.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mpmath-1.3.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/munkres-1.1.4-pyhd8ed1ab_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/mypy_extensions-1.1.0-pyha770c72_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/narwhals-2.17.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbclient-0.10.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbconvert-core-7.17.0-pyhcf101f3_0.conda
@@ -10165,7 +10124,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/packaging-26.0-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pandocfilters-1.5.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.6-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/pathspec-1.0.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/platformdirs-4.9.2-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pluggy-1.6.0-pyhf9edf01_1.conda
@@ -10294,7 +10252,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/matplotlib-base-3.10.8-py314hfa45d96_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/mkl-2025.3.0-hac47afa_455.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/mumps-seq-5.8.2-h607cc0b_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/mypy-1.19.1-py314h5a2d7ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/nlopt-2.10.1-np2py314hb7a55bc_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/numba-0.64.0-py314h36f8cf2_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/numpy-2.4.2-py314h06c3c77_1.conda
@@ -10312,7 +10269,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/pygmo-2.19.7-py314h322d9f3_7.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pyside6-6.10.2-py314h2c9462b_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/python-3.14.3-h4b44e0e_101_cp314.conda
-      - conda: https://conda.anaconda.org/conda-forge/win-64/python-librt-0.8.1-py314hc5dbbe4_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pytorch-2.10.0-cpu_mkl_py314_hf6ce55f_103.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pytorch-cpu-2.10.0-cpu_mkl_hf38594e_103.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/pywin32-311-py314h8f8f202_1.conda
@@ -10330,6 +10286,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/tbb-2022.3.0-h3155e25_2.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tk-8.6.13-h6ed50ae_3.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/tornado-6.5.4-py314h5a2d7ad_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/ty-0.0.59-hc21aad4_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/ucrt-10.0.26100.0-h57928b3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/unicodedata2-17.0.1-py314h5a2d7ad_0.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/vc-14.3-h41ae7f8_34.conda
@@ -10355,7 +10312,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/dc/491b7661614ab97483abf2056be1deee4dc2490ecbf7bff9ab5cdbac86e1/pyreadline3-3.5.4-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/62/ae/cb215ab25b76228bc90c90444b87e323ffba58c212321a53d5bc92903098/sqlalchemy_stubs-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/76/18/a8def8f91b18cd1ba6e05dbe02540168cb24d47e8dcf69e8d00b7da42a08/scikit_learn-1.8.0-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/7c/2f/f91e4eee21585ff548e83358332d5632ee49f6b2dcd96cb5dca4e0468951/pandas_stubs-3.0.0.260204-py3-none-any.whl
@@ -10366,7 +10322,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/bc/d6/b8effb1c48539260a5eb4196afc55efac4ea1684a4991977555eb266b2ef/types_MarkupSafe-1.1.10-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/15/4564f173d031f64bf56964d192b6b705e679fc23c02704b84ccbcb809396/types_cffi-1.17.0.20260307-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f4/1e/0d44a4e3a291c009a357fbd1d61511d9306c2c4db9a7ceb6e8104d8d385f/Py_BOBYQA-1.5.0-py3-none-any.whl
@@ -13491,25 +13446,6 @@ packages:
   purls: []
   size: 2711532
   timestamp: 1771833764229
-- conda: https://conda.anaconda.org/conda-forge/linux-64/mypy-1.19.1-py314h5bd0f2a_0.conda
-  sha256: 4e607095b92cac2ec6dbb8de348d8e006408291c9c2805926f01e4a30e94edbb
-  md5: 0490f2b08d179719201fdb9514d67157
-  depends:
-  - __glibc >=2.17,<3.0.a0
-  - libgcc >=14
-  - mypy_extensions >=1.0.0
-  - pathspec >=0.9.0
-  - psutil >=4.0
-  - python >=3.14,<3.15.0a0
-  - python-librt >=0.6.2
-  - python_abi 3.14.* *_cp314
-  - typing_extensions >=4.6.0
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/mypy?source=hash-mapping
-  size: 18632958
-  timestamp: 1765795548407
 - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
   sha256: 3fde293232fa3fca98635e1167de6b7c7fda83caf24b9d6c91ec9eefb4f4d586
   md5: 47e340acb35de30501a76c7c799c41d7
@@ -14658,20 +14594,6 @@ packages:
   size: 36702440
   timestamp: 1770675584356
   python_site_packages_path: lib/python3.14/site-packages
-- conda: https://conda.anaconda.org/conda-forge/linux-64/python-librt-0.8.1-py314h0f05182_0.conda
-  sha256: 53a19b531000edd487bfba24a04a341d49088a39a4abe9be858edaff05a1d065
-  md5: 9a021120e52c4b44761c30d950e6a8c6
-  depends:
-  - python
-  - libgcc >=14
-  - __glibc >=2.17,<3.0.a0
-  - python_abi 3.14.* *_cp314
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/librt?source=hash-mapping
-  size: 76241
-  timestamp: 1771423015190
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pytorch-2.10.0-cpu_generic_py312_h2e1582b_1.conda
   sha256: f43e4cb022ad0405d082c7c710221fdf47e4bda366840e557c4a2ebb2cccccf9
   md5: e3e0999fb8a15f65e05eea8a2f9c4fcb
@@ -15547,6 +15469,25 @@ packages:
   - pkg:pypi/tornado?source=hash-mapping
   size: 905436
   timestamp: 1765458949518
+- conda: https://conda.anaconda.org/conda-forge/linux-64/ty-0.0.59-h4e94fc0_0.conda
+  noarch: python
+  sha256: 7cf135185dee0b985520985d5e626d04a9c8d085a041418104b7ccf646dbd9f7
+  md5: c2ba304bba1fbf79906b3312677edb5d
+  depends:
+  - python
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  - _python_abi3_support 1.*
+  - cpython >=3.10
+  constrains:
+  - __glibc >=2.17
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/ty?source=hash-mapping
+  run_exports: {}
+  size: 10303828
+  timestamp: 1783908696596
 - conda: https://conda.anaconda.org/conda-forge/linux-64/ucc-1.4.4-h2b97398_0.conda
   sha256: 768309ff1a98171bbb5424b0d6e6365f7e01f31428dfd4527c1c97d875dfadc1
   md5: bd93aa12125acee057b56d590ee6f65c
@@ -17474,17 +17415,6 @@ packages:
   - pkg:pypi/munkres?source=hash-mapping
   size: 15851
   timestamp: 1749895533014
-- conda: https://conda.anaconda.org/conda-forge/noarch/mypy_extensions-1.1.0-pyha770c72_0.conda
-  sha256: 6ed158e4e5dd8f6a10ad9e525631e35cee8557718f83de7a4e3966b1f772c4b1
-  md5: e9c622e0d00fa24a6292279af3ab6d06
-  depends:
-  - python >=3.9
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/mypy-extensions?source=hash-mapping
-  size: 11766
-  timestamp: 1745776666688
 - conda: https://conda.anaconda.org/conda-forge/noarch/myst-nb-1.4.0-pyhcf101f3_0.conda
   sha256: c81d0c8c74c3da66808f8da09d8e48f2af2d173d357d45239defaf466838edba
   md5: da07c7b1588ad0a44118d28aeb31b6a6
@@ -17716,17 +17646,6 @@ packages:
   - pkg:pypi/parso?source=hash-mapping
   size: 82287
   timestamp: 1770676243987
-- conda: https://conda.anaconda.org/conda-forge/noarch/pathspec-1.0.4-pyhd8ed1ab_0.conda
-  sha256: 29ea20d0faf20374fcd61c25f6d32fb8e9a2c786a7f1473a0c3ead359470fbe1
-  md5: 2908273ac396d2cd210a8127f5f1c0d6
-  depends:
-  - python >=3.10
-  license: MPL-2.0
-  license_family: MOZILLA
-  purls:
-  - pkg:pypi/pathspec?source=hash-mapping
-  size: 53739
-  timestamp: 1769677743677
 - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-1.0.2-pyhcf101f3_0.conda
   sha256: 9678f4745e6b82b36fab9657a19665081862268cb079cf9acf878ab2c4fadee9
   md5: 8678577a52161cc4e1c93fcc18e8a646
@@ -20485,25 +20404,6 @@ packages:
   purls: []
   size: 2710681
   timestamp: 1771833866358
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/mypy-1.19.1-py314hbdd0d06_0.conda
-  sha256: c5c9a691dc00ce9a726426f971fbe21d0501ec8c6228513b945210898f26c761
-  md5: 584f58048dc4af70f6c647b40a7049a6
-  depends:
-  - __osx >=11.0
-  - mypy_extensions >=1.0.0
-  - pathspec >=0.9.0
-  - psutil >=4.0
-  - python >=3.14,<3.15.0a0
-  - python >=3.14,<3.15.0a0 *_cp314
-  - python-librt >=0.6.2
-  - python_abi 3.14.* *_cp314
-  - typing_extensions >=4.6.0
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/mypy?source=hash-mapping
-  size: 11320681
-  timestamp: 1765795843941
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/ncurses-6.5-h5e97a16_3.conda
   sha256: 2827ada40e8d9ca69a153a45f7fd14f32b2ead7045d3bbb5d10964898fe65733
   md5: 068d497125e4bf8a66bf707254fff5ae
@@ -21350,20 +21250,6 @@ packages:
   size: 13522698
   timestamp: 1770675365241
   python_site_packages_path: lib/python3.14/site-packages
-- conda: https://conda.anaconda.org/conda-forge/osx-arm64/python-librt-0.8.1-py314ha14b1ff_0.conda
-  sha256: 10667ff7dec7aa0a4c1e7cc0d0fb16c168e4128ffeba57fdd247810f1a71d247
-  md5: 8c322be8d5466a35f48d5559def4c225
-  depends:
-  - python
-  - python 3.14.* *_cp314
-  - __osx >=11.0
-  - python_abi 3.14.* *_cp314
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/librt?source=hash-mapping
-  size: 72731
-  timestamp: 1771423079377
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/pytorch-2.10.0-cpu_generic_py312_h2470ad0_3.conda
   sha256: 6da6392a6d89f043c914c658cdaf98c49e6860ab7e91a0afcb8463723bca4364
   md5: b4c7ecd785628fbd767d9cb854ec2c0c
@@ -21864,6 +21750,24 @@ packages:
   - pkg:pypi/tornado?source=hash-mapping
   size: 909298
   timestamp: 1765836779269
+- conda: https://conda.anaconda.org/conda-forge/osx-arm64/ty-0.0.59-hdfcc030_0.conda
+  noarch: python
+  sha256: 4026d41475ebf53f3810913e80618cecd4459b4d497839ba044ad5a2f89183da
+  md5: 5e6c3112ca11b9c047a60a2b17f3bf1c
+  depends:
+  - python
+  - __osx >=11.0
+  - _python_abi3_support 1.*
+  - cpython >=3.10
+  constrains:
+  - __osx >=11.0
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/ty?source=hash-mapping
+  run_exports: {}
+  size: 9330666
+  timestamp: 1783908711033
 - conda: https://conda.anaconda.org/conda-forge/osx-arm64/unicodedata2-17.0.1-py312h2bbb03f_0.conda
   sha256: e935d0c11581e31e89ce4899a28b16f924d1a3c1af89f18f8a2c5f5728b3107f
   md5: 45b836f333fd3e282c16fff7dc82994e
@@ -23578,26 +23482,6 @@ packages:
   purls: []
   size: 6225640
   timestamp: 1771833767934
-- conda: https://conda.anaconda.org/conda-forge/win-64/mypy-1.19.1-py314h5a2d7ad_0.conda
-  sha256: 59c5f9046ad3ab9a449dee682392799d9589c12e470f0c6fed7f2aaa9b8e8ca2
-  md5: 4ca21331a3962c4fcf658d6d47df4c0b
-  depends:
-  - mypy_extensions >=1.0.0
-  - pathspec >=0.9.0
-  - psutil >=4.0
-  - python >=3.14,<3.15.0a0
-  - python-librt >=0.6.2
-  - python_abi 3.14.* *_cp314
-  - typing_extensions >=4.6.0
-  - ucrt >=10.0.20348.0
-  - vc >=14.3,<15
-  - vc14_runtime >=14.44.35208
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/mypy?source=hash-mapping
-  size: 9114684
-  timestamp: 1765795714379
 - conda: https://conda.anaconda.org/conda-forge/win-64/nlopt-2.10.1-np2py312ha76dc74_0.conda
   sha256: 3499df0c1c06b1592d286d1f745151173c5d1b1dcf2f751f52c30c1a928a5f64
   md5: b26775517ac366a0fd41ecf8bb048d7f
@@ -24440,21 +24324,6 @@ packages:
   size: 18273230
   timestamp: 1770675442998
   python_site_packages_path: Lib/site-packages
-- conda: https://conda.anaconda.org/conda-forge/win-64/python-librt-0.8.1-py314hc5dbbe4_0.conda
-  sha256: 25d152c9354a8a95eca1f9754cfe4e3bf8f85dec6229c692d7bc8bcd1613f02f
-  md5: 29edadadd2768a75eff4788fd105cc46
-  depends:
-  - python
-  - vc >=14.3,<15
-  - vc14_runtime >=14.44.35208
-  - ucrt >=10.0.20348.0
-  - python_abi 3.14.* *_cp314
-  license: MIT
-  license_family: MIT
-  purls:
-  - pkg:pypi/librt?source=hash-mapping
-  size: 50410
-  timestamp: 1771423050838
 - conda: https://conda.anaconda.org/conda-forge/win-64/pytorch-2.10.0-cpu_mkl_py312_h9991af1_103.conda
   sha256: 76be0f78976ae08c75a7e581bbc91e06b5bd84bb76e846e5fad840036a5a3134
   md5: 4c42b5a7c6d466fc3f53f8113f620d51
@@ -25089,6 +24958,24 @@ packages:
   - pkg:pypi/tornado?source=hash-mapping
   size: 908399
   timestamp: 1765836848636
+- conda: https://conda.anaconda.org/conda-forge/win-64/ty-0.0.59-hc21aad4_0.conda
+  noarch: python
+  sha256: 83ecfac9ac09d73f3325714f67551e4b32af6c1840f15b056204b13c24ede597
+  md5: d35c871f7af02f796e3ec32d9c1b3451
+  depends:
+  - python
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  - ucrt >=10.0.20348.0
+  - _python_abi3_support 1.*
+  - cpython >=3.10
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/ty?source=hash-mapping
+  run_exports: {}
+  size: 10435580
+  timestamp: 1783908745042
 - conda: https://conda.anaconda.org/conda-forge/win-64/ucrt-10.0.26100.0-h57928b3_0.conda
   sha256: 3005729dce6f3d3f5ec91dfc49fc75a0095f9cd23bab49efb899657297ac91a5
   md5: 71b24316859acd00bdb8b38f5e2ce328
@@ -25273,9 +25160,9 @@ packages:
   - cloudpickle>=2.2
   - joblib>=1.1
   - numpy>=1.26
+  - optree>=0.19
   - pandas>=2.1
   - plotly>=5.14
-  - pybaum>=0.1.2
   - pydantic>=2.6
   - scipy>=1.11
   - sqlalchemy>=2.0
@@ -25888,13 +25775,6 @@ packages:
   - pytest ; extra == 'dev'
   - twine ; extra == 'dev'
   requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/62/ae/cb215ab25b76228bc90c90444b87e323ffba58c212321a53d5bc92903098/sqlalchemy_stubs-0.4-py3-none-any.whl
-  name: sqlalchemy-stubs
-  version: '0.4'
-  sha256: 5eec7aa110adf9b957b631799a72fef396b23ff99fe296df726645d01e312aa5
-  requires_dist:
-  - mypy>=0.790
-  - typing-extensions>=3.7.4
 - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
   name: tabcompleter
   version: 1.4.0
@@ -26621,11 +26501,6 @@ packages:
   - psutil ; extra == 'test'
   - setuptools ; extra == 'test'
   requires_python: '>=3.10'
-- pypi: https://files.pythonhosted.org/packages/d3/20/bcd8f317a17900e5daeb3f87a87327399c9bbe9dcd97f4025f4663c3bdf1/pybaum-0.1.3-py3-none-any.whl
-  name: pybaum
-  version: 0.1.3
-  sha256: a1d74200d0477c7da121af2f67a236d658ec62aaef5f5c35562ec959f52efa3d
-  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
   name: bayesian-optimization
   version: 3.2.0

@@ -69,11 +69,12 @@ def base_problem():
         bounds=bounds,
         numdiff_options=numdiff_options,
         error_handling=error_handling,
-        error_penalty_func=None,
+        error_penalty_func=None,  # ty:ignore[invalid-argument-type]
         batch_evaluator=batch_evaluator,
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        callback=None,
     )
 
     return problem
@@ -476,11 +477,12 @@ def pytree_problem(base_problem):
         bounds=bounds,
         numdiff_options=numdiff_options,
         error_handling=error_handling,
-        error_penalty_func=None,
+        error_penalty_func=None,  # ty:ignore[invalid-argument-type]
         batch_evaluator=batch_evaluator,
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        callback=None,
     )
 
     return problem
@@ -605,6 +607,7 @@ def error_min_problem():
         linear_constraints=linear_constraints,
         nonlinear_constraints=nonlinear_constraints,
         logger=None,
+        callback=None,
     )
 
     return problem

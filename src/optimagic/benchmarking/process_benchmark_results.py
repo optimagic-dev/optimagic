@@ -67,7 +67,7 @@ def process_benchmark_results(
 
     histories = pd.concat(histories, ignore_index=True)
     infos = pd.DataFrame(infos).set_index(["problem", "algorithm"]).unstack()
-    infos.columns = [tup[1] for tup in infos.columns]
+    infos.columns = [tup[1] for tup in infos.columns]  # ty:ignore[invalid-assignment]
 
     return histories, infos
 

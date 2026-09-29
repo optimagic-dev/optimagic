@@ -11,12 +11,12 @@ dependencies = [
     "numpy>=1.26",
     "pandas>=2.1",
     "plotly>=5.14",
-    "pybaum>=0.1.2",
     "scipy>=1.11",
     "sqlalchemy>=2.0",
     "annotated-types>=0.4",
     "pydantic>=2.6",
     "typing-extensions>=4.5",
+    "optree>=0.19",
 ]
 dynamic = ["version"]
 keywords = [
@@ -124,6 +124,8 @@ select = [
   "ISC",
   # pydocstyle
   "D",
+  # flake8-annotations: require type annotations on all function signatures
+  "ANN",
 ]
 
 extend-ignore = [
@@ -147,6 +149,8 @@ extend-ignore = [
   "E731",
   # Too many arguments to function call
   "PLR0913",
+  # Too many positional arguments
+  "PLR0917",
   # Too many returns
   "PLR0911",
   # Too many branches
@@ -161,16 +165,110 @@ extend-ignore = [
   "B028",
   # Incompatible with formatting
   "ISC001",
+  # Dynamically typed expressions (typing.Any) are disallowed
+  "ANN401",
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "docs/source/conf.py" = ["E501", "ERA001", "DTZ005"]
-"src/optimagic/parameters/kernel_transformations.py" = ["ARG001", "N806"]
+"src/optimagic/parameters/kernel_transformations.py" = ["ARG001", "N806", "ANN"]
 "docs/source/*" = ["B018"]
 "src/optimagic/algorithms.py" = ["E501"]
+"docs/*" = ["ANN"]
+"tests/*" = ["ANN"]
+"src/optimagic/benchmarking/benchmark_reports.py" = ["ANN"]
+"src/optimagic/benchmarking/cartis_roberts.py" = ["ANN"]
+"src/optimagic/benchmarking/get_benchmark_problems.py" = ["ANN"]
+"src/optimagic/benchmarking/more_wild.py" = ["ANN"]
+"src/optimagic/benchmarking/noise_distributions.py" = ["ANN"]
+"src/optimagic/benchmarking/process_benchmark_results.py" = ["ANN"]
+"src/optimagic/benchmarking/run_benchmark.py" = ["ANN"]
+
+"src/optimagic/differentiation/derivatives.py" = ["ANN"]
+"src/optimagic/differentiation/finite_differences.py" = ["ANN"]
+"src/optimagic/differentiation/generate_steps.py" = ["ANN"]
+"src/optimagic/differentiation/richardson_extrapolation.py" = ["ANN"]
+
+"src/optimagic/examples/numdiff_functions.py" = ["ANN"]
+
+"src/optimagic/optimization/algo_options.py" = ["ANN"]
+"src/optimagic/optimization/optimize_result.py" = ["ANN"]
+"src/optimagic/optimization/multistart.py" = ["ANN"]
+"src/optimagic/optimization/scipy_aliases.py" = ["ANN"]
+"src/optimagic/optimization/create_optimization_problem.py" = ["ANN"]
+
+"src/optimagic/optimizers/_pounders/pounders_auxiliary.py" = ["ANN"]
+"src/optimagic/optimizers/_pounders/pounders_history.py" = ["ANN"]
+"src/optimagic/optimizers/_pounders/_conjugate_gradient.py" = ["ANN"]
+"src/optimagic/optimizers/_pounders/_steihaug_toint.py" = ["ANN"]
+"src/optimagic/optimizers/_pounders/_trsbox.py" = ["ANN"]
+"src/optimagic/optimizers/_pounders/bntr.py" = ["ANN"]
+"src/optimagic/optimizers/_pounders/gqtpar.py" = ["ANN"]
+"src/optimagic/optimizers/_pounders/linear_subsolvers.py" = ["ANN"]
+
+"src/optimagic/optimizers/pygmo_optimizers.py" = ["ANN"]
+"src/optimagic/optimizers/scipy_optimizers.py" = ["ANN"]
+"src/optimagic/optimizers/nag_optimizers.py" = ["ANN"]
+"src/optimagic/optimizers/neldermead.py" = ["ANN"]
+"src/optimagic/optimizers/nlopt_optimizers.py" = ["ANN"]
+"src/optimagic/optimizers/ipopt.py" = ["ANN"]
+"src/optimagic/optimizers/fides.py" = ["ANN"]
+"src/optimagic/optimizers/pounders.py" = ["ANN"]
+"src/optimagic/optimizers/tao_optimizers.py" = ["ANN"]
+
+
+"src/optimagic/parameters/block_trees.py" = ["ANN"]
+"src/optimagic/parameters/check_constraints.py" = ["ANN"]
+"src/optimagic/parameters/consolidate_constraints.py" = ["ANN"]
+"src/optimagic/parameters/constraint_tools.py" = ["ANN"]
+"src/optimagic/parameters/conversion.py" = ["ANN"]
+"src/optimagic/parameters/nonlinear_constraints.py" = ["ANN"]
+"src/optimagic/parameters/process_constraints.py" = ["ANN"]
+"src/optimagic/parameters/space_conversion.py" = ["ANN"]
+"src/optimagic/parameters/tree_conversion.py" = ["ANN"]
+
+
+"src/optimagic/shared/check_option_dicts.py" = ["ANN"]
+"src/optimagic/shared/compat.py" = ["ANN"]
+"src/optimagic/shared/process_user_function.py" = ["ANN"]
+
+"src/optimagic/visualization/convergence_plot.py" = ["ANN"]
+"src/optimagic/visualization/deviation_plot.py" = ["ANN"]
+"src/optimagic/visualization/history_plots.py" = ["ANN"]
+"src/optimagic/visualization/plotting_utilities.py" = ["ANN"]
+"src/optimagic/visualization/profile_plot.py" = ["ANN"]
+"src/optimagic/visualization/slice_plot.py" = ["ANN"]
+
+"src/optimagic/decorators.py" = ["ANN"]
+"src/optimagic/exceptions.py" = ["ANN"]
+"src/optimagic/utilities.py" = ["ANN"]
+"src/optimagic/pytree.py" = ["ANN"]
+"src/optimagic/deprecations.py" = ["ANN"]
+
+"src/estimagic/__init__.py" = ["ANN"]
+"src/estimagic/examples/logit.py" = ["ANN"]
+"src/estimagic/estimate_ml.py" = ["ANN"]
+"src/estimagic/estimate_msm.py" = ["ANN"]
+"src/estimagic/msm_weighting.py" = ["ANN"]
+"src/estimagic/bootstrap_ci.py" = ["ANN"]
+"src/estimagic/bootstrap_helpers.py" = ["ANN"]
+"src/estimagic/bootstrap_outcomes.py" = ["ANN"]
+"src/estimagic/bootstrap_samples.py" = ["ANN"]
+"src/estimagic/bootstrap.py" = ["ANN"]
+"src/estimagic/ml_covs.py" = ["ANN"]
+"src/estimagic/msm_covs.py" = ["ANN"]
+"src/estimagic/shared_covs.py" = ["ANN"]
+"src/estimagic/msm_sensitivity.py" = ["ANN"]
+"src/estimagic/estimation_table.py" = ["ANN"]
+"src/estimagic/lollipop_plot.py" = ["ANN"]
+"src/optimagic/visualization/slice_plot_3d.py" = ["ANN"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.flake8-annotations]
+# Like mypy, allow omitting `-> None` on `__init__` if an argument is annotated.
+mypy-init-return = true
 
 
 # ======================================================================================
@@ -218,138 +316,19 @@ none_representation = "null"
 
 
 # ======================================================================================
-# Mypy configuration
+# Ty configuration
 # ======================================================================================
-[tool.mypy]
-files = ["src", "tests", ".tools"]
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
+[tool.ty]
+src.include = ["src", ".tools", "tests"]
 
-[[tool.mypy.overrides]]
-module = [
-    "optimagic.benchmarking",
-    "optimagic.benchmarking.benchmark_reports",
-    "optimagic.benchmarking.cartis_roberts",
-    "optimagic.benchmarking.get_benchmark_problems",
-    "optimagic.benchmarking.more_wild",
-    "optimagic.benchmarking.noise_distributions",
-    "optimagic.benchmarking.process_benchmark_results",
-    "optimagic.benchmarking.run_benchmark",
-
-    "optimagic.differentiation",
-    "optimagic.differentiation.derivatives",
-    "optimagic.differentiation.finite_differences",
-    "optimagic.differentiation.generate_steps",
-    "optimagic.differentiation.richardson_extrapolation",
-
-    "optimagic.examples",
-    "optimagic.examples.numdiff_functions",
-
-    "optimagic.optimization",
-    "optimagic.optimization.algo_options",
-    "optimagic.optimization.convergence_report",
-    "optimagic.optimization.optimization_logging",
-    "optimagic.optimization.optimize_result",
-    "optimagic.optimization.optimize",
-    "optimagic.optimization.multistart",
-    "optimagic.optimization.scipy_aliases",
-    "optimagic.optimization.create_optimization_problem",
-
-    "optimagic.optimizers._pounders",
-    "optimagic.optimizers._pounders.pounders_auxiliary",
-    "optimagic.optimizers._pounders.pounders_history",
-    "optimagic.optimizers._pounders._conjugate_gradient",
-    "optimagic.optimizers._pounders._steihaug_toint",
-    "optimagic.optimizers._pounders._trsbox",
-    "optimagic.optimizers._pounders.bntr",
-    "optimagic.optimizers._pounders.gqtpar",
-    "optimagic.optimizers._pounders.linear_subsolvers",
-
-    "optimagic.optimizers",
-    "optimagic.optimizers.tranquilo",
-    "optimagic.optimizers.pygmo_optimizers",
-    "optimagic.optimizers.scipy_optimizers",
-    "optimagic.optimizers.nag_optimizers",
-    "optimagic.optimizers.neldermead",
-    "optimagic.optimizers.nlopt_optimizers",
-    "optimagic.optimizers.ipopt",
-    "optimagic.optimizers.fides",
-    "optimagic.optimizers.pounders",
-    "optimagic.optimizers.tao_optimizers",
-
-
-    "optimagic.parameters",
-    "optimagic.parameters.block_trees",
-    "optimagic.parameters.check_constraints",
-    "optimagic.parameters.consolidate_constraints",
-    "optimagic.parameters.constraint_tools",
-    "optimagic.parameters.conversion",
-    "optimagic.parameters.kernel_transformations",
-    "optimagic.parameters.nonlinear_constraints",
-    "optimagic.parameters.process_constraints",
-    "optimagic.parameters.space_conversion",
-    "optimagic.parameters.tree_conversion",
-    "optimagic.parameters.tree_registry",
-
-
-    "optimagic.shared",
-    "optimagic.shared.check_option_dicts",
-    "optimagic.shared.compat",
-    "optimagic.shared.process_user_function",
-
-    "optimagic.visualization",
-    "optimagic.visualization.convergence_plot",
-    "optimagic.visualization.backends",
-    "optimagic.visualization.deviation_plot",
-    "optimagic.visualization.history_plots",
-    "optimagic.visualization.plotting_utilities",
-    "optimagic.visualization.profile_plot",
-    "optimagic.visualization.slice_plot",
-
-    "optimagic",
-    "optimagic.decorators",
-    "optimagic.exceptions",
-    "optimagic.utilities",
-    "optimagic.deprecations",
-
-    "estimagic",
-    "estimagic.examples",
-    "estimagic.examples.logit",
-    "estimagic.estimate_ml",
-    "estimagic.estimate_msm",
-    "estimagic.estimation_summaries",
-    "estimagic.msm_weighting",
-    "estimagic.bootstrap_ci",
-    "estimagic.bootstrap_helpers",
-    "estimagic.bootstrap_outcomes",
-    "estimagic.bootstrap_samples",
-    "estimagic.bootstrap",
-    "estimagic.ml_covs",
-    "estimagic.msm_covs",
-    "estimagic.shared_covs",
-    "estimagic.msm_sensitivity",
-    "estimagic.estimation_table",
-    "estimagic.lollipop_plot",
-
+[tool.ty.analysis]
+allowed-unresolved-imports = [
+      "petsc4py.**",
+      "jax.**",
+      "pathos.**",
+      "nevergrad.**",
 ]
-check_untyped_defs = false
-disallow_any_generics = false
-disallow_untyped_defs = false
-
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = [
-    "pybaum",
+replace-imports-with-any = [
     "scipy",
     "scipy.linalg",
     "scipy.linalg.lapack",
@@ -378,8 +357,6 @@ module = [
     "bokeh.command.util",
     "fides",
     "fides.hessian_approximation",
-    "petsc4py",
-    "petsc4py.PETSc",
     "tranquilo",
     "tranquilo.tranquilo",
     "tranquilo.options",
@@ -387,18 +364,13 @@ module = [
     "dfols",
     "pybobyqa",
     "pygmo",
-    "jax",
     "joblib",
     "cloudpickle",
     "numba",
-    "pathos",
-    "pathos.pools",
     "optimagic._version",
     "annotated_types",
     "pdbp",
     "iminuit",
-    "nevergrad",
-    "nevergrad.optimization.base",
     "pygad",
     "pyswarms",
     "pyswarms.backend.topology",
@@ -406,7 +378,6 @@ module = [
     "gradient_free_optimizers",
     "gradient_free_optimizers.optimizers.base_optimizer",
   ]
-ignore_missing_imports = true
 
 
 # ======================================================================================
@@ -472,19 +443,20 @@ tests = { cmd = "pytest", description = "Run the full test suite" }
 tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
 tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src", description = "Run tests with XML coverage report" }
 
-# --- Feature: type-checking (mypy + type stubs) --------------------------------------
+# --- Feature: type-checking (ty + type stubs) --------------------------------------
 [tool.pixi.feature.type-checking.dependencies]
-mypy = "==1.19.1"
+ty = ">=0.0.59,<0.0.60"
 
 [tool.pixi.feature.type-checking.pypi-dependencies]
 pandas-stubs = "*"
 types-cffi = "*"
 types-openpyxl = "*"
 types-jinja2 = "*"
-sqlalchemy-stubs = "*"
 
 [tool.pixi.feature.type-checking.tasks]
-mypy = { cmd = "mypy", description = "Run mypy type checker" }
+ty = { cmd = "ty check", description = "Run ty type checker" }
+ty-concise = { cmd = "ty check --output-format concise", description = "Run ty type checker with concise output" }
+ty-fix = { cmd = "ty check --fix", description = "Run ty type checker and apply safe fixes" }
 
 # --- Feature: linux (Linux-only deps) ------------------------------------------------
 [tool.pixi.feature.linux]

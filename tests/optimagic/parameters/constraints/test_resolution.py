@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal as aae
-from pybaum import tree_flatten, tree_just_flatten, tree_unflatten
 
 import optimagic as om
 from optimagic.constraints import (
@@ -16,7 +15,12 @@ from optimagic.parameters.constraints.resolution import (
     to_legacy_dicts,
 )
 from optimagic.parameters.tree_conversion import TreeConverter
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.pytree import (
+    tree_flatten,
+    tree_leaves,
+    tree_unflatten,
+)
+from optimagic.typing import PyTreeNamespace
 
 
 @pytest.fixture()
@@ -28,17 +32,14 @@ def tree_params():
 
 @pytest.fixture()
 def tree_params_converter(tree_params):
-    registry = get_registry(extended=True)
-    _, treedef = tree_flatten(tree_params, registry=registry)
+    _, treedef = tree_flatten(tree_params, namespace=PyTreeNamespace.VALUE)
 
     converter = TreeConverter(
         params_flatten=lambda params: np.array(
-            tree_just_flatten(params, registry=registry)
+            tree_leaves(params, namespace=PyTreeNamespace.VALUE)
         ),
-        params_unflatten=lambda x: tree_unflatten(
-            treedef, x.tolist(), registry=registry
-        ),
-        derivative_flatten=None,
+        params_unflatten=lambda x: tree_unflatten(treedef, x.tolist()),
+        derivative_flatten=None,  # ty:ignore[invalid-argument-type]
     )
     return converter
 
@@ -115,9 +116,9 @@ def test_provenance_is_attached(np_params_converter):
         param_names=PARAM_NAMES,
     )
     for position, resolved in enumerate(calculated):
-        assert len(resolved.sources) == 1
-        assert resolved.sources[0].position == position
-        assert resolved.sources[0].constraint is constraints[position]
+        assert len(resolved.sources) == 1  # ty:ignore[unresolved-attribute]
+        assert resolved.sources[0].position == position  # ty:ignore[unresolved-attribute]
+        assert resolved.sources[0].constraint is constraints[position]  # ty:ignore[unresolved-attribute]
 
 
 def test_empty_selections_are_dropped(np_params_converter):

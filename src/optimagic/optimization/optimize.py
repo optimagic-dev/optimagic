@@ -15,7 +15,7 @@ is then passed to `_optimize` which handles the optimization logic.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Sequence, Type, cast
+from typing import Any, Callable, Literal, Sequence, Type, cast
 
 import numpy as np
 from scipy.optimize import Bounds as ScipyBounds
@@ -72,12 +72,11 @@ from optimagic.typing import (
 
 FunType = Callable[..., float | PyTree | FunctionValue]
 AlgorithmType = str | Algorithm | Type[Algorithm]
-ConstraintsType = Constraint | list[Constraint] | dict[str, Any] | list[dict[str, Any]]
+ConstraintsType = Constraint | dict[str, Any] | Sequence[Constraint | dict[str, Any]]
 JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]
-# TODO: refine this type
-CallbackType = Callable[..., Any]
+CallbackType = Callable[[PyTree], None]
 
 CriterionType = Callable[..., float | dict[str, Any]]
 CriterionAndDerivativeType = Callable[..., tuple[float | dict[str, Any], PyTree]]
@@ -95,9 +94,12 @@ def maximize(
     constraints: ConstraintsType | None = None,
     fun_kwargs: dict[str, Any] | None = None,
     algo_options: dict[str, Any] | None = None,
-    jac: JacType | list[JacType] | None = None,
+    jac: JacType | Sequence[JacType] | Literal[True] | None = None,
     jac_kwargs: dict[str, Any] | None = None,
-    fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
+    fun_and_jac: FunAndJacType
+    | CriterionAndDerivativeType
+    | Sequence[FunAndJacType]
+    | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
     # TODO: add typed-dict support?
@@ -168,12 +170,16 @@ def maximize(
         jac: The first derivative of `fun`. Providing a closed form derivative can be
             a great way to speed up your optimization. The easiest way to get
             a derivative for your objective function are autodiff frameworks like
-            JAX. For details and examples see :ref:`how-to-jac`.
+            JAX. If you provide a sequence of derivatives, the one that matches the
+            aggregation level of the algorithm is used. For compatibility with scipy,
+            `jac=True` means that `fun` returns a tuple of the function value and its
+            derivative. For details and examples see :ref:`how-to-jac`.
         jac_kwargs: Additional keyword arguments for `jac`.
         fun_and_jac: A function that returns both the objective value and the
             derivative. This can be used do exploit synergies in the calculation of the
-            function value and its derivative. For details and examples see
-            :ref:`how-to-jac`.
+            function value and its derivative. If you provide a sequence, the element
+            that matches the aggregation level of the algorithm is used and `fun` must
+            also be provided. For details and examples see :ref:`how-to-jac`.
         fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
@@ -198,7 +204,7 @@ def maximize(
             To choose which heuristic is used and to customize the scaling, provide
             a dictionary or an instance of :class:`optimagic.ScalingOptions`.
             For details and examples see :ref:`scaling`.
-        multistart: If None or False, no multistart approach is used. If True, the
+        multistart: If False, no multistart approach is used. If True, the
             optimization is restarted from multiple starting points. Note that this
             requires finite bounds or soft bounds for all parameters. To customize the
             multistart approach, provide a dictionary or an instance of
@@ -216,7 +222,14 @@ def maximize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -292,9 +305,12 @@ def minimize(
     constraints: ConstraintsType | None = None,
     fun_kwargs: dict[str, Any] | None = None,
     algo_options: dict[str, Any] | None = None,
-    jac: JacType | list[JacType] | None = None,
+    jac: JacType | Sequence[JacType] | Literal[True] | None = None,
     jac_kwargs: dict[str, Any] | None = None,
-    fun_and_jac: FunAndJacType | CriterionAndDerivativeType | None = None,
+    fun_and_jac: FunAndJacType
+    | CriterionAndDerivativeType
+    | Sequence[FunAndJacType]
+    | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
     # TODO: add typed-dict support?
@@ -365,12 +381,16 @@ def minimize(
         jac: The first derivative of `fun`. Providing a closed form derivative can be
             a great way to speed up your optimization. The easiest way to get
             a derivative for your objective function are autodiff frameworks like
-            JAX. For details and examples see :ref:`how-to-jac`.
+            JAX. If you provide a sequence of derivatives, the one that matches the
+            aggregation level of the algorithm is used. For compatibility with scipy,
+            `jac=True` means that `fun` returns a tuple of the function value and its
+            derivative. For details and examples see :ref:`how-to-jac`.
         jac_kwargs: Additional keyword arguments for `jac`.
         fun_and_jac: A function that returns both the objective value and the
             derivative. This can be used do exploit synergies in the calculation of the
-            function value and its derivative. For details and examples see
-            :ref:`how-to-jac`.
+            function value and its derivative. If you provide a sequence, the element
+            that matches the aggregation level of the algorithm is used and `fun` must
+            also be provided. For details and examples see :ref:`how-to-jac`.
         fun_and_jac_kwargs: Additional keyword arguments for `fun_and_jac`.
         numdiff_options: Options for numerical differentiation. Can be a dictionary
             or an instance of :class:`optimagic.NumdiffOptions`.
@@ -395,7 +415,7 @@ def minimize(
             To choose which heuristic is used and to customize the scaling, provide
             a dictionary or an instance of :class:`optimagic.ScalingOptions`.
             For details and examples see :ref:`scaling`.
-        multistart: If None or False, no multistart approach is used. If True, the
+        multistart: If False, no multistart approach is used. If True, the
             optimization is restarted from multiple starting points. Note that this
             requires finite bounds or soft bounds for all parameters. To customize the
             multistart approach, provide a dictionary or an instance of
@@ -413,7 +433,14 @@ def minimize(
         args: Alternative to fun_kwargs for scipy compatibility.
         hess: Not yet supported.
         hessp: Not yet supported.
-        callback: Not yet supported.
+        callback: Experimental; its behavior might change in upcoming releases.
+            Optional callable called after each objective evaluation with
+            signature ``callback(xk)``, where ``xk`` holds the current parameters (a
+            PyTree with the same structure as ``params``). ``xk`` is not copied, so
+            the callback must not modify it in place. The callback is not called
+            during the exploration phase of a multistart optimization.
+            Raising ``StopIteration`` to abort optimization is not yet supported. The
+            ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
         criterion: Deprecated. Use fun instead.
@@ -653,6 +680,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         linear_constraints=None,
         nonlinear_constraints=internal_nonlinear_constraints,
         logger=logger,
+        callback=problem.callback,
     )
 
     # ==================================================================================

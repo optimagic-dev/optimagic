@@ -2,7 +2,7 @@ import typing
 import warnings
 from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import dataclass, replace
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 import pydantic
@@ -98,8 +98,10 @@ class InternalOptimizeResult:
 class AlgorithmMeta(ABCMeta):
     """Metaclass to get repr, algo_info and name for classes, not just instances."""
 
+    __algo_info__: AlgoInfo | None
+
     def __repr__(self) -> str:
-        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+        if self.__algo_info__ is not None:
             out = f"om.algos.{self.__algo_info__.name}"
         else:
             out = self.__class__.__name__
@@ -107,7 +109,7 @@ class AlgorithmMeta(ABCMeta):
 
     @property
     def name(self) -> str:
-        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+        if self.__algo_info__ is not None:
             out = self.__algo_info__.name
         else:
             out = self.__class__.__name__
@@ -115,7 +117,7 @@ class AlgorithmMeta(ABCMeta):
 
     @property
     def algo_info(self) -> AlgoInfo:
-        if not hasattr(self, "__algo_info__") or self.__algo_info__ is None:
+        if self.__algo_info__ is None:
             msg = (
                 f"The algorithm {self.name} does not have have the __algo_info__ "
                 "attribute. Use the `mark.minimizer` decorator to add this attribute."
@@ -133,6 +135,9 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
     ``_solve_internal_problem`` method.
 
     """
+
+    __algo_info__: ClassVar[AlgoInfo | None] = None
+    """Information about the algorithm; set by the `mark.minimizer` decorator."""
 
     @abstractmethod
     def _solve_internal_problem(
@@ -222,14 +227,14 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
     def name(self) -> str:
         """The name of the algorithm."""
         # cannot call algo_info here because it would be an infinite recursion
-        if hasattr(self, "__algo_info__") and self.__algo_info__ is not None:
+        if self.__algo_info__ is not None:
             return self.__algo_info__.name
         return self.__class__.__name__
 
     @property
     def algo_info(self) -> AlgoInfo:
         """Information about the algorithm."""
-        if not hasattr(self, "__algo_info__") or self.__algo_info__ is None:
+        if self.__algo_info__ is None:
             msg = (
                 f"The algorithm {self.name} does not have have the __algo_info__ "
                 "attribute. Use the `mark.minimizer` decorator to add this attribute."

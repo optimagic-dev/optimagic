@@ -1,19 +1,24 @@
 import inspect
 import itertools
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Literal
 
 import numpy as np
-from pybaum import leaf_names, tree_flatten, tree_just_flatten, tree_unflatten
 
 from optimagic.config import DEFAULT_PALETTE
 from optimagic.logging.logger import LogReader, SQLiteLogOptions
 from optimagic.optimization.algorithm import Algorithm
 from optimagic.optimization.history import History
 from optimagic.optimization.optimize_result import OptimizeResult
-from optimagic.parameters.tree_registry import get_registry
-from optimagic.typing import IterationHistory, PyTree
+from optimagic.pytree import (
+    leaf_names,
+    tree_flatten,
+    tree_leaves,
+    tree_unflatten,
+)
+from optimagic.typing import IterationHistory, PyTree, PyTreeNamespace
 from optimagic.visualization.backends import line_plot
 from optimagic.visualization.plotting_utilities import LineData, get_palette_cycle
 
@@ -40,7 +45,7 @@ ResultOrPath = OptimizeResult | str | Path
 
 
 def criterion_plot(
-    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
+    results: ResultOrPath | Sequence[ResultOrPath] | Mapping[Any, ResultOrPath],
     names: list[str] | str | None = None,
     max_evaluations: int | None = None,
     backend: Literal["plotly", "matplotlib", "bokeh", "altair"] = "plotly",
@@ -114,7 +119,7 @@ def criterion_plot(
 
 
 def _harmonize_inputs_to_dict(
-    results: ResultOrPath | list[ResultOrPath] | dict[str, ResultOrPath],
+    results: ResultOrPath | Sequence[ResultOrPath] | Mapping[Any, ResultOrPath],
     names: list[str] | str | None,
 ) -> dict[str, ResultOrPath]:
     """Convert all valid inputs for results and names to dict[str, OptimizeResult]."""
@@ -129,11 +134,10 @@ def _harmonize_inputs_to_dict(
         raise ValueError("len(results) needs to be equal to len(names).")
 
     # handle dict case
-    if isinstance(results, dict):
+    if isinstance(results, Mapping):
+        results_dict = dict(results)
         if names is not None:
-            results_dict = dict(zip(names, list(results.values()), strict=False))
-        else:
-            results_dict = results
+            results_dict = dict(zip(names, results_dict.values(), strict=False))
 
     # unlabeled iterable of results
     else:
@@ -352,18 +356,10 @@ def _retrieve_optimization_data_from_result_object(
         if stack_multistart:
             stacked = _get_stacked_local_histories(local_histories, res.direction)
             if show_exploration:
-                fun = res.multistart_info.exploration_results[::-1] + stacked.fun
-                params = res.multistart_info.exploration_sample[::-1] + stacked.params
-
-                stacked = History(
-                    direction=stacked.direction,
-                    fun=fun,
-                    params=params,
-                    # TODO: This needs to be fixed
-                    start_time=len(fun) * [None],  # type: ignore
-                    stop_time=len(fun) * [None],  # type: ignore
-                    batches=len(fun) * [None],  # type: ignore
-                    task=len(fun) * [None],  # type: ignore
+                stacked = _prepend_exploration(
+                    stacked,
+                    exploration_fun=res.multistart_info.exploration_results,
+                    exploration_params=res.multistart_info.exploration_sample,
                 )
         else:
             stacked = None
@@ -415,9 +411,12 @@ def _retrieve_optimization_data_from_database(
 
     if stack_multistart and local_histories is not None:
         stacked = _get_stacked_local_histories(local_histories, direction, _history)
-        if show_exploration:
-            stacked["params"] = exploration["params"][::-1] + stacked["params"]  # type: ignore
-            stacked["criterion"] = exploration["criterion"][::-1] + stacked["criterion"]  # type: ignore
+        if show_exploration and exploration is not None:
+            stacked = _prepend_exploration(
+                stacked,
+                exploration_fun=exploration.fun,
+                exploration_params=exploration.params,
+            )
     else:
         stacked = None
 
@@ -428,8 +427,8 @@ def _retrieve_optimization_data_from_database(
         start_time=_history["time"],
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(_history["fun"]) * [None],  # type: ignore
-        task=len(_history["fun"]) * [None],  # type: ignore
+        stop_time=len(_history["fun"]) * [None],  # ty:ignore[invalid-argument-type]
+        task=len(_history["fun"]) * [None],  # ty:ignore[invalid-argument-type]
         batches=list(range(len(_history["fun"]))),
     )
 
@@ -476,9 +475,34 @@ def _get_stacked_local_histories(
         # TODO (@janosg): Retrieve `stop_time` from `hist` once it is available for the
         # IterationHistory.
         # https://github.com/optimagic-dev/optimagic/pull/553
-        stop_time=len(stacked["criterion"]) * [None],  # type: ignore
-        task=len(stacked["criterion"]) * [None],  # type: ignore
+        stop_time=len(stacked["criterion"]) * [None],  # ty:ignore[invalid-argument-type]
+        task=len(stacked["criterion"]) * [None],  # ty:ignore[invalid-argument-type]
         batches=list(range(len(stacked["criterion"]))),
+    )
+
+
+def _prepend_exploration(
+    history: History,
+    exploration_fun: list[float],
+    exploration_params: list[PyTree],
+) -> History:
+    """Prepend the exploration samples in reverse order to a stacked history.
+
+    The exploration samples are sorted from best to worst, so reversing them puts the
+    best samples right before the local optimizations.
+
+    """
+    fun = exploration_fun[::-1] + history.fun
+    params = exploration_params[::-1] + history.params
+    return History(
+        direction=history.direction,
+        fun=fun,
+        params=params,
+        # TODO: This needs to be fixed
+        start_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+        stop_time=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+        batches=len(fun) * [None],  # ty:ignore[invalid-argument-type]
+        task=len(fun) * [None],  # ty:ignore[invalid-argument-type]
     )
 
 
@@ -580,15 +604,17 @@ def _extract_params_plot_lines(
         history = data.history.params
     start_params = data.start_params
 
-    registry = get_registry(extended=True)
-
-    hist_arr = np.array([tree_just_flatten(p, registry=registry) for p in history]).T
-    names = leaf_names(start_params, registry=registry)
+    hist_arr = np.array(
+        [tree_leaves(p, namespace=PyTreeNamespace.VALUE) for p in history]
+    ).T
+    names = leaf_names(start_params, namespace=PyTreeNamespace.VALUE)
 
     if selector is not None:
-        flat, treedef = tree_flatten(start_params, registry=registry)
-        helper = tree_unflatten(treedef, list(range(len(flat))), registry=registry)
-        selected = np.array(tree_just_flatten(selector(helper), registry=registry))
+        flat, treedef = tree_flatten(start_params, namespace=PyTreeNamespace.VALUE)
+        helper = tree_unflatten(treedef, list(range(len(flat))))
+        selected = np.array(
+            tree_leaves(selector(helper), namespace=PyTreeNamespace.VALUE)
+        )
         names = [names[i] for i in selected]
         hist_arr = hist_arr[selected]
 

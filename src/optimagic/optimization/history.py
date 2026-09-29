@@ -6,11 +6,13 @@ from typing import Any, Callable, Iterable, Literal
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from pybaum import leaf_names, tree_just_flatten
 
-from optimagic.parameters.tree_registry import get_registry
+from optimagic.pytree import (
+    leaf_names,
+    tree_leaves,
+)
 from optimagic.timing import CostModel
-from optimagic.typing import Direction, EvalTask, PyTree
+from optimagic.typing import Direction, EvalTask, PyTree, PyTreeNamespace
 
 
 @dataclass(frozen=True)
@@ -136,7 +138,7 @@ class History:
             fun = _apply_reduction_to_batches(
                 data=fun,
                 batch_ids=self.batches,
-                reduction_function=min_or_max,  # type: ignore[arg-type]
+                reduction_function=min_or_max,  # ty:ignore[invalid-argument-type]
             )
 
             # Verify that tasks are homogeneous in each batch, and select first if true.
@@ -398,8 +400,7 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
     if fast_path:
         flatten = lambda x: x.tolist()
     else:
-        registry = get_registry(extended=True)
-        flatten = partial(tree_just_flatten, registry=registry)
+        flatten = partial(tree_leaves, namespace=PyTreeNamespace.VALUE)
 
     return [flatten(p) for p in params]
 
@@ -407,12 +408,9 @@ def _get_flat_params(params: list[PyTree]) -> list[list[float]]:
 def _get_flat_param_names(param: PyTree) -> list[str]:
     fast_path = _is_1d_array(param)
     if fast_path:
-        # Mypy raises an error here because .tolist() returns a str for zero-dimensional
-        # arrays, but the fast path is only taken for 1d arrays, so it can be ignored.
         return np.arange(param.size).astype(str).tolist()
 
-    registry = get_registry(extended=True)
-    return leaf_names(param, registry=registry)
+    return leaf_names(param, namespace=PyTreeNamespace.VALUE)
 
 
 def _is_1d_array(param: PyTree) -> bool:
@@ -449,7 +447,7 @@ def _validate_args_are_all_none_or_lists_of_same_length(
 
     if not all_none:
         if all_list:
-            unique_list_lengths = set(map(len, args))  # type: ignore[arg-type]
+            unique_list_lengths = set(map(len, args))  # ty:ignore[invalid-argument-type]
 
             if len(unique_list_lengths) != 1:
                 raise ValueError("All list arguments must have the same length.")
@@ -487,6 +485,8 @@ def _apply_reduction_to_batches(
     """
     batch_starts, batch_stops = _get_batch_starts_and_stops(batch_ids)
 
+    func_name = getattr(reduction_function, "__name__", repr(reduction_function))
+
     batch_results: list[float] = []
 
     for start, stop in zip(batch_starts, batch_stops, strict=True):
@@ -500,9 +500,9 @@ def _apply_reduction_to_batches(
                 reduced = reduction_function(batch_data)
         except Exception as e:
             msg = (
-                f"Calling function {reduction_function.__name__} on batch {batch_id} "
+                f"Calling function {func_name} on batch {batch_id} "
                 "of the History raised an Exception. Please verify that "
-                f"{reduction_function.__name__} is well-defined, takes an iterable of "
+                f"{func_name} is well-defined, takes an iterable of "
                 "floats as input and returns a scalar. The function must be able to "
                 "handle NaN's."
             )
@@ -510,14 +510,14 @@ def _apply_reduction_to_batches(
 
         if not np.isscalar(reduced):
             msg = (
-                f"Function {reduction_function.__name__} did not return a scalar for "
-                f"batch {batch_id}. Please verify that {reduction_function.__name__} "
+                f"Function {func_name} did not return a scalar for "
+                f"batch {batch_id}. Please verify that {func_name} "
                 "returns a scalar when called on an iterable of floats. The function "
                 "must be able to handle NaN's."
             )
             raise ValueError(msg)
 
-        batch_results.append(float(reduced))  # type: ignore[arg-type,unused-ignore]
+        batch_results.append(float(reduced))  # ty:ignore[invalid-argument-type]
 
     return np.array(batch_results, dtype=np.float64)
 

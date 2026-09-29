@@ -185,6 +185,7 @@ test_cases = [
     # linear solver
     # using ma27, ma57, ma77, ma86 leads to remaining at the start values
     # using ma97 leads to segmentation fault
+    {"linear_solver_options": {"linear_scaling_on_demand": True}},
     {"linear_solver_options": {"mumps_pivtol": 1e-5}},
     {"linear_solver_options": {"linear_system_scaling": None}},
     {"linear_solver_options": {"ma86_scaling": None}},

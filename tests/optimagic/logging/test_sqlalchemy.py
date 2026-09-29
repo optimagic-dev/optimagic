@@ -70,7 +70,7 @@ class TestIterationStore:
             store.update(key=1, value=updated_result)
 
         with pytest.raises(AttributeError):
-            store.sellect_typo  # type:ignore # noqa: B018
+            store.sellect_typo  # noqa: B018
 
     def test_serialization(self, store):
         """Test the serialization and deserialization of the IterationStore."""

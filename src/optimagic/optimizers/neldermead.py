@@ -303,7 +303,7 @@ def neldermead_parallel(
                             m,
                         )
                         for i in range(p)
-                    ),
+                    ),  # ty:ignore[invalid-argument-type]
                     n_cores=p,
                 )
             ),
