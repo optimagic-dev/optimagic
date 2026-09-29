@@ -1,6 +1,6 @@
 ---
 version: 2
-# update once a week, with a 7-day cooldown
+# update once a week, with a 7-day cooldown, bundling all updates into one PR
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -8,3 +8,7 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - '*'
