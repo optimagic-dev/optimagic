@@ -52,7 +52,7 @@ class LogOptions:
 
     def __init_subclass__(
         cls: Type[LogOptions], abstract: bool = False, **kwargs: dict[Any, Any]
-    ):
+    ) -> None:
         if not abstract:
             LogOptions._subclass_registry.append(cls)
         super().__init_subclass__(**kwargs)

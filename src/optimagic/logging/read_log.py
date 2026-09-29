@@ -14,13 +14,14 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass
+from typing import Any
 
-from optimagic.logging.logger import SQLiteLogOptions, SQLiteLogReader
+from optimagic.logging.logger import LogReader, SQLiteLogOptions, SQLiteLogReader
 
 
 @dataclass
 class OptimizeLogReader:
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: Any, **kwargs: Any) -> LogReader[SQLiteLogOptions]:
         warnings.warn(
             "OptimizeLogReader is deprecated and will be removed in a future "
             "version. Please use optimagic.logging.SQLiteLogReader instead.",
