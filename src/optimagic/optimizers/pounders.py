@@ -318,8 +318,9 @@ def internal_solve_pounders(
     )
 
     x_accepted = history.get_best_x()
-    gradient_norm_initial = np.linalg.norm(main_model.linear_terms)
-    gradient_norm_initial *= delta
+    # The model is fitted in coordinates scaled by the trust-region radius, so its
+    # linear terms equal delta times the gradient in the original coordinates.
+    gradient_norm_initial = np.linalg.norm(main_model.linear_terms) / delta
 
     valid = True
     n_modelpoints = n + 1
@@ -548,8 +549,7 @@ def internal_solve_pounders(
 
         main_model = create_main_from_residual_model(residual_model)
 
-        gradient_norm = np.linalg.norm(main_model.linear_terms)
-        gradient_norm *= delta
+        gradient_norm = np.linalg.norm(main_model.linear_terms) / delta
 
         (
             last_model_indices,
