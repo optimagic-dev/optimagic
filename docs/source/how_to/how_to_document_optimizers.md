@@ -173,6 +173,18 @@ more memory but may converge faster for some problems.
     Without this, type hints such as ``PositiveInt`` may appear decomposed in the
     documentation (e.g., as ``Annotated[int, Gt(gt=0)]``).
 
+.. warning::
+    Option values are validated against the field annotations with pydantic, which
+    resolves the annotations at runtime. Every name used in a field annotation must
+    therefore be importable at runtime -- a name that is only imported inside an
+    ``if TYPE_CHECKING:`` block will raise an error when the algorithm is
+    instantiated. If an optional dependency provides a type you want to use in an
+    annotation, add a runtime fallback next to the ``TYPE_CHECKING`` import, as is
+    done for ``HessianApproximation`` in ``optimagic/optimizers/fides.py``.
+
+    Since annotations are enforced, they must also be honest: document and annotate
+    the values the optimizer actually accepts, rather than a narrower set.
+
 ```
 
 ### Step 4: Integrate into `algorithms.md`
