@@ -488,6 +488,10 @@ class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
 
     """
 
+    iteration_store: IterationStore
+    step_store: StepStore
+    problem_store: ProblemStore
+
     @staticmethod
     def _handle_existing_database(
         path: str | Path,
