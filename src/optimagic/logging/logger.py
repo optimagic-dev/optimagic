@@ -354,6 +354,9 @@ class LogStore(Generic[_LogOptionsType, _LogReaderType], ABC):
     ) -> LogStore[_LogOptionsType, _LogReaderType]:
         pass
 
+    def close(self) -> None:
+        """Release resources (e.g. database connections) held by the stores."""
+
 
 class SQLiteLogOptions(SQLAlchemyConfig, LogOptions):
     """Configuration class for setting up an SQLite database with SQLAlchemy.
@@ -521,6 +524,11 @@ class _SQLiteLogStore(LogStore[SQLiteLogOptions, SQLiteLogReader]):
         step_store = StepStore(log_options)
         problem_store = ProblemStore(log_options)
         return cls(iteration_store, step_store, problem_store)
+
+    def close(self) -> None:
+        """Close all connections, so SQLite checkpoints the WAL into the file."""
+        for store in (self.iteration_store, self.step_store, self.problem_store):
+            store.engine.dispose()
 
 
 _LOG_OPTION_LOGGER_REGISTRY: dict[Type[LogOptions], Type[LogStore[Any, Any]]] = {

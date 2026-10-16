@@ -753,6 +753,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
 
     if logger is not None:
         assert problem.logging is not None
+        logger.close()
         log_reader = LogReader.from_options(problem.logging)
     else:
         log_reader = None
