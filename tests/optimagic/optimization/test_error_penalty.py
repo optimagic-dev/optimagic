@@ -103,3 +103,40 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
 
     assert np.isclose(scalar.value, contribs.value.sum())
     assert np.isclose(scalar.value, (root_contribs.value**2).sum())
+
+
+@pytest.mark.parametrize(
+    "start_criterion, solver_type",
+    [
+        (LikelihoodFunctionValue(np.arange(1.0, 6.0)), AggregationLevel.LIKELIHOOD),
+        (
+            LeastSquaresFunctionValue(np.arange(1.0, 6.0)),
+            AggregationLevel.LEAST_SQUARES,
+        ),
+    ],
+)
+def test_default_penalty_matches_the_scalar_penalty_of_the_start_value(
+    start_criterion, solver_type
+):
+    """Without explicit options, every aggregation penalizes the same scalar value."""
+    x = np.array([0.3, 0.7])
+    x0 = np.array([0.1, 0.2])
+    scalar_func = get_error_penalty_function(
+        start_x=x0,
+        start_criterion=ScalarFunctionValue(
+            start_criterion.internal_value(AggregationLevel.SCALAR)
+        ),
+        error_penalty=None,
+        solver_type=AggregationLevel.SCALAR,
+        direction=Direction.MINIMIZE,
+    )
+    func = get_error_penalty_function(
+        start_x=x0,
+        start_criterion=start_criterion,
+        error_penalty=None,
+        solver_type=solver_type,
+        direction=Direction.MINIMIZE,
+    )
+    expected, _ = scalar_func(x)
+    got, _ = func(x)
+    assert np.isclose(got.internal_value(AggregationLevel.SCALAR), expected.value)

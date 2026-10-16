@@ -67,7 +67,7 @@ def get_error_penalty_function(
 ) -> Callable[[NDArray[np.float64]], tuple[SpecificFunctionValue, NDArray[np.float64]]]:
     error_penalty = {} if error_penalty is None else error_penalty
 
-    first_value = start_criterion.internal_value(solver_type)
+    first_value = start_criterion.internal_value(AggregationLevel.SCALAR)
 
     constant, slope = _process_error_penalty(
         error_penalty=error_penalty,
