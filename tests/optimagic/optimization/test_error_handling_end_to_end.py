@@ -33,11 +33,6 @@ from optimagic.utilities import get_rng
 START_PARAMS = np.full(2, -1.0)
 FAILURE_MARGIN = 0.01
 
-BHHH_XFAIL = pytest.mark.xfail(
-    strict=True,
-    reason="bhhh steps uphill and accepts worse points; fixed in #719.",
-)
-
 
 def _generate_data():
     rng = get_rng(seed=0)
@@ -167,11 +162,11 @@ CASES = [
     # likelihood functions
     ("likelihood", "scipy_lbfgsb", "minimize", False),
     ("likelihood", "scipy_lbfgsb", "maximize", False),
-    pytest.param("likelihood", "bhhh", "minimize", False, marks=BHHH_XFAIL),
-    pytest.param("likelihood", "bhhh", "maximize", False, marks=BHHH_XFAIL),
+    ("likelihood", "bhhh", "minimize", False),
+    ("likelihood", "bhhh", "maximize", False),
     # least-squares functions
     ("least_squares", "scipy_lbfgsb", "minimize", False),
-    pytest.param("least_squares", "bhhh", "minimize", False, marks=BHHH_XFAIL),
+    ("least_squares", "bhhh", "minimize", False),
     ("least_squares", "scipy_ls_trf", "minimize", False),
     ("least_squares", "scipy_ls_trf", "minimize", True),
     ("least_squares", "pounders", "minimize", False),
