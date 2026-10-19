@@ -57,82 +57,84 @@ def bhhh_internal(
     gtol_abs: NonNegativeFloat,
     maxiter: PositiveInt,
 ) -> InternalOptimizeResult:
-    """Minimize a likelihood function using the BHHH algorithm.
+    r"""Minimize a sum of contributions using the BHHH algorithm.
+
+    With contributions :math:`f_i(x)`, Jacobian :math:`J` of shape (n_obs, n_params),
+    gradient :math:`g = J^\top 1` and Hessian approximation :math:`H = J^\top J`, the
+    search direction is the descent direction :math:`d = -H^{-1} g`.
 
     Args:
-        criterion_and_derivative: The objective function to be minimized.
-        x: Initial guess of the parameter vector (starting points).
-        convergence_absolute_gradient_tolerance: Stopping criterion for the
-            gradient tolerance.
-        stopping_max_iterations: Maximum number of iterations. If reached,
-            terminate.
+        fun_and_jac: Function that returns the contributions of shape (n_obs,) and
+            their Jacobian of shape (n_obs, n_params). The sum of contributions is
+            minimized.
+        x: Start parameters of shape (n_params,).
+        gtol_abs: Stop if :math:`g^\top H^{-1} g` falls below this value.
+        maxiter: Maximum number of iterations.
 
     Returns:
-        InternalOptimizeResult: The result of the optimization.
+        The result of the optimization.
 
     """
-    criterion_accepted, gradient = fun_and_jac(x)
+    criterion_accepted, jacobian = fun_and_jac(x)
     x_accepted = x
-
-    hessian_approx = np.dot(gradient.T, gradient)
-    gradient_sum = np.sum(gradient, axis=0)
-    direction = np.linalg.solve(hessian_approx, gradient_sum)
-    gtol = np.dot(gradient_sum, direction)
+    direction, gtol = _get_direction(jacobian)
 
     initial_step_size = 1.0
+    min_step_size = 1e-10
     step_size = initial_step_size
+    success = gtol < gtol_abs
+    message = "Converged." if success else "Maximum number of iterations reached."
 
     niter = 1
-    while niter < maxiter:
+    while niter < maxiter and not success:
         niter += 1
 
         x_candidate = x_accepted + step_size * direction
-        criterion_candidate, gradient = fun_and_jac(x_candidate)
+        criterion_candidate, jacobian_candidate = fun_and_jac(x_candidate)
 
-        # If previous step was accepted
-        if step_size == initial_step_size:
-            hessian_approx = np.dot(gradient.T, gradient)
-
-        else:
-            criterion_candidate, gradient = fun_and_jac(x_candidate)
-
-        # Line search
+        # Line search: halve the step until the criterion does not increase. The
+        # Jacobian at a rejected candidate is never used.
         if np.sum(criterion_candidate) > np.sum(criterion_accepted):
             step_size /= 2
+            if step_size < min_step_size:
+                message = "Line search did not find a decrease of the criterion."
+                break
 
-            if step_size <= 0.01:
-                # Accept step
-                x_accepted = x_candidate
-                criterion_accepted = criterion_candidate
-
-                # Reset step size
-                step_size = initial_step_size
-
-        # If decrease in likelihood, calculate new direction vector
         else:
-            # Accept step
             x_accepted = x_candidate
             criterion_accepted = criterion_candidate
-
-            gradient_sum = np.sum(gradient, axis=0)
-            direction = np.linalg.solve(hessian_approx, gradient_sum)
-            gtol = np.dot(gradient_sum, direction)
-
-            if gtol < 0:
-                hessian_approx = np.dot(gradient.T, gradient)
-                direction = np.linalg.solve(hessian_approx, gradient_sum)
-
-            # Reset stepsize
+            direction, gtol = _get_direction(jacobian_candidate)
             step_size = initial_step_size
-
-        if gtol < gtol_abs:
-            break
+            if gtol < gtol_abs:
+                success = True
+                message = "Converged."
 
     res = InternalOptimizeResult(
         x=x_accepted,
         fun=criterion_accepted,
-        message="Under development",
+        success=success,
+        message=message,
         n_iterations=niter,
     )
 
     return res
+
+
+def _get_direction(
+    jacobian: NDArray[np.float64],
+) -> tuple[NDArray[np.float64], float]:
+    r"""Compute the BHHH search direction and the convergence criterion.
+
+    Args:
+        jacobian: Jacobian of the contributions of shape (n_obs, n_params).
+
+    Returns:
+        The descent direction :math:`d = -H^{-1} g` of shape (n_params,), with
+        :math:`H = J^\top J` and :math:`g = J^\top 1`, and :math:`g^\top H^{-1} g`.
+
+    """
+    hessian_approx = jacobian.T @ jacobian
+    gradient = jacobian.sum(axis=0)
+    direction = -np.linalg.solve(hessian_approx, gradient)
+    gtol = float(-gradient @ direction)
+    return direction, gtol
