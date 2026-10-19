@@ -57,18 +57,22 @@ def bhhh_internal(
     gtol_abs: NonNegativeFloat,
     maxiter: PositiveInt,
 ) -> InternalOptimizeResult:
-    """Minimize a likelihood function using the BHHH algorithm.
+    r"""Minimize a sum of contributions using the BHHH algorithm.
+
+    With contributions :math:`f_i(x)`, Jacobian :math:`J` of shape (n_obs, n_params),
+    gradient :math:`g = J^\top 1` and Hessian approximation :math:`H = J^\top J`, the
+    search direction is the descent direction :math:`d = -H^{-1} g`.
 
     Args:
-        criterion_and_derivative: The objective function to be minimized.
-        x: Initial guess of the parameter vector (starting points).
-        convergence_absolute_gradient_tolerance: Stopping criterion for the
-            gradient tolerance.
-        stopping_max_iterations: Maximum number of iterations. If reached,
-            terminate.
+        fun_and_jac: Function that returns the contributions of shape (n_obs,) and
+            their Jacobian of shape (n_obs, n_params). The sum of contributions is
+            minimized.
+        x: Start parameters of shape (n_params,).
+        gtol_abs: Stop if :math:`g^\top H^{-1} g` falls below this value.
+        maxiter: Maximum number of iterations.
 
     Returns:
-        InternalOptimizeResult: The result of the optimization.
+        The result of the optimization.
 
     """
     criterion_accepted, gradient = fun_and_jac(x)
@@ -76,8 +80,8 @@ def bhhh_internal(
 
     hessian_approx = np.dot(gradient.T, gradient)
     gradient_sum = np.sum(gradient, axis=0)
-    direction = np.linalg.solve(hessian_approx, gradient_sum)
-    gtol = np.dot(gradient_sum, direction)
+    direction = -np.linalg.solve(hessian_approx, gradient_sum)
+    gtol = -np.dot(gradient_sum, direction)
 
     initial_step_size = 1.0
     step_size = initial_step_size
@@ -108,19 +112,19 @@ def bhhh_internal(
                 # Reset step size
                 step_size = initial_step_size
 
-        # If decrease in likelihood, calculate new direction vector
+        # If the criterion decreased, calculate a new direction vector
         else:
             # Accept step
             x_accepted = x_candidate
             criterion_accepted = criterion_candidate
 
             gradient_sum = np.sum(gradient, axis=0)
-            direction = np.linalg.solve(hessian_approx, gradient_sum)
-            gtol = np.dot(gradient_sum, direction)
+            direction = -np.linalg.solve(hessian_approx, gradient_sum)
+            gtol = -np.dot(gradient_sum, direction)
 
             if gtol < 0:
                 hessian_approx = np.dot(gradient.T, gradient)
-                direction = np.linalg.solve(hessian_approx, gradient_sum)
+                direction = -np.linalg.solve(hessian_approx, gradient_sum)
 
             # Reset stepsize
             step_size = initial_step_size

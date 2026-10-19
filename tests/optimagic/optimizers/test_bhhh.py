@@ -1,14 +1,13 @@
 """Test the internal BHHH algorithm."""
 
-from functools import partial
-
 import numpy as np
 import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy.stats import norm
 
-from optimagic import mark, minimize
+from optimagic import mark, maximize, minimize
+from optimagic.differentiation.derivatives import first_derivative
 from optimagic.optimizers.bhhh import bhhh_internal
 from optimagic.utilities import get_rng
 
@@ -30,133 +29,87 @@ def generate_test_data():
     return endog, exog
 
 
+ENDOG, EXOG = generate_test_data()
+
+
 def _cdf_logit(x):
     return 1 / (1 + np.exp(-x))
 
 
-def get_loglikelihood_logit(endog, exog, x):
-    q = 2 * endog - 1
-    linear_prediction = np.dot(exog, x)
-
-    return np.log(_cdf_logit(q * linear_prediction))
-
-
-def get_score_logit(endog, exog, x):
-    linear_prediction = np.dot(exog, x)
-
-    return (endog - _cdf_logit(linear_prediction))[:, None] * exog
+def loglike_logit(x):
+    """Return the logit loglikelihood contributions of shape (n_obs,)."""
+    q = 2 * ENDOG - 1
+    return np.log(_cdf_logit(q * (EXOG @ x)))
 
 
-def get_loglikelihood_probit(endog, exog, x):
-    q = 2 * endog - 1
-    linear_prediction = np.dot(exog, x[: exog.shape[1]])
-
-    return np.log(norm.cdf(q * linear_prediction))
+def score_logit(x):
+    """Return the derivative of `loglike_logit` of shape (n_obs, n_params)."""
+    return (ENDOG - _cdf_logit(EXOG @ x))[:, None] * EXOG
 
 
-def get_score_probit(endog, exog, x):
-    q = 2 * endog - 1
-    linear_prediction = np.dot(exog, x[: exog.shape[1]])
-
-    derivative_loglikelihood = (
-        q * norm.pdf(q * linear_prediction) / norm.cdf(q * linear_prediction)
-    )
-
-    return derivative_loglikelihood[:, None] * exog
+def loglike_probit(x):
+    """Return the probit loglikelihood contributions of shape (n_obs,)."""
+    q = 2 * ENDOG - 1
+    return np.log(norm.cdf(q * (EXOG @ x)))
 
 
-def criterion_and_derivative_logit(x):
-    """Return Logit criterion and derivative.
-
-    Args:
-        x (np.ndarray): Parameter vector of shape (n_obs,).
-
-    Returns:
-        tuple: first entry is the criterion, second entry is the score
-
-    """
-    endog, exog = generate_test_data()
-    score = partial(get_score_logit, endog, exog)
-    loglike = partial(get_loglikelihood_logit, endog, exog)
-
-    return -loglike(x), score(x)
+def score_probit(x):
+    """Return the derivative of `loglike_probit` of shape (n_obs, n_params)."""
+    q = 2 * ENDOG - 1
+    linear_prediction = EXOG @ x
+    derivative = q * norm.pdf(q * linear_prediction) / norm.cdf(q * linear_prediction)
+    return derivative[:, None] * EXOG
 
 
-def criterion_and_derivative_probit(x):
-    """Return Probit criterion and derivative.
-
-    Args:
-        x (np.ndarray): Parameter vector of shape (n_obs,).
-
-    Returns:
-        tuple: first entry is the criterion, second entry is the score
-
-    """
-    endog, exog = generate_test_data()
-
-    score = partial(get_score_probit, endog, exog)
-    loglike = partial(get_loglikelihood_probit, endog, exog)
-
-    return -loglike(x), score(x)
+MODELS = {
+    "logit": (loglike_logit, score_logit, sm.Logit),
+    "probit": (loglike_probit, score_probit, sm.Probit),
+}
 
 
-@pytest.fixture()
-def result_statsmodels_logit():
-    endog, exog = generate_test_data()
-    result = sm.Logit(endog, exog).fit()
-
-    return result
-
-
-@pytest.fixture()
-def result_statsmodels_probit():
-    endog, exog = generate_test_data()
-    result = sm.Probit(endog, exog).fit()
-
-    return result
+@pytest.fixture(params=list(MODELS), scope="module")
+def model(request):
+    loglike, score, statsmodels_model = MODELS[request.param]
+    expected = statsmodels_model(ENDOG, EXOG).fit(disp=0).params
+    return loglike, score, expected
 
 
-@pytest.mark.parametrize(
-    "criterion_and_derivative, result_statsmodels",
-    [
-        (criterion_and_derivative_logit, "result_statsmodels_logit"),
-        (criterion_and_derivative_probit, "result_statsmodels_probit"),
-    ],
-)
-def test_maximum_likelihood(criterion_and_derivative, result_statsmodels, request):
-    result_expected = request.getfixturevalue(result_statsmodels)
-
-    x = np.zeros(3)
-
-    result_bhhh = bhhh_internal(
-        criterion_and_derivative,
-        x=x,
-        gtol_abs=1e-8,
-        maxiter=200,
-    )
-
-    aaae(result_bhhh.x, result_expected.params, decimal=4)
+def test_score_is_derivative_of_loglike(model):
+    loglike, score, _ = model
+    x = np.array([0.1, -0.2, 0.3])
+    numerical = first_derivative(loglike, params=x).derivative
+    aaae(score(x), numerical, decimal=5)
 
 
-@pytest.mark.parametrize(
-    "criterion_and_derivative, result_statsmodels",
-    [
-        (criterion_and_derivative_logit, "result_statsmodels_logit"),
-        (criterion_and_derivative_probit, "result_statsmodels_probit"),
-    ],
-)
-def test_maximum_likelihood_external_interfaace(
-    criterion_and_derivative, result_statsmodels, request
-):
-    result_expected = request.getfixturevalue(result_statsmodels)
+def test_bhhh_internal_minimizes_negative_loglike(model):
+    loglike, score, expected = model
 
-    x = np.zeros(3)
+    def fun_and_jac(x):
+        return -loglike(x), -score(x)
 
-    result_bhhh = minimize(
-        fun=mark.likelihood(criterion_and_derivative),
-        jac=True,
-        params=x,
+    res = bhhh_internal(fun_and_jac, x=np.zeros(3), gtol_abs=1e-8, maxiter=200)
+    aaae(res.x, expected, decimal=4)
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+@pytest.mark.parametrize("closed_form_derivative", [True, False])
+def test_bhhh_external_interface(model, direction, closed_form_derivative):
+    loglike, score, expected = model
+    sign = 1.0 if direction == "maximize" else -1.0
+
+    @mark.likelihood
+    def fun(x):
+        return sign * loglike(x)
+
+    @mark.likelihood
+    def fun_and_jac(x):
+        return sign * loglike(x), sign * score(x)
+
+    optimize = maximize if direction == "maximize" else minimize
+    res = optimize(
+        fun=fun,
+        fun_and_jac=fun_and_jac if closed_form_derivative else None,
+        params=np.zeros(3),
         algorithm="bhhh",
     )
-
-    aaae(result_bhhh.params, result_expected.params, decimal=4)
+    aaae(res.params, expected, decimal=4)
