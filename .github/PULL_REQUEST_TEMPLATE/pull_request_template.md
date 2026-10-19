@@ -3,9 +3,12 @@
 Reference the issue or discussion, if there is any. Provide a description of your
 proposed solution.
 
-### Todo
+### Checklist
 
-- [ ] Target the right branch and pick an appropriate title.
-- [ ] Put `Closes #XXXX` in the first PR comment to auto-close the relevant issue once
-  the PR is accepted. This is not applicable if there is no corresponding issue.
-- [ ] Any steps that still need to be done.
+- [ ] I have read the [contributor guide](https://optimagic.readthedocs.io/en/latest/development/how_to_contribute.html).
+- [ ] I have described any additional validation I performed (e.g., manual checks, numerical comparisons, or benchmarks) and any remaining validation gaps.
+- [ ] I have added or updated tests for changed behavior.
+- [ ] I have updated documentation for user-facing changes.
+- [ ] I have linked any issues this PR resolves using `Closes #XXXX`.
+- [ ] I have described any substantial AI assistance and how I checked the result.
+- [ ] I have selected the appropriate base branch and described any remaining work.
