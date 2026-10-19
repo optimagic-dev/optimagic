@@ -198,7 +198,7 @@ def maximize(
             optimization from there. For details see  :ref:`how-to-errors`.
         error_penalty: A dictionary with the keys "slope" and "constant" that
             influences the magnitude of the penalty values. For maximization problems
-            both should be negative. For details see :ref:`how-to-errors`.
+            both should be negative. For details see :ref:`error-handling-explanation`.
         scaling: If None or False, the parameter space is not rescaled. If True,
             a heuristic is used to improve the conditioning of the optimization problem.
             To choose which heuristic is used and to customize the scaling, provide
@@ -409,7 +409,7 @@ def minimize(
             optimization from there. For details see  :ref:`how-to-errors`.
         error_penalty: A dictionary with the keys "slope" and "constant" that
             influences the magnitude of the penalty values. For minimization problems
-            both should be positive. For details see :ref:`how-to-errors`.
+            both should be positive. For details see :ref:`error-handling-explanation`.
         scaling: If None or False, the parameter space is not rescaled. If True,
             a heuristic is used to improve the conditioning of the optimization problem.
             To choose which heuristic is used and to customize the scaling, provide
