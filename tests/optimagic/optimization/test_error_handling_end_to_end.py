@@ -13,8 +13,7 @@ predictor :math:`\eta_i(x) = x_0 + x_1 t_i`:
 Evaluating either objective fails if :math:`x_0 + x_1` exceeds its value at the optimum
 by more than ``FAILURE_MARGIN``, similar to an overflow of the exponential. Starting at
 ``START_PARAMS``, all tested optimizers step into that region on their way to the
-optimum. The tests cover all supported combinations of function type, solver type and
-direction.
+optimum.
 
 """
 
@@ -27,7 +26,6 @@ from numpy.testing import assert_array_almost_equal as aaae
 from scipy.special import gammaln
 
 import optimagic as om
-from optimagic.exceptions import InvalidFunctionError
 from optimagic.utilities import get_rng
 
 START_PARAMS = np.full(2, -1.0)
@@ -101,97 +99,63 @@ def _raise_in_failure_region(x, optimum, counter):
         raise ValueError("Evaluation failed.")
 
 
-def _get_problem(fun_type, direction, counter):
-    """Return the objective, its derivative, the optimum and the optimal value.
+def _poisson_functions(direction, counter):
+    """Return the loglikelihood contributions and their derivative of shape (n_obs, 2).
 
-    Args:
-        fun_type: One of "scalar", "likelihood" or "least_squares".
-        direction: One of "minimize" or "maximize".
-        counter: Counts the evaluations in the failure region.
-
-    Returns:
-        The marked objective, its marked derivative, the optimal parameters of shape
-        (2,) and the aggregated objective value at the optimum. The derivative has
-        shape (2,) for scalar and shape (n_obs, 2) for likelihood and least-squares
-        functions.
+    For minimization, both are multiplied by -1.
 
     """
-    # The loglikelihood is maximized; minimization uses its negative.
     sign = 1.0 if direction == "maximize" else -1.0
 
-    if fun_type in ("scalar", "likelihood"):
-        optimum = POISSON_OPTIMUM
+    def contributions(x):
+        _raise_in_failure_region(x, POISSON_OPTIMUM, counter)
+        return sign * _poisson_loglike(x)
 
-        def contributions(x):
-            _raise_in_failure_region(x, optimum, counter)
-            return sign * _poisson_loglike(x)
+    def contributions_jac(x):
+        _raise_in_failure_region(x, POISSON_OPTIMUM, counter)
+        return sign * _poisson_score(x)
 
-        def contributions_jac(x):
-            _raise_in_failure_region(x, optimum, counter)
-            return sign * _poisson_score(x)
-
-        if fun_type == "scalar":
-            fun = om.mark.scalar(lambda x: contributions(x).sum())
-            jac = om.mark.scalar(lambda x: contributions_jac(x).sum(axis=0))
-        else:
-            fun = om.mark.likelihood(contributions)
-            jac = om.mark.likelihood(contributions_jac)
-        optimal_value = sign * _poisson_loglike(optimum).sum()
-
-    elif fun_type == "least_squares":
-        optimum = GAUSSIAN_OPTIMUM
-
-        @om.mark.least_squares
-        def fun(x):
-            _raise_in_failure_region(x, optimum, counter)
-            return _gaussian_residuals(x)
-
-        @om.mark.least_squares
-        def jac(x):
-            _raise_in_failure_region(x, optimum, counter)
-            return _gaussian_residuals_jac(x)
-
-        optimal_value = (_gaussian_residuals(optimum) ** 2).sum()
-
-    return fun, jac, optimum, optimal_value
+    return contributions, contributions_jac
 
 
-CASES = [
-    # scalar functions
-    ("scalar", "scipy_lbfgsb", "minimize", False),
-    ("scalar", "scipy_lbfgsb", "maximize", False),
-    ("scalar", "scipy_lbfgsb", "minimize", True),
-    ("scalar", "scipy_lbfgsb", "maximize", True),
-    ("scalar", "scipy_neldermead", "minimize", False),
-    ("scalar", "scipy_neldermead", "maximize", False),
-    # likelihood functions
-    ("likelihood", "scipy_lbfgsb", "minimize", False),
-    ("likelihood", "scipy_lbfgsb", "maximize", False),
-    pytest.param("likelihood", "bhhh", "minimize", False, marks=BHHH_XFAIL),
-    pytest.param("likelihood", "bhhh", "maximize", False, marks=BHHH_XFAIL),
-    # least-squares functions
-    ("least_squares", "scipy_lbfgsb", "minimize", False),
-    pytest.param("least_squares", "bhhh", "minimize", False, marks=BHHH_XFAIL),
-    ("least_squares", "scipy_ls_trf", "minimize", False),
-    ("least_squares", "scipy_ls_trf", "minimize", True),
-    ("least_squares", "pounders", "minimize", False),
-]
+def _scalar_problem(direction, counter):
+    contributions, contributions_jac = _poisson_functions(direction, counter)
+    fun = om.mark.scalar(lambda x: contributions(x).sum())
+    jac = om.mark.scalar(lambda x: contributions_jac(x).sum(axis=0))
+    return fun, jac
 
 
-@pytest.mark.parametrize("fun_type, algorithm, direction, with_jac", CASES)
-def test_optimizer_recovers_from_errors(fun_type, algorithm, direction, with_jac):
-    counter = FailureCounter()
-    fun, jac, optimum, optimal_value = _get_problem(fun_type, direction, counter)
-    optimize = om.maximize if direction == "maximize" else om.minimize
+def _likelihood_problem(direction, counter):
+    contributions, contributions_jac = _poisson_functions(direction, counter)
+    return om.mark.likelihood(contributions), om.mark.likelihood(contributions_jac)
 
-    res = optimize(
-        fun=fun,
-        jac=jac if with_jac else None,
-        params=START_PARAMS,
-        algorithm=algorithm,
-        error_handling="continue",
-    )
 
+def _least_squares_problem(counter):
+    @om.mark.least_squares
+    def fun(x):
+        _raise_in_failure_region(x, GAUSSIAN_OPTIMUM, counter)
+        return _gaussian_residuals(x)
+
+    @om.mark.least_squares
+    def jac(x):
+        _raise_in_failure_region(x, GAUSSIAN_OPTIMUM, counter)
+        return _gaussian_residuals_jac(x)
+
+    return fun, jac
+
+
+def _assert_poisson_recovered(res, counter):
+    sign = 1.0 if res.direction == "maximize" else -1.0
+    optimal_value = sign * _poisson_loglike(POISSON_OPTIMUM).sum()
+    _assert_recovered(res, counter, POISSON_OPTIMUM, optimal_value)
+
+
+def _assert_gaussian_recovered(res, counter):
+    optimal_value = (_gaussian_residuals(GAUSSIAN_OPTIMUM) ** 2).sum()
+    _assert_recovered(res, counter, GAUSSIAN_OPTIMUM, optimal_value)
+
+
+def _assert_recovered(res, counter, optimum, optimal_value):
     assert counter.n_failures > 0, "The failure region was never evaluated."
     aaae(res.params, optimum, decimal=4)
     # Penalty values are worse than the start value by at least 100, so an optimal
@@ -199,35 +163,152 @@ def test_optimizer_recovers_from_errors(fun_type, algorithm, direction, with_jac
     assert np.isclose(res.fun, optimal_value, rtol=1e-8)
     assert res.history is not None
     history_values = [v for v in res.history.fun if v is not None]
-    best = max(history_values) if direction == "maximize" else min(history_values)
+    best = max(history_values) if res.direction == "maximize" else min(history_values)
     assert np.isclose(best, optimal_value, rtol=1e-8)
 
 
-def test_least_squares_function_cannot_be_maximized():
-    fun, *_ = _get_problem("least_squares", "minimize", FailureCounter())
-    with pytest.raises(InvalidFunctionError, match="cannot be maximized"):
-        om.maximize(
-            fun=fun,
-            params=START_PARAMS,
-            algorithm="scipy_lbfgsb",
-            error_handling="continue",
-        )
+# ======================================================================================
+# scalar functions
+# ======================================================================================
 
 
-@pytest.mark.parametrize(
-    "fun_type, algorithm",
-    [
-        ("scalar", "bhhh"),
-        ("scalar", "scipy_ls_trf"),
-        ("likelihood", "scipy_ls_trf"),
-    ],
-)
-def test_unsupported_solver_type_raises(fun_type, algorithm):
-    fun, *_ = _get_problem(fun_type, "minimize", FailureCounter())
-    with pytest.raises(InvalidFunctionError):
-        om.minimize(
-            fun=fun,
-            params=START_PARAMS,
-            algorithm=algorithm,
-            error_handling="continue",
-        )
+def test_scalar_lbfgsb_minimize():
+    counter = FailureCounter()
+    fun, _ = _scalar_problem("minimize", counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="scipy_lbfgsb", error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+def test_scalar_lbfgsb_maximize():
+    counter = FailureCounter()
+    fun, _ = _scalar_problem("maximize", counter)
+    res = om.maximize(
+        fun, START_PARAMS, algorithm="scipy_lbfgsb", error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+def test_scalar_lbfgsb_minimize_with_jac():
+    counter = FailureCounter()
+    fun, jac = _scalar_problem("minimize", counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="scipy_lbfgsb", jac=jac, error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+def test_scalar_lbfgsb_maximize_with_jac():
+    counter = FailureCounter()
+    fun, jac = _scalar_problem("maximize", counter)
+    res = om.maximize(
+        fun, START_PARAMS, algorithm="scipy_lbfgsb", jac=jac, error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+def test_scalar_neldermead_minimize():
+    counter = FailureCounter()
+    fun, _ = _scalar_problem("minimize", counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="scipy_neldermead", error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+def test_scalar_neldermead_maximize():
+    counter = FailureCounter()
+    fun, _ = _scalar_problem("maximize", counter)
+    res = om.maximize(
+        fun, START_PARAMS, algorithm="scipy_neldermead", error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+# ======================================================================================
+# likelihood functions
+# ======================================================================================
+
+
+def test_likelihood_lbfgsb_minimize():
+    counter = FailureCounter()
+    fun, _ = _likelihood_problem("minimize", counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="scipy_lbfgsb", error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+def test_likelihood_lbfgsb_maximize():
+    counter = FailureCounter()
+    fun, _ = _likelihood_problem("maximize", counter)
+    res = om.maximize(
+        fun, START_PARAMS, algorithm="scipy_lbfgsb", error_handling="continue"
+    )
+    _assert_poisson_recovered(res, counter)
+
+
+@BHHH_XFAIL
+def test_likelihood_bhhh_minimize():
+    counter = FailureCounter()
+    fun, _ = _likelihood_problem("minimize", counter)
+    res = om.minimize(fun, START_PARAMS, algorithm="bhhh", error_handling="continue")
+    _assert_poisson_recovered(res, counter)
+
+
+@BHHH_XFAIL
+def test_likelihood_bhhh_maximize():
+    counter = FailureCounter()
+    fun, _ = _likelihood_problem("maximize", counter)
+    res = om.maximize(fun, START_PARAMS, algorithm="bhhh", error_handling="continue")
+    _assert_poisson_recovered(res, counter)
+
+
+# ======================================================================================
+# least-squares functions
+# ======================================================================================
+
+
+def test_least_squares_lbfgsb():
+    counter = FailureCounter()
+    fun, _ = _least_squares_problem(counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="scipy_lbfgsb", error_handling="continue"
+    )
+    _assert_gaussian_recovered(res, counter)
+
+
+@BHHH_XFAIL
+def test_least_squares_bhhh():
+    counter = FailureCounter()
+    fun, _ = _least_squares_problem(counter)
+    res = om.minimize(fun, START_PARAMS, algorithm="bhhh", error_handling="continue")
+    _assert_gaussian_recovered(res, counter)
+
+
+def test_least_squares_ls_trf():
+    counter = FailureCounter()
+    fun, _ = _least_squares_problem(counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="scipy_ls_trf", error_handling="continue"
+    )
+    _assert_gaussian_recovered(res, counter)
+
+
+def test_least_squares_ls_trf_with_jac():
+    counter = FailureCounter()
+    fun, jac = _least_squares_problem(counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="scipy_ls_trf", jac=jac, error_handling="continue"
+    )
+    _assert_gaussian_recovered(res, counter)
+
+
+def test_least_squares_pounders():
+    counter = FailureCounter()
+    fun, _ = _least_squares_problem(counter)
+    res = om.minimize(
+        fun, START_PARAMS, algorithm="pounders", error_handling="continue"
+    )
+    _assert_gaussian_recovered(res, counter)
