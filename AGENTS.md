@@ -22,8 +22,8 @@ Consult the relevant sections of the documentation for your task:
 - Contribution workflow: [contributor guide](docs/source/development/how_to_contribute.md).
 - Code changes: [style guide](docs/source/development/styleguide.md).
 - Typing and public interfaces: [EP-02](docs/source/development/ep-02-typing.md).
-- GitHub activity: read the contributor guide's AI-use and review sections and\
-  follow their approval requirements before publishing.
+- GitHub activity: read the contributor guide's AI-use section and\
+  follow its approval requirements before publishing.
 
 ## Generated code
 
