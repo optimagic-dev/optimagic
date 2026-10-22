@@ -4,130 +4,211 @@
 
 ## 1. Intro
 
-We welcome and greatly appreciate contributions of all forms and sizes! Whether it's
-updating the documentation, adding small extensions, or implementing new features, every
-effort is valued.
+We welcome your ideas and expertise, whether you are getting started with optimagic or
+bring years of experience in optimization and scientific software. There are many ways
+to contribute, from suggesting features and reporting bugs to improving documentation,
+adding tests, and contributing code.
 
-For substantial changes, please contact us in advance. This allows us to discuss your
-ideas and guide the development process from the beginning. You can start a conversation
-by posting an issue on GitHub or by emailing [janosg](https://github.com/janosg).
+Our preferred starting point for new features and substantial improvements is a
+well-developed issue. It helps us understand the need, agree on a design, and plan the
+implementation together.
 
-To get familiar with the codebase, we recommend checking out our
-[issue tracker](https://github.com/optimagic-dev/optimagic/issues) for some immediate
-and clearly defined tasks.
+When a well-developed issue leads to a merged change, we credit the issue author as a
+contributor in the corresponding [release notes](changes.md), alongside those who
+implement the change.
 
-## 2. Before you start
+The situations below explain how to get started and which sections of this guide to
+read.
 
-Once you've decided to contribute, please review the {ref}`style_guide` (see the next
-page) to ensure your work aligns with the project's coding standards.
+- **You would like a new feature.** Describe your use case and the behavior you would
+  find helpful. See [Writing an issue](#contributing-issues).
+- **You noticed a bug.** Tell us what happened, what you expected, and how to reproduce
+  it. See [Writing an issue](#contributing-issues).
+- **You want to improve documentation or tests.** Small, focused improvements are
+  welcome as pull requests. Follow [Preparing a change](#contributing-preparing) and
+  [Opening and updating a pull request](#contributing-prs). For substantial changes,
+  start with an issue to agree on the scope and approach.
+- **You want to implement an issue or contribute a code improvement.** Small,
+  well-defined changes are welcome as pull requests. For larger changes, first agree on
+  the scope and approach with the maintainers on the issue. Then follow
+  [Preparing a change](#contributing-preparing) and
+  [Opening and updating a pull request](#contributing-prs).
 
-We manage new features through Pull Requests (PRs). Contributors work on their local
-copy of optimagic, modifying and extending the codebase there, before opening a PR to
-propose merging their changes into the main branch.
+If you use AI tools, read [Using AI tools](#contributing-ai) before posting on GitHub.
 
-Regular contributors gain push access to unprotected branches, which simplifies the
-contribution process (see Notes below).
+If you are looking for a starting point, browse our
+[issue tracker](https://github.com/optimagic-dev/optimagic/issues) for tasks that
+interest you. You can also work through the documentation and examples and suggest ways
+to make them clearer or easier to follow.
 
-## 3. Step-by-step guide
+(contributing-issues)=
 
-1. Fork the [optimagic repository](https://github.com/optimagic-dev/optimagic/). This
-   action creates a copy of the repository with write access for you.
+## 2. Writing an issue
 
-```{note}
-For regular contributors: **Clone** the [repository](https://github.com/optimagic-dev/optimagic/) to your local machine and create a new branch for implementing your changes. You can push your branch directly to the remote optimagic repository and open a PR from there.
-```
+Search the issue tracker for related discussions first. An existing issue may already
+address your question, and additional examples or evidence can help move it forward.
+When opening a new issue, choose the template that best fits your contribution.
 
-1. Clone your forked repository to your disk. This is where you'll make all your
-   changes.
+### Feature requests
 
-1. Open your terminal and execute the following commands from the root directory of your
-   local optimagic repository:
+Help us understand the problem you want to solve:
+
+- Describe your use case and why the change would help.
+- Explain what you currently do and where that approach falls short.
+- Describe the behavior you would like, with a small example if useful.
+
+If you have ideas for an API or implementation, include them so we can discuss the
+design together.
+
+### Bug reports
+
+Give us enough information to reproduce and investigate the problem:
+
+- A small, runnable example, or clear steps to reproduce the behavior.
+- What you expected and what actually happened, including relevant error messages.
+- Your optimagic and Python versions, operating system, and relevant dependency
+  versions.
+
+For numerical problems, include the relevant inputs and results so we can assess the
+behavior.
+
+### Larger improvements
+
+For substantial changes to code, documentation, or tests, describe the current
+limitation, intended outcome, affected area, and proposed scope. Share any approach or
+tradeoffs you have considered. Agree on the scope and approach with the maintainers
+before starting implementation.
+
+For example, an illustrative documentation issue might say: "In the algorithm-selection
+guide, I could not tell how to choose between two derivative-free methods. An example
+comparing when each is useful would help." A proposal for reorganizing several guides
+could outline the new structure and explain which reader needs it addresses.
+
+If you use AI tools to prepare or submit an issue, consult
+[Using AI tools](#contributing-ai) before posting. Once you are ready to implement an
+agreed change, continue with [Preparing a change](#contributing-preparing).
+
+(contributing-preparing)=
+
+## 3. Preparing a change
+
+### Set up your working copy
+
+1. Fork the [repository](https://github.com/optimagic-dev/optimagic/), clone your fork,
+   and create a branch for your change. Contributors who already have push access can
+   use a branch in the main repository.
+
+1. Install [Pixi](https://github.com/prefix-dev/pixi) for Python environments and
+   development tasks, and [prek](https://github.com/j178/prek) for pre-commit checks.
+   Prek is installed separately from Pixi.
+
+1. From the repository root, enable the Git hooks:
 
    ```console
    $ prek install
    ```
 
-   This activates pre-commit hooks for linting and style formatting.
+Pixi automatically selects the environment for the tasks below and creates it when
+needed. Use `-e <environment>` to target a particular test environment. Tasks and
+environments are defined in `pyproject.toml`. To discover available commands, run:
 
-   ```{note}
-   `prek` is not managed by pixi and must be installed globally. You can find
-   installation instructions at [github.com/j178/prek](https://github.com/j178/prek).
-   ```
-
-   You can then run the test suite with:
-
-   ```console
-   $ pixi run tests
-   ```
-
-   which installs the development dependencies and runs pytest. To run the type checker,
-   use:
-
-   ```console
-   $ pixi run ty
-   ```
-
-   To see all available pixi tasks, run:
-
-   ```console
-   $ pixi task list
-   ```
-
-1. Implement your fix or feature. Use git to add, commit, and push your changes to the
-   remote repository. For more on git and how to stage and commit your work, refer to
-   these
-   [online materials](https://effective-programming-practices.vercel.app/git/staging/objectives_materials.html).
-
-1. Contributions are validated in two main ways. We run a comprehensive test suite to
-   ensure compatibility with the existing codebase and employ
-   [pre-commit hooks](https://effective-programming-practices.vercel.app/git/pre_commits/objectives_materials.html)
-   to maintain quality and adherence to our style guidelines. Opening a PR (see below)
-   triggers optimagic's
-   [Continuous Integration (CI)](https://docs.github.com/en/actions/automating-builds-and-tests/about-continuous-integration)
-   workflow, which runs the full test suite, pre-commit hooks, and other checks on a
-   remote server.
-
-   You can also run the test suite locally for
-   [debugging](https://effective-programming-practices.vercel.app/debugging/pdbp/objectives_materials.html).
-
-   With prek installed, linters run before each commit. Commits are rejected if any
-   checks fail. Note that some linters may automatically fix errors by modifying the
-   code in-place. Remember to re-stage the files after such modifications.
-
-```{tip}
-Skip the next paragraph if you haven't worked on the documentation.
+```console
+$ pixi task list
 ```
 
-1. Assuming you have updated the documentation, verify that it builds correctly. Run:
+### Follow the relevant guides
 
-   ```console
-   $ pixi run build-docs
-   ```
+- For code and tests, follow the [style guide](styleguide.md).
+- For typing and public interfaces, consult [EP-02](ep-02-typing.md).
+- For documentation, follow the documentation section of the
+  [style guide](styleguide.md).
 
-   This command builds the HTML documentation, saving all files in the `docs/build/html`
-   directory. You can view the documentation with your preferred web browser by opening
-   `docs/build/html/index.html` or any other file. Similar to the online documentation,
-   you can navigate to different pages simply by clicking on the links.
+Keep the change focused on its purpose. The current tool configuration is in
+`pyproject.toml` and `.pre-commit-config.yaml`.
 
-1. Once all tests and hooks pass locally, push your changes to your forked repository
-   and create a pull request through GitHub: Go to the Github repository of your fork. A
-   banner on your fork's GitHub repository will prompt you to open a PR.
+### Check your change
 
-   ```{note}
-   Regular contributors with push access can directly push their local branch to the remote optimagic repository and initiate a PR from there.
-   ```
+Run tests for the behavior you changed while iterating. For example:
 
-   Follow the steps outlined in the optimagic
-   [PR template](https://github.com/optimagic-dev/optimagic/blob/main/.github/PULL_REQUEST_TEMPLATE/pull_request_template.md)
-   to describe your contribution, the problem it addresses, and your proposed solution.
+```console
+$ pixi run tests tests/optimagic/optimization/test_optimize.py
+```
 
-   Opening a PR initiates a complete CI run, including the `pytest` suite, linters, code
-   coverage checks, doctests, and building the HTML documentation. Monitor the CI
-   workflow status on your PR page and make necessary modifications to your code based
-   on the results, iterating until all tests pass.
+Include relevant slow tests before opening a PR. For broader checks, use
+`pixi run tests-fast`; it excludes slow and JAX tests on every platform. For
+cross-cutting changes, run the full suite with `pixi run tests` in an environment with
+the required dependencies. The named Linux test environments in `pyproject.toml` include
+JAX and PETSc.
 
-1. Request a review from one of the main contributors once all CI tests pass. Address
-   any feedback or suggestions by making the necessary changes and committing them.
+For changes affecting typing, run:
 
-1. After your PR is approved, one of the main contributors will merge it into
-   optimagic's main branch.
+```console
+$ pixi run ty
+```
+
+With hooks enabled, formatting and lint checks run before each commit. Some checks
+modify files automatically; review and re-stage those changes before committing again.
+
+### Documentation changes
+
+Build the documentation and inspect the affected pages:
+
+```console
+$ pixi run build-docs
+```
+
+Open `docs/build/html/index.html` in your browser to view the result. The build executes
+notebooks, so allow time for their examples to run.
+
+### Generated code
+
+Changes affecting optimizer definitions, `src/optimagic/algorithms.py`, or `.tools/`
+trigger a hook that regenerates `src/optimagic/algorithms.py` from the optimizer
+definitions. This hook requires `uv` on your path. Include the regenerated file in your
+change.
+
+(contributing-prs)=
+
+## 4. Opening and updating a pull request
+
+Prepare a focused PR that makes your change easy to assess:
+
+- Use a descriptive title, select the appropriate base branch, and follow the
+  [PR template](https://github.com/optimagic-dev/optimagic/blob/main/.github/PULL_REQUEST_TEMPLATE/pull_request_template.md).
+- Explain the problem, your solution, and any remaining work. Link the relevant issue;
+  use `Closes #XXXX` when the PR resolves it.
+- Describe the checks you ran, their results, and any remaining validation gaps.
+- Identify the author of a well-developed issue that led to the change so they can
+  receive contributor credit.
+
+If you use AI tools, read [Using AI tools](#contributing-ai) before publishing or
+updating the PR. Include the requested description of substantial AI assistance.
+
+Push your branch to your fork, or to the main repository if you have push access, and
+open the PR against optimagic. Automated CI checks cover tests, formatting, typing, and
+documentation. Monitor the results, investigate failures, and explain any unresolved
+limitations.
+
+Request a maintainer review when the PR is ready. Respond to feedback with changes or an
+explanation, and keep the description current as the PR develops. A maintainer will
+merge the approved change.
+
+(contributing-ai)=
+
+## 5. Using AI tools
+
+We welcome carefully prepared contributions, including AI-written code and text.
+Contributors should check what they submit for accuracy and relevance and be able to
+explain it. Review generated code and test the behavior it changes, following
+[Preparing a change](#contributing-preparing) and the [style guide](styleguide.md).
+
+We ask contributors to briefly describe substantial AI use in their PR, including how
+they used the tools and checked the result. The PR template includes a reminder.
+
+Autonomous agent activity on GitHub requires explicit prior maintainer approval for the
+proposed activity. This includes opening issues or PRs, posting comments, and submitting
+reviews. Contributors remain responsible for the content and actions of agents they use.
+
+Maintainers prioritize relevant, carefully prepared submissions and may close or remove
+submissions at their discretion. Feedback is provided as time allows. Repeated
+low-quality or unsolicited activity may lead to restrictions on participation.
