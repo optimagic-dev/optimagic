@@ -5,6 +5,8 @@ from optimagic.benchmarking.more_wild import (
     MORE_WILD_PROBLEMS,
     get_start_points_mancino,
 )
+from optimagic.shared.process_user_function import infer_aggregation_level
+from optimagic.typing import AggregationLevel
 
 
 @pytest.mark.parametrize("name, specification", list(MORE_WILD_PROBLEMS.items()))
@@ -30,3 +32,9 @@ def test_get_start_points_mancino():
     expected = (np.array([102.4824, 96.3335, 90.4363, 84.7852, 79.3747]),)
     result = get_start_points_mancino(5)
     assert np.allclose(expected, result)
+
+
+@pytest.mark.parametrize("name, specification", list(MORE_WILD_PROBLEMS.items()))
+def test_more_wild_function_is_marked_as_least_squares(name, specification):  # noqa: ARG001
+    problem_type = infer_aggregation_level(specification["fun"])
+    assert problem_type == AggregationLevel.LEAST_SQUARES

@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from optimagic import get_benchmark_problems
@@ -64,3 +65,20 @@ def test_run_benchmark_failing():
 
     key = (failing_name, "scipy_lbfgsb")
     assert isinstance(result[key]["solution"], str)
+
+
+def test_run_benchmark_noisy_scaled_problem():
+    all_problems = get_benchmark_problems(
+        "example", additive_noise=True, scaling=True, seed=0
+    )
+    name = "rosenbrock_good_start"
+    problems = {name: all_problems[name]}
+
+    result = run_benchmark(
+        problems=problems,
+        optimize_options=["scipy_neldermead"],
+        max_criterion_evaluations=20,
+    )
+
+    history = result[(name, "scipy_neldermead")]["criterion_history"]
+    assert np.allclose(history[0], problems[name]["start_criterion"])

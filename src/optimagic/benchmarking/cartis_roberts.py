@@ -4895,7 +4895,7 @@ solution_x_methane = [
 CARTIS_ROBERTS_PROBLEMS = {
     "arglale": {
         # arglale is the same as linear_full_rank with specific settings
-        "fun": partial(linear_full_rank, dim_out=400),
+        "fun": mark.least_squares(partial(linear_full_rank, dim_out=400)),
         "start_x": [1] * 100,
         "solution_x": [-0.99999952] * 100,
         "start_criterion": 700,
@@ -4903,7 +4903,7 @@ CARTIS_ROBERTS_PROBLEMS = {
     },
     "arglble": {
         # arglble is the same as linear_rank_one with specific settings
-        "fun": partial(linear_rank_one, dim_out=400),
+        "fun": mark.least_squares(partial(linear_rank_one, dim_out=400)),
         "start_x": [1] * 100,
         "solution_x": solution_x_arglble,
         "start_criterion": 5.460944e14,
@@ -4938,21 +4938,21 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "bratu_2d": {
-        "fun": partial(bratu_2d, alpha=4),
+        "fun": mark.least_squares(partial(bratu_2d, alpha=4)),
         "start_x": [0] * 64,
         "solution_x": solution_x_bratu_2d,
         "start_criterion": 0.1560738,
         "solution_criterion": 0,
     },
     "bratu_2d_t": {
-        "fun": partial(bratu_2d, alpha=6.80812),
+        "fun": mark.least_squares(partial(bratu_2d, alpha=6.80812)),
         "start_x": [0] * 64,
         "solution_x": solution_x_bratu_2d_t,
         "start_criterion": 0.4521311,
         "solution_criterion": 1.8534736e-05,
     },
     "bratu_3d": {
-        "fun": partial(bratu_3d, alpha=6.80812),
+        "fun": mark.least_squares(partial(bratu_3d, alpha=6.80812)),
         "start_x": [0] * 27,
         "solution_x": solution_x_bratu_3d,
         "start_criterion": 4.888529,
@@ -5017,28 +5017,28 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "drcavty1": {
-        "fun": partial(drcavty, r=500),
+        "fun": mark.least_squares(partial(drcavty, r=500)),
         "start_x": [0] * 100,
         "solution_x": None,
         "start_criterion": 0.4513889,
         "solution_criterion": 0,
     },
     "drcavty2": {
-        "fun": partial(drcavty, r=1000),
+        "fun": mark.least_squares(partial(drcavty, r=1000)),
         "start_x": [0] * 100,
         "solution_x": solution_x_drcavty2,
         "start_criterion": 0.4513889,
         "solution_criterion": 3.988378e-4,
     },
     "drcavty3": {
-        "fun": partial(drcavty, r=4500),
+        "fun": mark.least_squares(partial(drcavty, r=4500)),
         "start_x": [0] * 100,
         "solution_x": solution_x_drcavty3,
         "start_criterion": 0.4513889,
         "solution_criterion": 0,
     },
     "eigena": {
-        "fun": partial(eigen, param=np.diag(np.arange(1, 11))),
+        "fun": mark.least_squares(partial(eigen, param=np.diag(np.arange(1, 11)))),
         "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
         "solution_x": [*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
         "start_criterion": 285,
@@ -5046,8 +5046,8 @@ CARTIS_ROBERTS_PROBLEMS = {
         "bounds": Bounds(lower=np.zeros(110)),
     },
     "eigenb": {
-        "fun": partial(
-            eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)
+        "fun": mark.least_squares(
+            partial(eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1))
         ),
         "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
         "solution_x": solution_x_eigenb,
@@ -5057,11 +5057,13 @@ CARTIS_ROBERTS_PROBLEMS = {
         # according to table 3 in their paper, the minimum is at 0.
     },
     "flosp2hh": {
-        "fun": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.int64),
-            b=np.array([1, 0, -1], dtype=np.int64),
-            ra=1e7,
+        "fun": mark.least_squares(
+            partial(
+                flosp2,
+                a=np.array([1, 0, -1], dtype=np.int64),
+                b=np.array([1, 0, -1], dtype=np.int64),
+                ra=1e7,
+            )
         ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
@@ -5069,11 +5071,13 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 1 / 3,
     },
     "flosp2hl": {
-        "fun": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.float64),
-            b=np.array([1, 0, -1], dtype=np.float64),
-            ra=1e3,
+        "fun": mark.least_squares(
+            partial(
+                flosp2,
+                a=np.array([1, 0, -1], dtype=np.float64),
+                b=np.array([1, 0, -1], dtype=np.float64),
+                ra=1e3,
+            )
         ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
@@ -5081,11 +5085,13 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 1 / 3,
     },
     "flosp2hm": {
-        "fun": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.float64),
-            b=np.array([1, 0, -1], dtype=np.float64),
-            ra=1e5,
+        "fun": mark.least_squares(
+            partial(
+                flosp2,
+                a=np.array([1, 0, -1], dtype=np.float64),
+                b=np.array([1, 0, -1], dtype=np.float64),
+                ra=1e5,
+            )
         ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
@@ -5093,11 +5099,13 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 1 / 3,
     },
     "flosp2th": {
-        "fun": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.float64),
-            b=np.array([0, 1, 1], dtype=np.float64),
-            ra=1e7,
+        "fun": mark.least_squares(
+            partial(
+                flosp2,
+                a=np.array([0, 1, 0], dtype=np.float64),
+                b=np.array([0, 1, 1], dtype=np.float64),
+                ra=1e7,
+            )
         ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
@@ -5105,11 +5113,13 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "flosp2tl": {
-        "fun": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.float64),
-            b=np.array([0, 1, 1], dtype=np.float64),
-            ra=1e3,
+        "fun": mark.least_squares(
+            partial(
+                flosp2,
+                a=np.array([0, 1, 0], dtype=np.float64),
+                b=np.array([0, 1, 1], dtype=np.float64),
+                ra=1e3,
+            )
         ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
@@ -5117,11 +5127,13 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "flosp2tm": {
-        "fun": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.float64),
-            b=np.array([0, 1, 1], dtype=np.float64),
-            ra=1e5,
+        "fun": mark.least_squares(
+            partial(
+                flosp2,
+                a=np.array([0, 1, 0], dtype=np.float64),
+                b=np.array([0, 1, 1], dtype=np.float64),
+                ra=1e5,
+            )
         ),
         "start_x": [0] * 59,
         "solution_x": None,  # multiple argmins
@@ -5143,14 +5155,14 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "hydcar20": {
-        "fun": partial(hydcar, n=20, m=3, k=9),
+        "fun": mark.least_squares(partial(hydcar, n=20, m=3, k=9)),
         "start_x": get_start_points_hydcar20(),
         "solution_x": solution_x_hydcar20,
         "start_criterion": 1341.663,
         "solution_criterion": 0,
     },
     "hydcar6": {
-        "fun": partial(hydcar, n=6, m=3, k=2),
+        "fun": mark.least_squares(partial(hydcar, n=6, m=3, k=2)),
         "start_x": get_start_points_hydcar6(),
         "solution_x": solution_x_hydcar6,
         "start_criterion": 704.1073,
@@ -5296,7 +5308,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "qr3d": {
-        "fun": partial(qr3d, m=5),
+        "fun": mark.least_squares(partial(qr3d, m=5)),
         "start_x": get_start_points_qr3d(5),
         "solution_x": solution_x_qr3d,
         "start_criterion": 1.2,
@@ -5307,7 +5319,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         ),
     },
     "qr3dbd": {
-        "fun": partial(qr3dbd, m=5),
+        "fun": mark.least_squares(partial(qr3dbd, m=5)),
         "start_x": get_start_points_qr3dbd(5),
         "solution_x": solution_x_qr3dbd,
         "start_criterion": 1.2,
@@ -5354,14 +5366,14 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "yatpsq_1": {
-        "fun": partial(yatpsq_1, dim_in=10),
+        "fun": mark.least_squares(partial(yatpsq_1, dim_in=10)),
         "start_x": [6] * 100 + [0] * 20,
         "solution_x": solution_x_yatpsq_1,
         "start_criterion": 2.073643e6,
         "solution_criterion": 0,
     },
     "yatpsq_2": {
-        "fun": partial(yatpsq_2, dim_in=10),
+        "fun": mark.least_squares(partial(yatpsq_2, dim_in=10)),
         "start_x": [10] * 100 + [0] * 20,
         "solution_x": solution_x_yatpsq_2,
         "start_criterion": 1.831687e5,
