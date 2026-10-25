@@ -35,7 +35,12 @@ from optimagic.optimization.create_optimization_problem import (
     create_optimization_problem,
 )
 from optimagic.optimization.error_penalty import get_error_penalty_function
-from optimagic.optimization.fun_value import FunctionValue
+from optimagic.optimization.fun_value import (
+    FunctionValue,
+    LeastSquaresFunctionValue,
+    LikelihoodFunctionValue,
+    SpecificFunctionValue,
+)
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
     InternalOptimizationProblem,
@@ -532,6 +537,7 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Do first evaluation of user provided functions
     # ==================================================================================
     first_crit_eval = problem.fun_eval
+    _check_fun_is_finite_at_start(first_crit_eval)
 
     # do first derivative evaluation (if given)
     if problem.jac is not None:
@@ -761,3 +767,33 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     res.logger = log_reader
 
     return res
+
+
+def _check_fun_is_finite_at_start(fun_eval: SpecificFunctionValue) -> None:
+    """Raise an error if the objective is not finite at the start parameters.
+
+    No optimizer can make progress from such a point, and the penalty used with
+    ``error_handling="continue"`` is derived from the start value.
+
+    """
+    if isinstance(fun_eval, LeastSquaresFunctionValue):
+        level = AggregationLevel.LEAST_SQUARES
+    elif isinstance(fun_eval, LikelihoodFunctionValue):
+        level = AggregationLevel.LIKELIHOOD
+    else:
+        level = AggregationLevel.SCALAR
+    value = np.atleast_1d(fun_eval.internal_value(level))
+    invalid = np.flatnonzero(~np.isfinite(value))
+    if invalid.size > 0:
+        msg = (
+            "The objective function is not finite (inf or nan) at the start params. "
+            "Choose start params at which the objective function is finite."
+        )
+        if value.size > 1:
+            shown = invalid[:10].tolist()
+            more = " (first 10 shown)" if invalid.size > 10 else ""
+            msg += (
+                f" {invalid.size} of {value.size} entries of the flattened objective "
+                f"value are not finite; their positions are {shown}{more}."
+            )
+        raise InvalidFunctionError(msg)

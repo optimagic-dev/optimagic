@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from optimagic import mark
 from optimagic.examples.criterion_functions import sos_scalar
 from optimagic.exceptions import InvalidFunctionError, InvalidNumdiffOptionsError
 from optimagic.optimization.optimize import maximize, minimize
@@ -66,3 +67,34 @@ def test_fun_and_jac_sequence_without_fun(container):
             params=np.arange(5),
             algorithm="scipy_lbfgsb",
         )
+
+
+@pytest.mark.parametrize("value", [np.inf, -np.inf, np.nan])
+def test_non_finite_scalar_fun_at_start_raises(value):
+    def fun(x):
+        return value if x[0] == 5 else x @ x
+
+    with pytest.raises(InvalidFunctionError, match="not finite"):
+        minimize(fun, params=np.array([5.0, 2.0]), algorithm="scipy_lbfgsb")
+
+
+def test_non_finite_likelihood_contributions_at_start_raise_with_positions():
+    @mark.likelihood
+    def fun(x):
+        out = np.ones(20) * (x @ x)
+        out[[3, 7]] = np.nan
+        return out
+
+    with pytest.raises(
+        InvalidFunctionError, match=r"2 of 20 .* positions are \[3, 7\]"
+    ):
+        minimize(fun, params=np.ones(2), algorithm="scipy_lbfgsb")
+
+
+def test_non_finite_residuals_at_start_raise_for_derivative_free_algorithm():
+    @mark.least_squares
+    def fun(x):
+        return np.array([x[0], np.inf if x[1] == 2 else x[1]])
+
+    with pytest.raises(InvalidFunctionError, match="not finite"):
+        minimize(fun, params=np.array([1.0, 2.0]), algorithm="scipy_neldermead")
