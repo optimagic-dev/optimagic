@@ -10,6 +10,9 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
+- {gh}`722` Adds four likelihood benchmark sets (`likelihood_small`, `likelihood_large`,
+  `likelihood_misspecified_small`, `likelihood_misspecified_large`) with simulated data,
+  closed form derivatives and bounds ({ghuser}`janosg`).
 - {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
   `maximize`. The callback is called after each objective evaluation; its behavior might
   change in upcoming releases ({ghuser}`Pragati5-DEBUG`).
