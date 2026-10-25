@@ -10,9 +10,9 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
-- {gh}`723` Fixes 23 More-Wild and Cartis-Roberts benchmark problems that were not marked as
-  least-squares problems, and the noise-free criterion of scaled benchmark problems
-  ({ghuser}`janosg`).
+- {gh}`723` Fixes 23 More-Wild and Cartis-Roberts benchmark problems that were not
+  marked as least-squares problems, and the noise-free criterion of scaled benchmark
+  problems ({ghuser}`janosg`).
 - {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
   `maximize`. The callback is called after each objective evaluation; its behavior might
   change in upcoming releases ({ghuser}`Pragati5-DEBUG`).
