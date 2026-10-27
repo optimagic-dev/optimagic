@@ -1,3 +1,4 @@
+import gc
 from dataclasses import asdict
 
 import numpy as np
@@ -144,3 +145,31 @@ def test_no_registered():
 
     with pytest.raises(ValueError, match="DummyOptions"):
         LogStore.from_options(DummyOptions())
+
+
+def _minimize_with_log(path):
+    return minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(5.0),
+        algorithm="scipy_lbfgsb",
+        logging=SQLiteLogOptions(path, if_database_exists="replace"),
+    )
+
+
+def test_log_file_is_final_when_minimize_returns(tmp_path):
+    """While the result is alive, no WAL content waits outside the database file."""
+    path = tmp_path / "log.db"
+    res = _minimize_with_log(path)
+    content_at_return = path.read_bytes()
+    assert not path.with_name("log.db-wal").exists()
+    del res
+    gc.collect()
+    assert path.read_bytes() == content_at_return
+
+
+def test_log_file_is_final_after_reading_history(tmp_path):
+    """Reading the log through the result leaves no connection open."""
+    path = tmp_path / "log.db"
+    res = _minimize_with_log(path)
+    res.logger.read_history()
+    assert not path.with_name("log.db-wal").exists()

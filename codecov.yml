@@ -16,4 +16,3 @@ coverage:
 ignore:
   # Uses numba
   - src/optimagic/benchmarking/cartis_roberts.py
-  - tests/**/*
