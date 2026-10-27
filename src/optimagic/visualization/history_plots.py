@@ -402,6 +402,12 @@ def _retrieve_optimization_data_from_database(
     reader: LogReader = LogReader.from_options(SQLiteLogOptions(res))
     _problem_table = reader.problem_df
 
+    if _problem_table.empty:
+        raise ValueError(
+            f"The log file at {res} does not contain any optimization problem. This "
+            "happens if the log was created but no optimization was run with it."
+        )
+
     direction = _problem_table["direction"].tolist()[-1]
 
     multistart_history = reader.read_multistart_history(direction)
