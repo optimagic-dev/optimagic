@@ -35,6 +35,21 @@ def test_get_converter_fast_case():
     )
 
 
+@pytest.mark.parametrize("container", [list, tuple, np.array])
+def test_get_converter_fast_case_with_sequence_bounds(container):
+    converter, internal = get_converter(
+        params=np.arange(3),
+        constraints=None,
+        bounds=Bounds(lower=container([-1, -2, -3]), upper=container([1, 2, 3])),
+        func_eval=3,
+        derivative_eval=None,
+        solver_type=AggregationLevel.SCALAR,
+    )
+
+    aaae(internal.lower_bounds, np.array([-1, -2, -3]))
+    aaae(internal.upper_bounds, np.array([1, 2, 3]))
+
+
 def test_get_converter_with_constraints_and_bounds():
     bounds = Bounds(
         lower=np.array([-1, -np.inf, -np.inf]),

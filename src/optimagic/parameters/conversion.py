@@ -5,6 +5,7 @@ from typing import Callable
 
 import numpy as np
 
+from optimagic.parameters.bounds import get_internal_bounds
 from optimagic.parameters.constraints import resolve_constraints, to_legacy_dicts
 from optimagic.parameters.scale_conversion import get_scale_converter
 from optimagic.parameters.space_conversion import InternalParams, get_space_converter
@@ -185,15 +186,7 @@ def _get_fast_path_converter(params, bounds, solver_type):
         has_transforming_constraints=False,
     )
 
-    if bounds is None or bounds.lower is None:
-        lower_bounds = None
-    else:
-        lower_bounds = bounds.lower.astype(float)
-
-    if bounds is None or bounds.upper is None:
-        upper_bounds = None
-    else:
-        upper_bounds = bounds.upper.astype(float)
+    lower_bounds, upper_bounds = get_internal_bounds(params=params, bounds=bounds)
 
     internal_params = InternalParams(
         values=params.astype(float),
