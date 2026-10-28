@@ -7,6 +7,7 @@ from numpy.testing import assert_array_equal
 
 import optimagic as om
 from optimagic.logging import SQLiteLogOptions
+from optimagic.logging.logger import LogStore
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 from optimagic.visualization.backends import (
@@ -149,6 +150,15 @@ def test_criterion_plot_wrong_inputs():
 
     with pytest.raises(ValueError):
         criterion_plot(["bla", "bla"], names="blub")
+
+
+@pytest.mark.parametrize("plot", [criterion_plot, params_plot])
+def test_history_plots_empty_database_raises_error(tmp_path, plot):
+    path = tmp_path / "empty.db"
+    LogStore.from_options(SQLiteLogOptions(path))
+
+    with pytest.raises(ValueError, match="does not contain any optimization problem"):
+        plot(path)
 
 
 @pytest.mark.parametrize("backend", BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION.keys())
