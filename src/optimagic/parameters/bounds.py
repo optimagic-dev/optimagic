@@ -156,9 +156,9 @@ def get_internal_bounds(
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
         raise InvalidBoundsError(msg)
 
-    if np.isinf(lower_flat).all():
+    if np.isneginf(lower_flat).all():
         lower_flat = None
-    if np.isinf(upper_flat).all():
+    if np.isposinf(upper_flat).all():
         upper_flat = None
 
     return lower_flat, upper_flat
@@ -245,14 +245,14 @@ def _get_fast_path_bounds(
         lower_bounds = None
     else:
         lower_bounds = bounds.lower.astype(float)
-        if np.isinf(lower_bounds).all():
+        if np.isneginf(lower_bounds).all():
             lower_bounds = None
 
     if bounds.upper is None:
         upper_bounds = None
     else:
         upper_bounds = bounds.upper.astype(float)
-        if np.isinf(upper_bounds).all():
+        if np.isposinf(upper_bounds).all():
             upper_bounds = None
 
     if (
