@@ -14,10 +14,13 @@ is then passed to `_optimize` which handles the optimization logic.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any, Callable, Literal, Sequence, Type, cast
 
 import numpy as np
+import pandas as pd
+from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.batch_evaluators import process_batch_evaluator
@@ -62,6 +65,7 @@ from optimagic.optimization.process_results import (
 )
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
+    Converter,
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
@@ -579,6 +583,15 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         add_soft_bounds=problem.multistart is not None,
     )
 
+    derivative_evals = {}
+    if problem.jac is not None:
+        derivative_evals["jac"] = first_deriv_eval
+    if problem.fun_and_jac is not None:
+        derivative_evals["fun_and_jac"] = first_crit_and_deriv_eval[1]
+    _check_derivatives_are_finite_at_start(
+        derivative_evals, converter=converter, x=internal_params.values
+    )
+
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
@@ -782,18 +795,45 @@ def _check_fun_is_finite_at_start(fun_eval: SpecificFunctionValue) -> None:
         level = AggregationLevel.LIKELIHOOD
     else:
         level = AggregationLevel.SCALAR
-    value = np.atleast_1d(fun_eval.internal_value(level))
-    invalid = np.flatnonzero(~np.isfinite(value))
-    if invalid.size > 0:
+    if not np.all(np.isfinite(fun_eval.internal_value(level))):
         msg = (
             "The objective function is not finite (inf or nan) at the start params. "
-            "Choose start params at which the objective function is finite."
+            "Choose start params at which the objective function is finite. The "
+            f"objective function returned:\n\n{_format_in_full(fun_eval.value)}"
         )
-        if value.size > 1:
-            shown = invalid[:10].tolist()
-            more = " (first 10 shown)" if invalid.size > 10 else ""
-            msg += (
-                f" {invalid.size} of {value.size} entries of the flattened objective "
-                f"value are not finite; their positions are {shown}{more}."
-            )
         raise InvalidFunctionError(msg)
+
+
+def _check_derivatives_are_finite_at_start(
+    derivative_evals: dict[str, PyTree],
+    converter: Converter,
+    x: NDArray[np.float64],
+) -> None:
+    """Raise an error if a user provided derivative is not finite at the start params.
+
+    Args:
+        derivative_evals: Derivatives at the start params by the name of the argument
+            through which they were provided.
+        converter: Converter between external and internal parameters.
+        x: Internal start parameters.
+
+    """
+    for name, derivative_eval in derivative_evals.items():
+        internal = converter.derivative_to_internal(derivative_eval, x)
+        if not np.all(np.isfinite(internal)):
+            msg = (
+                f"The derivative provided via {name} is not finite (inf or nan) at the "
+                "start params. Check the derivative function or choose start params "
+                f"at which it is finite. {name} returned the following derivative:"
+                f"\n\n{_format_in_full(derivative_eval)}"
+            )
+            raise InvalidFunctionError(msg)
+
+
+def _format_in_full(value: PyTree) -> str:
+    """Represent a pytree without truncating numpy arrays or pandas objects."""
+    with (
+        np.printoptions(threshold=sys.maxsize),
+        pd.option_context("display.max_rows", None, "display.max_columns", None),
+    ):
+        return repr(value)
