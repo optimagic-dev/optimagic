@@ -1,5 +1,7 @@
 """Implement Berndt-Hall-Hall-Hausman (BHHH) algorithm."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Callable, cast
 
@@ -31,9 +33,44 @@ from optimagic.typing import AggregationLevel, NonNegativeFloat, PositiveInt
 )
 @dataclass(frozen=True)
 class BHHH(Algorithm):
+    """Minimize a likelihood function using the BHHH algorithm.
+
+    BHHH (:cite:`Berndt1974`) can - and should ONLY - be used for minimizing (or
+    maximizing) a likelihood function. It is similar to the Newton-Raphson algorithm,
+    but replaces the Hessian matrix with the outer product of the gradients of the
+    likelihood contributions. This approximation is based on the information matrix
+    equality (:cite:`Halbert1982`) and is thus only valid when minimizing (or
+    maximizing) a likelihood function. In exchange, the approximated Hessian is
+    always positive semidefinite and no second derivatives are needed.
+
+    To use bhhh, the objective function must be a likelihood function, i.e. a
+    function that is decorated with ``om.mark.likelihood`` and returns the
+    likelihood contributions of each observation rather than their sum.
+
+    The algorithm is a local optimizer that uses first derivatives of the
+    likelihood contributions. It does not support bounds or constraints.
+
+    .. note::
+        This is a pure-Python implementation within optimagic. It is currently
+        considered experimental.
+
+    """
+
     converence_gtol_abs: NonNegativeFloat = 1e-8
+    """Stopping criterion for the gradient tolerance.
+
+    The algorithm converges when the inner product of the aggregated gradient and
+    the candidate search direction falls below this value.
+
+    """
+
     # TODO: Why is this 200?
     stopping_maxiter: PositiveInt = 200
+    """Maximum number of iterations.
+
+    If reached, terminate.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
