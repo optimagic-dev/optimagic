@@ -10,6 +10,10 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
+- {gh}`728` Rewrites the `bhhh` optimizer. It now stops on the scale invariant decrement
+  `g'(J'J)^-1 g`, supports bounds, uses a line search with step doubling, rejects trial
+  points at which the objective or its derivative fails, and warns about weakly
+  identified parameters. The options of `bhhh` change ({ghuser}`janosg`).
 - {gh}`722` Adds four likelihood benchmark sets (`likelihood_small`, `likelihood_large`,
   `likelihood_misspecified_small`, `likelihood_misspecified_large`) with simulated data,
   closed form derivatives and bounds ({ghuser}`janosg`).

@@ -825,30 +825,43 @@ We implement a few algorithms from scratch. They are currently considered experi
 ```{eval-rst}
 .. dropdown:: bhhh
 
-    .. code-block::
+    **How to use this algorithm:**
 
-        "bhhh"
+    .. code-block:: python
 
-    Minimize a likelihood function using the BHHH algorithm.
+        import optimagic as om
+        from optimagic.optimizers.bhhh import LineSearch
 
-    BHHH (:cite:`Berndt1974`) can - and should ONLY - be used for minimizing
-    (or maximizing) a likelihood. It is similar to the Newton-Raphson
-    algorithm, but replaces the Hessian matrix with the outer product of the
-    gradient. This approximation is based on the information matrix equality
-    (:cite:`Halbert1982`) and is thus only vaid when minimizing (or maximizing)
-    a likelihood.
+        om.maximize(
+            fun=loglike_contributions,
+            params=start_params,
+            algorithm=om.algos.bhhh(
+                convergence_decrement_tol=1e-8,
+                globalization=LineSearch(expansion="none"),
+            ),
+        )
 
-    The criterion function :func:`func` should return a dictionary with
-    at least the entry ``{"contributions": array_or_pytree}`` where ``array_or_pytree``
-    contains the likelihood contributions of each individual.
+    or using the string interface:
 
-    bhhh supports the following options:
+    .. code-block:: python
 
-    - **convergence.gtol_abs** (float): Stopping criterion for the
-      gradient tolerance. Default is 1e-8.
-    - **stopping.maxiter** (int): Maximum number of iterations.
-      If reached, terminate. Default is 200.
+        om.maximize(
+            fun=loglike_contributions,
+            params=start_params,
+            algorithm="bhhh",
+            algo_options={"convergence_decrement_tol": 1e-8},
+        )
 
+    ``loglike_contributions`` must be decorated with ``om.mark.likelihood`` and return
+    one log-likelihood contribution per independent unit.
+
+    **Description and available options:**
+
+    .. autoclass:: optimagic.optimizers.bhhh.BHHH
+
+    **Options of the line search:**
+
+    .. autoclass:: optimagic.optimizers.bhhh.LineSearch
 ```
 
 ```{eval-rst}
