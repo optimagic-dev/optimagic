@@ -66,9 +66,9 @@ class Ipopt(Algorithm):
     differentiable) scalar objective functions. It supports bounds as well as
     nonlinear equality and inequality constraints and is designed to scale to very
     large problems. It requires first derivatives of the objective function and
-    the constraints. By default, second derivatives are approximated with a
-    limited-memory quasi-Newton method, so no Hessian has to be provided. Ipopt is
-    not suitable for noisy or discontinuous objective functions.
+    the constraints. optimagic does not pass second derivatives to Ipopt; the
+    Hessian of the Lagrangian is approximated with a limited-memory quasi-Newton
+    method. Ipopt is not suitable for noisy or discontinuous objective functions.
 
     There are two levels of termination criteria. If the usual "desired"
     tolerances (see ``convergence_ftol_rel``, ``dual_inf_tol`` etc.) are satisfied
@@ -79,16 +79,28 @@ class Ipopt(Algorithm):
     algorithm might not be able to achieve the "desired" level of accuracy.
 
     The options are analogous to the ones in the `Ipopt options reference
-    <https://coin-or.github.io/Ipopt/OPTIONS.html>`_, with the exception of the
-    linear solver options, which are here bundled into the dictionary
-    ``linear_solver_options``. Any option that takes "yes" and "no" in the Ipopt
-    documentation can also be passed as ``True`` and ``False``, respectively, and
-    any option that accepts "none" in Ipopt accepts a Python ``None``.
+    <https://coin-or.github.io/Ipopt/OPTIONS.html>`_, with two exceptions. First,
+    the stopping and convergence criteria follow optimagic's naming:
+    ``convergence_ftol_rel`` is Ipopt's ``tol``, ``stopping_maxiter`` is
+    ``max_iter``, ``stopping_max_wall_time_seconds`` is ``max_wall_time`` and
+    ``stopping_max_cpu_time`` is ``max_cpu_time``. Second, the linear solver
+    options are bundled into the dictionary ``linear_solver_options``. Any option
+    that takes "yes" and "no" in the Ipopt documentation can also be passed as
+    ``True`` and ``False``, respectively, and any option that accepts "none" in
+    Ipopt accepts a Python ``None``.
+
+    optimagic passes every option to Ipopt explicitly, including the defaults.
+    Ipopt behavior that depends on an option being unset therefore does not apply;
+    the affected options say so in their descriptions.
 
     The following options are not supported:
 
-    - ``num_linear_variables``: since optimagic may reparametrize your problem and
-      this changes the parameter problem, we do not support this option
+    - ``num_linear_variables``: since optimagic may reparametrize your problem,
+      which changes which parameters Ipopt sees and in which order, we do not
+      support this option
+    - ``grad_f_constant``, ``jacobian_approximation``, ``gradient_approximation``
+      and ``findiff_perturbation``
+    - the linear solvers "pardisomkl", "spral" and "wsmp"
     - derivative checks
     - print options.
 
@@ -104,8 +116,10 @@ class Ipopt(Algorithm):
     """Relative convergence tolerance of the algorithm.
 
     The algorithm terminates successfully if the (scaled) nonlinear programming
-    error becomes smaller than this value. This is passed to Ipopt as the ``tol``
-    option. optimagic's default (2e-9) is stricter than Ipopt's own default of
+    error becomes smaller than this value and the absolute criteria
+    ``dual_inf_tol``, ``constr_viol_tol`` and ``compl_inf_tol`` are met. This is
+    passed to Ipopt as the ``tol`` option and must be positive; zero raises an
+    error. optimagic's default (2e-9) is stricter than Ipopt's own default of
     1e-8.
 
     """
@@ -137,7 +151,7 @@ class Ipopt(Algorithm):
     """
 
     s_max: float = 100
-    """Scaling threshold for the NLP error.
+    """Advanced feature. Scaling threshold for the NLP error.
 
     See paragraph after Eqn. (6) in :cite:`Waechter2005b`.
 
@@ -161,8 +175,9 @@ class Ipopt(Algorithm):
 
     If the maximum number of iterations is reached, the optimization stops, but we
     do not count this as successful convergence. One iteration might need several
-    criterion evaluations, e.g. in a line search. optimagic's default (1,000,000)
-    is much larger than Ipopt's own default of 3000.
+    criterion evaluations, e.g. in a line search. This is passed to Ipopt as the
+    ``max_iter`` option. optimagic's default (1,000,000) is much larger than
+    Ipopt's own default of 3000.
 
     """
 
@@ -170,7 +185,8 @@ class Ipopt(Algorithm):
     """Maximum number of wall clock seconds Ipopt may use to solve one problem.
 
     If this limit is exceeded during the convergence check, Ipopt terminates with
-    a corresponding message.
+    a corresponding message. This is passed to Ipopt as the ``max_wall_time``
+    option.
 
     """
 
@@ -178,7 +194,8 @@ class Ipopt(Algorithm):
     """Maximum number of CPU seconds Ipopt may use to solve one problem.
 
     If this limit is exceeded during the convergence check, Ipopt terminates with
-    a corresponding message.
+    a corresponding message. This is passed to Ipopt as the ``max_cpu_time``
+    option.
 
     """
 
@@ -206,7 +223,10 @@ class Ipopt(Algorithm):
     "Acceptable" termination requires that the max-norm of the (unscaled) dual
     infeasibility is less than this threshold; see also ``acceptable_tol``. Note
     that optimagic's default (1e-10) is much stricter than Ipopt's own default of
-    1e10.
+    1e10. With this default, the "acceptable" termination heuristic effectively
+    never triggers, because its dual infeasibility requirement is far stricter
+    than the one for regular termination (``dual_inf_tol``); set this option to
+    1e10 to get Ipopt's behavior.
 
     """
 
@@ -281,8 +301,8 @@ class Ipopt(Algorithm):
     """
 
     dependency_detector: Literal["none", "mumps", "wsmp", "ma28"] | None = None
-    """Which linear solver should be used to detect linearly dependent equality
-    constraints.
+    """Advanced feature. Which linear solver should be used to detect linearly
+    dependent equality constraints.
 
     ``None`` (or "none") means no check is performed. This feature is experimental
     and does not work well.
@@ -290,12 +310,13 @@ class Ipopt(Algorithm):
     """
 
     dependency_detection_with_rhs: YesNoBool = False
-    """Whether the right hand sides of the constraints should be considered in
-    addition to the gradients during dependency detection."""
+    """Advanced feature. Whether the right hand sides of the constraints should be
+    considered in addition to the gradients during dependency detection."""
 
     # bounds
     kappa_d: NonNegativeFloat = 1e-5
-    """Weight for the linear damping term (to handle one-sided bounds).
+    """Advanced feature. Weight for the linear damping term (to handle one-sided
+    bounds).
 
     See Section 3.7 in :cite:`Waechter2005b`.
 
@@ -358,7 +379,8 @@ class Ipopt(Algorithm):
     constraints).
 
     Activating this option will cause Ipopt to ask for the Hessian of the
-    Lagrangian function only once and reuse this information later.
+    Lagrangian function only once and reuse this information later. This is only
+    relevant for exact Hessians, which optimagic does not provide.
 
     """
 
@@ -383,6 +405,9 @@ class Ipopt(Algorithm):
     - "equilibration-based": scale the problem so that first derivatives are of
       order 1 at random points (uses the Harwell routine MC19)
 
+    optimagic provides no way to pass user scaling parameters, so apart from
+    ``obj_scaling_factor``, "user-scaling" amounts to no scaling.
+
     """
 
     obj_scaling_factor: float = 1
@@ -390,9 +415,9 @@ class Ipopt(Algorithm):
 
     The scaling is only seen internally by Ipopt, the unscaled objective is
     reported in the output. If additional scaling parameters are computed (e.g.
-    with user-scaling or gradient-based scaling), both factors are multiplied. If
-    this value is negative, Ipopt maximizes the objective function instead of
-    minimizing it.
+    with user-scaling or gradient-based scaling), both factors are multiplied. A
+    negative value makes Ipopt maximize optimagic's internal criterion, which
+    optimagic still treats as a minimization; use ``om.maximize`` to maximize.
 
     """
 
@@ -464,7 +489,8 @@ class Ipopt(Algorithm):
     Determines how much the initial slack variables might have to be modified in
     order to be sufficiently inside the inequality bounds (together with
     ``slack_bound_frac``). This is kappa_1 in Section 3.6 of
-    :cite:`Waechter2005b`.
+    :cite:`Waechter2005b`. In Ipopt, this defaults to ``bound_push``; since
+    optimagic always passes it, it does not follow changes to ``bound_push``.
 
     """
 
@@ -475,7 +501,9 @@ class Ipopt(Algorithm):
     Determines how much the initial slack variables might have to be modified in
     order to be sufficiently inside the inequality bounds (together with
     ``slack_bound_push``). This is kappa_2 in Section 3.6 of
-    :cite:`Waechter2005b`. The valid range is (0, 0.5].
+    :cite:`Waechter2005b`. The valid range is (0, 0.5]. In Ipopt, this defaults to
+    ``bound_frac``; since optimagic always passes it, it does not follow changes
+    to ``bound_frac``.
 
     """
 
@@ -484,8 +512,9 @@ class Ipopt(Algorithm):
 
     Determines how large the initial least-squares guesses of the constraint
     multipliers are allowed to be (in max-norm). If the guess is larger than this
-    value, it is discarded and all constraint multipliers are set to zero. This
-    option is also used when initializing the restoration phase.
+    value, it is discarded and all constraint multipliers are set to zero. Since
+    optimagic always passes this option, the same value is also used when
+    initializing the restoration phase, where Ipopt's own default is 0.
 
     """
 
@@ -535,7 +564,12 @@ class Ipopt(Algorithm):
     warm_start_init_point: YesNoBool = False
     """Whether this optimization should use a warm start initialization, where
     values of the primal and dual variables are given (e.g. from a previous
-    optimization of a related problem)."""
+    optimization of a related problem).
+
+    optimagic only passes the start parameters to Ipopt, so with a warm start all
+    multipliers start at zero (raised to at least ``warm_start_mult_bound_push``).
+
+    """
 
     warm_start_same_structure: YesNoBool = False
     """Advanced feature.
@@ -544,6 +578,10 @@ class Ipopt(Algorithm):
     to be solved. If enabled, the algorithm assumes that an NLP is now to be
     solved whose structure is identical to one that was already considered (with
     the same NLP object).
+
+    .. warning::
+       optimagic creates a new Ipopt problem for every optimization, so enabling
+       this option makes Ipopt abort with an exception and the optimization fails.
 
     """
 
@@ -574,12 +612,17 @@ class Ipopt(Algorithm):
     initializer."""
 
     warm_start_mult_init_max: float = 1e6
-    """Maximum initial value for the equality constraint multipliers when using a
-    warm start."""
+    """Maximum absolute initial value of the constraint and bound multipliers when
+    using a warm start."""
 
     warm_start_entire_iterate: YesNoBool = False
-    """Whether to use the GetWarmStartIterate method in the NLP instead of
-    GetStartingPoint when using a warm start."""
+    """Advanced feature. Whether to use the GetWarmStartIterate method in the NLP
+    instead of GetStartingPoint when using a warm start.
+
+    The NLP that optimagic passes to Ipopt does not provide a warm start iterate,
+    so Ipopt falls back to GetStartingPoint and this option has no effect.
+
+    """
 
     warm_start_target_mu: float = 0.0
     """Advanced and experimental feature."""
@@ -589,21 +632,31 @@ class Ipopt(Algorithm):
     """File name of an Ipopt options file.
 
     By default, optimagic passes an empty string, which disables reading of an
-    options file. If a name is given, Ipopt reads additional options from that
-    file.
+    options file (Ipopt's own default is "ipopt.opt"). If a name is given, Ipopt
+    reads additional options from that file.
 
     """
 
     replace_bounds: YesNoBool = False
-    """Whether all variable bounds should be replaced by inequality constraints.
+    """Advanced feature. Whether all variable bounds should be replaced by
+    inequality constraints.
 
-    This option must be set for the inexact algorithm.
+    Ipopt requires this for its inexact algorithm, which optimagic does not
+    expose. For problems with bounds but without nonlinear constraints, enabling
+    this option currently raises an error.
 
     """
 
     skip_finalize_solution_call: YesNoBool = False
-    """Whether the call to NLP::FinalizeSolution after the optimization should be
-    suppressed."""
+    """Advanced feature. Whether the call to NLP::FinalizeSolution after the
+    optimization should be suppressed.
+
+    .. warning::
+       optimagic receives the solution through this call. If it is suppressed,
+       the result reports the start parameters and a meaningless objective value
+       while still claiming success.
+
+    """
 
     timing_statistics: YesNoBool = False
     """Whether to measure the time spent in the components of Ipopt and the NLP
@@ -618,9 +671,10 @@ class Ipopt(Algorithm):
     """Factor for the initialization of the maximum value of the barrier
     parameter.
 
-    The upper bound on the barrier parameter is computed as the average
-    complementarity at the initial point times the value of this option. Only used
-    if ``mu_strategy`` is "adaptive".
+    In Ipopt, the upper bound on the barrier parameter is computed as the average
+    complementarity at the initial point times the value of this option, unless
+    ``mu_max`` is set. Since optimagic always passes ``mu_max``, this option
+    currently has no effect. Only used if ``mu_strategy`` is "adaptive".
 
     """
 
@@ -629,7 +683,8 @@ class Ipopt(Algorithm):
 
     This option specifies an upper bound on the barrier parameter in the adaptive
     mu selection mode. If this option is set, it overwrites the effect of
-    ``mu_max_fact``. Only used if ``mu_strategy`` is "adaptive".
+    ``mu_max_fact``; optimagic always passes it, so ``mu_max_fact`` is never used.
+    Only used if ``mu_strategy`` is "adaptive".
 
     """
 
@@ -637,9 +692,9 @@ class Ipopt(Algorithm):
     """Minimum value for the barrier parameter.
 
     This option specifies the lower bound on the barrier parameter in the adaptive
-    mu selection mode. In Ipopt, it is by default set to the minimum of 1e-11 and
-    ``min(tol, compl_inf_tol) / (barrier_tol_factor + 1)``, which should be a
-    reasonable value. Only used if ``mu_strategy`` is "adaptive".
+    mu selection mode. Ipopt derives a tolerance-dependent value if this option is
+    not set; since optimagic always passes it, the given value is used as is (also
+    in the restoration phase). Only used if ``mu_strategy`` is "adaptive".
 
     """
 
@@ -691,8 +746,7 @@ class Ipopt(Algorithm):
 
     Sufficient progress for a filter entry is defined as: (new obj) < (filter obj)
     - filter_margin_fact * (new constr-viol) or (new constr-viol) < (filter
-    constr-viol) - filter_margin_fact * (new constr-viol). For the description of
-    the "kkt-error-filter" option see ``filter_max_margin``. The valid range is
+    constr-viol) - filter_margin_fact * (new constr-viol). The valid range is
     (0, 1).
 
     """
@@ -736,8 +790,9 @@ class Ipopt(Algorithm):
     globalization strategies.
 
     When computing the KKT error for the globalization strategies, the norm to be
-    used is specified with this option. Note that this option is also used in the
-    quality function based mu oracle.
+    used is specified with this option. Note that in Ipopt 3.14 this option is
+    registered but not read; the norm is taken from
+    ``quality_function_norm_type`` instead.
 
     """
 
@@ -745,7 +800,10 @@ class Ipopt(Algorithm):
     """Update strategy for the barrier parameter.
 
     "monotone" uses the monotone (Fiacco-McCormick) strategy; "adaptive" uses the
-    adaptive update strategy from :cite:`Nocedal2009`.
+    adaptive update strategy from :cite:`Nocedal2009`. Ipopt (and cyipopt's
+    ``minimize_ipopt``) use "adaptive" if this option is not set and the Hessian
+    is approximated with limited-memory updates; since optimagic always passes
+    this option, its default is "monotone".
 
     """
 
@@ -1142,7 +1200,7 @@ class Ipopt(Algorithm):
     """Advanced feature. Safety factor for the minimal step size (before switching
     to the restoration phase).
 
-    This is gamma_alpha in Eqn. (20) in :cite:`Waechter2005b`. The valid range is
+    This is gamma_alpha in Eqn. (23) in :cite:`Waechter2005b`. The valid range is
     (0, 1).
 
     """
@@ -1289,8 +1347,9 @@ class Ipopt(Algorithm):
     This asks the algorithm to recompute the multipliers whenever the current
     infeasibility is less than ``recalc_y_feas_tol``. Choosing True might be
     helpful in the quasi-Newton option, but each recalculation requires an extra
-    factorization of the linear system. If a limited-memory quasi-Newton option is
-    chosen, this is used by default.
+    factorization of the linear system. Ipopt enables this automatically for
+    limited-memory quasi-Newton approximations if the option is not set; since
+    optimagic always passes it, it is only used if set to True.
 
     """
 
@@ -1330,12 +1389,20 @@ class Ipopt(Algorithm):
     """Whether to do Mehrotra's predictor-corrector algorithm.
 
     If enabled, the line search is disabled and the (unglobalized) adaptive mu
-    strategy is chosen with the "probing" oracle, and "corrector_type=affine" is
-    used without any safeguards; you should not explicitly set any of those
-    options in addition. Also, unless otherwise specified, the values of
-    ``bound_push``, ``bound_frac`` and ``bound_mult_init_val`` are set more
-    aggressively, and "alpha_for_y=bound-mult" is used. Mehrotra's
-    predictor-corrector algorithm usually works very well for LPs and convex QPs.
+    strategy is chosen with the "probing" oracle, and affine corrector steps are
+    used without any safeguards. Mehrotra's predictor-corrector algorithm usually
+    works very well for LPs and convex QPs.
+
+    .. warning::
+       Ipopt selects these settings only for options that are not set, but
+       optimagic always passes all options. Enabling only this option therefore
+       makes Ipopt abort with "Invalid option encountered"; you also need
+       ``mu_strategy="adaptive"``, ``mu_oracle="probing"``,
+       ``adaptive_mu_globalization="never-monotone-mode"`` and
+       ``accept_every_trial_step=True`` (with ``corrector_type=None``). Ipopt's
+       more aggressive defaults for ``bound_push``, ``bound_frac``,
+       ``bound_mult_init_val``, ``constr_mult_init_max``, ``alpha_for_y`` and
+       ``least_square_init_primal`` are not applied either.
 
     """
 
@@ -1398,7 +1465,7 @@ class Ipopt(Algorithm):
 
     If nonzero, incorrect inertia in the augmented system is ignored and Ipopt
     tests if the direction is a direction of positive curvature. This tolerance is
-    alpha_n in :cite:`Chiang2014` and it determines when the direction is
+    alpha_n in :cite:`ChiangZavala2016` and it determines when the direction is
     considered to be sufficiently positive. A value in the range [1e-12, 1e-11] is
     recommended.
 
@@ -1406,7 +1473,7 @@ class Ipopt(Algorithm):
 
     neg_curv_test_reg: YesNoBool = True
     """Whether to do the curvature test with the primal regularization (see
-    :cite:`Chiang2014`).
+    :cite:`ChiangZavala2016`).
 
     If False, the original Ipopt approach is used, in which the primal
     regularization is ignored.
@@ -1509,9 +1576,10 @@ class Ipopt(Algorithm):
     This option activates heuristics that may speed up the infeasibility
     determination if you expect that there is a good chance for the problem to be
     infeasible. In the filter line search procedure, the restoration phase is
-    called more quickly than usual, and more reduction in the constraint violation
-    is enforced before the restoration phase is left. If the problem is square,
-    this option is enabled automatically.
+    called more quickly than usual. Ipopt additionally enforces more reduction in
+    the constraint violation before the restoration phase is left, but only if
+    ``required_infeasibility_reduction`` is not set, which is never the case in
+    optimagic.
 
     """
 
@@ -1744,10 +1812,14 @@ class Ipopt(Algorithm):
     ] = "limited-memory"
     """Indicates what Hessian information is to be used.
 
-    "exact" uses second derivatives provided by the NLP; "limited-memory" performs
-    a limited-memory quasi-Newton approximation of the Hessian of the Lagrangian.
-    Since optimagic does not pass second derivatives to Ipopt, the default is
-    "limited-memory".
+    "limited-memory" performs a limited-memory quasi-Newton approximation of the
+    Hessian of the Lagrangian. "exact" (Ipopt's own default) uses second
+    derivatives provided by the NLP. Since optimagic does not pass second
+    derivatives to Ipopt, the default is "limited-memory".
+
+    .. warning::
+       Do not use "exact": without second derivatives, Ipopt runs without valid
+       Hessian information and does not raise an error.
 
     """
 
@@ -1773,9 +1845,11 @@ class Ipopt(Algorithm):
     Determines which linear algebra package is used for the solution of the
     augmented linear system (for obtaining the search directions). The default in
     optimagic is "mumps" (the MUMPS package that ships with most cyipopt
-    installations). The Harwell routines "ma27", "ma57", "ma77", "ma86" and "ma97"
-    as well as "pardiso" are loaded from libraries at runtime and require these to
-    be installed; "custom" selects a custom linear solver (expert use).
+    installations); Ipopt's documented default is "ma27", which requires the HSL
+    library. The Harwell routines "ma27", "ma57", "ma77", "ma86" and "ma97" as
+    well as "pardiso" are loaded from libraries at runtime and require these to be
+    installed; "custom" selects a custom linear solver (expert use). The Ipopt
+    values "pardisomkl", "spral" and "wsmp" are not supported.
 
     """
 

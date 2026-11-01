@@ -82,7 +82,7 @@ TRANQUILO_INSTALLATION_INSTRUCTIONS = (
 class Tranquilo(Algorithm):
     """Minimize a scalar function using the tranquilo algorithm.
 
-    Tranquilo, short for "TrustRegion Adaptive Noise robust QuadratIc or Linear
+    Tranquilo, short for "TrustRegion Adaptive Noise robust QUadratIc or Linear
     approximation Optimizer", is a trust-region optimizer for derivative-free
     optimization that was developed by the optimagic developers
     (:cite:`Gabler2024`). It is designed for black-box problems whose objective
@@ -98,18 +98,21 @@ class Tranquilo(Algorithm):
     bound constraints, but no linear or nonlinear constraints. In each iteration
     it fits a quadratic surrogate model to a sample of evaluated points, minimizes
     the surrogate model within the current trust region to obtain a candidate
-    point, and accepts or rejects the candidate by comparing the actual with the
-    predicted improvement. For background on derivative-free trust-region methods,
+    point, and accepts the candidate if it improves the objective function. The
+    ratio of the actual to the predicted improvement is used to adjust the
+    trust-region radius. For background on derivative-free trust-region methods,
     see :cite:`Conn2009`.
 
     Two features distinguish tranquilo from most other derivative-free
     trust-region optimizers:
 
-    - Parallelization: If ``n_cores`` is larger than one, the objective function
-      is evaluated in parallel batches. A parallel line search and speculative
-      sampling exploit all available cores even in steps of the algorithm that are
-      inherently sequential. tranquilo thereby minimizes the number of evaluation
-      batches rather than the number of function evaluations.
+    - Parallelization: If ``n_cores`` is larger than one, new sample points are
+      evaluated in parallel batches of size ``batch_size``. With
+      ``acceptance_decider="classic_line_search"``, spare evaluations in a batch
+      are additionally used for a parallel line search and speculative sampling,
+      which keep all cores busy even in steps of the algorithm that are inherently
+      sequential. The parallel version thereby aims to minimize the number of
+      evaluation batches rather than the number of function evaluations.
     - Noise handling: If ``noisy=True``, tranquilo adaptively determines how often
       the objective function must be evaluated (and averaged) at each point in
       order to keep making progress. The user does not have to provide any
@@ -122,8 +125,10 @@ class Tranquilo(Algorithm):
     need to be adjusted. In benchmarks on noise-free problems without
     parallelization, the scalar version of tranquilo is competitive with, but
     slightly slower than, established derivative-free optimizers such as
-    ``nlopt_bobyqa``. Its strengths come into play for noisy objective functions
-    and parallel function evaluation.
+    ``nlopt_bobyqa``. The noise handling and the parallelization were developed and
+    benchmarked for the least-squares version. In tranquilo 0.1.1, both are
+    experimental for the scalar version, and tranquilo warns that they are likely
+    to give very suboptimal results.
 
     .. note::
        This algorithm requires the tranquilo package (version 0.1.0 or newer) to
@@ -146,20 +151,20 @@ class Tranquilo(Algorithm):
     """Whether the objective function is noisy, i.e. whether repeated evaluations at
     the same parameter vector return different values.
 
-    If True, tranquilo activates its adaptive noise handling: the objective function
-    is evaluated multiple times at each sample point, and the number of evaluations
-    per point is adjusted over the course of the optimization such that just enough
-    noise is averaged out to keep making progress. Moreover, the acceptance decision
-    for candidate points is then based on a statistical power analysis, and the
-    number of evaluations at the start parameters defaults to 5.
+    If True, tranquilo activates its adaptive noise handling: the number of
+    evaluations per sample point starts at ``noise_adaptation_options.min_n_evals``
+    (1 by default) and is adjusted over the course of the optimization such that
+    just enough noise is averaged out to keep making progress. Moreover, the
+    acceptance decision for candidate points is then based on a statistical power
+    analysis, and the number of evaluations at the start parameters defaults to 5.
 
     """
 
     # convergence options
     disable_convergence: bool = False
     """If True, the optimization is terminated only by the stopping criteria
-    (``stopping_maxfun``, ``stopping_maxiter``, ``stopping_maxtime``), never because
-    a convergence criterion is satisfied.
+    (``stopping_maxfun`` and ``stopping_maxiter``), never because a convergence
+    criterion is satisfied.
 
     This is mostly useful for benchmarking.
 
@@ -173,17 +178,25 @@ class Tranquilo(Algorithm):
 
         |f^k - f^{k+1}| \leq \textsf{convergence_ftol_abs}.
 
-    This criterion is disabled by default (0.0).
+    With the default of 0.0, this criterion only triggers if the change is exactly
+    zero. Use ``disable_convergence=True`` to switch off all convergence criteria.
 
     """
 
     convergence_gtol_abs: NonNegativeFloat = 0.0
-    """Converge if the Euclidean norm of the gradient of the surrogate model at the
-    current trust-region center is less than this value.
+    """Converge if the norm of the gradient of the surrogate model is at most this
+    value.
 
     Since tranquilo never evaluates derivatives of the objective function, the
-    gradient of the fitted surrogate model is used instead of the true gradient.
-    This criterion is disabled by default (0.0).
+    gradient of the fitted surrogate model is used instead of the true gradient. In
+    tranquilo 0.1.1, this is the Euclidean norm of the model's linear terms, i.e. of
+    its gradient at the center of the trust region in which it was fitted (the
+    previously accepted point, or the center of the box if bounds are binding), in
+    coordinates scaled by the trust-region radius. It thus equals the norm of the
+    model gradient multiplied by the trust-region radius.
+
+    With the default of 0.0, this criterion only triggers if this norm is exactly
+    zero.
 
     """
 
@@ -196,7 +209,8 @@ class Tranquilo(Algorithm):
 
         \lVert x^k - x^{k+1} \rVert \leq \textsf{convergence_xtol_abs}.
 
-    This criterion is disabled by default (0.0).
+    With the default of 0.0, this criterion only triggers if the change is exactly
+    zero.
 
     """
 
@@ -211,9 +225,9 @@ class Tranquilo(Algorithm):
     """
 
     convergence_gtol_rel: NonNegativeFloat = 1e-8
-    r"""Converge if the Euclidean norm of the gradient of the surrogate model at the
-    current trust-region center, divided by its maximum with 1, is less than this
-    value. Denoting the gradient of the surrogate model by :math:`g^k`, this is
+    r"""Converge if the norm of the gradient of the surrogate model, divided by its
+    maximum with 1, is at most this value. Denoting the radius-scaled model gradient
+    that is described under ``convergence_gtol_abs`` by :math:`g^k`, this is
     expressed as
 
     .. math::
@@ -238,10 +252,10 @@ class Tranquilo(Algorithm):
     """
 
     convergence_min_trust_region_radius: NonNegativeFloat = 0.0
-    """Consider the optimization converged if the trust-region radius shrinks below
-    this value.
+    """Minimal trust-region radius for convergence.
 
-    This criterion is disabled by default (0.0).
+    In tranquilo 0.1.1, this option has no effect. The trust-region radius is
+    bounded below by ``radius_options.min_radius`` (1e-6 by default).
 
     """
 
@@ -250,7 +264,8 @@ class Tranquilo(Algorithm):
     """Maximum number of objective function evaluations before termination.
 
     Repeated evaluations at the same point (as used for noisy problems) count
-    towards this limit.
+    towards this limit. The limit is checked at the end of each iteration, so it
+    can be exceeded by the evaluations of the last iteration.
 
     """
 
@@ -258,7 +273,11 @@ class Tranquilo(Algorithm):
     """Maximum number of iterations (trust-region steps) before termination."""
 
     stopping_maxtime: NonNegativeFloat = np.inf
-    """Maximum running time in seconds before termination."""
+    """Maximum running time in seconds before termination.
+
+    In tranquilo 0.1.1, this option has no effect.
+
+    """
 
     # single advanced options
     batch_evaluator: Literal[
@@ -268,15 +287,17 @@ class Tranquilo(Algorithm):
     """Batch evaluator that is used to parallelize evaluations of the objective
     function.
 
-    See :ref:`batch_evaluators` for details.
+    This option is not passed on to tranquilo; parallel function evaluations always
+    use the "joblib" batch evaluator. See :ref:`batch_evaluators` for details.
 
     """
 
     n_cores: PositiveInt = 1
     """Number of cores used to evaluate the objective function in parallel.
 
-    If larger than one, tranquilo evaluates batches of points in parallel and uses a
-    parallel line search as well as speculative sampling to keep all cores busy.
+    If larger than one, tranquilo evaluates new sample points in parallel batches. A
+    parallel line search and speculative sampling are only used with
+    ``acceptance_decider="classic_line_search"``.
 
     """
 
@@ -292,10 +313,8 @@ class Tranquilo(Algorithm):
     """Target number of evaluated points in the trust region on which the surrogate
     model is fitted.
 
-    By default, the sample size is determined from the model type and the dimension
-    :math:`n` of the problem: :math:`2 n + 1` for quadratic models, and :math:`n +
-    1` (in the noisy or parallel case) or :math:`n + 2` (otherwise) for linear
-    models.
+    By default, the sample size is :math:`2 n + 1`, where :math:`n` is the dimension
+    of the problem.
 
     """
 
@@ -308,9 +327,8 @@ class Tranquilo(Algorithm):
     ) = None
     """Type of surrogate model that is fitted in each iteration.
 
-    Defaults to "quadratic" for the scalar version of tranquilo. Linear models
-    require fewer function evaluations per iteration but contain no curvature
-    information.
+    In tranquilo 0.1.1, the scalar version only supports "quadratic", which is also
+    the default; "linear" raises a ``NotImplementedError``.
 
     """
 
@@ -327,10 +345,10 @@ class Tranquilo(Algorithm):
     """Initial number of times the objective function is evaluated (and averaged) at
     each sample point.
 
-    This is only relevant for noisy problems, where the default is derived from
-    ``noise_adaptation_options`` and the number of evaluations per point is
-    adaptively adjusted over the course of the optimization. For non-noisy problems,
-    the default is 1.
+    For noisy problems, the default is ``noise_adaptation_options.min_n_evals`` (1
+    by default), and the number of evaluations per point is adaptively adjusted over
+    the course of the optimization. For non-noisy problems, the default is 1 and the
+    number is not adjusted.
 
     """
 
@@ -347,7 +365,7 @@ class Tranquilo(Algorithm):
     """Seed for the random number generators used to sample new points and to
     simulate noise during the noise adaptation.
 
-    Pass None for non-reproducible randomness.
+    In tranquilo 0.1.1, the seed must be an integer; None raises a ``TypeError``.
 
     """
 
@@ -356,8 +374,10 @@ class Tranquilo(Algorithm):
     """Advanced options for the management of the trust-region radius, e.g. the
     initial, minimal and maximal radius as well as expansion and shrinking factors.
 
-    Pass an instance of ``tranquilo.options.RadiusOptions``; see the tranquilo
-    package for details.
+    Pass a dict with a subset of the fields of ``tranquilo.options.RadiusOptions``
+    or an instance of it; see the tranquilo package for details. The default initial
+    radius is 0.1 times the largest absolute value of the start parameters, so pass
+    a positive ``initial_radius`` if all start parameters are zero.
 
     """
 
@@ -365,8 +385,10 @@ class Tranquilo(Algorithm):
     """Advanced options that determine how the algorithm reacts if it stagnates,
     i.e. if a proposed step is very small relative to the trust-region radius.
 
-    Pass an instance of ``tranquilo.options.StagnationOptions``; see the tranquilo
-    package for details.
+    Pass a dict with a subset of the fields of
+    ``tranquilo.options.StagnationOptions`` or an instance of it; see the tranquilo
+    package for details. Fields that are not passed in a dict keep their defaults,
+    which depend on ``noisy`` and ``batch_size``.
 
     """
 
@@ -421,9 +443,10 @@ class Tranquilo(Algorithm):
     search region are used to fit the surrogate model.
 
     "keep_all" keeps all points, "discard_all" keeps only the trust-region center,
-    "drop_excess" drops points if there are more than needed to fit the surrogate
-    model, preferring points that are spread out within the trust region, and
-    "clustering" keeps only one point per cluster of nearby points. The default is
+    "drop_excess" keeps at most ``n_max_factor`` (3 by default) times the target
+    sample size and drops excess points, starting with points outside the trust
+    region and then points that are close to other points, and "clustering" keeps
+    only one point per cluster of nearby points. The default is
     "drop_excess" if ``batch_size`` is larger than one and "keep_all" otherwise. A
     custom filter function can be passed as a callable.
 
@@ -536,11 +559,14 @@ class Tranquilo(Algorithm):
     """Method used to decide whether a candidate point is accepted as the new
     trust-region center.
 
-    "classic" performs the standard acceptance step of trust-region algorithms,
-    which compares the actual with the predicted improvement.
-    "classic_line_search" additionally evaluates speculative points along the
-    search direction in parallel. "naive_noisy" averages a fixed number of
-    evaluations at the candidate point. "noisy" uses a statistical power analysis
+    "classic" evaluates the candidate point once and accepts it if it improves on
+    the current point. "classic_line_search" does the same if ``batch_size`` is
+    one; otherwise, it uses the spare evaluations of the batch for a line search
+    along the step (if the candidate lies on the border of the trust region) and
+    for speculative sampling of points around the candidate, and accepts the best
+    of these points if it improves on the current point. "naive_noisy" averages a
+    fixed number of evaluations (10) at the candidate point. "noisy" uses a
+    statistical power analysis
     to determine how many evaluations at the candidate and the current point are
     needed to decide which one is better. The default is "noisy" for noisy problems
     and "classic" otherwise. A custom acceptance function can be passed as a
@@ -577,12 +603,12 @@ class Tranquilo(Algorithm):
     """
 
     infinity_handler: Literal["relative"] | Callable = "relative"
-    """Method used to clip infinite objective function values before fitting the
+    """Method used to replace infinite and NaN function values before fitting the
     surrogate model.
 
-    The "relative" method clips infinite values at a penalty value that is derived
-    from the range of the finite values in the sample. A custom function can be
-    passed as a callable.
+    The "relative" method replaces infinite and NaN values with a penalty value that
+    is derived from the range of the finite values in the sample. A custom function
+    can be passed as a callable.
 
     """
 
@@ -677,7 +703,7 @@ class Tranquilo(Algorithm):
 class TranquiloLS(Algorithm):
     r"""Minimize a least-squares problem using the tranquilo algorithm.
 
-    Tranquilo, short for "TrustRegion Adaptive Noise robust QuadratIc or Linear
+    Tranquilo, short for "TrustRegion Adaptive Noise robust QUadratIc or Linear
     approximation Optimizer", is a trust-region optimizer for derivative-free
     optimization that was developed by the optimagic developers
     (:cite:`Gabler2024`). It is designed for black-box problems whose objective
@@ -701,18 +727,21 @@ class TranquiloLS(Algorithm):
     supports bound constraints, but no linear or nonlinear constraints. In each
     iteration it fits surrogate models to a sample of evaluated points, minimizes
     the aggregated surrogate model within the current trust region to obtain a
-    candidate point, and accepts or rejects the candidate by comparing the actual
-    with the predicted improvement. For background on derivative-free trust-region
+    candidate point, and accepts the candidate if it improves the objective
+    function. The ratio of the actual to the predicted improvement is used to
+    adjust the trust-region radius. For background on derivative-free trust-region
     methods, see :cite:`Conn2009`.
 
     Two features distinguish tranquilo from most other derivative-free
     trust-region optimizers:
 
-    - Parallelization: If ``n_cores`` is larger than one, the objective function
-      is evaluated in parallel batches. A parallel line search and speculative
-      sampling exploit all available cores even in steps of the algorithm that are
-      inherently sequential. tranquilo thereby minimizes the number of evaluation
-      batches rather than the number of function evaluations.
+    - Parallelization: If ``n_cores`` is larger than one, new sample points are
+      evaluated in parallel batches of size ``batch_size``. With
+      ``acceptance_decider="classic_line_search"``, spare evaluations in a batch
+      are additionally used for a parallel line search and speculative sampling,
+      which keep all cores busy even in steps of the algorithm that are inherently
+      sequential. The parallel version thereby aims to minimize the number of
+      evaluation batches rather than the number of function evaluations.
     - Noise handling: If ``noisy=True``, tranquilo adaptively determines how often
       the objective function must be evaluated (and averaged) at each point in
       order to keep making progress. The user does not have to provide any
@@ -726,7 +755,8 @@ class TranquiloLS(Algorithm):
     parallelization, tranquilo_ls is slightly slower than DFO-LS
     (:cite:`Cartis2018`) and faster than POUNDERS (:cite:`Wild2015`). With two or
     more cores, it is considerably faster than DFO-LS, and in noisy settings it
-    outperforms all benchmarked configurations of DFO-LS.
+    outperforms all benchmarked configurations of DFO-LS. In tranquilo 0.1.1,
+    combining ``noisy=True`` with ``n_cores`` larger than one is experimental.
 
     .. note::
        This algorithm requires the tranquilo package (version 0.1.0 or newer) to
@@ -740,20 +770,20 @@ class TranquiloLS(Algorithm):
     """Whether the residual functions are noisy, i.e. whether repeated evaluations
     at the same parameter vector return different values.
 
-    If True, tranquilo activates its adaptive noise handling: the objective function
-    is evaluated multiple times at each sample point, and the number of evaluations
-    per point is adjusted over the course of the optimization such that just enough
-    noise is averaged out to keep making progress. Moreover, the acceptance decision
-    for candidate points is then based on a statistical power analysis, and the
-    number of evaluations at the start parameters defaults to 5.
+    If True, tranquilo activates its adaptive noise handling: the number of
+    evaluations per sample point starts at ``noise_adaptation_options.min_n_evals``
+    (1 by default) and is adjusted over the course of the optimization such that
+    just enough noise is averaged out to keep making progress. Moreover, the
+    acceptance decision for candidate points is then based on a statistical power
+    analysis, and the number of evaluations at the start parameters defaults to 5.
 
     """
 
     # convergence options
     disable_convergence: bool = False
     """If True, the optimization is terminated only by the stopping criteria
-    (``stopping_maxfun``, ``stopping_maxiter``, ``stopping_maxtime``), never because
-    a convergence criterion is satisfied.
+    (``stopping_maxfun`` and ``stopping_maxiter``), never because a convergence
+    criterion is satisfied.
 
     This is mostly useful for benchmarking.
 
@@ -767,17 +797,25 @@ class TranquiloLS(Algorithm):
 
         |f^k - f^{k+1}| \leq \textsf{convergence_ftol_abs}.
 
-    This criterion is disabled by default (0.0).
+    With the default of 0.0, this criterion only triggers if the change is exactly
+    zero. Use ``disable_convergence=True`` to switch off all convergence criteria.
 
     """
 
     convergence_gtol_abs: NonNegativeFloat = 0.0
-    """Converge if the Euclidean norm of the gradient of the surrogate model at the
-    current trust-region center is less than this value.
+    """Converge if the norm of the gradient of the surrogate model is at most this
+    value.
 
     Since tranquilo never evaluates derivatives of the objective function, the
-    gradient of the fitted surrogate model is used instead of the true gradient.
-    This criterion is disabled by default (0.0).
+    gradient of the fitted surrogate model is used instead of the true gradient. In
+    tranquilo 0.1.1, this is the Euclidean norm of the model's linear terms, i.e. of
+    its gradient at the center of the trust region in which it was fitted (the
+    previously accepted point, or the center of the box if bounds are binding), in
+    coordinates scaled by the trust-region radius. It thus equals the norm of the
+    model gradient multiplied by the trust-region radius.
+
+    With the default of 0.0, this criterion only triggers if this norm is exactly
+    zero.
 
     """
 
@@ -790,7 +828,8 @@ class TranquiloLS(Algorithm):
 
         \lVert x^k - x^{k+1} \rVert \leq \textsf{convergence_xtol_abs}.
 
-    This criterion is disabled by default (0.0).
+    With the default of 0.0, this criterion only triggers if the change is exactly
+    zero.
 
     """
 
@@ -805,9 +844,9 @@ class TranquiloLS(Algorithm):
     """
 
     convergence_gtol_rel: NonNegativeFloat = 1e-8
-    r"""Converge if the Euclidean norm of the gradient of the surrogate model at the
-    current trust-region center, divided by its maximum with 1, is less than this
-    value. Denoting the gradient of the surrogate model by :math:`g^k`, this is
+    r"""Converge if the norm of the gradient of the surrogate model, divided by its
+    maximum with 1, is at most this value. Denoting the radius-scaled model gradient
+    that is described under ``convergence_gtol_abs`` by :math:`g^k`, this is
     expressed as
 
     .. math::
@@ -832,10 +871,10 @@ class TranquiloLS(Algorithm):
     """
 
     convergence_min_trust_region_radius: NonNegativeFloat = 0.0
-    """Consider the optimization converged if the trust-region radius shrinks below
-    this value.
+    """Minimal trust-region radius for convergence.
 
-    This criterion is disabled by default (0.0).
+    In tranquilo 0.1.1, this option has no effect. The trust-region radius is
+    bounded below by ``radius_options.min_radius`` (1e-6 by default).
 
     """
 
@@ -844,7 +883,8 @@ class TranquiloLS(Algorithm):
     """Maximum number of objective function evaluations before termination.
 
     Repeated evaluations at the same point (as used for noisy problems) count
-    towards this limit.
+    towards this limit. The limit is checked at the end of each iteration, so it
+    can be exceeded by the evaluations of the last iteration.
 
     """
 
@@ -852,7 +892,11 @@ class TranquiloLS(Algorithm):
     """Maximum number of iterations (trust-region steps) before termination."""
 
     stopping_maxtime: NonNegativeFloat = np.inf
-    """Maximum running time in seconds before termination."""
+    """Maximum running time in seconds before termination.
+
+    In tranquilo 0.1.1, this option has no effect.
+
+    """
 
     # single advanced options
     batch_evaluator: Literal[
@@ -862,15 +906,17 @@ class TranquiloLS(Algorithm):
     """Batch evaluator that is used to parallelize evaluations of the objective
     function.
 
-    See :ref:`batch_evaluators` for details.
+    This option is not passed on to tranquilo; parallel function evaluations always
+    use the "joblib" batch evaluator. See :ref:`batch_evaluators` for details.
 
     """
 
     n_cores: PositiveInt = 1
     """Number of cores used to evaluate the objective function in parallel.
 
-    If larger than one, tranquilo evaluates batches of points in parallel and uses a
-    parallel line search as well as speculative sampling to keep all cores busy.
+    If larger than one, tranquilo evaluates new sample points in parallel batches. A
+    parallel line search and speculative sampling are only used with
+    ``acceptance_decider="classic_line_search"``.
 
     """
 
@@ -886,10 +932,9 @@ class TranquiloLS(Algorithm):
     """Target number of evaluated points in the trust region on which the surrogate
     models are fitted.
 
-    By default, the sample size is determined from the model type and the dimension
-    :math:`n` of the problem: :math:`n + 1` (in the noisy or parallel case) or
-    :math:`n + 2` (otherwise) for linear models, and :math:`2 n + 1` for quadratic
-    models.
+    By default, the sample size is :math:`n + 1` if the problem is noisy or
+    ``batch_size`` is larger than one, and :math:`n + 2` otherwise, where :math:`n`
+    is the dimension of the problem.
 
     """
 
@@ -902,7 +947,8 @@ class TranquiloLS(Algorithm):
     ) = None
     """Type of surrogate model that is fitted to each residual in every iteration.
 
-    Defaults to "linear" for the least-squares version of tranquilo. The residual
+    In tranquilo 0.1.1, the least-squares version only supports "linear", which is
+    also the default; "quadratic" raises a ``NotImplementedError``. The residual
     models are aggregated into a quadratic model of the objective function, so even
     with linear residual models the algorithm has curvature information.
 
@@ -921,10 +967,10 @@ class TranquiloLS(Algorithm):
     """Initial number of times the objective function is evaluated (and averaged) at
     each sample point.
 
-    This is only relevant for noisy problems, where the default is derived from
-    ``noise_adaptation_options`` and the number of evaluations per point is
-    adaptively adjusted over the course of the optimization. For non-noisy problems,
-    the default is 1.
+    For noisy problems, the default is ``noise_adaptation_options.min_n_evals`` (1
+    by default), and the number of evaluations per point is adaptively adjusted over
+    the course of the optimization. For non-noisy problems, the default is 1 and the
+    number is not adjusted.
 
     """
 
@@ -941,7 +987,7 @@ class TranquiloLS(Algorithm):
     """Seed for the random number generators used to sample new points and to
     simulate noise during the noise adaptation.
 
-    Pass None for non-reproducible randomness.
+    In tranquilo 0.1.1, the seed must be an integer; None raises a ``TypeError``.
 
     """
 
@@ -950,8 +996,10 @@ class TranquiloLS(Algorithm):
     """Advanced options for the management of the trust-region radius, e.g. the
     initial, minimal and maximal radius as well as expansion and shrinking factors.
 
-    Pass an instance of ``tranquilo.options.RadiusOptions``; see the tranquilo
-    package for details.
+    Pass a dict with a subset of the fields of ``tranquilo.options.RadiusOptions``
+    or an instance of it; see the tranquilo package for details. The default initial
+    radius is 0.1 times the largest absolute value of the start parameters, so pass
+    a positive ``initial_radius`` if all start parameters are zero.
 
     """
 
@@ -959,8 +1007,10 @@ class TranquiloLS(Algorithm):
     """Advanced options that determine how the algorithm reacts if it stagnates,
     i.e. if a proposed step is very small relative to the trust-region radius.
 
-    Pass an instance of ``tranquilo.options.StagnationOptions``; see the tranquilo
-    package for details.
+    Pass a dict with a subset of the fields of
+    ``tranquilo.options.StagnationOptions`` or an instance of it; see the tranquilo
+    package for details. Fields that are not passed in a dict keep their defaults,
+    which depend on ``noisy`` and ``batch_size``.
 
     """
 
@@ -1015,9 +1065,10 @@ class TranquiloLS(Algorithm):
     search region are used to fit the surrogate models.
 
     "keep_all" keeps all points, "discard_all" keeps only the trust-region center,
-    "drop_excess" drops points if there are more than needed to fit the surrogate
-    model, preferring points that are spread out within the trust region, and
-    "clustering" keeps only one point per cluster of nearby points. The default is
+    "drop_excess" keeps at most ``n_max_factor`` (3 by default) times the target
+    sample size and drops excess points, starting with points outside the trust
+    region and then points that are close to other points, and "clustering" keeps
+    only one point per cluster of nearby points. The default is
     "drop_excess" if ``batch_size`` is larger than one and "keep_all" otherwise. A
     custom filter function can be passed as a callable.
 
@@ -1048,9 +1099,9 @@ class TranquiloLS(Algorithm):
     of-Hessian fit depending on the sample size, following ideas from
     :cite:`Powell2004`, and "tranquilo" is a variant of "ols" that penalizes the
     linear terms of the model less strongly when the fitting problem is
-    underdetermined. By default, "ols" is used if the sample size is large enough to
-    identify all model parameters and "tranquilo" otherwise. A custom fitting
-    function can be passed as a callable.
+    underdetermined. For the least-squares version, whose residual models are
+    linear, the default is "ols". A custom fitting function can be passed as a
+    callable.
 
     """
 
@@ -1130,11 +1181,14 @@ class TranquiloLS(Algorithm):
     """Method used to decide whether a candidate point is accepted as the new
     trust-region center.
 
-    "classic" performs the standard acceptance step of trust-region algorithms,
-    which compares the actual with the predicted improvement.
-    "classic_line_search" additionally evaluates speculative points along the
-    search direction in parallel. "naive_noisy" averages a fixed number of
-    evaluations at the candidate point. "noisy" uses a statistical power analysis
+    "classic" evaluates the candidate point once and accepts it if it improves on
+    the current point. "classic_line_search" does the same if ``batch_size`` is
+    one; otherwise, it uses the spare evaluations of the batch for a line search
+    along the step (if the candidate lies on the border of the trust region) and
+    for speculative sampling of points around the candidate, and accepts the best
+    of these points if it improves on the current point. "naive_noisy" averages a
+    fixed number of evaluations (10) at the candidate point. "noisy" uses a
+    statistical power analysis
     to determine how many evaluations at the candidate and the current point are
     needed to decide which one is better. The default is "noisy" for noisy problems
     and "classic" otherwise. A custom acceptance function can be passed as a
@@ -1171,12 +1225,12 @@ class TranquiloLS(Algorithm):
     """
 
     infinity_handler: Literal["relative"] | Callable = "relative"
-    """Method used to clip infinite objective function values before fitting the
+    """Method used to replace infinite and NaN function values before fitting the
     surrogate models.
 
-    The "relative" method clips infinite values at a penalty value that is derived
-    from the range of the finite values in the sample. A custom function can be
-    passed as a callable.
+    The "relative" method replaces infinite and NaN values with a penalty value that
+    is derived from the range of the finite values in the sample. A custom function
+    can be passed as a callable.
 
     """
 

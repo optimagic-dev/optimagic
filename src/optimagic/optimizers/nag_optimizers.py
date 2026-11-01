@@ -1,4 +1,4 @@
-"""Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/].
+"""Implement algorithms by the `Numerical Algorithms Group <https://www.nag.com/>`_.
 
 The following arguments are not supported as ``algo_options``:
 
@@ -34,117 +34,41 @@ from optimagic.typing import (
 from optimagic.utilities import calculate_trustregion_initial_radius
 
 CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE = 1e-8
-"""float: Stop when the lower trust region radius falls below this value."""
 
 CONVERGENCE_SLOW_PROGRESS = {
     "threshold_to_characterize_as_slow": 1e-8,
     "max_insufficient_improvements": None,
     "comparison_period": 5,
 }
-"""dict: Specification of when to terminate or reset the optimization because of only
-    slow improvements. This is similar to an absolute criterion tolerance only that
-    instead of a single improvement the average over several iterations must be small.
-
-    Possible entries are:
-        threshold_to_characterize_as_slow (float): Threshold whether an improvement
-            is insufficient. Note: the improvement is divided by the
-            ``comparison_period``.
-            So this is the required average improvement per iteration over the
-            comparison period.
-        max_insufficient_improvements (int): Number of consecutive
-            insufficient improvements before termination (or reset). Default is
-            ``20 * len(x)``.
-        comparison_period (int):
-            How many iterations to go back to calculate the improvement.
-            For example 5 would mean that each criterion evaluation is compared to the
-            criterion value from 5 iterations before.
-
-"""
 
 THRESHOLD_FOR_SAFETY_STEP = 0.5
-r"""float: Threshold for when to call the safety step (:math:`\gamma_s`).
-
-    :math:`\text{proposed step} \leq \text{threshold_for_safety_step} \cdot
-    \text{current_lower_trustregion_radius}`.
-
-"""
 
 CONVERGENCE_NOISE_CORRECTED_FTOL = 1.0
-"""float: Stop when the evaluations on the set of interpolation points all fall within
-    this factor of the noise level. The default is 1, i.e. when all evaluations are
-    within the noise level. If you want to not use this criterion but still flag your
-    criterion function as noisy, set this tolerance to 0.0.
-
-    .. warning::
-        Very small values, as in most other tolerances don't make sense here.
-
-"""
 
 
 TRUSTREGION_THRESHOLD_SUCCESSFUL = 0.1
-"""float: Share of the predicted improvement that has to be achieved for a trust
-    region iteration to count as successful.
-
-"""
 
 TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL = 0.7
-"""float: Share of predicted improvement that has to be achieved for a trust region
-    iteration to count as very successful.``criterion_noisy``
-
-"""
 
 TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL = None
-"""float: Ratio by which to shrink the upper trust region radius when realized
-    improvement does not match the ``threshold_successful``. The default is 0.98
-    if the criterion is noisy and 0.5 else.
-
-"""
 
 TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL = 2.0
-r"""float: Ratio by which to expand the upper trust region radius :math:`\Delta_k`
-    in very successful iterations (:math:`\gamma_{inc}` in the notation of the paper).
-
-"""
 
 TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL = 4.0
-r"""float: Ratio of the proposed step ($\|s_k\|$) by which to expand the upper trust
-    region radius (:math:`\Delta_k`) in very successful iterations
-    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
-
-"""
 
 TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS = None
-r"""float: Ratio by which to shrink the lower trust region radius (:math:`\rho_k`)
-    (:math:`\alpha_1` in the notation of the paper). Default is 0.9 if
-    the criterion is noisy and 0.1 else.
-
-"""
 
 TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS = None
-r"""float: Ratio of the current lower trust region (:math:`\rho_k`) by which to shrink
-    the upper trust region radius (:math:`\Delta_k`) when the lower one is shrunk
-    (:math:`\alpha_2` in the notation of the paper). Default is 0.95 if the
-    criterion is noisy and 0.5 else."""
 
 RANDOM_DIRECTIONS_ORTHOGONAL = True
-"""bool: Whether to make randomly drawn initial directions orthogonal."""
 
 
 INTERPOLATION_ROUNDING_ERROR = 0.1
-r"""float: Internally, all the NAG algorithms store interpolation points with respect
-    to a base point :math:`x_b`; that is, we store :math:`\{y_t-x_b\}`,
-    which reduces the risk of roundoff errors. We shift :math:`x_b` to :math:`x_k` when
-    :math:`\text{proposed step} \leq \text{interpolation_rounding_error} \cdot
-    \|x_k-x_b\|`.
-
-"""
 
 CLIP_CRITERION_IF_OVERFLOWING = True
-"""bool: Whether to clip the criterion to avoid ``OverflowError``."""
 
 
 TRUSTREGION_PRECONDITION_INTERPOLATION = True
-"""bool: whether to scale the interpolation linear system to improve conditioning."""
 
 
 RESET_OPTIONS = {
@@ -169,73 +93,6 @@ RESET_OPTIONS = {
     "n_extra_interpolation_points_per_hard_reset": 0,
     "n_additional_extra_points_to_replace_per_reset": 0,
 }
-r"""dict: Options for reseting the optimization.
-
-    Possible entries are:
-
-        use_resets (bool): Whether to do resets when the lower trust
-            region radius (:math:`\rho_k`) reaches the stopping criterion
-            (:math:`\rho_{end}`), or (optionally) when all interpolation points are
-            within noise level. Default is ``True`` if the criterion is noisy.
-        minimal_trustregion_radius_tolerance_scaling_at_reset (float): Factor with
-            which the trust region stopping criterion is multiplied at each reset.
-
-        reset_type (str): Whether to use "soft" or "hard" resets. Default is "soft".
-
-        move_center_at_soft_reset (bool): Whether to move the trust region center
-            ($x_k$) to the best new point evaluated in stead of keeping it constant.
-        points_to_replace_at_soft_reset (int): Number of interpolation points to move
-            at each soft reset.
-        reuse_criterion_value_at_hard_reset (bool): Whether or not to recycle the
-            criterion value at the best iterate found when performing a hard reset.
-            This saves one criterion evaluation.
-        max_iterations_without_new_best_after_soft_reset (int):
-            The maximum number of successful steps in a given run where the new
-            criterion value is worse than the best value found in previous runs before
-            terminating. Default is ``max_criterion_evaluations``.
-        auto_detect (bool): Whether or not to
-            automatically determine when to reset. This is an additional condition
-            and resets can still be triggered by small upper trust region radius, etc.
-            There are two criteria used: upper trust region radius shrinkage
-            (no increases over the history, more decreases than no changes) and
-            changes in the model Jacobian (consistently increasing trend as measured
-            by slope and correlation coefficient of the line of best fit).
-        auto_detect_history (int):
-            How many iterations of model changes and trust region radii to store.
-        auto_detect_min_jacobian_increase (float):
-            Minimum rate of increase of the Jacobian over past iterations to cause a
-            reset.
-        auto_detect_min_correlations (float):
-            Minimum correlation of the Jacobian data set required to cause a reset.
-        max_consecutive_unsuccessful_resets (int): maximum number of consecutive
-            unsuccessful resets allowed (i.e. resets which did not outperform the
-            best known value from earlier runs).
-
-    Only used when using nag_bobyqa:
-
-        max_unsuccessful_resets (int):
-            number of total unsuccessful resets allowed.
-            Default is 20 if ``seek_global_optimum`` and else unrestricted.
-        trust_region_scaling_at_unsuccessful_reset (float): Factor by which to
-            expand the initial lower trust region radius (:math:`\rho_{beg}`) after
-            unsuccessful resets. Default is 1.1 if ``seek_global_optimum`` else 1.
-
-    Only used when using nag_dfols:
-
-        max_interpolation_points (int): Maximum allowed value of the number of
-            interpolation points. This is useful if the number of interpolation points
-            increases with each reset, e.g. when
-            ``n_extra_interpolation_points_per_soft_reset > 0``. The default is
-            ``n_interpolation_points``.
-        n_extra_interpolation_points_per_soft_reset (int): Number of points to add to
-            the interpolation set with each soft reset.
-        n_extra_interpolation_points_per_hard_reset (int): Number of points to add to
-            the interpolation set with each hard reset.
-        n_additional_extra_points_to_replace_per_reset (int): This parameter modifies
-            ``n_extra_points_to_replace_successful``. With each reset
-            ``n_extra_points_to_replace_successful`` is increased by this number.
-
-"""
 
 
 TRUSTREGION_FAST_START_OPTIONS = {
@@ -243,8 +100,8 @@ TRUSTREGION_FAST_START_OPTIONS = {
     "method": "auto",
     "scale_of_trustregion_step_perturbation": None,
     "scale_of_jacobian_components_perturbation": 1e-2,
-    # the following will be growing.full_rank.min_sing_val
-    # but it not supported yet by DF-OLS.
+    # corresponds to DFO-LS's growing.full_rank.svd_scale_factor, which optimagic
+    # currently does not pass to DFO-LS.
     "floor_of_jacobian_singular_values": 1,
     "jacobian_max_condition_number": 1e8,
     "geometry_improving_steps": False,
@@ -256,78 +113,6 @@ TRUSTREGION_FAST_START_OPTIONS = {
     "shrinking_factor_not_successful": None,
     "n_extra_search_directions_per_iteration": 0,
 }
-r"""dict: Options to start the optimization while building the full trust region model.
-
-    To activate this, set the number of interpolation points at which to evaluate the
-    criterion before doing the first step, `min_initial_points`, to something smaller
-    than the number of parameters.
-
-    The following options can be specified:
-
-        min_initial_points (int): Number of initial interpolation
-            points in addition to the start point. This should only be changed to
-            a value less than ``len(x)``, and only if the default setup cost
-            of ``len(x) + 1`` evaluations of the criterion is impractical.
-            If this is set to be less than the default, the input value of
-            ``n_interpolation_points`` should be set to ``len(x)``.
-            If the default is used, all the other parameters have no effect.
-            Default is ``n_interpolation_points - 1``.
-            If the default setup costs of the evaluations are very large, DF-OLS
-            can start with less than ``len(x)`` interpolation points and add points
-            to the trust region model with every iteration.
-        method ("jacobian", "trustregion" or "auto"):
-            When there are less interpolation points than ``len(x)`` the model is
-            underdetermined. This can be fixed in two ways:
-            If "jacobian", the interpolated Jacobian is perturbed to have full
-            rank, allowing the trust region step to include components in the full
-            search space. This is the default if
-            ``len(x) \geq number of root contributions``.
-            If "trustregion_step", the trust region step is perturbed by an
-            orthogonal direction not yet searched. It is the default if
-            ``len(x) < number of root contributions``.
-        scale_of_trustregion_step_perturbation (float):
-            When adding new search directions, the length of the step is the trust
-            region radius multiplied by this value. The default is 0.1 if
-            ``method == "trustregion"`` else 1.
-        scale_of_jacobian_components_perturbation (float): Magnitude of extra
-            components added to the Jacobian. Default is 1e-2.
-        floor_of_jacobian_singular_values (float): Floor singular
-            values of the Jacobian at this factor of the last non zero value.
-            As of version 1.2.1 this option is not yet supported by DF-OLS!
-        scale_of_jacobian_singular_value_floor (float):
-            Floor singular values of the Jacobian at this factor of the last nonzero
-            value.
-        jacobian_max_condition_number (float): Cap on the condition number
-            of Jacobian after applying floors to singular values
-            (effectively another floor on the smallest singular value, since the
-            largest singular value is fixed).
-        geometry_improving_steps (bool): Whether to do geometry-improving steps in the
-            trust region algorithm, as per the usual algorithm during the fast start.
-        safety_steps (bool):
-            Whether to perform safety steps.
-        shrink_upper_radius_in_safety_steps (bool): During the fast start whether to
-            shrink the upper trust region radius in safety steps.
-        full_geometry_improving_step (bool): During the fast start whether to do a
-            full geometry-improving step within safety steps (the same as the post fast
-            start phase of the algorithm). Since this involves reducing the upper trust
-            region radius, this can only be `True` if
-            `shrink_upper_radius_in_safety_steps == False`.
-        reset_trustregion_radius_after_fast_start (bool):
-            Whether or not to reset the upper trust region radius to its initial value
-            at the end of the fast start phase.
-        reset_min_trustregion_radius_after_fast_start (bool):
-            Whether or not to reset the minimum trust region radius
-            (:math:`\rho_k`) to its initial value at the end of the fast start phase.
-        shrinking_factor_not_successful (float):
-            Ratio by which to shrink the trust region radius when realized
-            improvement does not match the ``threshold_for_successful_iteration``
-            during the fast start phase.  By default it is the same as
-            ``reduction_when_not_successful``.
-        n_extra_search_directions_per_iteration (int): Number of new search
-            directions to add with each iteration where we do not have a full set
-            of search directions. This approach is not recommended! Default is 0.
-
-"""
 
 
 @mark.minimizer(
@@ -359,37 +144,39 @@ class NagDFOLS(Algorithm):
         \min_{x\in\mathbb{R}^n}  &\quad  f(x) := \sum_{i=1}^{m}r_{i}(x)^2 \\
         \text{s.t.} &\quad  \text{lower_bounds} \leq x \leq \text{upper_bounds}
 
-    The :math:`r_{i}` are called root contributions in optimagic.
+    The :math:`r_{i}` are the least-squares residuals. To use DFO-LS, decorate your
+    criterion function with ``om.mark.least_squares`` and return the residuals
+    instead of their sum of squares.
 
     DFO-LS is a derivative-free algorithm: it does not require the user to provide the
     derivatives of :math:`f(x)` or :math:`r_{i}(x)`, nor does it attempt to estimate
     them internally (by using finite differencing, for instance). Instead, it
-    constructs an interpolation-based model of the root contributions that exploits
-    the least-squares structure of the problem and minimizes this model within a
-    trust region.
+    constructs an interpolation-based model of the residuals that exploits the
+    least-squares structure of the problem and minimizes this model within a trust
+    region.
 
     There are two main situations when using a derivative-free algorithm (such as
     DFO-LS) is preferable to a derivative-based algorithm (which is the vast majority
     of least-squares solvers):
 
-    1. If the root contributions are noisy, then calculating or even estimating their
+    1. If the residuals are noisy, then calculating or even estimating their
        derivatives may be impossible (or at least very inaccurate). By noisy we mean
        that if we evaluate :math:`r_{i}(x)` multiple times at the same value of x, we
        get different results. This may happen when a Monte Carlo simulation is used,
        for instance.
 
-    2. If the root contributions are expensive to evaluate, then estimating
-       derivatives (which requires n evaluations of each :math:`r_{i}(x)` for every
-       point of interest x) may be prohibitively expensive. Derivative-free methods
-       are designed to solve the problem with the fewest number of evaluations of the
-       criterion as possible.
+    2. If the residuals are expensive to evaluate, then estimating derivatives (which
+       requires n evaluations of each :math:`r_{i}(x)` for every point of interest x)
+       may be prohibitively expensive. Derivative-free methods are designed to solve
+       the problem with the fewest number of evaluations of the criterion as
+       possible.
 
     DFO-LS was developed by the same group as Py-BOBYQA (``nag_pybobyqa``), its
     general-purpose scalar counterpart. If your problem has least-squares structure,
     DFO-LS typically needs far fewer criterion evaluations than Py-BOBYQA and other
     scalar optimizers because it exploits this structure.
 
-    There are four possible convergence criteria:
+    There are five possible convergence criteria:
 
     1. when the lower trust region radius is shrunk below a minimum
        (``convergence_minimal_trustregion_radius_tolerance``).
@@ -408,6 +195,13 @@ class NagDFOLS(Algorithm):
        of the noise level of the criterion function. This is only applicable if the
        criterion function is noisy. You can specify this criterion with
        ``convergence_noise_corrected_criterion_tolerance``.
+
+    5. when the criterion value falls below 1e-12. This is ``model.abs_tol`` in the
+       DFO-LS documentation and cannot be changed through optimagic.
+
+    If resets are enabled (see ``trustregion_reset_options``; this is the default for
+    noisy criterion functions), criteria 1, 2 and 4 trigger a reset instead of
+    terminating the optimization.
 
     DFO-LS supports resetting the optimization and doing a fast start by starting
     with a smaller interpolation set and growing it dynamically. For more information
@@ -437,9 +231,9 @@ class NagDFOLS(Algorithm):
     )
     """Stop when the lower trust-region radius falls below this value.
 
-    This is approximately equivalent to an absolute parameter tolerance and
-    corresponds to ``rhoend`` in the DFO-LS documentation, from which the default
-    value is taken.
+    If resets are enabled, a reset is triggered instead. This criterion is
+    approximately equivalent to an absolute parameter tolerance and corresponds to
+    ``rhoend`` in the DFO-LS documentation, from which the default value is taken.
 
     """
 
@@ -449,9 +243,10 @@ class NagDFOLS(Algorithm):
     """Stop when the evaluations on the set of interpolation points all fall within
     this factor of the noise level.
 
-    The default is 1, i.e. when all evaluations are within the noise level. If you
-    want to not use this criterion but still flag your criterion function as noisy,
-    set this tolerance to 0.0.
+    If resets are enabled (the default for noisy criterion functions), a reset is
+    triggered instead. The default is 1, i.e. when all evaluations are within the
+    noise level. If you want to not use this criterion but still flag your criterion
+    function as noisy, set this tolerance to 0.0.
 
     .. warning::
         Very small values, as in most other tolerances, don't make sense here.
@@ -464,23 +259,25 @@ class NagDFOLS(Algorithm):
     :math:`f(x_k)/f(x_0) \leq \textsf{convergence_ftol_scaled}` is reached.
 
     This is ``model.rel_tol`` in the DFO-LS documentation. With the default of 0.0
-    this criterion is deactivated unless the lowest mathematically possible criterion
-    value (0.0) is actually achieved.
+    this criterion is deactivated. Note that DFO-LS additionally stops successfully
+    when the criterion value falls below 1e-12 (``model.abs_tol``), which cannot be
+    changed through optimagic.
 
     """
 
     convergence_slow_progress: dict[str, Any] | None = None
-    """Specification of when to terminate (or reset) the optimization because of only
+    r"""Specification of when to terminate (or reset) the optimization because of only
     slow improvements.
 
     This is similar to a relative criterion tolerance, only that instead of a single
     improvement the average improvement over several iterations must be small.
-    Possible entries are:
+    DFO-LS measures improvements in :math:`\log f`. Possible entries are:
 
     - ``threshold_to_characterize_as_slow`` (float): Threshold whether an improvement
       is insufficient. Note that the improvement is divided by the
       ``comparison_period``, so this is the required average improvement per
-      iteration over the comparison period. Default is 1e-8.
+      iteration over the comparison period. Default is 1e-8, whereas DFO-LS itself
+      defaults to 1e-4.
     - ``max_insufficient_improvements`` (int): Number of consecutive insufficient
       improvements before termination (or reset). Default is ``20 * len(x)``.
     - ``comparison_period`` (int): How many iterations to go back to calculate the
@@ -534,11 +331,17 @@ class NagDFOLS(Algorithm):
     r"""How often to evaluate the criterion function at each point.
 
     This is only applicable for criterion functions with noise, when averaging
-    multiple evaluations at the same point produces a more accurate value. It must be
-    a function with the keyword arguments ``upper_trustregion_radius``
-    (:math:`\Delta`), ``lower_trustregion_radius`` (:math:`\rho`), ``n_iterations``
-    and ``n_resets`` that returns the number of evaluations as an integer. The
-    default is no averaging, i.e. to evaluate the criterion only once at each point.
+    multiple evaluations at the same point produces a more accurate value. The
+    solver calls the value positionally as
+    ``f(upper_trustregion_radius, lower_trustregion_radius, n_iterations, n_resets)``
+    (i.e. with :math:`\Delta`, :math:`\rho`, the number of iterations and the number
+    of resets) and expects the number of evaluations as an integer. The default is
+    no averaging, i.e. to evaluate the criterion only once at each point.
+
+    .. warning::
+        Currently, only the default ``None`` works: a callable is rejected by the
+        validation of algorithm options (``InvalidAlgoOptionError``), and an integer
+        raises a ``TypeError`` inside the solver because it is not callable.
 
     """
 
@@ -598,30 +401,33 @@ class NagDFOLS(Algorithm):
     - ``min_inital_points`` (int): Number of initial interpolation points in addition
       to the start point. This should only be changed to a value less than
       ``len(x)``, and only if the default setup cost of ``len(x) + 1`` evaluations of
-      the criterion is impractical. If this is set to be less than the default, the
-      input value of ``trustregion_n_interpolation_points`` should be set to
-      ``len(x)``. If the default is used, all the other parameters have no effect.
-      Default is ``trustregion_n_interpolation_points - 1``. If the default setup
-      costs of the evaluations are very large, DFO-LS can start with less than
-      ``len(x)`` interpolation points and add points to the trust-region model with
-      every iteration. Note that the option name is indeed ``min_inital_points``,
-      i.e. it contains a spelling mistake.
+      the criterion is impractical. In that case, keep
+      ``trustregion_n_interpolation_points`` at its default of ``len(x) + 1``
+      (DFO-LS requires at least ``len(x) + 1`` interpolation points). If the default
+      is used, all the other parameters have no effect. Default is
+      ``trustregion_n_interpolation_points - 1``. If the default setup costs of the
+      evaluations are very large, DFO-LS can start with less than ``len(x)``
+      interpolation points and add points to the trust-region model with every
+      iteration. Note that the option name is indeed ``min_inital_points``, i.e. it
+      contains a spelling mistake.
     - ``method`` ("jacobian", "trustregion" or "auto"): When there are less
       interpolation points than ``len(x)``, the model is underdetermined. This can be
       fixed in two ways: If "jacobian", the interpolated Jacobian is perturbed to
       have full rank, allowing the trust-region step to include components in the
-      full search space. This is the default if the number of root contributions is
-      at least ``len(x)``. If "trustregion", the trust-region step is perturbed by an
-      orthogonal direction not yet searched. This is the default if the number of
-      root contributions is smaller than ``len(x)``.
+      full search space. If "trustregion", the trust-region step is perturbed by an
+      orthogonal direction not yet searched. The default is "auto". Note that in
+      optimagic "auto" currently always behaves like "jacobian": DFO-LS's automatic
+      switch to "trustregion" when there are fewer residuals than parameters is not
+      triggered. Set "trustregion" explicitly in that case.
     - ``scale_of_trustregion_step_perturbation`` (float): When adding new search
       directions, the length of the step is the trust-region radius multiplied by
-      this value. The default is 0.1 if ``method == "trustregion"`` else 1.
+      this value. The default is 1.
     - ``scale_of_jacobian_components_perturbation`` (float): Magnitude of the extra
       components added to the Jacobian. The default is 1e-2.
     - ``floor_of_jacobian_singular_values`` (float): Floor the singular values of the
-      Jacobian at this factor of the last non-zero value. As of version 1.2.1 this
-      option is not yet supported by DFO-LS!
+      Jacobian at this factor of the last non-zero value. This option currently has
+      no effect: optimagic does not pass it to DFO-LS and raises a warning if it is
+      not 1, so DFO-LS's default factor of 1 is always used.
     - ``jacobian_max_condition_number`` (float): Cap on the condition number of the
       Jacobian after applying floors to singular values (effectively another floor on
       the smallest singular value, since the largest singular value is fixed).
@@ -643,8 +449,10 @@ class NagDFOLS(Algorithm):
       the fast start phase.
     - ``shrinking_factor_not_successful`` (float): Ratio by which to shrink the
       trust-region radius when the realized improvement does not match the
-      ``trustregion_threshold_successful`` during the fast start phase. By default it
-      is the same as ``trustregion_shrinking_factor_not_successful``.
+      ``trustregion_threshold_successful`` during the fast start phase. The default
+      is 0.98 if the criterion is noisy and 0.5 else, i.e. DFO-LS's default of
+      ``trustregion_shrinking_factor_not_successful``. It does not follow a
+      user-specified value of that option.
     - ``n_extra_search_directions_per_iteration`` (int): Number of new search
       directions to add with each iteration where we do not have a full set of search
       directions. This approach is not recommended! Default is 0.
@@ -730,10 +538,11 @@ class NagDFOLS(Algorithm):
       fit).
     - ``auto_detect_history`` (int): How many iterations of model changes and trust
       region radii to store.
-    - ``auto_detect_min_jacobian_increase`` (float): Minimum rate of increase of the
-      Jacobian over past iterations to cause a reset.
-    - ``auto_detect_min_correlations`` (float): Minimum correlation of the Jacobian
-      data set required to cause a reset.
+    - ``auto_detect_min_jacobian_increase`` (float): Minimum rate of increase of
+      :math:`\log(\|J_k - J_{k-1}\|_F)`, i.e. of the change in the model Jacobian,
+      over past iterations to cause a reset.
+    - ``auto_detect_min_correlations`` (float): Minimum correlation of the data set
+      :math:`(k, \log(\|J_k - J_{k-1}\|_F))` required to cause a reset.
     - ``max_consecutive_unsuccessful_resets`` (int): Maximum number of consecutive
       unsuccessful resets allowed (i.e. resets which did not outperform the best
       known value from earlier runs).
@@ -743,9 +552,13 @@ class NagDFOLS(Algorithm):
       ``n_extra_interpolation_points_per_soft_reset > 0``. The default is
       ``trustregion_n_interpolation_points``.
     - ``n_extra_interpolation_points_per_soft_reset`` (int): Number of points to add
-      to the interpolation set with each soft reset.
-    - ``n_extra_interpolation_points_per_hard_reset`` (int): Number of points to add
-      to the interpolation set with each hard reset.
+      to the interpolation set with each reset (soft or hard). The default is 0.
+    - ``n_extra_interpolation_points_per_hard_reset`` (int): With each hard reset,
+      the number of initial search directions is increased by the difference
+      between this value and ``n_extra_interpolation_points_per_soft_reset``. It
+      must therefore be at least ``n_extra_interpolation_points_per_soft_reset``;
+      otherwise DFO-LS rejects the input and the optimization fails with an error.
+      The default is 0.
     - ``n_additional_extra_points_to_replace_per_reset`` (int): This parameter
       modifies ``trustregion_n_extra_points_to_replace_successful``. With each reset
       it is increased by this number.
@@ -876,8 +689,7 @@ def nag_dfols_internal(
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
-    For details see
-    :ref: `list_of_nag_algorithms`.
+    For details see :class:`NagDFOLS`.
 
     """
     if not IS_DFOLS_INSTALLED:
@@ -929,8 +741,8 @@ def nag_dfols_internal(
     )
     if fast_start["floor_of_jacobian_singular_values"] != 1:
         warnings.warn(
-            "Setting the `floor_of_jacobian_singular_values` is not supported by "
-            "DF-OLS as of version 1.2.1."
+            "Setting `floor_of_jacobian_singular_values` has no effect because "
+            "optimagic does not pass it to DFO-LS."
         )
     if (
         fast_start["shrink_upper_radius_in_safety_steps"]
@@ -952,8 +764,8 @@ def nag_dfols_internal(
     ):
         raise ValueError(
             "In the trustregion_reset_options "
-            "'n_extra_interpolation_points_per_soft_reset' must "
-            "be larger or the same as 'n_extra_interpolation_points_per_hard_reset'."
+            "'n_extra_interpolation_points_per_hard_reset' must "
+            "be larger or the same as 'n_extra_interpolation_points_per_soft_reset'."
         )
 
     dfols_options = {
@@ -1114,6 +926,10 @@ class NagPyBOBYQA(Algorithm):
        (``convergence_noise_corrected_criterion_tolerance``). This is only applicable
        if the criterion function is noisy.
 
+    If resets are enabled (see ``trustregion_reset_options``; this is the default for
+    noisy criterion functions and if ``seek_global_optimum`` is ``True``), criteria
+    1, 3 and 4 trigger a reset instead of terminating the optimization.
+
     .. note::
         The following arguments of ``pybobyqa.solve`` are not supported by optimagic:
         ``scaling_within_bounds``, ``init.run_in_parallel``, ``do_logging``,
@@ -1130,9 +946,10 @@ class NagPyBOBYQA(Algorithm):
     )
     """Stop when the lower trust-region radius falls below this value.
 
-    This is approximately equivalent to an absolute parameter tolerance and
-    corresponds to ``rhoend`` in the Py-BOBYQA documentation, from which the default
-    value is taken.
+    If resets are enabled, a reset is triggered instead. This criterion is
+    approximately equivalent to an absolute parameter tolerance and corresponds to
+    ``rhoend`` in the Py-BOBYQA documentation, from which the default value is
+    taken.
 
     """
 
@@ -1142,9 +959,10 @@ class NagPyBOBYQA(Algorithm):
     """Stop when the evaluations on the set of interpolation points all fall within
     this factor of the noise level.
 
-    The default is 1, i.e. when all evaluations are within the noise level. If you
-    want to not use this criterion but still flag your criterion function as noisy,
-    set this tolerance to 0.0.
+    If resets are enabled (the default for noisy criterion functions), a reset is
+    triggered instead. The default is 1, i.e. when all evaluations are within the
+    noise level. If you want to not use this criterion but still flag your criterion
+    function as noisy, set this tolerance to 0.0.
 
     .. warning::
         Very small values, as in most other tolerances, don't make sense here.
@@ -1163,7 +981,7 @@ class NagPyBOBYQA(Algorithm):
     """Specification of when to terminate (or reset) the optimization because of only
     slow improvements.
 
-    This is similar to a relative criterion tolerance, only that instead of a single
+    This is similar to an absolute criterion tolerance, only that instead of a single
     improvement the average improvement over several iterations must be small.
     Possible entries are:
 
@@ -1224,11 +1042,17 @@ class NagPyBOBYQA(Algorithm):
     r"""How often to evaluate the criterion function at each point.
 
     This is only applicable for criterion functions with noise, when averaging
-    multiple evaluations at the same point produces a more accurate value. It must be
-    a function with the keyword arguments ``upper_trustregion_radius``
-    (:math:`\Delta`), ``lower_trustregion_radius`` (:math:`\rho`), ``n_iterations``
-    and ``n_resets`` that returns the number of evaluations as an integer. The
-    default is no averaging, i.e. to evaluate the criterion only once at each point.
+    multiple evaluations at the same point produces a more accurate value. The
+    solver calls the value positionally as
+    ``f(upper_trustregion_radius, lower_trustregion_radius, n_iterations, n_resets)``
+    (i.e. with :math:`\Delta`, :math:`\rho`, the number of iterations and the number
+    of resets) and expects the number of evaluations as an integer. The default is
+    no averaging, i.e. to evaluate the criterion only once at each point.
+
+    .. warning::
+        Currently, only the default ``None`` works: a callable is rejected by the
+        validation of algorithm options (``InvalidAlgoOptionError``), and an integer
+        raises a ``TypeError`` inside the solver because it is not callable.
 
     """
 
@@ -1245,8 +1069,13 @@ class NagPyBOBYQA(Algorithm):
 
     The heuristic repeatedly restarts the optimization from the best point found so
     far with an enlarged trust-region radius. It is only a heuristic, so there is no
-    guarantee that the global optimum is found. To use it, finite lower and upper
-    bounds must be provided for all parameters.
+    guarantee that the global optimum is found. To use it, both lower and upper
+    bounds must be specified (individual entries may be infinite); otherwise
+    Py-BOBYQA rejects the input and the optimization fails with an error.
+
+    Setting this to ``True`` also changes the defaults of the ``use_resets``,
+    ``max_unsuccessful_resets`` and ``trust_region_scaling_at_unsuccessful_reset``
+    entries of ``trustregion_reset_options``.
 
     """
 
@@ -1312,7 +1141,7 @@ class NagPyBOBYQA(Algorithm):
     trustregion_n_interpolation_points: NonNegativeInt | None = None
     r"""The number of interpolation points to use.
 
-    This is ``npt`` in the Py-BOBYQA documentation. With :math:`n = len(x)` the
+    This is ``npt`` in the Py-BOBYQA documentation. With :math:`n` = ``len(x)``, the
     default is :math:`2n+1` if the criterion is not noisy. Otherwise, it is set to
     :math:`(n+1)(n+2)/2`. Larger values are particularly useful for noisy problems.
     Py-BOBYQA requires
@@ -1339,7 +1168,8 @@ class NagPyBOBYQA(Algorithm):
     - ``use_resets`` (bool): Whether to do resets when the lower trust-region radius
       (:math:`\rho_k`) reaches the stopping criterion (:math:`\rho_{end}`), or
       (optionally) when all interpolation points are within the noise level. The
-      default is ``True`` if the criterion is noisy.
+      default is ``True`` if the criterion is noisy or ``seek_global_optimum`` is
+      ``True``, and ``False`` else.
     - ``minimal_trustregion_radius_tolerance_scaling_at_reset`` (float): Factor with
       which the trust-region stopping criterion is multiplied at each reset.
     - ``reset_type`` (str): Whether to use "soft" or "hard" resets. The default is
@@ -1359,15 +1189,18 @@ class NagPyBOBYQA(Algorithm):
       reset. This is an additional condition and resets can still be triggered by a
       small upper trust-region radius, etc. There are two criteria used: upper
       trust-region radius shrinkage (no increases over the history, more decreases
-      than no changes) and changes in the model Jacobian (consistently increasing
-      trend as measured by the slope and correlation coefficient of the line of best
-      fit).
+      than no changes) and changes in the model gradient and Hessian (consistently
+      increasing trend as measured by the slope and correlation coefficient of the
+      line of best fit).
     - ``auto_detect_history`` (int): How many iterations of model changes and trust
       region radii to store.
-    - ``auto_detect_min_jacobian_increase`` (float): Minimum rate of increase of the
-      Jacobian over past iterations to cause a reset.
-    - ``auto_detect_min_correlations`` (float): Minimum correlation of the Jacobian
-      data set required to cause a reset.
+    - ``auto_detect_min_jacobian_increase`` (float): Minimum rate of increase of
+      :math:`\log(\|g_k - g_{k-1}\|)` and :math:`\log(\|H_k - H_{k-1}\|_F)`, i.e. of
+      the changes in the model gradient and Hessian, over past iterations to cause a
+      reset.
+    - ``auto_detect_min_correlations`` (float): Minimum correlation of the data sets
+      :math:`(k, \log(\|g_k - g_{k-1}\|))` and :math:`(k, \log(\|H_k - H_{k-1}\|_F))`
+      required to cause a reset.
     - ``max_consecutive_unsuccessful_resets`` (int): Maximum number of consecutive
       unsuccessful resets allowed (i.e. resets which did not outperform the best
       known value from earlier runs).
@@ -1504,8 +1337,7 @@ def nag_pybobyqa_internal(
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
-    For details see
-    :ref: `list_of_nag_algorithms`.
+    For details see :class:`NagPyBOBYQA`.
 
     """
     if not IS_PYBOBYQA_INSTALLED:
@@ -1679,7 +1511,7 @@ def _create_nag_advanced_options(
             "reset_type in the trustregion_reset_options must be soft or hard."
         )
     if initial_directions not in ["coordinate", "random"]:
-        raise ValueError("inital_directions must be either 'coordinate' or 'random'.")
+        raise ValueError("initial_directions must be either 'coordinate' or 'random'.")
     convergence_slow_progress = _build_options_dict(
         user_input=convergence_slow_progress,
         default_options=CONVERGENCE_SLOW_PROGRESS,
@@ -1797,7 +1629,7 @@ def _get_fast_start_method(user_value):
     allowed_values = ["auto", "jacobian", "trustregion"]
     if user_value not in allowed_values:
         raise ValueError(
-            "`perturb_jacobian_or_trustregion_step` must be one of "
+            "The 'method' entry of trustregion_fast_start_options must be one of "
             f"{allowed_values}. You provided {user_value}."
         )
     if user_value == "auto":

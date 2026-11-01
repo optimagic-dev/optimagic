@@ -4,8 +4,8 @@ Notes for converting to the new algorithm interface:
 
 - `create_algo_options` is not needed anymore because the only thing it did was mixing
   options that are supported by all optimizers (e.g. population_size, seed) with
-  specific options. Then later they had to be taken appart again. Instead you need
-  to pass  a few more arguments directly to `_minimize_pygmo`.
+  specific options. Then later they had to be taken apart again. Instead you need
+  to pass a few more arguments directly to `_minimize_pygmo`.
 - Calling `_check_that_every_param_is_bounded` is not needed anymore. I do that check
   once in `_minimize_pygmo`.
 - The documentation often just says float where I suspect PositiveFloats; Leave it at
@@ -77,8 +77,10 @@ else:
 class PygmoGaco(Algorithm):
     """Minimize a scalar function using the extended ant colony algorithm (GACO).
 
-    The version available through pygmo is a generalized version of the original
-    ant colony algorithm proposed by :cite:`Schlueter2009`.
+    The version available through pygmo is an extension of the extended ant
+    colony optimization algorithm proposed by :cite:`Schlueter2009`. It differs
+    from the original in how two of the three pheromone values (the weights and
+    the standard deviations) are computed.
 
     Ant colony optimization is a class of optimization algorithms modeled on the
     actions of an ant colony. Artificial "ants" (e.g. simulation agents) locate
@@ -94,12 +96,13 @@ class PygmoGaco(Algorithm):
     previous solution. The solutions are ranked through an oracle penalty
     method.
 
-    Like all pygmo optimizers, this is a global, derivative-free, population
-    based algorithm. It is a good choice for multimodal problems where no
-    derivatives are available and a large budget of function evaluations is
-    affordable. In contrast to most other pygmo algorithms, it supports parallel
-    function evaluation via ``n_cores``. For smooth problems with only one
-    optimum, local optimizers are much more efficient.
+    Like most pygmo optimizers wrapped by optimagic, this is a global,
+    derivative-free, population based algorithm. It is a good choice for
+    multimodal problems where no derivatives are available and a large budget of
+    function evaluations is affordable. In contrast to most other pygmo
+    algorithms, it supports parallel function evaluation via ``n_cores``. For
+    smooth problems with only one optimum, local optimizers are much more
+    efficient.
 
     The algorithm requires finite bounds on all parameters.
 
@@ -113,7 +116,12 @@ class PygmoGaco(Algorithm):
     """Number of cores used for parallel function evaluation."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -131,7 +139,8 @@ class PygmoGaco(Algorithm):
     """Number of solutions stored in the solution archive (the ``ker`` parameter
     in pygmo).
 
-    The default value is taken from pygmo.
+    It must be at least 2 and not larger than ``population_size``. The default
+    value is taken from pygmo.
 
     """
 
@@ -141,7 +150,9 @@ class PygmoGaco(Algorithm):
 
     In the pygmo documentation it is referred to as :math:`q`. It must be
     positive and can be larger than 1. The default is 1.0 until ``threshold`` is
-    reached. Then it is set to 0.01 automatically.
+    reached. Then it is set to 0.01 automatically. With the default
+    ``threshold`` of 1, this happens in the first generation already, so
+    ``speed_parameter_q`` only has an effect if ``threshold`` is larger than 1.
 
     """
 
@@ -176,8 +187,12 @@ class PygmoGaco(Algorithm):
     is stopped (the ``impstop`` parameter in pygmo)."""
 
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
-    """Maximum number of function evaluations (the ``evalstop`` parameter in
-    pygmo)."""
+    """Stop after this many consecutive generations without improvement of the
+    best solution found so far (the ``evalstop`` parameter in pygmo).
+
+    Despite its name, this is not a limit on the number of function evaluations.
+
+    """
 
     focus: NonNegativeFloat = 0.0
     """This parameter makes the search for the optimum greedier and more focused
@@ -252,9 +267,9 @@ class PygmoBeeColony(Algorithm):
 
     The algorithm mimics the foraging behavior of a honey bee swarm: employed
     bees exploit known food sources (candidate solutions), onlooker bees pick
-    promising sources based on their quality, and food sources that could not be
-    improved for ``max_n_trials`` trials are abandoned and replaced by random new
-    ones.
+    promising sources based on their quality, and in each generation the food
+    source with the most unsuccessful trials is abandoned and replaced by a
+    random new one if it could not be improved for ``max_n_trials`` trials.
 
     It is a global, derivative-free, population based algorithm that is suited
     for multimodal problems where no derivatives are available and many function
@@ -269,7 +284,12 @@ class PygmoBeeColony(Algorithm):
     """Number of generations to evolve (the ``gen`` parameter in pygmo)."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -356,7 +376,12 @@ class PygmoDe(Algorithm):
     at least 10."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -370,7 +395,7 @@ class PygmoDe(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAX_ITERATIONS_GENETIC
     """Number of generations to evolve (the ``gen`` parameter in pygmo)."""
 
-    # TODO: Refine type to fix range [0,2]
+    # TODO: Refine type to fix range [0,1]
     weight_coefficient: NonNegativeFloat = 0.8
     r"""Weight coefficient, denoted by :math:`F` in the differential evolution
     literature.
@@ -401,8 +426,9 @@ class PygmoDe(Algorithm):
     ] = "rand/1/exp"
     """Mutation variant used to create a new candidate individual.
 
-    The default is "rand/1/exp". The following variants are available (the pygmo
-    integer code given in parentheses is accepted as well):
+    The default is "rand/1/exp". The following variants are available; the
+    corresponding pygmo integer code is given in parentheses for reference, but
+    only the names are accepted:
 
     - "best/1/exp" (1)
     - "rand/1/exp" (2)
@@ -521,7 +547,12 @@ class PygmoSea(Algorithm):
     at least 10."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -606,7 +637,12 @@ class PygmoSga(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -657,7 +693,7 @@ class PygmoSga(Algorithm):
     """Mutation strategy. Must be "uniform" or "polynomial". Default is
     "polynomial"."""
 
-    # TODO: Refine type to fix range [0,1]
+    # TODO: Refine type to fix range [1,100]
     mutation_polynomial_distribution_index: NonNegativeFloat | None = None
     """Distribution index used by polynomial mutation (part of the ``param_m``
     parameter in pygmo).
@@ -673,8 +709,8 @@ class PygmoSga(Algorithm):
     """Width of the gaussian used by gaussian mutation (part of the ``param_m``
     parameter in pygmo).
 
-    It must lie in [0, 1]. It is only used if the mutation strategy is
-    "gaussian"; otherwise a warning is raised and the value is ignored.
+    This option has no effect: "gaussian" is not an allowed
+    ``mutation_strategy``, so setting this value only raises a warning.
 
     """
 
@@ -711,7 +747,7 @@ class PygmoSga(Algorithm):
 
         if self.eta_c is not None and self.crossover_strategy != "sbx":
             warnings.warn(
-                f"You specified crossover strategy {self.crossover_strategy}"
+                f"You specified crossover strategy {self.crossover_strategy} "
                 "and eta_c. However, eta_c is ignored because it is only used when "
                 "the crossover_strategy is set to sbx."
             )
@@ -721,7 +757,7 @@ class PygmoSga(Algorithm):
             self.mutation_polynomial_distribution_index is not None
         ) and self.mutation_strategy != "polynomial":
             warnings.warn(
-                "You specified a mutation_polynomial_distribution_index but"
+                "You specified a mutation_polynomial_distribution_index but "
                 "did not choose polynomial as your mutation_strategy. Thus, "
                 "mutation_polynomial_distribution_index will be ignored."
             )
@@ -731,7 +767,7 @@ class PygmoSga(Algorithm):
         ):
             warnings.warn(
                 "You specified a mutation_gaussian_width but "
-                "did not choose gaussion as your mutation_strategy. "
+                "did not choose gaussian as your mutation_strategy. "
                 "Thus, mutation_gaussian_width will be ignored."
             )
         if (
@@ -851,7 +887,12 @@ class PygmoSade(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -898,8 +939,8 @@ class PygmoSade(Algorithm):
     The default is "rand/1/exp". The first ten variants are the classical
     mutation variants introduced in the original DE algorithm; the remaining
     ones are considered in the work by :cite:`Elsayed2011`. The following
-    variants are available (the pygmo integer code given in parentheses is
-    accepted as well):
+    variants are available; the corresponding pygmo integer code is given in
+    parentheses for reference, but only the names are accepted:
 
     - "best/1/exp" (1)
     - "rand/1/exp" (2)
@@ -1032,8 +1073,9 @@ class PygmoCmaes(Algorithm):
     part of the current population.
 
     In contrast to the pygmo version, optimagic always sets ``force_bounds`` to
-    True. This avoids that ill defined parameter values are evaluated, at the
-    cost of a somewhat worse covariance matrix adaptation.
+    True. This avoids that ill defined parameter values are evaluated, but it
+    interferes with the covariance matrix adaptation and can worsen the
+    performance considerably.
 
     The algorithm requires finite bounds on all parameters.
 
@@ -1044,7 +1086,12 @@ class PygmoCmaes(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -1103,7 +1150,9 @@ class PygmoCmaes(Algorithm):
     initial_step_size: float = 0.5
     r"""Initial step size, :math:`\sigma^0` in the original paper.
 
-    The default value is taken from pygmo.
+    It is relative to the width of the bounds: the initial standard deviation
+    along parameter ``i`` is ``initial_step_size * (upper_i - lower_i)``. The
+    default value is taken from pygmo.
 
     """
 
@@ -1205,16 +1254,31 @@ class PygmoSimulatedAnnealing(Algorithm):
         think about the temperature as the deterioration in the objective
         function value that still has a 37% chance of being accepted.
 
+    Apart from the evaluations of the initial population, the criterion function
+    is evaluated ``n_temp_adjustments * n_range_adjustments * bin_size *
+    n_params`` times.
+
     The algorithm requires finite bounds on all parameters.
 
     """
 
     population_size: int | None = None
-    """Size of the population. If None, it is set to ``10 * (n_params + 1)``, but
-    at least 64."""
+    """Size of the initial population.
+
+    Simulated annealing is not population based, so this value only determines
+    how many random initial points are evaluated; the annealing then starts from
+    the best of them. If None, it is set to ``10 * (n_params + 1)``, but at
+    least 64.
+
+    """
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -1233,7 +1297,7 @@ class PygmoSimulatedAnnealing(Algorithm):
     end_temperature: float = 0.01
     """Final temperature.
 
-    It must be positive and smaller than ``start_temperature``. Our default
+    It must be positive and not larger than ``start_temperature``. Our default
     (0.01) is lower than the default in pygmo and pagmo (0.1).
 
     """
@@ -1245,11 +1309,19 @@ class PygmoSimulatedAnnealing(Algorithm):
     # TODO: Check if type should be NonNegativeInt
     n_range_adjustments: int = 10
     """Number of adjustments of the search range performed at a constant
-    temperature."""
+    temperature.
+
+    optimagic uses a default of 10, whereas pygmo's default is 1.
+
+    """
 
     # TODO: Check if type should be NonNegativeInt
     bin_size: int = 10
-    """Number of mutations that are used to compute the acceptance rate."""
+    """Number of mutations that are used to compute the acceptance rate.
+
+    optimagic uses a default of 10, whereas pygmo's default is 20.
+
+    """
 
     # TODO: Refine type to fix range [0,1]
     start_range: NonNegativeFloat = 1.0
@@ -1312,11 +1384,19 @@ class PygmoPso(Algorithm):
     information to update its position. For a survey on particle swarm
     optimization algorithms, see :cite:`Poli2007`.
 
-    Each particle determines its future position :math:`x_{i+1} = x_i + v_i`
-    where
+    In the default variant ("canonical_constriction"), each particle updates
+    its velocity and position as
 
-    .. math:: v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x_i -
-        x^{l}_i) + \eta_2 \cdot \mathbf{r}_2 \cdot (x_i - x^g))
+    .. math::
+
+        v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x^{l}_i - x_i)
+        + \eta_2 \cdot \mathbf{r}_2 \cdot (x^g - x_i)), \qquad
+        x_{i+1} = x_i + v_{i+1}
+
+    The inertia weight variants (the first four values of ``algo_variant``) use
+    :math:`v_{i+1} = \omega v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x^{l}_i -
+    x_i) + \eta_2 \cdot \mathbf{r}_2 \cdot (x^g - x_i)`, and "fips" uses the
+    best positions of all neighbors.
 
     PSO is a global, derivative-free optimizer suited for multimodal problems
     where no derivatives are available and many function evaluations are
@@ -1333,7 +1413,12 @@ class PygmoPso(Algorithm):
     at least 10."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -1380,7 +1465,7 @@ class PygmoPso(Algorithm):
     max_velocity: NonNegativeFloat = 0.5
     """Maximum allowed particle velocity as fraction of the box bounds.
 
-    It must lie between 0 and 1. The default value is taken from pygmo.
+    It must lie in (0, 1]. The default value is taken from pygmo.
 
     """
 
@@ -1401,7 +1486,8 @@ class PygmoPso(Algorithm):
     - "canonical_constriction" (5): canonical PSO with constriction factor
     - "fips" (6): fully informed particle swarm
 
-    The pygmo integer code given in parentheses is accepted as well.
+    The corresponding pygmo integer code is given in parentheses for reference;
+    only the names are accepted.
 
     """
 
@@ -1414,7 +1500,8 @@ class PygmoPso(Algorithm):
     """Swarm topology that defines each particle's neighbors.
 
     One of "gbest" (1), "lbest" (2), "Von Neumann" (3) or "Adaptive random"
-    (4). The pygmo integer code given in parentheses is accepted as well.
+    (4). The corresponding pygmo integer code is given in parentheses for
+    reference; only the names are accepted.
 
     """
 
@@ -1520,20 +1607,32 @@ class PygmoPsoGen(Algorithm):
     Particle swarm optimization (generational) is identical to pygmo_pso, but
     it updates the velocities of all particles before the new particle
     positions are computed (taking into consideration all updated particle
-    velocities). The whole population is thus evaluated in one batch per
+    velocities). Each particle is thus evaluated on the same seed within a
     generation, as opposed to the standard PSO, which evaluates a single
-    particle at a time. Consequently, the generational PSO algorithm is suited
-    for stochastic optimization problems and supports parallel function
-    evaluation via ``n_cores``.
+    particle at a time. This makes the algorithm suitable for pygmo's
+    stochastic problems, i.e. problems whose random seed pygmo can change.
+    optimagic does not pass such problems to pygmo, so this property is not
+    used.
+
+    Because the whole population is evaluated in one batch per generation, the
+    algorithm supports parallel function evaluation via ``n_cores``.
 
     For a survey on particle swarm optimization algorithms, see
     :cite:`Poli2007`.
 
-    Each particle determines its future position :math:`x_{i+1} = x_i + v_i`
-    where
+    In the default variant ("canonical_constriction"), each particle updates
+    its velocity and position as
 
-    .. math:: v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x_i -
-        x^{l}_i) + \eta_2 \cdot \mathbf{r}_2 \cdot (x_i - x^g))
+    .. math::
+
+        v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x^{l}_i - x_i)
+        + \eta_2 \cdot \mathbf{r}_2 \cdot (x^g - x_i)), \qquad
+        x_{i+1} = x_i + v_{i+1}
+
+    The inertia weight variants (the first four values of ``algo_variant``) use
+    :math:`v_{i+1} = \omega v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x^{l}_i -
+    x_i) + \eta_2 \cdot \mathbf{r}_2 \cdot (x^g - x_i)`, and "fips" uses the
+    best positions of all neighbors.
 
     The algorithm requires finite bounds on all parameters.
 
@@ -1547,7 +1646,12 @@ class PygmoPsoGen(Algorithm):
     """Number of cores used for parallel function evaluation."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -1594,7 +1698,7 @@ class PygmoPsoGen(Algorithm):
     max_velocity: NonNegativeFloat = 0.5
     """Maximum allowed particle velocity as fraction of the box bounds.
 
-    It must lie between 0 and 1. The default value is taken from pygmo.
+    It must lie in (0, 1]. The default value is taken from pygmo.
 
     """
 
@@ -1615,7 +1719,8 @@ class PygmoPsoGen(Algorithm):
     - "canonical_constriction" (5): canonical PSO with constriction factor
     - "fips" (6): fully informed particle swarm
 
-    The pygmo integer code given in parentheses is accepted as well.
+    The corresponding pygmo integer code is given in parentheses for reference;
+    only the names are accepted.
 
     """
 
@@ -1628,7 +1733,8 @@ class PygmoPsoGen(Algorithm):
     """Swarm topology that defines each particle's neighbors.
 
     One of "gbest" (1), "lbest" (2), "Von Neumann" (3) or "Adaptive random"
-    (4). The pygmo integer code given in parentheses is accepted as well.
+    (4). The corresponding pygmo integer code is given in parentheses for
+    reference; only the names are accepted.
 
     """
 
@@ -1755,7 +1861,12 @@ class PygmoMbh(Algorithm):
     at least 250."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -1770,7 +1881,11 @@ class PygmoMbh(Algorithm):
     """A pygmo algorithm or a user-defined pygmo algorithm, either C++ or Python,
     that is used for the inner (local) searches.
 
-    If None, the ``pygmo.compass_search`` algorithm is used.
+    If None, ``pygmo.compass_search()`` with pygmo's default settings is used.
+    Its default ``max_fevals=1`` means that each local search is a single
+    compass sweep with at most ``2 * n_params`` function evaluations. Pass a
+    configured algorithm, e.g. ``pygmo.compass_search(max_fevals=1000)``, for a
+    more thorough local search.
 
     """
 
@@ -1872,7 +1987,12 @@ class PygmoXnes(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -1891,7 +2011,7 @@ class PygmoXnes(Algorithm):
     r"""Learning rate for the mean update (:math:`\eta_\mu` in the pygmo
     documentation).
 
-    It must lie between 0 and 1. If None, it is chosen automatically by pygmo.
+    It must lie in (0, 1]. If None, pygmo uses 1.0, which is also the default.
 
     """
 
@@ -1900,7 +2020,7 @@ class PygmoXnes(Algorithm):
     """Learning rate for the step-size update (``eta_sigma`` in the pygmo
     documentation).
 
-    It must lie between 0 and 1. If None, it is chosen automatically by pygmo.
+    It must lie in (0, 1]. If None, it is chosen automatically by pygmo.
 
     """
 
@@ -1909,7 +2029,7 @@ class PygmoXnes(Algorithm):
     """Learning rate for the covariance matrix update (``eta_b`` in the pygmo
     documentation).
 
-    It must lie between 0 and 1. If None, it is chosen automatically by pygmo.
+    It must lie in (0, 1]. If None, it is chosen automatically by pygmo.
 
     """
 
@@ -1919,8 +2039,8 @@ class PygmoXnes(Algorithm):
     (``sigma0`` in the pygmo documentation).
 
     The width of the initial sampling distribution along dimension ``i`` is
-    ``initial_search_share * (upper_bound_i - lower_bound_i)``. It must lie
-    between 0 and 1. Default is 1.
+    ``initial_search_share * (upper_bound_i - lower_bound_i)``. It must lie in
+    (0, 1]. optimagic uses a default of 1, whereas pygmo's default is 0.5.
 
     """
 
@@ -2040,7 +2160,12 @@ class PygmoGwo(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -2097,7 +2222,8 @@ class PygmoCompassSearch(Algorithm):
 
     Compass search is a direct (pattern) search method: at each step, the
     objective function is evaluated at points obtained by changing one
-    parameter at a time by the current step size. If an improvement is found,
+    parameter at a time by the current step size (a fraction of the width of
+    the bounds). If an improvement is found,
     the search moves there; otherwise, the step size is reduced. The algorithm
     is described in :cite:`Kolda2003`.
 
@@ -2121,7 +2247,11 @@ class PygmoCompassSearch(Algorithm):
     """
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    Compass search itself is deterministic.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -2138,14 +2268,17 @@ class PygmoCompassSearch(Algorithm):
 
     # TODO: Refine type to fix range (0,1]
     start_range: PositiveFloat = 0.1
-    """The start range. Must lie in (0, 1]. The default value is taken from
-    pygmo."""
+    """The start range, as a fraction of the width of the bounds.
 
-    # TODO?: mus be in (0,start_range]
+    Must lie in (0, 1]. The default value is taken from pygmo.
+
+    """
+
+    # TODO?: must be in (0,start_range)
     stop_range: PositiveFloat = 0.01
     """The stop range; the search stops when the range falls below this value.
 
-    Must lie in (0, start_range]. The default value is taken from pygmo.
+    Must lie in (0, start_range). The default value is taken from pygmo.
 
     """
 
@@ -2221,7 +2354,7 @@ class PygmoIhs(Algorithm):
 
     IHS is a derivative-free global optimizer for multimodal problems. Each
     generation creates and evaluates exactly one new candidate solution, so
-    progress is slow but steady. IHS supports stochastic problems.
+    progress is slow but steady.
 
     The algorithm requires finite bounds on all parameters.
 
@@ -2231,13 +2364,19 @@ class PygmoIhs(Algorithm):
     """Size of the population (the harmony memory).
 
     If None, it is set to ``10 * (n_params + 1)``. If a value is specified, a
-    warning is raised because the population size has no effect on the
-    performance of IHS.
+    warning is raised. New candidates draw their components from randomly
+    chosen members of the harmony memory, and the worst member is replaced
+    whenever a better candidate is found.
 
     """
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -2278,7 +2417,7 @@ class PygmoIhs(Algorithm):
     """Maximum pitch adjustment rate (similar to a mutation rate; the
     ``ppar_max`` parameter in pygmo).
 
-    It must lie between 0 and 1 and be larger than
+    It must lie between 0 and 1 and not be smaller than
     ``min_pitch_adjustment_rate``. The default value is taken from pygmo.
 
     """
@@ -2295,8 +2434,8 @@ class PygmoIhs(Algorithm):
     """Maximum distance bandwidth (similar to a mutation width; the ``bw_max``
     parameter in pygmo).
 
-    It must be larger than ``min_distance_bandwidth``. The default value is
-    taken from pygmo.
+    It must not be smaller than ``min_distance_bandwidth``. The default value
+    is taken from pygmo.
 
     """
 
@@ -2374,7 +2513,12 @@ class PygmoDe1220(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used by the internal random number generator."""
+    """Seed used to sample the initial population.
+
+    It is not passed to the pygmo algorithm, whose own random number generator is
+    seeded randomly, so runs are not reproducible.
+
+    """
 
     discard_start_params: bool = False
     """If True, the start parameters are not guaranteed to be part of the initial
@@ -2399,10 +2543,11 @@ class PygmoDe1220(Algorithm):
     allowed_variants: List[str] | None = None
     """Mutation variants the self-adaptation is allowed to choose from.
 
-    Each variant can be given as a string or as the pygmo integer code (in
-    parentheses below). The first ten variants are the classical mutation
-    variants introduced in the original DE algorithm; the remaining ones are
-    considered in the work by :cite:`Elsayed2011`. If None, the default is
+    Each variant is given by its name; the corresponding pygmo integer code is
+    shown in parentheses below for reference. The first ten variants are the
+    classical mutation variants introduced in the original DE algorithm; the
+    remaining ones are considered in the work by :cite:`Elsayed2011`. If None,
+    the default is
     ["rand/1/exp", "rand-to-best/1/exp", "rand/1/bin", "rand/2/bin",
     "best/3/exp", "best/3/bin", "rand-to-current/2/exp",
     "rand-to-current/2/bin"]. The following variants are available:
@@ -2533,7 +2678,7 @@ def _minimize_pygmo(
 
     bounds = problem.bounds
     if bounds is None or bounds.lower is None or bounds.upper is None:
-        raise ValueError(f"{method} requires finitel bounds for all parameters.")
+        raise ValueError(f"{method} requires finite bounds for all parameters.")
     elif not np.isfinite(bounds.lower).all() or not np.isfinite(bounds.upper).all():
         raise ValueError(f"{method} requires finite bounds for all parameters.")
 

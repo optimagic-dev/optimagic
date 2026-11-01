@@ -92,8 +92,15 @@ class TAOPounders(Algorithm):
 
         \lVert g(X) \rVert \leq \textsf{convergence_gtol_abs}
 
-    This is the absolute gradient tolerance ``gatol`` in the TAO documentation.
-    Set it to zero to disable this criterion.
+    This is the absolute gradient tolerance ``gatol`` in the TAO documentation. In
+    TAO's POUNDERS, :math:`g` is the gradient of the quadratic model, scaled by the
+    trust-region radius. Setting this option to zero restores TAO's default
+    (1e-8) instead of disabling the criterion.
+
+    .. note::
+        This criterion has no effect, because optimagic always installs
+        a custom convergence test for ``stopping_maxiter`` that replaces TAO's
+        default convergence test.
 
     """
 
@@ -106,7 +113,13 @@ class TAOPounders(Algorithm):
         \frac{\lVert g(X) \rVert}{|f(X)|} \leq \textsf{convergence_gtol_rel}
 
     This is the relative gradient tolerance ``grtol`` in the TAO documentation.
-    Set it to zero to disable this criterion.
+    Setting this option to zero restores TAO's default (1e-8) instead of disabling
+    the criterion.
+
+    .. note::
+        This criterion has no effect, because optimagic always installs
+        a custom convergence test for ``stopping_maxiter`` that replaces TAO's
+        default convergence test.
 
     """
 
@@ -120,7 +133,13 @@ class TAOPounders(Algorithm):
         \textsf{convergence_gtol_scaled}
 
     This is the gradient reduction tolerance ``gttol`` in the TAO documentation.
-    Set it to zero to disable this criterion.
+    Setting this option to zero restores TAO's default (0), which disables the
+    criterion.
+
+    .. note::
+        This criterion has no effect, because optimagic always installs
+        a custom convergence test for ``stopping_maxiter`` that replaces TAO's
+        default convergence test.
 
     """
 
@@ -134,11 +153,14 @@ class TAOPounders(Algorithm):
     """
 
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    """Alternative stopping criterion.
+    """Maximum number of iterations.
 
-    If set, the routine stops after the specified number of iterations or after the
-    step size is sufficiently small. If the variable is set, the default convergence
-    criteria are all ignored.
+    This limit is always enforced via a custom convergence test that replaces TAO's
+    default convergence test, so the ``convergence_gtol_*`` criteria are ignored.
+    Reaching the limit is reported as a successful convergence with the message
+    "user defined". POUNDERS can still stop earlier on its own if the same
+    interpolation model is used in two successive iterations without a change of
+    the trust-region radius (message "step size small").
 
     """
 

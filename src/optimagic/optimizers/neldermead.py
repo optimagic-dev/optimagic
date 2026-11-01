@@ -85,8 +85,9 @@ class NelderMeadParallel(Algorithm):
     n_cores: PositiveInt = 1
     """Degree of parallelization.
 
-    The default is 1 (no parallelization). Values larger than or equal to the
-    number of parameters are reduced to the number of parameters minus 1.
+    The default is 1 (no parallelization). The number of vertices that are
+    reflected in parallel is capped at the number of parameters minus 1; the
+    evaluations of the initial and of shrunk simplices use ``n_cores`` as given.
 
     """
 
@@ -102,8 +103,9 @@ class NelderMeadParallel(Algorithm):
     """Maximum number of algorithm iterations."""
 
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_FTOL_ABS
-    """Maximal absolute difference between the function value at the best vertex of
-    the simplex and the function values at the remaining vertices.
+    """Maximal absolute difference between the function value at the first vertex
+    of the simplex (the best vertex at the start of the iteration) and the function
+    values at the remaining vertices.
 
     Convergence requires that this criterion and ``convergence_xtol_abs`` are
     satisfied at the same time.
@@ -111,8 +113,9 @@ class NelderMeadParallel(Algorithm):
     """
 
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_SECOND_BEST_XTOL_ABS
-    """Maximal absolute distance between the best vertex of the simplex and the
-    remaining vertices.
+    """Maximal absolute coordinate-wise difference (infinity norm) between the
+    first vertex of the simplex (the best vertex at the start of the iteration) and
+    the remaining vertices.
 
     Convergence requires that this criterion and ``convergence_ftol_abs`` are
     satisfied at the same time.

@@ -54,6 +54,14 @@ class BHHH(Algorithm):
         This is a pure-Python implementation within optimagic. It is currently
         considered experimental.
 
+    .. warning::
+        The implementation steps along :math:`+H^{-1} g`, where :math:`g` is the
+        sum over observations of the Jacobian of the contributions. With
+        derivatives that are consistent with ``fun`` (including numerical
+        derivatives), it therefore moves uphill and does not minimize (nor, via
+        ``maximize``, maximize). It only works if the Jacobian has the opposite
+        sign of the derivative of ``fun``.
+
     """
 
     converence_gtol_abs: NonNegativeFloat = 1e-8

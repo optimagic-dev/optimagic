@@ -78,7 +78,12 @@ class Pounders(Algorithm):
     a least-squares function, i.e. a function that is decorated with
     ``om.mark.least_squares`` and returns the residuals rather than the sum of
     their squares. Bound constraints are supported; other constraint types are
-    not.
+    not. The start parameters plus ``trustregion_initial_radius`` must not exceed
+    the upper bounds; otherwise a ``ValueError`` is raised.
+
+    Besides the gradient-based criteria below, the algorithm also stops if the
+    same interpolation model is used in two successive iterations without a change
+    of the trust-region radius.
 
     .. note::
         Scaling the problem is necessary such that bounds correspond to the unit
@@ -89,17 +94,20 @@ class Pounders(Algorithm):
     """
 
     convergence_gtol_abs: NonNegativeFloat = 1e-8
-    """Convergence tolerance for the absolute gradient norm.
+    r"""Convergence tolerance for the absolute gradient norm.
 
-    Stop if the norm of the gradient is less than this value.
+    Stop if the norm of the gradient is less than this value. The gradient is that
+    of the quadratic surrogate model of half the sum of squared residuals at the
+    accepted point, i.e. :math:`J^\top r` for the model Jacobian :math:`J` of the
+    residuals :math:`r`.
 
     """
 
     convergence_gtol_rel: NonNegativeFloat = 1e-8
     """Convergence tolerance for the relative gradient norm.
 
-    Stop if the norm of the gradient relative to the criterion value is less than
-    this value.
+    Stop if the norm of the gradient (see ``convergence_gtol_abs``) divided by the
+    criterion value, i.e. the sum of squared residuals, is less than this value.
 
     """
 
@@ -138,12 +146,20 @@ class Pounders(Algorithm):
     """Maximal trust-region radius."""
 
     trustregion_shrinking_factor_not_successful: PositiveFloat = 0.5
-    """Shrinking factor of the trust-region radius in case the solution vector of the
-    subproblem is not accepted, but the model is fully linear (i.e. "valid")."""
+    """Shrinking factor of the trust-region radius.
+
+    It is applied whenever the radius is not expanded and the model is fully linear
+    (i.e. "valid"), including iterations in which the candidate is accepted.
+
+    """
 
     trustregion_expansion_factor_successful: PositiveFloat = 2
-    """Expansion factor of the trust-region radius in case the solution vector of the
-    subproblem is accepted."""
+    """Expansion factor of the trust-region radius.
+
+    It is applied if the ratio of actual to predicted reduction is at least
+    ``trustregion_threshold_successful`` and the step is not short.
+
+    """
 
     theta1: PositiveFloat = 1e-5
     """Threshold for adding the current candidate vector to the model.
@@ -161,14 +177,20 @@ class Pounders(Algorithm):
 
     trustregion_threshold_acceptance: NonNegativeFloat = 0
     """First threshold for accepting the solution vector of the trust-region
-    subproblem as the best candidate."""
+    subproblem as the best candidate.
+
+    The candidate is accepted if the ratio of actual to predicted reduction exceeds
+    this value and the model is fully linear (i.e. "valid").
+
+    """
 
     trustregion_threshold_successful: NonNegativeFloat = 0.1
     """Second threshold for accepting the solution vector of the trust-region
     subproblem as the best candidate.
 
-    If exceeded, the iteration counts as successful and the trust-region radius is
-    expanded.
+    If the ratio of actual to predicted reduction reaches this value, the candidate
+    is accepted even if the model is not fully linear, and the trust-region radius
+    is expanded unless the step is short.
 
     """
 

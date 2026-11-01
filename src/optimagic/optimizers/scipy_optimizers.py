@@ -13,19 +13,19 @@ The following arguments are not supported as part of ``algo_options``:
 - ``disp``
     If set to True would print a convergence message.
     In optimagic it's always set to its default False.
-    Refer to optimagic's result dictionary's "success" entry for the convergence
-    message.
+    Refer to the ``success`` and ``message`` attributes of optimagic's
+    ``OptimizeResult`` for the convergence message.
 - ``return_all``
     If set to True, a list of the best solution at each iteration is returned.
     In optimagic it's always set to its default False.
 - ``tol``
     This argument of minimize (not an options key) is passed as different types of
     tolerance (gradient, parameter or criterion, as well as relative or absolute)
-    depending on the selected algorithm. We require the user to explicitely input
+    depending on the selected algorithm. We require the user to explicitly input
     the tolerance criteria or use our defaults instead.
 - ``args``
     This argument of minimize (not an options key) is partialed into the function
-    for the user. Specify ``criterion_kwargs`` in ``maximize`` or ``minimize`` to
+    for the user. Specify ``fun_kwargs`` in ``maximize`` or ``minimize`` to
     achieve the same behavior.
 - ``callback``
     This argument would be called after each iteration and the algorithm would
@@ -105,9 +105,11 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 class ScipyLBFGSB(Algorithm):
     """Minimize a scalar differentiable function using the L-BFGS-B algorithm.
 
-    The optimizer is taken from scipy, which calls the Fortran code written by the
-    original authors of the algorithm. The Fortran code includes the corrections
-    and improvements that were introduced in a follow up paper.
+    The optimizer is taken from scipy, which uses the code written by the original
+    authors of the algorithm (L-BFGS-B v3.0). This code includes the corrections and
+    improvements that were introduced in a follow up paper. Since SciPy 1.15, SciPy
+    uses a C translation of the original Fortran code; older versions call the
+    Fortran code directly.
 
     lbfgsb is a limited memory version of the original bfgs algorithm, that deals with
     lower and upper bounds via an active set approach.
@@ -130,7 +132,9 @@ class ScipyLBFGSB(Algorithm):
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     r"""Converge if the relative change in the objective function is less than this
-    value. More formally, this is expressed as.
+    value.
+
+    More formally, this is expressed as
 
     .. math::
 
@@ -140,8 +144,8 @@ class ScipyLBFGSB(Algorithm):
     """
 
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
-    """Converge if the absolute values in the gradient of the objective function are
-    less than this value."""
+    """Converge if the largest absolute value of the projected gradient of the
+    objective function is less than this value."""
 
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     """Maximum number of function evaluations."""
@@ -409,17 +413,29 @@ class ScipyPowell(Algorithm):
     """
 
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
-    """Stop when the relative movement between parameter vectors is smaller than
-    this."""
+    """Tolerance of the one-dimensional line searches. This is the 'xtol' parameter
+    in the SciPy documentation.
+
+    SciPy only uses this value to control the precision of the line searches along
+    the search directions; it is not a separate stopping criterion. Powell's method
+    stops based on ``convergence_ftol_rel``, ``stopping_maxfun`` and
+    ``stopping_maxiter``.
+
+    """
 
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     r"""Stop when the relative improvement between two iterations is smaller than
-    this. More formally, this is expressed as
+    this.
+
+    More formally, the optimization stops if
 
     .. math::
 
-        \frac{f^k - f^{k+1}}{\max\{{|f^k|, |f^{k+1}|, 1}\}} \leq
-        \textsf{convergence_ftol_rel}.
+        2 (f^k - f^{k+1}) \leq \textsf{convergence_ftol_rel} \cdot
+        (|f^k| + |f^{k+1}|) + 10^{-20},
+
+    where :math:`f^k` and :math:`f^{k+1}` are the criterion values before and after
+    one iteration, i.e., one line search along each vector of the direction set.
 
     """
 
@@ -551,16 +567,17 @@ class ScipyBFGS(Algorithm):
 
     curvature_condition: NonNegativeFloat = 0.9
     r"""Parameter for the curvature condition rule of the line search. This is the
-    'c2' parameter in the SciPy documentation. It ensures
+    'c2' parameter in the SciPy documentation. Together with the Armijo condition,
+    it forms the strong Wolfe conditions. It ensures
 
     .. math::
 
-        \nabla f(x_k + \alpha p_k)^\top p_k \geq \textsf{curvature_condition} \cdot
-        \nabla f(x_k)^\top p_k,
+        |\nabla f(x_k + \alpha p_k)^\top p_k| \leq \textsf{curvature_condition}
+        \cdot |\nabla f(x_k)^\top p_k|,
 
-    so the slope at the new point is not too negative. Smaller values enforce a
-    stricter curvature reduction (smaller steps), larger values are looser (bigger
-    steps). SciPy requires ``0 < armijo_condition < curvature_condition < 1``. The
+    so the slope at the new point is sufficiently reduced in absolute value.
+    Smaller values require a more exact line search, larger values accept steps
+    sooner. SciPy requires ``0 < armijo_condition < curvature_condition < 1``. The
     default value is taken from SciPy.
 
     """
@@ -718,11 +735,13 @@ class ScipyNewtonCG(Algorithm):
     """
 
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
-    """Stop when the relative movement between parameter vectors is smaller than
-    this.
+    """Stop when the average absolute change of the parameters between two
+    iterations is at most this value. This is the 'xtol' parameter in the SciPy
+    documentation.
 
-    Newton-CG uses the average relative change in the parameters for determining
-    convergence.
+    More precisely, Newton-CG stops when the L1 norm of the step is at most
+    ``n * convergence_xtol_rel``, where ``n`` is the number of parameters. Despite
+    its name, this is an absolute and not a relative criterion.
 
     """
 
@@ -787,8 +806,9 @@ class ScipyCOBYLA(Algorithm):
     constraints before passing the problem to SciPy. Bounds are not supported by
     this optimizer in optimagic.
 
-    SciPy's implementation wraps Powell's original Fortran implementation of the
-    algorithm.
+    Since SciPy 1.16, SciPy uses the pure-Python implementation of COBYLA from the
+    PRIMA package; older SciPy versions wrap Powell's original Fortran
+    implementation of the algorithm.
 
     """
 
@@ -803,19 +823,26 @@ class ScipyCOBYLA(Algorithm):
     """
 
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
-    """If the maximum number of iterations is reached, the optimization stops, but we
-    do not count this as convergence."""
+    """Maximum number of criterion evaluations. If it is reached, the optimization
+    stops, but we do not count this as convergence.
+
+    This is passed as 'maxiter' to SciPy, but SciPy's COBYLA interprets it as the
+    maximum number of function evaluations, not iterations.
+
+    """
 
     trustregion_initial_radius: PositiveFloat | None = None
-    """Initial value of the trust region radius.
+    """Initial value of the trust region radius. This is the 'rhobeg' parameter in
+    the SciPy documentation.
 
     Since a linear approximation is likely only good near the current simplex, the
     linear program is given the further requirement that the solution, which will
     become the next evaluation point, must be within a radius RHO_j from x_j. RHO_j
     only decreases, never increases. The initial RHO_j is the
     ``trustregion_initial_radius``. In this way COBYLA's iterations behave like a
-    trust region algorithm. If None (the default), the radius is determined from
-    the magnitude of the start parameters.
+    trust region algorithm. If None (the default), optimagic uses
+    ``0.1 * max(max(abs(x0)), 1)``, where ``x0`` are the start parameters. SciPy's
+    default is 1.
 
     """
 
@@ -1233,25 +1260,34 @@ class ScipyTruncatedNewton(Algorithm):
     .. note::
         optimagic does not support the SciPy arguments ``scale`` and ``offset``
         because they are not compatible with the way optimagic handles constraints.
-        It also does not support ``messg_num``, which is an additional way to
+        It also does not support ``mesg_num``, which is an additional way to
         control the verbosity of the optimizer.
 
     """
 
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
     """Absolute difference in the criterion value between iterations after scaling
-    that is tolerated to declare convergence."""
+    that is tolerated to declare convergence.
+
+    optimagic's default of 0 is equivalent to SciPy's default.
+
+    """
 
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
     """Absolute difference in parameters between iterations after scaling that is
-    tolerated to declare convergence."""
+    tolerated to declare convergence.
+
+    optimagic's default is 0, while SciPy's default sets this tolerance to the
+    square root of the machine precision.
+
+    """
 
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
     """Stop if the value of the projected gradient (after applying x scaling factors)
     is smaller than this value.
 
-    In SciPy, a negative value means that the tolerance is set to
-    ``1e-2 * sqrt(finite_difference_precision)``.
+    optimagic's default is 1e-5. In SciPy, a negative value (SciPy's default) means
+    that the tolerance is set to ``1e-2 * sqrt(finite_difference_precision)``.
 
     """
 
@@ -1386,7 +1422,10 @@ class ScipyTrustConstr(Algorithm):
     equality-constrained barrier problems for progressively smaller values of the
     barrier parameter. The previously described equality-constrained SQP method is
     used to solve the subproblems with increasing levels of accuracy as the iterate
-    gets closer to a solution.
+    gets closer to a solution. Because optimagic passes equality constraints as
+    pairs of inequality constraints and SciPy treats finite bounds as inequality
+    constraints, optimagic uses the interior point method whenever bounds or
+    nonlinear constraints are present.
 
     It approximates the Hessian using the Broyden-Fletcher-Goldfarb-Shanno (BFGS)
     Hessian update strategy, so no Hessian needs to be provided.
@@ -1400,6 +1439,8 @@ class ScipyTrustConstr(Algorithm):
     """
 
     # TODO: Check if can be set to CONVERGENCE_GTOL_ABS
+    # SciPy's default; it is smaller than CONVERGENCE_GTOL_ABS because the sum of
+    # squares tests need this smaller tolerance to pass.
     convergence_gtol_abs: NonNegativeFloat = 1e-08
     """Tolerance for termination by the norm of the Lagrangian gradient.
 
@@ -1431,8 +1472,9 @@ class ScipyTrustConstr(Algorithm):
     the trust region should be large and for an approximation valid only close to
     the current point it should be a small one. The trust radius is automatically
     updated throughout the optimization process, with ``trustregion_initial_radius``
-    being its initial value. If None (the default), the initial radius is
-    determined from the magnitude of the start parameters.
+    being its initial value. If None (the default), optimagic uses
+    ``0.1 * max(max(abs(x0)), 1)``, where ``x0`` are the start parameters. SciPy's
+    default is 1.
 
     """
 
@@ -1556,7 +1598,11 @@ class ScipyBasinhopping(Algorithm):
     opposed to just those from SciPy) and allows for a better visualization of the
     multistart history.
 
-    When a derivative is provided, it is passed to the local minimization method.
+    optimagic always passes a derivative (the user-provided one or a numerical
+    derivative) to the local minimization method.
+
+    Bounds are only enforced by the local optimization algorithm, which therefore
+    needs to support bounds; the random displacement steps ignore them.
 
     """
 
@@ -1581,15 +1627,24 @@ class ScipyBasinhopping(Algorithm):
     ) = "L-BFGS-B"
     """The local optimization algorithm to be used.
 
-    Can be the name of any SciPy local minimizer or a custom function for local
-    minimization. The default is "L-BFGS-B", as in SciPy.
+    Can be the name of a SciPy local minimizer or a custom function for local
+    minimization. "dogleg", "trust-ncg", "trust-exact" and "trust-krylov" require
+    a Hessian (or Hessian-vector product), which optimagic does not pass; it needs
+    to be supplied via ``local_algo_options``. optimagic's default is "L-BFGS-B",
+    while SciPy uses the default method of ``scipy.optimize.minimize`` ("BFGS"
+    without bounds, "L-BFGS-B" with bounds).
 
     """
 
     n_local_optimizations: PositiveInt = 100
-    """The number of local optimizations that are run.
+    """The total number of local optimizations, including the one at the start
+    parameters.
 
-    The default is 100, as in SciPy.
+    SciPy runs one local optimization at the start parameters plus one per
+    basin-hopping iteration, so optimagic passes
+    ``niter = n_local_optimizations - 1`` to SciPy (values below 2 behave like 2).
+    The default of 100 thus corresponds to SciPy's ``niter=99``; SciPy's default
+    ``niter=100`` runs 101 local optimizations.
 
     """
 
@@ -1749,11 +1804,15 @@ class ScipyBrute(Algorithm):
     """
 
     polishing_function: Callable | None = None
-    """Function to seek a more precise minimum near the best grid point, taking the
-    best grid point as initial guess as a positional argument. This is the 'finish'
-    parameter in the SciPy documentation.
+    """Function to seek a more precise minimum near the best grid point. This is the
+    'finish' parameter in the SciPy documentation.
 
-    The default is None, which means that no polishing is performed.
+    SciPy calls it as ``polishing_function(func, x_best, args=())``, i.e., with the
+    criterion function and the best grid point as positional arguments, and also
+    passes ``full_output`` and ``disp`` as keyword arguments if the function
+    accepts them (as ``scipy.optimize.fmin`` does). optimagic's default is None,
+    which means that no polishing is performed, while SciPy's default is
+    ``scipy.optimize.fmin``.
 
     """
 
@@ -1830,7 +1889,15 @@ class ScipyDifferentialEvolution(Algorithm):
     comes at the cost of requiring more criterion evaluations than gradient-based
     methods. It is a good choice for global optimization of non-smooth or noisy
     problems with a moderate number of parameters. Finite bounds are required for
-    all parameters. Nonlinear constraints are supported.
+    all parameters. Nonlinear inequality constraints are supported.
+
+    The start values are not used by the algorithm, but they are still necessary
+    for optimagic to infer the number and format of the parameters.
+
+    .. warning::
+        optimagic currently passes all nonlinear constraints to SciPy as inequality
+        constraints. An equality constraint ``g(x) = value`` is therefore only
+        enforced as ``g(x) >= value``.
 
     .. note::
         Due to optimagic's general parameter format, the SciPy arguments
@@ -1900,7 +1967,7 @@ class ScipyDifferentialEvolution(Algorithm):
     """The differential weight, denoted by F in the literature. This is the
     'mutation' parameter in the SciPy documentation.
 
-    Should be within [0, 2]. If a tuple ``(min, max)`` is given, dithering is used:
+    Should be within [0, 2). If a tuple ``(min, max)`` is given, dithering is used:
     the mutation constant is randomly changed on a generation by generation basis,
     which can help speed up convergence significantly. The default is (0.5, 1), as
     in SciPy.
@@ -2021,17 +2088,22 @@ class ScipySHGO(Algorithm):
     programming and black-box optimization problems to global optimality
     (low-dimensional problems). It samples the search space, builds a simplicial
     complex on the sampled points from which promising candidate minimizers are
-    derived, and refines the candidates with a local optimization algorithm. Bounds
-    and nonlinear constraints are supported.
+    derived, and refines the candidates with a local optimization algorithm.
+    Nonlinear constraints are supported.
 
     With the default "simplicial" sampling method, the algorithm has theoretical
     guarantees of convergence to the global minimum in finite time for Lipschitz
     smooth functions.
 
+    .. warning::
+        SciPy requires bounds for all parameters; without bounds, the optimization
+        fails. SciPy replaces infinite bounds by -1e50 and 1e50.
+
     .. note::
-        If nonlinear constraints are used, only the local algorithms "COBYLA" and
-        "SLSQP" take the constraints into account during the local refinement; the
-        other local algorithms ignore them.
+        If nonlinear constraints are used, only the local algorithms "COBYLA",
+        "SLSQP" and "trust-constr" take the constraints into account during the
+        local refinement; the other local algorithms ignore them. Inequality
+        constraints are also used to discard infeasible sampling points.
 
     """
 
@@ -2056,9 +2128,13 @@ class ScipySHGO(Algorithm):
     ) = "L-BFGS-B"
     """The local optimization algorithm to be used.
 
-    Can be the name of any SciPy local minimizer or a custom function for local
-    minimization. Only "COBYLA" and "SLSQP" support constraints. The default is
-    "L-BFGS-B", as in SciPy.
+    Can be the name of a SciPy local minimizer. Custom functions for local
+    minimization are not supported by SciPy's shgo and raise an error. Only
+    "COBYLA", "SLSQP" and "trust-constr" support constraints. "dogleg",
+    "trust-ncg", "trust-exact" and "trust-krylov" require a Hessian (or
+    Hessian-vector product), which optimagic does not pass; it needs to be
+    supplied via ``local_algo_options``. optimagic's default is "L-BFGS-B", while
+    SciPy's default is "SLSQP".
 
     """
 
@@ -2074,7 +2150,8 @@ class ScipySHGO(Algorithm):
     """The number of sampling points used in the construction of the simplicial
     complex. This is the 'n' parameter in the SciPy documentation.
 
-    optimagic's default is 128.
+    optimagic's default is 128, while SciPy's default is 100 (which SciPy replaces
+    by ``2 ** n_params + 1`` for the "simplicial" sampling method).
 
     """
 
@@ -2082,7 +2159,10 @@ class ScipySHGO(Algorithm):
     """The number of iterations used in the construction of the simplicial complex.
     This is the 'iters' parameter in the SciPy documentation.
 
-    The default is 1, as in SciPy.
+    The default is 1, as in SciPy. SciPy ignores this option if any of the options
+    'maxiter', 'maxfev', 'maxev', 'minhgrd' or 'f_min' is set. Since optimagic
+    always passes ``stopping_maxfun`` as 'maxev', this option currently has no
+    effect.
 
     """
 
@@ -2126,7 +2206,11 @@ class ScipySHGO(Algorithm):
 
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     """The maximum number of sampling evaluations, including points outside the
-    feasible domain. This is the 'maxev' option in the SciPy documentation."""
+    feasible domain. This is the 'maxev' option in the SciPy documentation.
+
+    optimagic's default is 1000, while SciPy's default is None (no limit).
+
+    """
 
     stopping_max_processing_time: PositiveFloat | None = None
     """The maximum time allowed for the optimization. This is the 'maxtime' option in
@@ -2138,7 +2222,7 @@ class ScipySHGO(Algorithm):
 
     The rank of the homology group approximately corresponds to the number of
     locally convex subdomains (and thus local minima) found so far. The algorithm
-    terminates when the rank has not grown for this many iterations.
+    terminates as soon as the rank grows by at most this value in one iteration.
 
     """
 
@@ -2290,8 +2374,13 @@ class ScipyDualAnnealing(Algorithm):
     ) = "L-BFGS-B"
     """The local optimization algorithm to be used.
 
-    Can be the name of any SciPy local minimizer or a custom function for local
-    minimization. The default is "L-BFGS-B", as in SciPy.
+    Can be the name of a SciPy local minimizer or a custom function for local
+    minimization. "dogleg", "trust-ncg", "trust-exact" and "trust-krylov" require
+    a Hessian (or Hessian-vector product), which optimagic does not pass; it needs
+    to be supplied via ``local_algo_options``. The default is "L-BFGS-B", as in
+    SciPy. Since optimagic always passes the local algorithm and its options to
+    SciPy, SciPy's default cap on the number of iterations of each local search
+    does not apply.
 
     """
 
@@ -2438,9 +2527,9 @@ class ScipyDirect(Algorithm):
     best hyperrectangle and the next potentially optimal hyperrectangle to be
     divided. This is the 'eps' parameter in the SciPy documentation.
 
-    It determines the trade-off between local and global search: the larger the
-    value, the more the search is biased towards local exploration. optimagic's
-    default is 2e-9, while SciPy's default is 1e-4.
+    It determines the trade-off between local and global search: the smaller the
+    value, the more local the search becomes. optimagic's default is 2e-9, while
+    SciPy's default is 1e-4.
 
     """
 
