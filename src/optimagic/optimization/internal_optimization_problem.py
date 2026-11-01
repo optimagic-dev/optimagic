@@ -834,7 +834,7 @@ def _assert_finite_jac(
 
     """
     if not np.all(np.isfinite(out_jac)):
-        if origin == "jac" or "fun_and_jac":
+        if origin in ("jac", "fun_and_jac"):
             msg = (
                 "The optimization failed because the derivative provided via "
                 f"{origin} contains infinite or NaN values."
