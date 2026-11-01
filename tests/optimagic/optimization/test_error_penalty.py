@@ -103,3 +103,101 @@ def test_penalty_aggregations_via_get_error_penalty(seed):
 
     assert np.isclose(scalar.value, contribs.value.sum())  # ty:ignore[unresolved-attribute]
     assert np.isclose(scalar.value, (root_contribs.value**2).sum())  # ty:ignore[unresolved-attribute]
+
+
+SUPPORTED_COMBINATIONS = [
+    (ScalarFunctionValue(-3.0), AggregationLevel.SCALAR, Direction.MINIMIZE),
+    (ScalarFunctionValue(-3.0), AggregationLevel.SCALAR, Direction.MAXIMIZE),
+    (
+        LikelihoodFunctionValue(np.arange(-3.0, 2.0)),
+        AggregationLevel.SCALAR,
+        Direction.MINIMIZE,
+    ),
+    (
+        LikelihoodFunctionValue(np.arange(-3.0, 2.0)),
+        AggregationLevel.SCALAR,
+        Direction.MAXIMIZE,
+    ),
+    (
+        LikelihoodFunctionValue(np.arange(-3.0, 2.0)),
+        AggregationLevel.LIKELIHOOD,
+        Direction.MINIMIZE,
+    ),
+    (
+        LikelihoodFunctionValue(np.arange(-3.0, 2.0)),
+        AggregationLevel.LIKELIHOOD,
+        Direction.MAXIMIZE,
+    ),
+    (
+        LeastSquaresFunctionValue(np.arange(-2.0, 3.0)),
+        AggregationLevel.SCALAR,
+        Direction.MINIMIZE,
+    ),
+    (
+        LeastSquaresFunctionValue(np.arange(-2.0, 3.0)),
+        AggregationLevel.LIKELIHOOD,
+        Direction.MINIMIZE,
+    ),
+    (
+        LeastSquaresFunctionValue(np.arange(-2.0, 3.0)),
+        AggregationLevel.LEAST_SQUARES,
+        Direction.MINIMIZE,
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "start_criterion, solver_type, direction", SUPPORTED_COMBINATIONS
+)
+def test_default_penalty_matches_the_scalar_penalty_of_the_start_value(
+    start_criterion, solver_type, direction
+):
+    """Without explicit options, every aggregation penalizes the same scalar value."""
+    x = np.array([0.3, 0.7])
+    x0 = np.array([0.1, 0.2])
+    scalar_func = get_error_penalty_function(
+        start_x=x0,
+        start_criterion=ScalarFunctionValue(
+            start_criterion.internal_value(AggregationLevel.SCALAR)
+        ),
+        error_penalty=None,
+        solver_type=AggregationLevel.SCALAR,
+        direction=direction,
+    )
+    func = get_error_penalty_function(
+        start_x=x0,
+        start_criterion=start_criterion,
+        error_penalty=None,
+        solver_type=solver_type,
+        direction=direction,
+    )
+    expected, _ = scalar_func(x)
+    got, _ = func(x)
+    assert np.isclose(
+        got.internal_value(AggregationLevel.SCALAR),
+        expected.internal_value(AggregationLevel.SCALAR),
+    )
+
+
+@pytest.mark.parametrize(
+    "start_criterion, solver_type, direction", SUPPORTED_COMBINATIONS
+)
+def test_default_penalty_is_worse_than_the_start_value(
+    start_criterion, solver_type, direction
+):
+    x0 = np.array([0.1, 0.2])
+    func = get_error_penalty_function(
+        start_x=x0,
+        start_criterion=start_criterion,
+        error_penalty=None,
+        solver_type=solver_type,
+        direction=direction,
+    )
+    start_value = start_criterion.internal_value(AggregationLevel.SCALAR)
+    for x in [x0 + 1e-8, np.array([0.3, 0.7]), np.array([-5.0, 10.0])]:
+        penalty, _ = func(x)
+        penalty_value = penalty.internal_value(AggregationLevel.SCALAR)
+        if direction == Direction.MINIMIZE:
+            assert penalty_value > start_value
+        else:
+            assert penalty_value < start_value
