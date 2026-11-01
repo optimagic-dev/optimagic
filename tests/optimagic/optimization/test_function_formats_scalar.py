@@ -433,3 +433,27 @@ def test_minimize_with_invalid_fun_and_jac(fun_and_jac):
             algorithm="scipy_lbfgsb",
             fun_and_jac=fun_and_jac,
         )
+
+
+# ======================================================================================
+# incompatible solver types
+# ======================================================================================
+
+
+def test_scalar_problem_with_likelihood_solver_raises():
+    with pytest.raises(InvalidFunctionError, match="Likelihood solvers can only"):
+        minimize(fun=sos, params=np.array([1, 2, 3]), algorithm="bhhh")
+
+
+def test_scalar_problem_with_least_squares_solver_raises():
+    with pytest.raises(InvalidFunctionError, match="Least-squares solvers can only"):
+        minimize(fun=sos, params=np.array([1, 2, 3]), algorithm="scipy_ls_trf")
+
+
+def test_likelihood_problem_with_least_squares_solver_raises():
+    with pytest.raises(InvalidFunctionError, match="Least-squares solvers can only"):
+        minimize(
+            fun=mark.likelihood(lambda x: x**2),
+            params=np.array([1, 2, 3]),
+            algorithm="scipy_ls_trf",
+        )

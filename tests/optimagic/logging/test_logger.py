@@ -108,6 +108,28 @@ def test_non_existing_database_raises_error(tmp_path):
         SQLiteLogReader(tmp_path / "i_do_not_exist.db").read_start_params()
 
 
+@pytest.fixture()
+def empty_db(tmp_path):
+    path = tmp_path / "empty.db"
+    LogStore.from_options(SQLiteLogOptions(path))
+    return path
+
+
+def test_empty_database_read_start_params_raises_error(empty_db):
+    reader = SQLiteLogReader(empty_db)
+    with pytest.raises(ValueError, match="does not contain any optimization problem"):
+        reader.read_start_params()
+
+
+def test_empty_database_read_history_raises_error(empty_db):
+    reader = SQLiteLogReader(empty_db)
+    with pytest.raises(ValueError, match="does not contain any function evaluations"):
+        reader.read_history()
+
+    with pytest.raises(ValueError, match="does not contain any function evaluations"):
+        reader.read_multistart_history(direction=Direction.MINIMIZE)
+
+
 def test_available_log_options():
     available_types = LogOptions.available_option_types()
     assert len(available_types) == 1

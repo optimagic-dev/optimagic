@@ -64,6 +64,15 @@ class LogOptions:
 
 _LogOptionsType = TypeVar("_LogOptionsType", bound=LogOptions)
 
+_EMPTY_HISTORY_MSG = (
+    "The log does not contain any function evaluations. This happens if the "
+    "optimization stopped before the first function evaluation was logged."
+)
+_EMPTY_PROBLEM_MSG = (
+    "The log does not contain any optimization problem. This happens if the log "
+    "was created but no optimization was run with it."
+)
+
 
 class LogReader(Generic[_LogOptionsType], ABC):
     """A class that manages the retrieving of optimization and exploration data.
@@ -155,6 +164,9 @@ class LogReader(Generic[_LogOptionsType], ABC):
                 criterion_list.append(data.scalar_fun)
                 runtime_list.append(data.timestamp)
 
+        if not criterion_list:
+            raise ValueError(_EMPTY_HISTORY_MSG)
+
         times = np.array(runtime_list)
         times -= times[0]
 
@@ -185,6 +197,9 @@ class LogReader(Generic[_LogOptionsType], ABC):
                 history["fun"].append(data.scalar_fun)
                 history["time"].append(data.timestamp)
                 history["step"].append(data.step)
+
+        if not history["fun"]:
+            raise ValueError(_EMPTY_HISTORY_MSG)
 
         times = np.array(history["time"])
         times -= times[0]
@@ -299,7 +314,10 @@ class LogReader(Generic[_LogOptionsType], ABC):
             A pytree object representing the start parameter.
 
         """
-        return self._problem_store.select(1)[0].params
+        row_list = self._problem_store.select(1)
+        if len(row_list) == 0:
+            raise ValueError(_EMPTY_PROBLEM_MSG)
+        return row_list[0].params
 
 
 _LogReaderType = TypeVar("_LogReaderType", bound=LogReader[Any])
