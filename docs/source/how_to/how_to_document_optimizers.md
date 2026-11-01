@@ -195,28 +195,33 @@ This creates a dropdown section that shows users how to use the algorithm.
 Add the following to `docs/source/algorithms.md` in an `eval-rst` block:
 
 ```text
-.. dropdown::  scipy_lbfgsb
+.. dropdown:: scipy_lbfgsb
 
     **How to use this algorithm:**
 
     .. code-block:: python
 
+        import numpy as np
         import optimagic as om
-        om.minimize(
-          fun=lambda x: x @ x,
-          params=[1.0, 2.0, 3.0],
-          algorithm=om.algos.scipy_lbfgsb(stopping_maxiter=1_000, ...),
-        )
-        
-    or using the string interface:
-        
-    .. code-block:: python
 
         om.minimize(
-          fun=lambda x: x @ x,
-          params=[1.0, 2.0, 3.0],
-          algorithm="scipy_lbfgsb",
-          algo_options={"stopping_maxiter": 1_000, ...},
+            fun=lambda x: x @ x,
+            params=np.array([1.0, 2.0, 3.0]),
+            algorithm=om.algos.scipy_lbfgsb(stopping_maxiter=1_000),
+        )
+
+    or using the string interface:
+
+    .. code-block:: python
+
+        import numpy as np
+        import optimagic as om
+
+        om.minimize(
+            fun=lambda x: x @ x,
+            params=np.array([1.0, 2.0, 3.0]),
+            algorithm="scipy_lbfgsb",
+            algo_options={"stopping_maxiter": 1_000},
         )
 
     **Description and available options:**
@@ -229,6 +234,10 @@ Add the following to `docs/source/algorithms.md` in an `eval-rst` block:
 - **The dropdown button and title**: Makes it easy to find the algorithm
 - **Concrete usage examples** showing both the object and string interfaces
 - **Algorithm-specific parameter** in the usage example
+- **Copy-pasteable code**: Each code block is self-contained and runs as is. Pass
+  `params` as a NumPy array so that `x @ x` works, don't use `...` placeholders, add
+  finite `bounds` if the algorithm needs them, and mark least-squares or likelihood
+  functions with `om.mark.least_squares` or `om.mark.likelihood`
 - **Auto-generated documentation** via the `autoclass` directive that pulls in your
   docstrings
 
