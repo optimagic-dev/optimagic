@@ -1,3 +1,4 @@
+import gc
 from dataclasses import asdict
 
 import numpy as np
@@ -107,6 +108,28 @@ def test_non_existing_database_raises_error(tmp_path):
         SQLiteLogReader(tmp_path / "i_do_not_exist.db").read_start_params()
 
 
+@pytest.fixture()
+def empty_db(tmp_path):
+    path = tmp_path / "empty.db"
+    LogStore.from_options(SQLiteLogOptions(path))
+    return path
+
+
+def test_empty_database_read_start_params_raises_error(empty_db):
+    reader = SQLiteLogReader(empty_db)
+    with pytest.raises(ValueError, match="does not contain any optimization problem"):
+        reader.read_start_params()
+
+
+def test_empty_database_read_history_raises_error(empty_db):
+    reader = SQLiteLogReader(empty_db)
+    with pytest.raises(ValueError, match="does not contain any function evaluations"):
+        reader.read_history()
+
+    with pytest.raises(ValueError, match="does not contain any function evaluations"):
+        reader.read_multistart_history(direction=Direction.MINIMIZE)
+
+
 def test_available_log_options():
     available_types = LogOptions.available_option_types()
     assert len(available_types) == 1
@@ -122,3 +145,31 @@ def test_no_registered():
 
     with pytest.raises(ValueError, match="DummyOptions"):
         LogStore.from_options(DummyOptions())
+
+
+def _minimize_with_log(path):
+    return minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(5.0),
+        algorithm="scipy_lbfgsb",
+        logging=SQLiteLogOptions(path, if_database_exists="replace"),
+    )
+
+
+def test_log_file_is_final_when_minimize_returns(tmp_path):
+    """While the result is alive, no WAL content waits outside the database file."""
+    path = tmp_path / "log.db"
+    res = _minimize_with_log(path)
+    content_at_return = path.read_bytes()
+    assert not path.with_name("log.db-wal").exists()
+    del res
+    gc.collect()
+    assert path.read_bytes() == content_at_return
+
+
+def test_log_file_is_final_after_reading_history(tmp_path):
+    """Reading the log through the result leaves no connection open."""
+    path = tmp_path / "log.db"
+    res = _minimize_with_log(path)
+    res.logger.read_history()
+    assert not path.with_name("log.db-wal").exists()

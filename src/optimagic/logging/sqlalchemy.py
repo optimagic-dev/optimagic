@@ -59,6 +59,7 @@ class SQLAlchemyConfig:
         metadata = MetaData()
         self._configure_reflect()
         metadata.reflect(engine)
+        engine.dispose()
         return metadata
 
     def create_engine(self) -> Engine:
@@ -144,6 +145,7 @@ class _SQLAlchemyStoreMixin:
         self._engine = db_config.create_engine()
         self._table_config = table_config
         self._table = table_config.create_table(db_config.metadata, self._engine)
+        self._engine.dispose()
 
     @property
     def column_names(self) -> list[str]:
@@ -186,7 +188,11 @@ class _SQLAlchemyStoreMixin:
 
     def _execute_read_statement(self, statement: Executable) -> Sequence[Row[Any]]:
         with self._engine.connect() as connection:
-            return connection.execute(statement).fetchall()
+            rows = connection.execute(statement).fetchall()
+        # Reads are rare; closing the pooled connections afterwards means a reader
+        # (e.g. `OptimizeResult.logger`) does not keep the database file open.
+        self._engine.dispose()
+        return rows
 
     def _execute_write_statement(self, statement: Executable) -> None:
         try:

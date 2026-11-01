@@ -1,6 +1,5 @@
 """Test suite for the internal pounders interface."""
 
-import sys
 from functools import partial
 from itertools import product
 
@@ -90,13 +89,11 @@ specific_tests = [
 TEST_CASES = universal_tests + specific_tests
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not accurate on Windows.")
-@pytest.mark.skipif(
-    sys.platform == "linux" and sys.version_info[:2] >= (3, 10),
-    reason="Not accurate on Linux with Python 3.10 or higher.",
-)
-@pytest.mark.parametrize("start_vec, conjugate_gradient_method_sub", TEST_CASES)
-def test_bntr(
+X_EXPECTED = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
+CRITERION_EXPECTED = 2384.477
+
+
+def _solve_bntr(
     start_vec,
     conjugate_gradient_method_sub,
     criterion,
@@ -136,9 +133,53 @@ def test_bntr(
         batch_fun=batch_fun,
         **pounders_options,
     )
+    return result
 
-    x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result.x, x_expected, decimal=3)
+
+@pytest.mark.parametrize("start_vec, conjugate_gradient_method_sub", TEST_CASES)
+def test_bntr(
+    start_vec,
+    conjugate_gradient_method_sub,
+    criterion,
+    pounders_options,
+    trustregion_subproblem_options,
+):
+    result = _solve_bntr(
+        start_vec,
+        conjugate_gradient_method_sub,
+        criterion,
+        pounders_options,
+        trustregion_subproblem_options,
+    )
+
+    aaae(result.x, X_EXPECTED, decimal=3)
+    assert np.sum(criterion(result.x) ** 2) == pytest.approx(
+        CRITERION_EXPECTED, abs=1e-2
+    )
+
+
+@pytest.mark.slow
+def test_bntr_no_false_convergence_under_start_value_jitter(
+    criterion, pounders_options, trustregion_subproblem_options
+):
+    """Tiny perturbations of x0 must not lead to convergence at a non-minimum.
+
+    The path from this start vector is chaotic, so relative perturbations of order
+    1e-15 lead to different iterates. With a mis-scaled gradient norm some of these
+    runs used to report convergence far away from the minimum (see #657).
+
+    """
+    rng = np.random.default_rng(0)
+    start_vec = np.array([1e-6, 1e-6, 1e-6])
+    criterion_values = []
+    for _ in range(10):
+        x0 = start_vec * (1 + 1e-15 * rng.standard_normal(3))
+        result = _solve_bntr(
+            x0, "cg", criterion, pounders_options, trustregion_subproblem_options
+        )
+        criterion_values.append(np.sum(criterion(result.x) ** 2))
+
+    np.testing.assert_allclose(criterion_values, CRITERION_EXPECTED, atol=1e-2)
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])
@@ -177,5 +218,4 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         **pounders_options,
     )
 
-    x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result.x, x_expected, decimal=4)
+    aaae(result.x, X_EXPECTED, decimal=4)
