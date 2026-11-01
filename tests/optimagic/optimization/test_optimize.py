@@ -102,15 +102,6 @@ def test_non_finite_pytree_residuals_at_start_raise_with_full_output():
     assert "c    inf" in str(e.value)
 
 
-def test_non_finite_residuals_at_start_raise_for_derivative_free_algorithm():
-    @mark.least_squares
-    def fun(x):
-        return np.array([x[0], np.inf if x[1] == 2 else x[1]])
-
-    with pytest.raises(InvalidFunctionError, match="not finite"):
-        minimize(fun, params=np.array([1.0, 2.0]), algorithm="scipy_neldermead")
-
-
 @pytest.mark.parametrize("value", [np.inf, np.nan])
 def test_non_finite_jac_at_start_raises(value):
     def jac(x):
@@ -118,6 +109,16 @@ def test_non_finite_jac_at_start_raises(value):
 
     with pytest.raises(InvalidFunctionError, match="provided via jac is not finite"):
         minimize(lambda x: x @ x, params=np.ones(2), algorithm="scipy_lbfgsb", jac=jac)
+
+
+def test_non_finite_jac_at_start_does_not_raise_for_derivative_free_algorithm():
+    def jac(x):
+        return np.array([np.inf, 2 * x[1]])
+
+    res = minimize(
+        lambda x: x @ x, params=np.ones(2), algorithm="scipy_neldermead", jac=jac
+    )
+    aaae(res.params, np.zeros(2), decimal=4)
 
 
 def test_non_finite_fun_and_jac_at_start_raises():

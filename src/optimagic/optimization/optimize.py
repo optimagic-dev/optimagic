@@ -38,12 +38,7 @@ from optimagic.optimization.create_optimization_problem import (
     create_optimization_problem,
 )
 from optimagic.optimization.error_penalty import get_error_penalty_function
-from optimagic.optimization.fun_value import (
-    FunctionValue,
-    LeastSquaresFunctionValue,
-    LikelihoodFunctionValue,
-    SpecificFunctionValue,
-)
+from optimagic.optimization.fun_value import FunctionValue, SpecificFunctionValue
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
     InternalOptimizationProblem,
@@ -583,14 +578,15 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         add_soft_bounds=problem.multistart is not None,
     )
 
-    derivative_evals = {}
-    if problem.jac is not None:
-        derivative_evals["jac"] = first_deriv_eval
-    if problem.fun_and_jac is not None:
-        derivative_evals["fun_and_jac"] = first_crit_and_deriv_eval[1]
-    _check_derivatives_are_finite_at_start(
-        derivative_evals, converter=converter, x=internal_params.values
-    )
+    if problem.algorithm.algo_info.needs_jac:
+        derivative_evals = {}
+        if problem.jac is not None:
+            derivative_evals["jac"] = first_deriv_eval
+        if problem.fun_and_jac is not None:
+            derivative_evals["fun_and_jac"] = first_crit_and_deriv_eval[1]
+        _check_derivatives_are_finite_at_start(
+            derivative_evals, converter=converter, x=internal_params.values
+        )
 
     # ==================================================================================
     # initialize the log database
@@ -789,13 +785,7 @@ def _check_fun_is_finite_at_start(fun_eval: SpecificFunctionValue) -> None:
     ``error_handling="continue"`` is derived from the start value.
 
     """
-    if isinstance(fun_eval, LeastSquaresFunctionValue):
-        level = AggregationLevel.LEAST_SQUARES
-    elif isinstance(fun_eval, LikelihoodFunctionValue):
-        level = AggregationLevel.LIKELIHOOD
-    else:
-        level = AggregationLevel.SCALAR
-    if not np.all(np.isfinite(fun_eval.internal_value(level))):
+    if not np.isfinite(fun_eval.internal_value(AggregationLevel.SCALAR)):
         msg = (
             "The objective function is not finite (inf or nan) at the start params. "
             "Choose start params at which the objective function is finite. The "
