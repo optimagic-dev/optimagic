@@ -538,31 +538,28 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     first_crit_eval = problem.fun_eval
     _check_fun_is_finite_at_start(first_crit_eval)
 
-    # do first derivative evaluation (if given)
-    if problem.jac is not None:
-        try:
-            first_deriv_eval = problem.jac(problem.params)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            msg = "Error while evaluating derivative at start params."
-            raise InvalidFunctionError(msg) from e
+    # do first derivative evaluation (if given and used by the algorithm)
+    derivative_evals = {}
+    if problem.algorithm.algo_info.needs_jac:
+        if problem.jac is not None:
+            try:
+                derivative_evals["jac"] = problem.jac(problem.params)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception as e:
+                msg = "Error while evaluating derivative at start params."
+                raise InvalidFunctionError(msg) from e
 
-    if problem.fun_and_jac is not None:
-        try:
-            first_crit_and_deriv_eval = problem.fun_and_jac(problem.params)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            msg = "Error while evaluating criterion_and_derivative at start params."
-            raise InvalidFunctionError(msg) from e
+        if problem.fun_and_jac is not None:
+            try:
+                derivative_evals["fun_and_jac"] = problem.fun_and_jac(problem.params)[1]
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception as e:
+                msg = "Error while evaluating criterion_and_derivative at start params."
+                raise InvalidFunctionError(msg) from e
 
-    if problem.jac is not None:
-        used_deriv = first_deriv_eval
-    elif problem.fun_and_jac is not None:
-        used_deriv = first_crit_and_deriv_eval[1]
-    else:
-        used_deriv = None
+    used_deriv = derivative_evals.get("jac", derivative_evals.get("fun_and_jac"))
 
     # ==================================================================================
     # Get the converter (for tree flattening, constraints and scaling)
@@ -578,15 +575,9 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         add_soft_bounds=problem.multistart is not None,
     )
 
-    if problem.algorithm.algo_info.needs_jac:
-        derivative_evals = {}
-        if problem.jac is not None:
-            derivative_evals["jac"] = first_deriv_eval
-        if problem.fun_and_jac is not None:
-            derivative_evals["fun_and_jac"] = first_crit_and_deriv_eval[1]
-        _check_derivatives_are_finite_at_start(
-            derivative_evals, converter=converter, x=internal_params.values
-        )
+    _check_derivatives_are_finite_at_start(
+        derivative_evals, converter=converter, x=internal_params.values
+    )
 
     # ==================================================================================
     # initialize the log database

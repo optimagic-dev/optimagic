@@ -121,6 +121,20 @@ def test_non_finite_jac_at_start_does_not_raise_for_derivative_free_algorithm():
     aaae(res.params, np.zeros(2), decimal=4)
 
 
+def test_derivatives_are_not_evaluated_for_derivative_free_algorithm():
+    def raise_error(x):
+        raise ValueError("Derivatives should not be evaluated.")
+
+    res = minimize(
+        lambda x: x @ x,
+        params=np.ones(2),
+        algorithm="scipy_neldermead",
+        jac=raise_error,
+        fun_and_jac=raise_error,
+    )
+    aaae(res.params, np.zeros(2), decimal=4)
+
+
 def test_non_finite_fun_and_jac_at_start_raises():
     def fun_and_jac(x):
         return x["a"] ** 2 + x["b"] ** 2, {"a": 2 * x["a"], "b": np.nan}

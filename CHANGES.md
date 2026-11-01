@@ -11,8 +11,9 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
 - {gh}`727` Raises an error if the objective function or a user provided derivative is
-  not finite at the start params. The message shows the complete output of the function
-  ({ghuser}`janosg`).
+  not finite at the start params. The message shows the complete output of the function.
+  User provided derivatives are only evaluated at the start params if the algorithm uses
+  them ({ghuser}`janosg`).
 - {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
   `maximize`. The callback is called after each objective evaluation; its behavior might
   change in upcoming releases ({ghuser}`Pragati5-DEBUG`).
