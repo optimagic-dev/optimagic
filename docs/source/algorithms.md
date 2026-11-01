@@ -46,6 +46,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLBFGSB
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -81,6 +83,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipySLSQP
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -116,6 +120,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyNelderMead
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -151,6 +157,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyPowell
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -186,6 +194,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyBFGS
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -221,6 +231,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyConjugateGradient
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -256,6 +268,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyNewtonCG
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -291,6 +305,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyCOBYLA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -326,6 +342,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyTruncatedNewton
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -361,6 +379,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyTrustConstr
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -408,6 +428,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLSDogbox
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -455,6 +477,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLSTRF
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -502,6 +526,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLSLM
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -537,6 +563,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyBasinhopping
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -574,6 +602,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyBrute
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -613,6 +643,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyDifferentialEvolution
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -650,6 +682,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipySHGO
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -687,6 +721,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyDualAnnealing
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -724,6 +760,8 @@ automatically installed when you install optimagic.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyDirect
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 (own-algorithms)=
@@ -777,6 +815,8 @@ We implement a few algorithms from scratch. They are currently considered experi
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.bhhh.BHHH
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -812,6 +852,8 @@ We implement a few algorithms from scratch. They are currently considered experi
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.neldermead.NelderMeadParallel
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -859,6 +901,8 @@ We implement a few algorithms from scratch. They are currently considered experi
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pounders.Pounders
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 (tao-algorithms)=
@@ -913,6 +957,8 @@ need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.tao_optimizers.TAOPounders
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 (nag-algorithms)=
@@ -970,6 +1016,8 @@ install each of them separately:
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nag_optimizers.NagDFOLS
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1007,6 +1055,8 @@ install each of them separately:
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nag_optimizers.NagPyBOBYQA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 (pygmo-algorithms)=
@@ -1051,6 +1101,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoGaco
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1088,6 +1140,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoBeeColony
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1125,6 +1179,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoDe
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1162,6 +1218,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoSea
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1199,6 +1257,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoSga
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1236,6 +1296,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoSade
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1273,6 +1335,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoCmaes
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1310,6 +1374,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoSimulatedAnnealing
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1347,6 +1413,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoPso
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1384,6 +1452,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoPsoGen
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1421,6 +1491,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoMbh
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1458,6 +1530,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoXnes
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1495,6 +1569,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoGwo
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1532,6 +1608,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoCompassSearch
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1569,6 +1647,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoIhs
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1606,6 +1686,8 @@ supports the following [pygmo2](https://esa.github.io/pygmo2) optimizers.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygmo_optimizers.PygmoDe1220
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 (ipopt-algorithm)=
@@ -1654,6 +1736,8 @@ To use ipopt, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.ipopt.Ipopt
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 (fides-algorithm)=
@@ -1698,6 +1782,8 @@ need to have [the fides package](https://github.com/fides-dev/fides) installed
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.fides.Fides
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## The NLOPT Optimizers (nlopt)
@@ -1741,6 +1827,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptBOBYQA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1776,6 +1864,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptNelderMead
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1811,6 +1901,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptPRAXIS
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1846,6 +1938,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptCOBYLA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1881,6 +1975,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptSbplx
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1916,6 +2012,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptNEWUOA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1951,6 +2049,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptTNewton
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -1986,6 +2086,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptLBFGSB
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2021,6 +2123,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptCCSAQ
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2056,6 +2160,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptMMA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2091,6 +2197,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptVAR
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2126,6 +2234,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptSLSQP
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2163,6 +2273,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptDirect
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2200,6 +2312,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptESCH
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2237,6 +2351,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptISRES
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2274,6 +2390,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nlopt_optimizers.NloptCRS2LM
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## Optimizers from iminuit
@@ -2316,6 +2434,8 @@ use MIGRAD, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.iminuit_migrad.IminuitMigrad
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## Nevergrad Optimizers
@@ -2363,6 +2483,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradPSO
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2398,6 +2520,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradCMAES
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2433,6 +2557,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradOnePlusOne
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2468,6 +2594,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradDifferentialEvolution
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2508,6 +2636,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradBayesOptim
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2543,6 +2673,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEMNA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2578,6 +2710,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradCGA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2613,6 +2747,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradEDA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2648,6 +2784,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradTBPSA
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2683,6 +2821,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradRandomSearch
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2721,6 +2861,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradSamplingSearch
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2756,6 +2898,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradNGOpt
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2791,6 +2935,8 @@ and hence imprecise.\
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.nevergrad_optimizers.NevergradMeta
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## Bayesian Optimization
@@ -2837,6 +2983,8 @@ incompatible with `nevergrad > 1.0.3`.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.bayesian_optimizer.BayesOpt
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## Gradient Free Optimizers
@@ -2881,8 +3029,8 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOHillClimbing
-      :members:
-      :inherited-members: Algorithm, object
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -2920,9 +3068,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOStochasticHillClimbing
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -2960,9 +3108,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFORepulsingHillClimbing
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3000,9 +3148,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSimulatedAnnealing
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3040,9 +3188,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODownhillSimplex
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3080,9 +3228,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOPowellsMethod
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3120,9 +3268,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParticleSwarmOptimization
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3163,9 +3311,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOParallelTempering
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3206,9 +3354,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOSpiralOptimization
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3249,9 +3397,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOGeneticAlgorithm
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3292,9 +3440,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFOEvolutionStrategy
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ```{eval-rst}
@@ -3335,9 +3483,9 @@ package are available in optimagic. To use it, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.gfo_optimizers.GFODifferentialEvolution
-      :members:
-      :inherited-members: Algorithm, object  
-      :member-order: bysource
+        :members:
+        :inherited-members: Algorithm, object
+        :member-order: bysource
 ```
 
 ## Pygad Optimizer
@@ -3380,6 +3528,8 @@ We wrap the pygad optimizer. To use it you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pygad_optimizer.Pygad
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## PySwarms Optimizers
@@ -3423,8 +3573,8 @@ LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGlobalBestPSO
-      :members:
-      :inherited-members: Algorithm, object
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -3460,8 +3610,8 @@ LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsLocalBestPSO
-      :members:
-      :inherited-members: Algorithm, object
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -3497,8 +3647,8 @@ LocalBestPSO, GeneralOptimizerPSO). To use these optimizers, you need to have
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.pyswarms_optimizers.PySwarmsGeneralPSO
-      :members:
-      :inherited-members: Algorithm, object
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## The Tranquilo Optimizer
@@ -3545,6 +3695,8 @@ squared residuals.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.tranquilo.Tranquilo
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ```{eval-rst}
@@ -3592,6 +3744,8 @@ squared residuals.
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.tranquilo.TranquiloLS
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 ## References
