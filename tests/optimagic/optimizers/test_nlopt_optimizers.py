@@ -3,10 +3,10 @@ import pytest
 from numpy.testing import assert_allclose
 
 from optimagic import mark
-from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.config import IS_NLOPT_INSTALLED
 from optimagic.exceptions import InvalidAlgoOptionError
 from optimagic.optimization.optimize import minimize
+from optimagic.optimizers.nlopt_optimizers import NloptESCH
 from optimagic.parameters.bounds import Bounds
 
 if IS_NLOPT_INSTALLED:
@@ -24,16 +24,18 @@ def _run(algorithm, options):
         evaluations.append(x.copy())
         return float(x @ x)
 
-    kwargs = {}
-    if algorithm != "nlopt_praxis":
-        kwargs["bounds"] = Bounds(lower=np.full(3, -1.0), upper=np.full(3, 1.0))
+    bounds = (
+        None
+        if algorithm == "nlopt_praxis"
+        else Bounds(lower=np.full(3, -1.0), upper=np.full(3, 1.0))
+    )
     minimize(
         fun=objective,
         params=np.array([0.5, -0.4, 0.3]),
         algorithm=algorithm,
         algo_options={"stopping_maxfun": 80, **options},
         collect_history=False,
-        **kwargs,
+        bounds=bounds,
     )
     return np.array(evaluations)
 
@@ -98,11 +100,11 @@ def test_deterministic_direct_does_not_reset_random_state(monkeypatch):
 
 @pytest.mark.parametrize("seed", [0, 2**32 - 1])
 def test_seed_limits_are_valid(seed):
-    assert AVAILABLE_ALGORITHMS["nlopt_esch"](seed=seed).seed == seed
+    assert NloptESCH(seed=seed).seed == seed
     _run("nlopt_esch", {"seed": seed})
 
 
 @pytest.mark.parametrize("seed", [-1, 2**32])
 def test_seed_outside_portable_range_is_rejected(seed):
     with pytest.raises(InvalidAlgoOptionError):
-        AVAILABLE_ALGORITHMS["nlopt_esch"](seed=seed)
+        NloptESCH(seed=seed)
