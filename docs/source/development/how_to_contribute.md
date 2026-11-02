@@ -69,20 +69,12 @@ Give us enough information to reproduce and investigate the problem:
 - Your optimagic and Python versions, operating system, and relevant dependency
   versions.
 
-For numerical problems, include the relevant inputs and results so we can assess the
-behavior.
-
 ### Larger improvements
 
 For substantial changes to code, documentation, or tests, describe the current
 limitation, intended outcome, affected area, and proposed scope. Share any approach or
 tradeoffs you have considered. Agree on the scope and approach with the maintainers
 before starting implementation.
-
-For example, an illustrative documentation issue might say: "In the algorithm-selection
-guide, I could not tell how to choose between two derivative-free methods. An example
-comparing when each is useful would help." A proposal for reorganizing several guides
-could outline the new structure and explain which reader needs it addresses.
 
 If you use AI tools to prepare or submit an issue, consult
 [Using AI tools](#contributing-ai) before posting. Once you are ready to implement an
@@ -135,10 +127,8 @@ $ pixi run tests tests/optimagic/optimization/test_optimize.py
 ```
 
 Include relevant slow tests before opening a PR. For broader checks, use
-`pixi run tests-fast`; it excludes slow and JAX tests on every platform. For
-cross-cutting changes, run the full suite with `pixi run tests` in an environment with
-the required dependencies. The named Linux test environments in `pyproject.toml` include
-JAX and PETSc.
+`pixi run tests-fast`; it excludes slow and JAX tests on every platform. For changes to
+shared code used across multiple modules, run the full suite with `pixi run tests`.
 
 For changes affecting typing, run:
 
@@ -205,9 +195,9 @@ explain it. Review generated code and test the behavior it changes, following
 We ask contributors to briefly describe substantial AI use in their PR, including how
 they used the tools and checked the result. The PR template includes a reminder.
 
-Autonomous agent activity on GitHub requires explicit prior maintainer approval for the
-proposed activity. This includes opening issues or PRs, posting comments, and submitting
-reviews. Contributors remain responsible for the content and actions of agents they use.
+We strongly prefer human-written communication on GitHub. You may use AI tools and
+agents to help draft issues, PR descriptions, comments, and reviews. You remain
+responsible for the accuracy, relevance, and quality of what you post.
 
 Maintainers prioritize relevant, carefully prepared submissions and may close or remove
 submissions at their discretion. Feedback is provided as time allows. Repeated
