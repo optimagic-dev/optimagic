@@ -3815,6 +3815,13 @@ optimization. The deterministic DIRECT variants do not use the seed.
     - "DIRECT_L_RAND_NOSCAL"
     - "DIRECT_RAND"
 
+    .. note::
+
+       NLopt 2.10.1 selects the deterministic unscaled DIRECT-L implementation for
+       all unscaled variants, including the randomized variant. Its seed therefore
+       has no effect on the search. This has been corrected in NLopt's development
+       branch.
+
     - **convergence.xtol_rel** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
     - **convergence.xtol_abs** (float): Stop when the absolute movement

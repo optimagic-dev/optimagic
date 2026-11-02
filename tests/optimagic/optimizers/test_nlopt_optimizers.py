@@ -48,40 +48,14 @@ def _run(algorithm, options, *, flat=False):
         ("nlopt_isres", {}),
         ("nlopt_crs2_lm", {}),
         ("nlopt_direct", {"locally_biased": True, "random_search": True}),
-        (
-            "nlopt_direct",
-            {"locally_biased": True, "random_search": True, "unscaled_bounds": True},
-        ),
     ],
 )
-def test_seed_reproduces_evaluations_and_is_forwarded(algorithm, options, monkeypatch):
-    seeds = []
-    original_srand = nlopt.srand
-
-    def record_seed(seed):
-        seeds.append(seed)
-        original_srand(seed)
-
-    monkeypatch.setattr(nlopt, "srand", record_seed)
-    first = _run(algorithm, {**options, "seed": 0})
-    second = _run(algorithm, {**options, "seed": 0})
-
-    assert seeds == [0, 0]
-    assert_allclose(first, second, rtol=0, atol=0)
-
-
-@pytest.mark.parametrize("algorithm", ["nlopt_esch", "nlopt_isres", "nlopt_crs2_lm"])
-def test_different_seeds_change_evaluations(algorithm):
-    first = _run(algorithm, {"seed": 123})
-    second = _run(algorithm, {"seed": 456})
-
-    assert first.shape != second.shape or not np.array_equal(first, second)
-
-
-def test_praxis_seed_controls_random_steps():
-    first = _run("nlopt_praxis", {"seed": 123}, flat=True)
-    repeated = _run("nlopt_praxis", {"seed": 123}, flat=True)
-    different = _run("nlopt_praxis", {"seed": 456}, flat=True)
+def test_seed_controls_evaluation_sequence(algorithm, options):
+    # A flat objective makes PRAXIS take random steps.
+    flat = algorithm == "nlopt_praxis"
+    first = _run(algorithm, {**options, "seed": 0}, flat=flat)
+    repeated = _run(algorithm, {**options, "seed": 0}, flat=flat)
+    different = _run(algorithm, {**options, "seed": 1}, flat=flat)
 
     assert_allclose(first, repeated, rtol=0, atol=0)
     assert first.shape != different.shape or not np.array_equal(first, different)
@@ -99,12 +73,14 @@ def test_none_seed_preserves_external_seed():
     assert first.shape != third.shape or not np.array_equal(first, third)
 
 
-def test_deterministic_direct_does_not_reset_random_state(monkeypatch):
-    def fail_on_seed(seed):
-        pytest.fail(f"Unexpected seed: {seed}")
-
-    monkeypatch.setattr(nlopt, "srand", fail_on_seed)
+def test_deterministic_direct_does_not_reset_random_state():
+    nlopt.srand(456)
+    expected = _run("nlopt_esch", {"seed": None})
+    nlopt.srand(456)
     _run("nlopt_direct", {"seed": 123})
+    actual = _run("nlopt_esch", {"seed": None})
+
+    assert_allclose(actual, expected, rtol=0, atol=0)
 
 
 @pytest.mark.parametrize("seed", [0, 2**32 - 1])
