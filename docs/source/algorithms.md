@@ -3459,8 +3459,7 @@ optimization. The deterministic DIRECT variants do not use the seed.
     fail under its certain rank-preserving transformations (e.g., will lead to
     a non-quadratic shape of the objective function).
 
-    The algorithm can take random steps. Use ``seed`` to initialize NLopt's
-    random number generator for reproducible runs.
+    The algorithm can take random steps. Use ``seed`` to control those steps.
 
     The algorithm failed on a simple benchmark function with finite parameter bounds.
     Passing arguments `lower_bounds` and `upper_bounds` has been disabled for this

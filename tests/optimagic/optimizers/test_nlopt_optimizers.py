@@ -16,13 +16,13 @@ if IS_NLOPT_INSTALLED:
 pytestmark = pytest.mark.skipif(not IS_NLOPT_INSTALLED, reason="nlopt not installed")
 
 
-def _run(algorithm, options):
+def _run(algorithm, options, *, flat=False):
     evaluations = []
 
     @mark.scalar
     def objective(x):
         evaluations.append(x.copy())
-        return float(x @ x)
+        return 1.0 if flat else float(x @ x)
 
     bounds = (
         None
@@ -76,6 +76,15 @@ def test_different_seeds_change_evaluations(algorithm):
     second = _run(algorithm, {"seed": 456})
 
     assert first.shape != second.shape or not np.array_equal(first, second)
+
+
+def test_praxis_seed_controls_random_steps():
+    first = _run("nlopt_praxis", {"seed": 123}, flat=True)
+    repeated = _run("nlopt_praxis", {"seed": 123}, flat=True)
+    different = _run("nlopt_praxis", {"seed": 456}, flat=True)
+
+    assert_allclose(first, repeated, rtol=0, atol=0)
+    assert first.shape != different.shape or not np.array_equal(first, different)
 
 
 def test_none_seed_preserves_external_seed():
