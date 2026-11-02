@@ -3375,6 +3375,14 @@ algorithms. Please add the
 addition to optimagic when using an NLOPT algorithm. To install nlopt run
 `conda install nlopt`.
 
+PRAXIS, ESCH, ISRES, CRS2-LM, and randomized DIRECT accept a `seed` option. It must be
+an integer between 0 and `2**32 - 1`, inclusive. When set, it initializes NLopt's random
+number generator before the optimization. When `None`, optimagic leaves NLopt's existing
+random state unchanged. The random state is shared by NLopt optimizers on the same
+thread in builds with thread-local storage, and may be shared across threads in other
+builds. Nested optimizations can therefore change the random stream of an outer
+optimization. The deterministic DIRECT variants do not use the seed.
+
 ```{eval-rst}
 .. dropdown:: nlopt_bobyqa
 
@@ -3451,8 +3459,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     fail under its certain rank-preserving transformations (e.g., will lead to
     a non-quadratic shape of the objective function).
 
-    The algorithm is not determenistic and it is not possible to achieve
-    detereminancy via seed setting.
+    The algorithm can take random steps. Use ``seed`` to initialize NLopt's
+    random number generator for reproducible runs.
 
     The algorithm failed on a simple benchmark function with finite parameter bounds.
     Passing arguments `lower_bounds` and `upper_bounds` has been disabled for this
@@ -3476,6 +3484,7 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     - **stopping.maxfun** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
+    - **seed** (int or None): Random seed; see the NLopt notes above.
 
 ```
 
@@ -3821,6 +3830,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     - **locally_biased** (bool): Whether the "L" version of the algorithm is selected.
     - **random_search** (bool): Whether the randomized version of the algorithm is selected.
     - **unscaled_bounds** (bool): Whether the "NOSCAL" version of the algorithm is selected.
+    - **seed** (int or None): Random seed; see the NLopt notes above.
+
 ```
 
 ```{eval-rst}
@@ -3849,6 +3860,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     - **stopping.maxfun** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
+    - **seed** (int or None): Random seed; see the NLopt notes above.
+
 ```
 
 ```{eval-rst}
@@ -3880,6 +3893,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
     - **stopping.maxfun** (int): If the maximum number of
       function evaluation is reached, the optimization stops but we do not count
       this as convergence.
+    - **seed** (int or None): Random seed; see the NLopt notes above.
+
 ```
 
 ```{eval-rst}
@@ -3914,6 +3929,8 @@ addition to optimagic when using an NLOPT algorithm. To install nlopt run
       convergence.
     - **population_size** (int): Size of the population. If None, it's set to be
       10 * (number of parameters + 1).
+    - **seed** (int or None): Random seed; see the NLopt notes above.
+
 ```
 
 ## Optimizers from iminuit
