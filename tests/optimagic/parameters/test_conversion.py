@@ -13,7 +13,7 @@ from optimagic.parameters.scaling import ScalingOptions
 from optimagic.typing import AggregationLevel
 
 
-def test_get_converter_fast_case():
+def test_get_converter_fast_path():
     converter, internal = get_converter(
         params=np.arange(3),
         constraints=None,
@@ -36,7 +36,7 @@ def test_get_converter_fast_case():
 
 
 @pytest.mark.parametrize("container", [list, tuple, np.array])
-def test_get_converter_fast_case_with_sequence_bounds(container):
+def test_get_converter_fast_path_with_sequence_bounds(container):
     converter, internal = get_converter(
         params=np.arange(3),
         constraints=None,
