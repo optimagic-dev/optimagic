@@ -7,9 +7,11 @@ build:
   jobs:
     create_environment:
       - asdf plugin add pixi
-      - asdf install pixi latest
-      - asdf global pixi latest
+      - asdf install pixi 0.83.0
+      - asdf global pixi 0.83.0
+    install:
+      - pixi install --locked -e docs
     post_build:
-      - pixi run -e docs build-docs
+      - pixi run --locked -e docs build-docs
       - mkdir --parents $READTHEDOCS_OUTPUT/html/
       - cp -a docs/build/html/. "$READTHEDOCS_OUTPUT/html" && rm -r docs/build

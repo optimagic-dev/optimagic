@@ -471,8 +471,6 @@ sphinx = ">=8.2.3"
 sphinxcontrib-bibtex = "*"
 sphinx-copybutton = "*"
 sphinx-design = "*"
-sphinx-llm = "*"
-sphinx-llms-txt = "*"
 ipython = "*"
 ipython_genutils = "*"
 myst-nb = "*"
@@ -485,7 +483,7 @@ sphinxcontrib-mermaid = "*"
 intersphinx-registry = "*"
 
 [tool.pixi.feature.docs.tasks]
-build-docs = { cmd = "make html", cwd = "docs", description = "Build the HTML documentation" }
+build-docs = { cmd = "make html SPHINXOPTS=-T", cwd = "docs", description = "Build the HTML documentation" }
 
 # --- Compat features (version overrides for backward-compat CI) ---------------------
 [tool.pixi.feature.old-plotly.dependencies]

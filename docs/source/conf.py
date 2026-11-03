@@ -50,8 +50,6 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "sphinxcontrib.mermaid",
-    "sphinx_llm.txt",
-    "sphinx_llms_txt",
 ]
 
 myst_enable_extensions = [
@@ -174,6 +172,7 @@ else:
 # -- Options for myst-nb  ----------------------------------------
 nb_execution_mode = "force"  # "off", "force", "cache", "auto"
 nb_execution_allow_errors = False
+nb_execution_raise_on_error = True
 nb_merge_streams = True
 nb_scroll_outputs = True
 
