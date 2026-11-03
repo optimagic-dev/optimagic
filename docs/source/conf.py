@@ -50,7 +50,26 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx_design",
     "sphinxcontrib.mermaid",
+    "sphinx_llms_txt",
 ]
+
+# Generate a navigation index within the HTML build. RTD serves linked pages as
+# Markdown when clients request them with the Accept header below.
+llms_txt_full_file = False
+# sphinx-llms-txt 0.7.1 ignores full_file=False when sources are present.
+# Its size policy skips the full corpus and still writes the navigation index.
+llms_txt_full_max_size = 0
+llms_txt_full_size_policy = "info_skip"
+llms_txt_summary = (
+    "Index of the optimagic documentation. On Read the Docs, request linked pages "
+    "with Accept: text/markdown to retrieve Markdown derived from the rendered docs."
+)
+llms_txt_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+llms_txt_uri_template = (
+    f"{llms_txt_baseurl.rstrip('/')}/{{docname}}.html"
+    if llms_txt_baseurl
+    else "{docname}.html"
+)
 
 myst_enable_extensions = [
     "colon_fence",
