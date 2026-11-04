@@ -907,10 +907,12 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 0.00821487730657897,
     },
     "kowalik_osborne": {
-        "fun": mark.least_squares(partial)(
-            kowalik_osborne,
-            y1=v_vec,
-            y2=y2_vec,
+        "fun": mark.least_squares(
+            partial(
+                kowalik_osborne,
+                y1=v_vec,
+                y2=y2_vec,
+            )
         ),
         "start_x": [0.25, 0.39, 0.415, 0.39],
         "solution_x": kowalik_osborne_solution_x,

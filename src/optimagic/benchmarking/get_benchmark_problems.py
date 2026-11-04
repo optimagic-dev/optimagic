@@ -117,10 +117,17 @@ def get_benchmark_problems(
             scaling_options=scaling_options,
             rng=rng,
         )
+        noise_free_inputs = _create_problem_inputs(
+            specification,
+            additive_options=None,
+            multiplicative_options=None,
+            scaling_options=scaling_options,
+            rng=rng,
+        )
 
         problems[prob_name] = {
             "inputs": inputs,
-            "noise_free_fun": specification["fun"],
+            "noise_free_fun": noise_free_inputs["fun"],
             "solution": _create_problem_solution(
                 specification, scaling_options=scaling_options
             ),
