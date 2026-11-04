@@ -13,5 +13,7 @@ build:
       - pixi install --locked -e docs
     post_build:
       - pixi run --locked -e docs build-docs
+      # The exporter can log a failed Markdown subprocess without failing Sphinx.
+      - test -s docs/build/html/llms.txt
       - mkdir --parents $READTHEDOCS_OUTPUT/html/
       - cp -a docs/build/html/. "$READTHEDOCS_OUTPUT/html" && rm -r docs/build
