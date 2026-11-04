@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from optimagic import get_benchmark_problems
@@ -64,3 +65,44 @@ def test_run_benchmark_failing():
 
     key = (failing_name, "scipy_lbfgsb")
     assert isinstance(result[key]["solution"], str)
+
+
+def test_run_benchmark_likelihood_problems():
+    all_problems = get_benchmark_problems("likelihood_small")
+    names = ["logit_5_good_start", "garch_3_bad_start"]
+    problems = {name: all_problems[name] for name in names}
+
+    with pytest.warns():
+        result = run_benchmark(
+            problems=problems,
+            optimize_options=["scipy_lbfgsb", "scipy_ls_trf"],
+            max_criterion_evaluations=50,
+        )
+
+    for name, problem in problems.items():
+        # least-squares optimizers fail on likelihood problems; the start value of the
+        # failed run is the sum of the likelihood contributions
+        failed = result[(name, "scipy_ls_trf")]
+        assert isinstance(failed["solution"], str)
+        np.testing.assert_allclose(
+            failed["criterion_history"][0], problem["start_criterion"]
+        )
+
+        history = result[(name, "scipy_lbfgsb")]["criterion_history"]
+        np.testing.assert_allclose(history[0], problem["start_criterion"])
+        assert history[-1] < problem["start_criterion"]
+
+
+def test_run_benchmark_noisy_likelihood_problem():
+    all_problems = get_benchmark_problems("likelihood_small", additive_noise=True)
+    name = "poisson_5_good_start"
+    problems = {name: all_problems[name]}
+
+    result = run_benchmark(
+        problems=problems,
+        optimize_options=["scipy_neldermead"],
+        max_criterion_evaluations=20,
+    )
+
+    history = result[(name, "scipy_neldermead")]["criterion_history"]
+    np.testing.assert_allclose(history[0], problems[name]["start_criterion"])

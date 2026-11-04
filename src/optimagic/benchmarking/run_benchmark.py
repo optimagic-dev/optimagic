@@ -14,7 +14,8 @@ from optimagic import batch_evaluators
 from optimagic.algorithms import AVAILABLE_ALGORITHMS
 from optimagic.optimization.optimize import minimize
 from optimagic.pytree import tree_leaves
-from optimagic.typing import PyTreeNamespace
+from optimagic.shared.process_user_function import infer_aggregation_level
+from optimagic.typing import AggregationLevel, PyTreeNamespace
 
 
 def run_benchmark(
@@ -181,10 +182,11 @@ def _process_one_result(optimize_result, problem):
 
     """
     _criterion = problem["noise_free_fun"]
+    _problem_type = infer_aggregation_level(_criterion)
     _start_x = problem["inputs"]["params"]
     _start_crit_value = _criterion(_start_x)
     if isinstance(_start_crit_value, np.ndarray):
-        _start_crit_value = (_start_crit_value**2).sum()
+        _start_crit_value = _aggregate_residuals(_start_crit_value, _problem_type)
     _is_noisy = problem["noisy"]
     _solution_crit = problem["solution"]["value"]
 
@@ -203,7 +205,9 @@ def _process_one_result(optimize_result, problem):
         if _is_noisy:
             criterion_history = np.array([_criterion(p) for p in params_history])
             if criterion_history.ndim == 2:
-                criterion_history = (criterion_history**2).sum(axis=1)
+                criterion_history = _aggregate_residuals(
+                    criterion_history, _problem_type
+                )
         else:
             criterion_history = history.fun
         criterion_history = np.clip(criterion_history, _solution_crit, np.inf)
@@ -217,3 +221,15 @@ def _process_one_result(optimize_result, problem):
         "batches_history": batches_history,
         "solution": optimize_result,
     }
+
+
+def _aggregate_residuals(value, problem_type):
+    """Aggregate residuals or likelihood contributions along the last axis.
+
+    Likelihood contributions are summed; anything else is treated as least-squares
+    residuals and squared before summing.
+
+    """
+    if problem_type == AggregationLevel.LIKELIHOOD:
+        return value.sum(axis=-1)
+    return (value**2).sum(axis=-1)
