@@ -7,10 +7,8 @@ build:
   jobs:
     create_environment:
       - asdf plugin add pixi
-      - asdf install pixi 0.83.0
-      - asdf global pixi 0.83.0
-    install:
-      - pixi install --locked -e docs
+      - asdf install pixi latest
+      - asdf global pixi latest
     post_build:
       - pixi run --locked -e docs build-docs
       # The exporter can log a failed Markdown subprocess without failing Sphinx.

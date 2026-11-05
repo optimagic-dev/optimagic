@@ -55,10 +55,7 @@ extensions = [
 
 # Reuse the HTML doctrees so Markdown generation does not execute notebooks again.
 llms_txt_build_parallel = False
-llms_txt_full_build = False
-llms_txt_description = (
-    "Documentation for optimagic, a Python package for numerical optimization."
-)
+llms_txt_description = "Documentation for optimagic, a numerical optimization package."
 markdown_http_base = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 
 myst_enable_extensions = [
