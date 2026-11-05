@@ -1,4 +1,5 @@
-# optimagic
+```{title} optimagic
+```
 
 <div style="padding-top: 50px;">
 </div>
