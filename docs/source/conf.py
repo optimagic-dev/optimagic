@@ -51,8 +51,12 @@ extensions = [
     "sphinx_design",
     "sphinxcontrib.mermaid",
     "sphinx_llm.txt",
-    "sphinx_llms_txt",
 ]
+
+# Reuse the HTML doctrees so Markdown generation does not execute notebooks again.
+llms_txt_build_parallel = False
+llms_txt_description = "Documentation for optimagic, a numerical optimization package."
+markdown_http_base = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 
 myst_enable_extensions = [
     "colon_fence",
@@ -174,6 +178,12 @@ else:
 # -- Options for myst-nb  ----------------------------------------
 nb_execution_mode = "force"  # "off", "force", "cache", "auto"
 nb_execution_allow_errors = False
+nb_execution_raise_on_error = True
+# Preserve notebook text outputs in sphinx-llm's Markdown builder.
+nb_mime_priority_overrides = [
+    ("llms-markdown", "text/markdown", 10),
+    ("llms-markdown", "text/plain", 20),
+]
 nb_merge_streams = True
 nb_scroll_outputs = True
 
