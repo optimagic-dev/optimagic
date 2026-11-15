@@ -258,8 +258,8 @@ class NloptNelderMead(Algorithm):
     needs_hess=False,
     needs_bounds=False,
     supports_parallelism=False,
-    supports_bounds=False,
-    supports_infinite_bounds=False,
+    supports_bounds=True,
+    supports_infinite_bounds=True,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
@@ -286,12 +286,6 @@ class NloptPRAXIS(Algorithm):
     transformation. For bound-constrained problems, this method is dominated by
     algorithms with native bound support such as ``nlopt_bobyqa`` and
     ``nlopt_cobyla``.
-
-    .. warning::
-        optimagic marks this algorithm as not supporting bounds because the NLopt
-        implementation failed on a simple benchmark function with finite parameter
-        bounds. Bounds passed to ``minimize`` are nevertheless forwarded to NLopt,
-        which enforces them via the variable transformation.
 
     """
 
@@ -622,14 +616,9 @@ class NloptNEWUOA(Algorithm):
     The version in NLopt :cite:`Johnson2007` has been extended to support bound
     constraints via the ``LN_NEWUOA_BOUND`` variant, which solves the trust-region
     subproblems with the MMA algorithm and truncates some steps to the bounds; this
-    may slow down convergence. optimagic uses ``LN_NEWUOA_BOUND`` only if at least
-    one finite lower bound and at least one finite upper bound are specified;
-    otherwise, it uses the original ``LN_NEWUOA`` algorithm for unconstrained
-    optimization, which ignores bounds.
-
-    .. warning::
-        With one-sided bounds (e.g. only lower bounds), the bounds are therefore
-        ignored and the solution can violate them.
+    may slow down convergence. optimagic uses ``LN_NEWUOA_BOUND`` if at least one
+    finite bound is specified; otherwise, it uses the original ``LN_NEWUOA``
+    algorithm for unconstrained optimization.
 
     .. note::
         NEWUOA requires the dimension n of the parameter space to be at least 2,
@@ -691,14 +680,11 @@ class NloptNEWUOA(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if problem.bounds.lower is None or problem.bounds.upper is None:
-            algo = nlopt.LN_NEWUOA
-        elif np.any(np.isfinite(problem.bounds.lower)) or np.any(
-            np.isfinite(problem.bounds.upper)
-        ):
-            algo = nlopt.LN_NEWUOA_BOUND
-        else:
-            algo = nlopt.LN_NEWUOA
+        has_finite_bounds = any(
+            b is not None and np.isfinite(b).any()
+            for b in (problem.bounds.lower, problem.bounds.upper)
+        )
+        algo = nlopt.LN_NEWUOA_BOUND if has_finite_bounds else nlopt.LN_NEWUOA
         res = _minimize_nlopt(
             problem=problem,
             x0=x0,
@@ -1487,7 +1473,7 @@ class NloptDirect(Algorithm):
     halve next in the case of near-ties. It is only available for the locally
     biased version of the algorithm, i.e. this option requires
     ``locally_biased=True``; setting it to True with ``locally_biased=False`` raises
-    an error.
+    a ValueError.
 
     """
 
@@ -1517,6 +1503,11 @@ class NloptDirect(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
+        if self.random_search and not self.locally_biased:
+            raise ValueError(
+                "random_search=True requires locally_biased=True because NLopt only "
+                "has randomized variants of the locally biased DIRECT algorithm."
+            )
         if (
             not self.locally_biased
             and not self.random_search
