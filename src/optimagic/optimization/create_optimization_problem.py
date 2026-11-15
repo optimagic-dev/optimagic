@@ -297,6 +297,14 @@ def create_optimization_problem(
             fun = split_fun_and_jac(fun_and_jac, target="fun")
             split_fun_and_jac_candidate = fun_and_jac
 
+    # If fun is derived from fun_and_jac, both are the same user function and need the
+    # same keyword arguments. Users only have to provide them once.
+    if split_fun_and_jac_candidate is not None:
+        if fun_kwargs is None:
+            fun_kwargs = fun_and_jac_kwargs
+        elif fun_and_jac_kwargs is None:
+            fun_and_jac_kwargs = fun_kwargs
+
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented
     # ==================================================================================

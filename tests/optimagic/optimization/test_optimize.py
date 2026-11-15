@@ -349,17 +349,87 @@ def test_fun_and_jac_is_evaluated_once_at_start_if_fun_is_provided():
 
 def test_start_derivative_is_evaluated_with_fun_and_jac_kwargs():
     # The derivative at the start params is only finite with the fun_and_jac_kwargs.
-    # It must not be taken from the first evaluation of fun, which does not get them.
-    def fun_and_jac(x, factor=np.nan):
+    # It must not be taken from the first evaluation of fun, which gets fun_kwargs.
+    def fun_and_jac(x, factor):
         return x @ x, 2 * x * factor
 
     res = minimize(
         fun_and_jac=fun_and_jac,
+        fun_kwargs={"factor": np.nan},
         fun_and_jac_kwargs={"factor": 1.0},
         params=np.ones(2),
         algorithm="scipy_lbfgsb",
     )
     aaae(res.params, np.zeros(2))
+
+
+# ======================================================================================
+# A fun that is derived from fun_and_jac gets the same kwargs as fun_and_jac
+# ======================================================================================
+
+
+def _get_counting_fun_and_jac_with_target():
+    calls = []
+
+    def fun_and_jac(x, target):
+        calls.append(x)
+        diff = x - target
+        return diff @ diff, 2 * diff
+
+    return fun_and_jac, calls
+
+
+@pytest.mark.parametrize("use_fun_kwargs", [True, False])
+def test_fun_and_jac_without_fun_shares_kwargs(use_fun_kwargs):
+    fun_and_jac, calls = _get_counting_fun_and_jac_with_target()
+    target = np.array([1.0, 2.0])
+    kwargs = {"target": target}
+
+    res = minimize(
+        fun_and_jac=fun_and_jac,
+        params=np.zeros(2),
+        algorithm="scipy_lbfgsb",
+        fun_kwargs=kwargs if use_fun_kwargs else None,
+        fun_and_jac_kwargs=None if use_fun_kwargs else kwargs,
+    )
+
+    aaae(res.params, target)
+    assert len(calls) - 1 == res.n_fun_evals
+
+
+@pytest.mark.parametrize("use_fun_kwargs", [True, False])
+def test_fun_with_jac_equal_to_true_shares_kwargs(use_fun_kwargs):
+    fun_and_jac, calls = _get_counting_fun_and_jac_with_target()
+    target = np.array([1.0, 2.0])
+    kwargs = {"target": target}
+
+    res = minimize(
+        fun_and_jac,
+        params=np.zeros(2),
+        algorithm="scipy_lbfgsb",
+        jac=True,
+        fun_kwargs=kwargs if use_fun_kwargs else None,
+        fun_and_jac_kwargs=None if use_fun_kwargs else kwargs,
+    )
+
+    aaae(res.params, target)
+    assert len(calls) - 1 == res.n_fun_evals
+
+
+def test_fun_with_jac_equal_to_true_and_args():
+    fun_and_jac, calls = _get_counting_fun_and_jac_with_target()
+    target = np.array([1.0, 2.0])
+
+    res = minimize(
+        fun_and_jac,
+        params=np.zeros(2),
+        algorithm="scipy_lbfgsb",
+        jac=True,
+        args=(target,),
+    )
+
+    aaae(res.params, target)
+    assert len(calls) - 1 == res.n_fun_evals
 
 
 def test_start_derivative_of_unused_fun_and_jac_is_ignored():

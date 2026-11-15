@@ -20,6 +20,10 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
 - {gh}`727` Derivative-free algorithms no longer evaluate `jac` and `fun_and_jac` at the
   start params. `fun_and_jac` is only evaluated once at the start params if `fun` is
   derived from it ({ghuser}`janosg`).
+- {gh}`727` Fixes keyword arguments that were not passed to both the objective and the
+  derivative if `fun` is derived from `fun_and_jac`, i.e. if only `fun_and_jac` is
+  provided or `jac=True`. It is now enough to provide either `fun_kwargs` or
+  `fun_and_jac_kwargs` ({ghuser}`janosg`).
 - {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
   `maximize`. The callback is called after each objective evaluation; its behavior might
   change in upcoming releases ({ghuser}`Pragati5-DEBUG`).
