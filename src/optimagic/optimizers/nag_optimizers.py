@@ -1079,7 +1079,7 @@ class NagPyBOBYQA(Algorithm):
 
     """
 
-    stopping_max_criterion_evaluations: PositiveInt = STOPPING_MAXFUN
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
     """Maximum number of criterion evaluations.
 
     If reached, the optimization stops, but this is not counted as successful
@@ -1184,7 +1184,7 @@ class NagPyBOBYQA(Algorithm):
     - ``max_iterations_without_new_best_after_soft_reset`` (int): The maximum number
       of successful steps in a given run where the new criterion value is worse than
       the best value found in previous runs before terminating. The default is
-      ``stopping_max_criterion_evaluations``.
+      ``stopping_maxfun``.
     - ``auto_detect`` (bool): Whether or not to automatically determine when to
       reset. This is an additional condition and resets can still be triggered by a
       small upper trust-region radius, etc. There are two criteria used: upper
@@ -1285,7 +1285,7 @@ class NagPyBOBYQA(Algorithm):
             noise_n_evals_per_point=self.noise_n_evals_per_point,
             random_directions_orthogonal=self.random_directions_orthogonal,
             seek_global_optimum=self.seek_global_optimum,
-            stopping_max_criterion_evaluations=self.stopping_max_criterion_evaluations,
+            stopping_maxfun=self.stopping_maxfun,
             threshold_for_safety_step=self.threshold_for_safety_step,
             trustregion_expansion_factor_successful=self.trustregion_expansion_factor_successful,
             trustregion_expansion_factor_very_successful=self.trustregion_expansion_factor_very_successful,  # noqa: E501
@@ -1320,7 +1320,7 @@ def nag_pybobyqa_internal(
     noise_n_evals_per_point,
     random_directions_orthogonal,
     seek_global_optimum,
-    stopping_max_criterion_evaluations,
+    stopping_maxfun,
     threshold_for_safety_step,
     trustregion_expansion_factor_successful,
     trustregion_expansion_factor_very_successful,  # noqa: E501
@@ -1402,7 +1402,7 @@ def nag_pybobyqa_internal(
         criterion,
         x0=x,
         bounds=(lower_bounds, upper_bounds),
-        maxfun=stopping_max_criterion_evaluations,
+        maxfun=stopping_maxfun,
         rhobeg=trustregion_initial_radius,
         user_params=advanced_options,
         scaling_within_bounds=False,

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from optimagic import mark
+from optimagic.config import IS_PYBOBYQA_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.nag_optimizers import (
     IS_DFOLS_INSTALLED,
@@ -94,3 +95,15 @@ def test_nag_dfols_starting_at_optimum():
         bounds=Bounds(-1 * np.ones_like(params), np.ones_like(params)),
     )
     aaae(res.params, params)
+
+
+@pytest.mark.skipif(not IS_PYBOBYQA_INSTALLED, reason="Py-BOBYQA is not installed.")
+def test_nag_pybobyqa_respects_stopping_maxfun_from_algo_options():
+    res = minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(1.0, 6.0),
+        algorithm="nag_pybobyqa",
+        algo_options={"stopping_maxfun": 15},
+    )
+    assert res.history is not None
+    assert len(res.history.fun) <= 15
