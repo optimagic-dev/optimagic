@@ -8,8 +8,10 @@ The documentation is heavily based on the documentation of the `NLopt library
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Annotated
 
 import numpy as np
+from annotated_types import Ge, Le
 from numpy.typing import NDArray
 
 from optimagic import mark
@@ -37,6 +39,9 @@ from optimagic.typing import (
 
 if IS_NLOPT_INSTALLED:
     import nlopt
+
+
+_NloptSeed = Annotated[int, Ge(0), Le(2**32 - 1)]
 
 
 @mark.minimizer(
@@ -273,8 +278,7 @@ class NloptPRAXIS(Algorithm):
     transformations that lead to a non-quadratic shape of the objective function).
 
     The algorithm is not deterministic because it takes random steps to avoid
-    stagnation; optimagic has no seed option, but calling ``nlopt.srand(seed)``
-    before optimizing fixes NLopt's random number generator.
+    stagnation; use ``seed`` to make runs reproducible.
 
     The implementation in NLopt :cite:`Johnson2007` is based on a C translation of
     Brent's original Fortran code. The original algorithm was designed for
@@ -338,6 +342,15 @@ class NloptPRAXIS(Algorithm):
 
     """
 
+    seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -351,6 +364,7 @@ class NloptPRAXIS(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.LN_PRAXIS,
+            seed=self.seed,
         )
 
         return res
@@ -1380,8 +1394,7 @@ class NloptDirect(Algorithm):
     parameters when no derivatives are available. Finite bounds on all parameters
     are required. The start parameters are not used; the search starts at the
     center of the bounds. The basic algorithm is deterministic. The randomized
-    variants are not; optimagic has no seed option, but calling
-    ``nlopt.srand(seed)`` before optimizing fixes NLopt's random number generator.
+    variants are not; use ``seed`` to make runs reproducible.
 
     The implementation in NLopt :cite:`Johnson2007` provides several variants that
     are selected via the ``locally_biased``, ``random_search`` and
@@ -1487,6 +1500,20 @@ class NloptDirect(Algorithm):
 
     """
 
+    seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    Only used if ``random_search=True``. If None, NLopt's current random state is
+    used and results can differ between runs. NLopt's random state is shared by all
+    NLopt optimizers on the same thread, so nested optimizations can change the
+    random stream of an outer optimization.
+
+    NLopt 2.10.1 uses the deterministic implementation for the unscaled randomized
+    variant (``random_search=True, unscaled_bounds=True``), so the seed has no
+    effect there.
+
+    """
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -1520,6 +1547,7 @@ class NloptDirect(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=algo,
+            seed=self.seed if self.random_search else None,
         )
         return res
 
@@ -1555,9 +1583,7 @@ class NloptESCH(Algorithm):
 
     Like most evolutionary algorithms, it typically needs many function
     evaluations, and there is no guarantee that the global optimum is found within
-    a finite budget. Results differ between runs; optimagic has no seed option, but
-    calling ``nlopt.srand(seed)`` before optimizing fixes NLopt's random number
-    generator.
+    a finite budget. Results differ between runs unless ``seed`` is set.
 
     .. note::
         ESCH ignores all ``convergence_*`` criteria; it always runs until
@@ -1610,6 +1636,15 @@ class NloptESCH(Algorithm):
 
     """
 
+    seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -1623,6 +1658,7 @@ class NloptESCH(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.GN_ESCH,
+            seed=self.seed,
         )
 
         return res
@@ -1663,8 +1699,7 @@ class NloptISRES(Algorithm):
 
     In the implementation in NLopt :cite:`Johnson2007`, the population size
     defaults to 20 * (number of parameters + 1); optimagic does not expose this
-    setting. Results differ between runs; optimagic has no seed option, but calling
-    ``nlopt.srand(seed)`` before optimizing fixes NLopt's random number generator.
+    setting. Results differ between runs unless ``seed`` is set.
 
     """
 
@@ -1717,6 +1752,15 @@ class NloptISRES(Algorithm):
 
     """
 
+    seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -1730,6 +1774,7 @@ class NloptISRES(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.GN_ISRES,
+            seed=self.seed,
         )
 
         return res
@@ -1765,9 +1810,8 @@ class NloptCRS2LM(Algorithm):
     Use it for global optimization of scalar problems when no derivatives are
     available. Finite bounds on all parameters are required. Like all stochastic
     global optimizers, it typically needs many function evaluations and offers no
-    guarantee of finding the global optimum. Results differ between runs; optimagic
-    has no seed option, but calling ``nlopt.srand(seed)`` before optimizing fixes
-    NLopt's random number generator.
+    guarantee of finding the global optimum. Results differ between runs unless
+    ``seed`` is set.
 
     """
 
@@ -1829,6 +1873,15 @@ class NloptCRS2LM(Algorithm):
 
     """
 
+    seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
+
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
@@ -1847,6 +1900,7 @@ class NloptCRS2LM(Algorithm):
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.GN_CRS2_LM,
             population_size=population_size,
+            seed=self.seed,
         )
 
         return res
@@ -1865,6 +1919,7 @@ def _minimize_nlopt(
     stopping_max_eval=None,
     population_size=None,
     nonlinear_constraints=None,
+    seed=None,
 ):
     """Run actual nlopt optimization argument, set relevant attributes."""
 
@@ -1901,6 +1956,8 @@ def _minimize_nlopt(
         for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="ineq"):
             opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
     opt.set_min_objective(func)
+    if seed is not None:
+        nlopt.srand(seed)
     solution_x = opt.optimize(x0)
     return _process_nlopt_results(opt, solution_x, is_global)
 

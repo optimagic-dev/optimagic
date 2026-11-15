@@ -1794,6 +1794,14 @@ algorithms. Please add the
 addition to optimagic when using an NLOPT algorithm. To install nlopt run
 `conda install nlopt`.
 
+PRAXIS, ESCH, ISRES, CRS2-LM, and randomized DIRECT accept a `seed` option. It must be
+an integer between 0 and `2**32 - 1`, inclusive. When set, it initializes NLopt's random
+number generator before the optimization. When `None`, optimagic leaves NLopt's existing
+random state unchanged. The random state is shared by NLopt optimizers on the same
+thread in builds with thread-local storage, and may be shared across threads in other
+builds. Nested optimizations can therefore change the random stream of an outer
+optimization. The deterministic DIRECT variants do not use the seed.
+
 ```{eval-rst}
 .. dropdown:: nlopt_bobyqa
 
