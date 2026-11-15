@@ -90,7 +90,7 @@ class TAOPounders(Algorithm):
 
     .. math::
 
-        \lVert g(X) \rVert \leq \textsf{convergence_gtol_abs}
+        \lVert g(X) \rVert \leq \textsf{convergence\_gtol\_abs}
 
     This is the absolute gradient tolerance ``gatol`` in the TAO documentation. In
     TAO's POUNDERS, :math:`g` is the gradient of the quadratic model, scaled by the
@@ -110,7 +110,7 @@ class TAOPounders(Algorithm):
 
     .. math::
 
-        \frac{\lVert g(X) \rVert}{|f(X)|} \leq \textsf{convergence_gtol_rel}
+        \frac{\lVert g(X) \rVert}{|f(X)|} \leq \textsf{convergence\_gtol\_rel}
 
     This is the relative gradient tolerance ``grtol`` in the TAO documentation.
     Setting this option to zero restores TAO's default (1e-8) instead of disabling
@@ -130,7 +130,7 @@ class TAOPounders(Algorithm):
     .. math::
 
         \frac{\lVert g(X) \rVert}{\lVert g(X_0) \rVert} \leq
-        \textsf{convergence_gtol_scaled}
+        \textsf{convergence\_gtol\_scaled}
 
     This is the gradient reduction tolerance ``gttol`` in the TAO documentation.
     Setting this option to zero restores TAO's default (0), which disables the

@@ -30,7 +30,10 @@ This document formalizes the optimagic code of conduct and governance model. In 
 changes, this document can be updated following the optimagic Enhancement Proposal
 process detailed below.
 
-```{include} ../../../CODE_OF_CONDUCT.md
+```{include} ../../../.github/CODE_OF_CONDUCT.md
+---
+heading-offset: 1
+---
 ```
 
 ## optimagic governance model
