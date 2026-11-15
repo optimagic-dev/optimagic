@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from numpy.testing import assert_array_equal
 
 from optimagic import first_derivative
 from optimagic.parameters.space_conversion import (
@@ -310,3 +311,98 @@ def test_multiply_from_left_and_right(seed):
 
     aaae(calc_from_left, expected)
     aaae(calc_from_right, expected)
+
+
+# ======================================================================================
+# Derivatives with respect to external parameters that do not depend on the internal
+# parameters (e.g. fixed parameters) must not influence the internal derivative.
+# ======================================================================================
+
+# name: (constraints, external values, positions that do not depend on internal params)
+INDEPENDENT_PARAMS_CASES = {
+    "fixed": (
+        [{"index": [0, 2], "type": "fixed"}],
+        np.array([1.0, 2.0, 3.0, 4.0]),
+        [0, 2],
+    ),
+    "fixed_and_increasing": (
+        [{"index": [0], "type": "fixed"}, {"index": [1, 2, 3], "type": "increasing"}],
+        np.array([5.0, 1.0, 2.0, 3.0]),
+        [0],
+    ),
+    "fixed_and_probability": (
+        [
+            {"index": [4], "type": "fixed"},
+            {"index": [0, 1, 2, 3], "type": "probability"},
+        ],
+        np.array([0.1, 0.2, 0.2, 0.5, 10.0]),
+        [4],
+    ),
+    "fixed_and_equality": (
+        [{"index": [1], "type": "fixed"}, {"index": [1, 2], "type": "equality"}],
+        np.array([0.0, 1.5, 1.5, 3.0]),
+        [1, 2],
+    ),
+}
+
+
+def _get_converter_and_internal_values(constraints, values):
+    params = InternalParams(
+        values=values,
+        lower_bounds=np.full(len(values), -np.inf),
+        upper_bounds=np.full(len(values), np.inf),
+        names=[str(i) for i in range(len(values))],
+    )
+    converter, internal = get_space_converter(
+        internal_params=params, internal_constraints=constraints
+    )
+    return converter, internal.values
+
+
+@pytest.mark.parametrize("invalid", [np.nan, np.inf, -np.inf])
+@pytest.mark.parametrize("n_rows", [None, 2, 8], ids=["gradient", "wide", "tall"])
+@pytest.mark.parametrize(
+    "constraints, values, independent",
+    list(INDEPENDENT_PARAMS_CASES.values()),
+    ids=list(INDEPENDENT_PARAMS_CASES),
+)
+def test_derivative_to_internal_ignores_params_that_do_not_depend_on_internal(
+    constraints, values, independent, n_rows, invalid
+):
+    converter, internal_values = _get_converter_and_internal_values(constraints, values)
+
+    shape = (len(values),) if n_rows is None else (n_rows, len(values))
+    valid_derivative = get_rng(0).uniform(size=shape)
+    invalid_derivative = valid_derivative.copy()
+    invalid_derivative[..., independent] = invalid
+    passed_derivative = invalid_derivative.copy()
+
+    expected = converter.derivative_to_internal(valid_derivative, internal_values)
+    got = converter.derivative_to_internal(passed_derivative, internal_values)
+
+    assert np.isfinite(got).all()
+    aaae(got, expected)
+    # the derivative that was passed in is not modified
+    assert_array_equal(passed_derivative, invalid_derivative)
+
+
+@pytest.mark.parametrize("invalid", [np.nan, np.inf, -np.inf])
+@pytest.mark.parametrize("n_rows", [None, 2, 8], ids=["gradient", "wide", "tall"])
+@pytest.mark.parametrize(
+    "constraints, values, independent",
+    list(INDEPENDENT_PARAMS_CASES.values()),
+    ids=list(INDEPENDENT_PARAMS_CASES),
+)
+def test_derivative_to_internal_keeps_invalid_values_of_other_params(
+    constraints, values, independent, n_rows, invalid
+):
+    converter, internal_values = _get_converter_and_internal_values(constraints, values)
+
+    shape = (len(values),) if n_rows is None else (n_rows, len(values))
+    for position in set(range(len(values))) - set(independent):
+        derivative = get_rng(0).uniform(size=shape)
+        derivative[..., position] = invalid
+
+        got = converter.derivative_to_internal(derivative, internal_values)
+
+        assert not np.isfinite(got).all()
