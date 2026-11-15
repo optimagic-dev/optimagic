@@ -5,8 +5,10 @@ The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io
 """
 
 from dataclasses import dataclass
+from typing import Annotated
 
 import numpy as np
+from annotated_types import Ge, Le
 from numpy.typing import NDArray
 
 from optimagic import mark
@@ -34,6 +36,9 @@ from optimagic.typing import (
 
 if IS_NLOPT_INSTALLED:
     import nlopt
+
+
+_NloptSeed = Annotated[int, Ge(0), Le(2**32 - 1)]
 
 
 @mark.minimizer(
@@ -138,6 +143,7 @@ class NloptPRAXIS(Algorithm):
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    seed: _NloptSeed | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -152,6 +158,7 @@ class NloptPRAXIS(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.LN_PRAXIS,
+            seed=self.seed,
         )
 
         return res
@@ -569,6 +576,7 @@ class NloptDirect(Algorithm):
     locally_biased: bool = False
     random_search: bool = False
     unscaled_bounds: bool = False
+    seed: _NloptSeed | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -603,6 +611,7 @@ class NloptDirect(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=algo,
+            seed=self.seed if self.random_search else None,
         )
         return res
 
@@ -629,6 +638,7 @@ class NloptESCH(Algorithm):
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    seed: _NloptSeed | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -643,6 +653,7 @@ class NloptESCH(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.GN_ESCH,
+            seed=self.seed,
         )
 
         return res
@@ -670,6 +681,7 @@ class NloptISRES(Algorithm):
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    seed: _NloptSeed | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -684,6 +696,7 @@ class NloptISRES(Algorithm):
             convergence_ftol_abs=self.convergence_ftol_abs,
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.GN_ISRES,
+            seed=self.seed,
         )
 
         return res
@@ -712,6 +725,7 @@ class NloptCRS2LM(Algorithm):
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
     population_size: PositiveInt | None = None
+    seed: _NloptSeed | None = None
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -731,6 +745,7 @@ class NloptCRS2LM(Algorithm):
             stopping_max_eval=self.stopping_maxfun,
             algorithm=nlopt.GN_CRS2_LM,
             population_size=population_size,
+            seed=self.seed,
         )
 
         return res
@@ -749,6 +764,7 @@ def _minimize_nlopt(
     stopping_max_eval=None,
     population_size=None,
     nonlinear_constraints=None,
+    seed=None,
 ):
     """Run actual nlopt optimization argument, set relevant attributes."""
 
@@ -785,6 +801,8 @@ def _minimize_nlopt(
         for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="ineq"):
             opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
     opt.set_min_objective(func)
+    if seed is not None:
+        nlopt.srand(seed)
     solution_x = opt.optimize(x0)
     return _process_nlopt_results(opt, solution_x, is_global)
 
