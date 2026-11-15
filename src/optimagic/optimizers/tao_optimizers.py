@@ -1,6 +1,7 @@
 """This module implements the POUNDERs algorithm."""
 
-import functools
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -40,13 +41,110 @@ from optimagic.utilities import calculate_trustregion_initial_radius
 )
 @dataclass(frozen=True)
 class TAOPounders(Algorithm):
-    """Implement the POUNDERs algorithm."""
+    r"""Minimize a nonlinear least-squares problem using the POUNDERS algorithm.
+
+    POUNDERS (Practical Optimization Using No Derivatives for sums of Squares,
+    :cite:`Wild2015`) is a derivative-free trust-region algorithm that is tailored
+    to nonlinear least-squares problems. It is part of the Toolkit for Advanced
+    Optimization (TAO, :cite:`Benson2017`), which is distributed together with
+    PETSc, and is wrapped in optimagic via
+    `petsc4py <https://pypi.org/project/petsc4py/>`_.
+
+    Instead of working only with the scalar sum of squares, POUNDERS exploits the
+    availability of the full vector of residuals: it maintains an interpolation-based
+    quadratic model of each residual around the current iterate (building on the
+    minimal norm Hessian models of :cite:`Wild2008`) and combines these models
+    according to the known least-squares structure of the objective. Candidate steps
+    are obtained by minimizing the combined model inside a dynamically resized trust
+    region.
+
+    Use POUNDERS if your criterion function is a nonlinear sum of squares, evaluating
+    the residuals is expensive (e.g., each evaluation requires a simulation),
+    derivatives are not available, and the residuals are possibly slightly noisy.
+    This makes it a useful tool for economists who estimate structural models using
+    indirect inference or the method of simulated moments. Compared to
+    Levenberg-Marquardt style solvers, which need the Jacobian of the residuals
+    (either analytically or via finite differences, which costs many extra
+    evaluations per iteration and is unreliable for noisy functions), POUNDERS gets
+    by without any derivative information. Compared to derivative-free algorithms
+    that ignore the least-squares structure, such as Nelder-Mead, it typically
+    requires far fewer criterion evaluations to arrive at a local optimum. If the
+    residuals are smooth, cheap to evaluate, and derivatives are available, a
+    derivative-based least-squares solver is usually the better choice.
+
+    Scale the problem such that the bounds correspond to the unit hypercube
+    :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that
+    unit changes in the parameters result in similar order-of-magnitude changes in
+    the criterion value(s).
+
+    .. note::
+        This algorithm requires the petsc4py package, which is not available on
+        Windows. Windows users can use optimagic's own ``pounders`` algorithm
+        instead.
+
+    """
 
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    r"""Stop if the norm of the gradient falls below this value.
+
+    .. math::
+
+        \lVert g(X) \rVert \leq \textsf{convergence_gtol_abs}
+
+    This is the absolute gradient tolerance ``gatol`` in the TAO documentation. In
+    TAO's POUNDERS, :math:`g` is the gradient of the quadratic model, scaled by the
+    trust-region radius. Setting this option to zero restores TAO's default
+    (1e-8) instead of disabling the criterion.
+
+    """
+
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    r"""Stop if the norm of the gradient relative to the criterion value falls below
+    this value.
+
+    .. math::
+
+        \frac{\lVert g(X) \rVert}{|f(X)|} \leq \textsf{convergence_gtol_rel}
+
+    This is the relative gradient tolerance ``grtol`` in the TAO documentation.
+    Setting this option to zero restores TAO's default (1e-8) instead of disabling
+    the criterion.
+
+    """
+
     convergence_gtol_scaled: NonNegativeFloat = CONVERGENCE_GTOL_SCALED
+    r"""Stop if the norm of the gradient falls below this fraction of the norm of the
+    gradient at the start parameters :math:`X_0`.
+
+    .. math::
+
+        \frac{\lVert g(X) \rVert}{\lVert g(X_0) \rVert} \leq
+        \textsf{convergence_gtol_scaled}
+
+    This is the gradient reduction tolerance ``gttol`` in the TAO documentation.
+    Setting this option to zero restores TAO's default (0), which disables the
+    criterion.
+
+    """
+
     trustregion_initial_radius: NonNegativeFloat | None = None
+    r"""Initial value of the trust region radius. It must be larger than zero.
+
+    If None (the default), the radius is set to
+    :math:`0.1 \max(\lVert x_0 \rVert_\infty, 1)`, where :math:`x_0` are the start
+    parameters.
+
+    """
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. POUNDERS can also stop on its own if the same interpolation model
+    is used in two successive iterations without a change of the trust-region radius
+    (message "step size small").
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -175,22 +273,9 @@ def tao_pounders(
         gttol=default_gttol,
     )
 
-    # Set user defined convergence tests. Beware that specifying multiple tests could
-    # overwrite others or lead to unclear behavior.
-    if stopping_maxiter is not None:
-        tao.setConvergenceTest(functools.partial(_max_iters, stopping_maxiter))
-    elif convergence_gtol_scaled is False and convergence_gtol_abs is False:
-        tao.setConvergenceTest(functools.partial(_grtol_conv, convergence_gtol_rel))
-    elif convergence_gtol_rel is False and convergence_gtol_scaled is False:
-        tao.setConvergenceTest(functools.partial(_gatol_conv, convergence_gtol_abs))
-    elif convergence_gtol_scaled is False:
-        tao.setConvergenceTest(
-            functools.partial(
-                _grtol_gatol_conv,
-                convergence_gtol_rel,
-                convergence_gtol_abs,
-            )
-        )
+    # Use TAO's default convergence test, which checks the gradient tolerances and the
+    # maximum number of iterations.
+    tao.setMaximumIterations(stopping_maxiter)
 
     # Run the problem.
     tao.solve()
@@ -226,49 +311,6 @@ def _initialise_petsc_array(len_or_array):
         array.array = len_or_array
 
     return array
-
-
-def _max_iters(max_iterations, tao):
-    if tao.getSolutionStatus()[0] < max_iterations:
-        return 0
-    elif tao.getSolutionStatus()[0] >= max_iterations:
-        tao.setConvergedReason(8)
-
-
-def _gatol_conv(absolute_gradient_tolerance, tao):
-    if tao.getSolutionStatus()[2] >= absolute_gradient_tolerance:
-        return 0
-    elif tao.getSolutionStatus()[2] < absolute_gradient_tolerance:
-        tao.setConvergedReason(3)
-
-
-def _grtol_conv(relative_gradient_tolerance, tao):
-    if (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        >= relative_gradient_tolerance
-    ):
-        return 0
-    elif (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        < relative_gradient_tolerance
-    ):
-        tao.setConvergedReason(4)
-
-
-def _grtol_gatol_conv(relative_gradient_tolerance, absolute_gradient_tolerance, tao):
-    if (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        >= relative_gradient_tolerance
-    ):
-        return 0
-    elif (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        < relative_gradient_tolerance
-    ):
-        tao.setConvergedReason(4)
-
-    elif tao.getSolutionStatus()[2] < absolute_gradient_tolerance:
-        tao.setConvergedReason(3)
 
 
 def _translate_tao_convergence_reason(tao_resaon):

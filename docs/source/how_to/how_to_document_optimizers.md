@@ -83,9 +83,11 @@ Here's how we document `ScipyLBFGSB`:
 class ScipyLBFGSB(Algorithm):
     """Minimize a scalar differentiable function using the L-BFGS-B algorithm.
 
-    The optimizer is taken from scipy, which calls the Fortran code written by the
-    original authors of the algorithm. The Fortran code includes the corrections
-    and improvements that were introduced in a follow up paper.
+    The optimizer is taken from scipy, which uses the code written by the original
+    authors of the algorithm (L-BFGS-B v3.0). This code includes the corrections and
+    improvements that were introduced in a follow up paper. Since SciPy 1.15, SciPy
+    uses a C translation of the original Fortran code; older versions call the
+    Fortran code directly.
 
     lbfgsb is a limited memory version of the original bfgs algorithm, that deals with
     lower and upper bounds via an active set approach.
@@ -110,7 +112,7 @@ class ScipyLBFGSB(Algorithm):
 **What makes this docstring effective:**
 
 - **Clear first line**: States exactly what the algorithm does
-- **Implementation details**: Explains it uses scipy's Fortran implementation
+- **Implementation details**: Explains which implementation scipy uses
 - **Algorithm classification**: Identifies it as a quasi-Newton method
 - **Problem suitability**: Explains what problems it's good for
 - **How it works**: Brief explanation of the algorithm's approach
@@ -130,7 +132,9 @@ stopping_maxiter: PositiveInt = STOPPING_MAXITER
 # Parameter with mathematical formulation
 convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
 r"""Converge if the relative change in the objective function is less than this
-value. More formally, this is expressed as.
+value.
+
+More formally, this is expressed as
 
 .. math::
 
@@ -173,6 +177,18 @@ more memory but may converge faster for some problems.
     Without this, type hints such as ``PositiveInt`` may appear decomposed in the
     documentation (e.g., as ``Annotated[int, Gt(gt=0)]``).
 
+.. warning::
+    Option values are validated against the field annotations with pydantic, which
+    resolves the annotations at runtime. Every name used in a field annotation must
+    therefore be importable at runtime -- a name that is only imported inside an
+    ``if TYPE_CHECKING:`` block will raise an error when the algorithm is
+    instantiated. If an optional dependency provides a type you want to use in an
+    annotation, add a runtime fallback next to the ``TYPE_CHECKING`` import, as is
+    done for ``HessianApproximation`` in ``optimagic/optimizers/fides.py``.
+
+    Since annotations are enforced, they must also be honest: document and annotate
+    the values the optimizer actually accepts, rather than a narrower set.
+
 ```
 
 ### Step 4: Integrate into `algorithms.md`
@@ -183,33 +199,40 @@ This creates a dropdown section that shows users how to use the algorithm.
 Add the following to `docs/source/algorithms.md` in an `eval-rst` block:
 
 ```text
-.. dropdown::  scipy_lbfgsb
+.. dropdown:: scipy_lbfgsb
 
     **How to use this algorithm:**
 
     .. code-block:: python
 
+        import numpy as np
         import optimagic as om
-        om.minimize(
-          fun=lambda x: x @ x,
-          params=[1.0, 2.0, 3.0],
-          algorithm=om.algos.scipy_lbfgsb(stopping_maxiter=1_000, ...),
-        )
-        
-    or using the string interface:
-        
-    .. code-block:: python
 
         om.minimize(
-          fun=lambda x: x @ x,
-          params=[1.0, 2.0, 3.0],
-          algorithm="scipy_lbfgsb",
-          algo_options={"stopping_maxiter": 1_000, ...},
+            fun=lambda x: x @ x,
+            params=np.array([1.0, 2.0, 3.0]),
+            algorithm=om.algos.scipy_lbfgsb(stopping_maxiter=1_000),
+        )
+
+    or using the string interface:
+
+    .. code-block:: python
+
+        import numpy as np
+        import optimagic as om
+
+        om.minimize(
+            fun=lambda x: x @ x,
+            params=np.array([1.0, 2.0, 3.0]),
+            algorithm="scipy_lbfgsb",
+            algo_options={"stopping_maxiter": 1_000},
         )
 
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.scipy_optimizers.ScipyLBFGSB
+        :members:
+        :inherited-members: Algorithm, object
 ```
 
 **What this section provides:**
@@ -217,8 +240,15 @@ Add the following to `docs/source/algorithms.md` in an `eval-rst` block:
 - **The dropdown button and title**: Makes it easy to find the algorithm
 - **Concrete usage examples** showing both the object and string interfaces
 - **Algorithm-specific parameter** in the usage example
+- **Copy-pasteable code**: Each code block is self-contained and runs as is. Pass
+  `params` as a NumPy array so that `x @ x` works, don't use `...` placeholders, add
+  finite `bounds` if the algorithm needs them, and mark least-squares or likelihood
+  functions with `om.mark.least_squares` or `om.mark.likelihood`
 - **Auto-generated documentation** via the `autoclass` directive that pulls in your
-  docstrings
+  docstrings. The `:inherited-members: Algorithm, object` option is required:
+  `mark.minimizer` re-creates the algorithm class as a pydantic dataclass that inherits
+  from your class, so without it autodoc treats your documented fields as inherited and
+  does not show them
 
 ## Working with Existing Documentation
 
