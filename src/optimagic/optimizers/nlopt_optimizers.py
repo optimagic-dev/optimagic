@@ -1,8 +1,11 @@
 """Implement `nlopt` algorithms.
 
-The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io].
+The documentation is heavily based on the documentation of the `NLopt library
+<https://nlopt.readthedocs.io>`_.
 
 """
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Annotated
@@ -58,11 +61,79 @@ _NloptSeed = Annotated[int, Ge(0), Le(2**32 - 1)]
 )
 @dataclass(frozen=True)
 class NloptBOBYQA(Algorithm):
+    """Minimize a scalar function using the BOBYQA algorithm.
+
+    BOBYQA (Bound Optimization BY Quadratic Approximation) is a derivative-free local
+    optimizer for bound-constrained problems by M. J. D. Powell :cite:`Powell2009`.
+    It iteratively constructs a quadratic approximation of the objective function
+    from function values only and minimizes this model in a trust region.
+
+    The algorithm is a good choice for smooth scalar problems with a moderate number
+    of parameters when derivatives are not available. Because it relies on a
+    quadratic model, it may perform poorly for objective functions that are not
+    twice-differentiable.
+
+    BOBYQA is the successor of Powell's NEWUOA algorithm (``nlopt_newuoa``) and
+    largely supersedes it; in contrast to NEWUOA, it supports bound constraints
+    natively. For noisy or very non-smooth problems, simplex-based methods such as
+    ``nlopt_neldermead`` or ``nlopt_sbplx`` can be more robust.
+
+    The implementation in NLopt :cite:`Johnson2007` is a C translation of Powell's
+    original Fortran subroutine. In addition, it supports all NLopt stopping
+    criteria and unequal initial step sizes in the different parameters, achieved
+    by internally rescaling the parameters proportional to the initial steps.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    BOBYQA implements this criterion differently: it stops when its trust-region
+    radius falls below this value times the initial trust-region radius.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -99,10 +170,67 @@ class NloptBOBYQA(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptNelderMead(Algorithm):
+    """Minimize a scalar function using the Nelder-Mead simplex algorithm.
+
+    The Nelder-Mead algorithm :cite:`Nelder1965` is a derivative-free local
+    optimizer that maintains a simplex of n+1 points in n dimensions. In each
+    iteration, the simplex is updated by reflecting, expanding or contracting it
+    away from the worst point.
+
+    The algorithm is simple and only requires function values. It can make progress
+    on noisy or non-smooth problems where model-based methods such as
+    ``nlopt_bobyqa`` fail, but it typically needs many function evaluations and is
+    known to fail to converge for some functions. The related ``nlopt_sbplx``
+    algorithm applies Nelder-Mead on a sequence of subspaces, is claimed to be more
+    efficient and robust, and is recommended over Nelder-Mead by the NLopt author.
+
+    The implementation in NLopt :cite:`Johnson2007` differs from the original
+    algorithm in that it explicitly supports bound constraints: whenever a new
+    point would lie outside the bounds, it is moved exactly onto the boundary. This
+    can collapse the simplex into a lower-dimensional subspace.
+
+    Unlike the other NLopt algorithms in optimagic, this algorithm has no
+    ``convergence_ftol_rel`` option, i.e. NLopt's relative tolerance on the function
+    value is disabled.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -138,12 +266,90 @@ class NloptNelderMead(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptPRAXIS(Algorithm):
+    """Minimize a scalar function using the principal-axis method.
+
+    PRAXIS is a derivative-free local optimizer by Richard Brent :cite:`Brent1972`.
+    It assumes an approximately quadratic form of the objective function and
+    repeatedly updates a set of conjugate search directions (the principal axes)
+    along which one-dimensional minimizations are performed.
+
+    The algorithm is not invariant to scaling of the objective function and may
+    fail under certain rank-preserving transformations of the objective (e.g.
+    transformations that lead to a non-quadratic shape of the objective function).
+
+    The algorithm is not deterministic because it takes random steps to avoid
+    stagnation; use ``seed`` to make runs reproducible.
+
+    The implementation in NLopt :cite:`Johnson2007` is based on a C translation of
+    Brent's original Fortran code. The original algorithm was designed for
+    unconstrained optimization; NLopt emulates bound constraints via a variable
+    transformation. For bound-constrained problems, this method is dominated by
+    algorithms with native bound support such as ``nlopt_bobyqa`` and
+    ``nlopt_cobyla``.
+
+    .. warning::
+        optimagic marks this algorithm as not supporting bounds because the NLopt
+        implementation failed on a simple benchmark function with finite parameter
+        bounds. Bounds passed to ``minimize`` are nevertheless forwarded to NLopt,
+        which enforces them via the variable transformation.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
+
     seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -181,11 +387,92 @@ class NloptPRAXIS(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptCOBYLA(Algorithm):
+    """Minimize a scalar function using the COBYLA algorithm.
+
+    COBYLA (Constrained Optimization BY Linear Approximations) is a derivative-free
+    local optimizer by M. J. D. Powell that supports nonlinear inequality and
+    equality constraints :cite:`Powell1994`.
+
+    It constructs successive linear approximations of the objective function and
+    constraints via a simplex of n+1 points (in n dimensions) and optimizes these
+    approximations in a trust region at each step.
+
+    Use it for scalar problems without derivatives, in particular when nonlinear
+    constraints are present: it is the only derivative-free local NLopt optimizer
+    in optimagic that supports them (for global derivative-free optimization with
+    nonlinear constraints, see ``nlopt_isres``). For unconstrained or
+    bound-constrained smooth problems, ``nlopt_bobyqa`` usually converges faster
+    because it uses quadratic instead of linear approximations.
+
+    The implementation in NLopt :cite:`Johnson2007` is based on a C translation of
+    Powell's original Fortran code and differs from the original implementation in
+    a few ways:
+
+    - It incorporates all of the NLopt termination criteria.
+    - It adds explicit support for bound constraints.
+    - It allows the trust-region radius to increase if the predicted improvement
+      was approximately right and the simplex is satisfactory, which can improve
+      convergence speed.
+    - It pseudo-randomizes the simplex steps, improving robustness by avoiding
+      accidentally taking steps that do not improve conditioning, while preserving
+      the deterministic nature of the algorithm (a deterministic seed is used).
+    - It supports unequal initial step sizes in the different parameters.
+
+    Since the underlying code only supports inequality constraints, equality
+    constraints are automatically transformed into pairs of inequality constraints
+    by NLopt.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    COBYLA implements this criterion differently: it stops when its trust-region
+    radius falls below this value times the initial trust-region radius.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -222,11 +509,68 @@ class NloptCOBYLA(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptSbplx(Algorithm):
+    """Minimize a scalar function using the Subplex algorithm.
+
+    Sbplx is a re-implementation of Tom Rowan's Subplex method :cite:`Rowan1990`.
+    Subplex is a variant of the Nelder-Mead algorithm (``nlopt_neldermead``) that
+    applies Nelder-Mead on a sequence of subspaces. It is claimed to be more
+    efficient and robust than the original Nelder-Mead algorithm, while retaining
+    its ability to make progress on noisy and non-smooth objective functions.
+
+    The implementation in NLopt :cite:`Johnson2007` was rewritten from scratch
+    because the license status of Rowan's original code is unclear. It differs from
+    the original algorithm in that it explicitly supports bound constraints, which
+    gives a big improvement in the case where the optimum lies against one of the
+    bounds.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -263,11 +607,86 @@ class NloptSbplx(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptNEWUOA(Algorithm):
+    """Minimize a scalar function using the NEWUOA algorithm.
+
+    NEWUOA is a derivative-free local optimizer for unconstrained optimization by
+    M. J. D. Powell :cite:`Powell2004`. Like BOBYQA, it iteratively constructs a
+    quadratic approximation of the objective function from function values only
+    and minimizes this model in a trust region.
+
+    Use it for smooth scalar problems when derivatives are not available. NEWUOA
+    is largely superseded by its successor BOBYQA (``nlopt_bobyqa``), which
+    supports bound constraints natively and is usually preferable, in particular
+    for bound-constrained problems.
+
+    The version in NLopt :cite:`Johnson2007` has been extended to support bound
+    constraints via the ``LN_NEWUOA_BOUND`` variant, which solves the trust-region
+    subproblems with the MMA algorithm and truncates some steps to the bounds; this
+    may slow down convergence. optimagic uses ``LN_NEWUOA_BOUND`` only if at least
+    one finite lower bound and at least one finite upper bound are specified;
+    otherwise, it uses the original ``LN_NEWUOA`` algorithm for unconstrained
+    optimization, which ignores bounds.
+
+    .. warning::
+        With one-sided bounds (e.g. only lower bounds), the bounds are therefore
+        ignored and the solution can violate them.
+
+    .. note::
+        NEWUOA requires the dimension n of the parameter space to be at least 2,
+        i.e. the implementation does not handle one-dimensional optimization
+        problems.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    NEWUOA implements this criterion differently: it stops when its trust-region
+    radius falls below this value times the initial trust-region radius.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -312,11 +731,76 @@ class NloptNEWUOA(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptTNewton(Algorithm):
+    """Minimize a scalar function using a truncated Newton method.
+
+    Truncated Newton methods are designed for large-scale smooth optimization
+    problems. Instead of solving the Newton equations exactly, which would require
+    the Hessian matrix, they solve them approximately (hence "truncated" or
+    "inexact") with a conjugate-gradient iteration that only requires gradient
+    information. A detailed description is given in :cite:`Dembo1983`.
+
+    Use it for differentiable scalar problems, in particular with many parameters.
+    The algorithm uses gradients; if no ``jac`` or ``fun_and_jac`` is provided,
+    optimagic approximates them numerically.
+
+    The implementation in NLopt :cite:`Johnson2007` is based on a Fortran
+    implementation written by Prof. Ladislav Luksan. NLopt also provides variants
+    of the method that add preconditioning via a low-storage BFGS approximation
+    and steepest-descent restarting; optimagic wraps the plain variant
+    (``LD_TNEWTON``) without preconditioning or restarting.
+
+    In addition to the stopping criteria below, the algorithm stops when the
+    projected gradient becomes smaller than 1e-8 (NLopt's ``tolg`` parameter, which
+    optimagic does not expose).
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -353,11 +837,78 @@ class NloptTNewton(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptLBFGSB(Algorithm):
+    """Minimize a scalar function using the low-storage BFGS algorithm.
+
+    L-BFGS is a limited-memory quasi-Newton method. It approximates the inverse
+    Hessian of the objective function from a limited number of stored past gradient
+    and parameter updates and uses this approximation to compute search directions
+    for a line search. Detailed descriptions of the algorithm are given in
+    :cite:`Nocedal1980` and :cite:`Nocedal1989`.
+
+    Use it for smooth, differentiable scalar problems, in particular with many
+    parameters: due to the limited-memory Hessian approximation, memory use grows
+    only linearly in the number of parameters. The algorithm uses gradients; if no
+    ``jac`` or ``fun_and_jac`` is provided, optimagic approximates them numerically.
+
+    The implementation in NLopt :cite:`Johnson2007` is based on a Fortran
+    implementation of the low-storage BFGS algorithm written by Prof. Ladislav
+    Luksan. It is a different implementation than the one wrapped by
+    ``scipy_lbfgsb``, which is based on the original Fortran code by Nocedal and
+    coworkers.
+
+    In addition to the stopping criteria below, the algorithm stops when the
+    projected gradient becomes smaller than 1e-8 (NLopt's ``tolg`` parameter, which
+    optimagic does not expose). The number of stored past updates is chosen
+    heuristically by NLopt and cannot be set in optimagic.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -394,11 +945,79 @@ class NloptLBFGSB(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptCCSAQ(Algorithm):
+    """Minimize a scalar function using the CCSAQ algorithm.
+
+    CCSAQ uses the quadratic variant of the conservative convex separable
+    approximation (CCSA) framework described in :cite:`Svanberg2002`. It is a
+    gradient-based local optimizer: at each candidate point, an affine approximation
+    of the objective function is constructed from the gradient, plus a separable
+    quadratic penalty term that makes the approximation convex and conservative (an
+    upper bound of the true function). The approximation is then minimized to
+    obtain the next candidate point.
+
+    The algorithm is "globally convergent" in the sense that it is guaranteed to
+    converge to a local optimum from any feasible starting point; it does not find
+    the global optimum.
+
+    CCSAQ is closely related to ``nlopt_mma``, which belongs to the same CCSA
+    family but approximates the objective with moving asymptotes instead of a
+    quadratic model. For problems without nonlinear constraints, the NLopt author
+    recommends trying CCSAQ before MMA.
+
+    .. note::
+        The underlying NLopt implementation :cite:`Johnson2007` supports nonlinear
+        inequality constraints, but nonlinear constraints are not supported for
+        this algorithm in optimagic. Use ``nlopt_mma`` or ``nlopt_slsqp`` for
+        nonlinearly constrained problems.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -435,11 +1054,77 @@ class NloptCCSAQ(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptMMA(Algorithm):
+    """Minimize a scalar function using the method of moving asymptotes (MMA).
+
+    MMA is a gradient-based local optimizer that was originally developed for
+    structural optimization :cite:`Svanberg1987`. The implementation in NLopt
+    :cite:`Johnson2007` is based on the globally convergent variant of the
+    algorithm described in :cite:`Svanberg2002`.
+
+    At each candidate point, a convex and separable approximation of the objective
+    function and constraints is constructed from the gradient and so-called moving
+    asymptotes that are updated across iterations. A quadratic penalty term makes
+    the approximation conservative (an upper bound of the true function). The
+    resulting convex separable subproblem is solved to obtain the next candidate
+    point. The algorithm is "globally convergent" in
+    the sense that it is guaranteed to converge to a local optimum from any
+    feasible starting point; it does not find the global optimum.
+
+    Use it for smooth scalar problems with bound and nonlinear constraints when
+    gradients are available. The underlying implementation supports nonlinear
+    inequality constraints, but no equality constraints; optimagic automatically
+    converts equality constraints into pairs of inequality constraints, so both
+    types can be specified. For problems without nonlinear constraints, the NLopt
+    author recommends trying ``nlopt_ccsaq`` first.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -481,12 +1166,81 @@ class NloptMMA(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptVAR(Algorithm):
+    """Minimize a scalar function using a limited-memory variable-metric method.
+
+    The algorithm is a shifted limited-memory variable-metric method by Vlcek and
+    Luksan; a detailed description, including the rank-1 and rank-2 variants, is
+    given in :cite:`Vlcek2006`. Like L-BFGS, it approximates the inverse Hessian
+    from a limited number of stored past updates of the gradient. The larger the
+    number of stored updates, the more memory is consumed; this number is chosen
+    heuristically by NLopt and cannot be set in optimagic.
+
+    Use it for smooth, differentiable scalar problems, in particular with many
+    parameters. The algorithm uses gradients; if no ``jac`` or ``fun_and_jac`` is
+    provided, optimagic approximates them numerically. Depending on the
+    ``rank_1_update`` option, either a rank-1 (``LD_VAR1``) or a rank-2
+    (``LD_VAR2``) update formula for the variable-metric approximation is used.
+
+    The implementation in NLopt :cite:`Johnson2007` is based on a Fortran
+    implementation written by Prof. Ladislav Luksan. In addition to the stopping
+    criteria below, the algorithm stops when the projected gradient becomes smaller
+    than 1e-8 (NLopt's ``tolg`` parameter, which optimagic does not expose).
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
+
     rank_1_update: bool = True
+    """Whether the rank-1 update method (``LD_VAR1``) is used.
+
+    If False, the rank-2 update method (``LD_VAR2``) is used instead.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -527,11 +1281,72 @@ class NloptVAR(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptSLSQP(Algorithm):
+    """Minimize a scalar function using the SLSQP algorithm.
+
+    SLSQP (Sequential Least Squares Quadratic Programming) is a gradient-based
+    local optimizer for nonlinearly constrained problems. It supports bound
+    constraints as well as nonlinear equality and inequality constraints. The
+    algorithm is a sequential quadratic programming (SQP) method that treats the
+    optimization problem as a sequence of constrained least-squares problems.
+    Despite its name, it is a general nonlinear optimizer for scalar objectives,
+    not a least-squares solver.
+
+    The implementation in NLopt :cite:`Johnson2007` is based on the procedure
+    described in :cite:`Kraft1988` and :cite:`Kraft1994`.
+
+    .. note::
+        Because the underlying code uses dense-matrix methods, it requires O(n^2)
+        storage and O(n^3) time in n dimensions, which makes it less practical for
+        problems with more than a few thousand parameters.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -568,15 +1383,136 @@ class NloptSLSQP(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptDirect(Algorithm):
+    """Minimize a scalar function using the DIRECT algorithm.
+
+    DIRECT (DIviding RECTangles) is a deterministic derivative-free global
+    optimizer :cite:`Jones1993`. It systematically divides the bounded search
+    domain into smaller and smaller hyperrectangles and evaluates the objective
+    function at their centers, balancing global exploration and local refinement.
+
+    Use it for global optimization of scalar problems with a small number of
+    parameters when no derivatives are available. Finite bounds on all parameters
+    are required. The start parameters are not used; the search starts at the
+    center of the bounds. The basic algorithm is deterministic. The randomized
+    variants are not; use ``seed`` to make runs reproducible.
+
+    The implementation in NLopt :cite:`Johnson2007` provides several variants that
+    are selected via the ``locally_biased``, ``random_search`` and
+    ``unscaled_bounds`` options:
+
+    - The locally biased variant DIRECT_L :cite:`Gablonsky2001` is more biased
+      towards local search and tends to be more efficient for objective functions
+      without too many local minima.
+    - The randomized variants (only available for the locally biased version) use
+      some randomization to decide which dimension to halve next in the case of
+      near-ties.
+    - By default, NLopt rescales the bounds to a unit hypercube, which gives all
+      dimensions equal weight relative to their bound widths. The unscaled
+      ("NOSCAL") variants skip this rescaling, which can be better if the search
+      region is long and skinny but the objective function varies at about the same
+      speed in all directions. According to NLopt, the unscaled variants make the
+      most sense for the original (not locally biased) DIRECT algorithm.
+
+    The available combinations are DIRECT, DIRECT_L, DIRECT_L_NOSCAL,
+    DIRECT_L_RAND, DIRECT_L_RAND_NOSCAL and DIRECT_NOSCAL. The NLopt author
+    suggests trying the locally biased variant (``locally_biased=True``) first.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    DIRECT implements this criterion differently: it stops when all hyperrectangles
+    selected for division are smaller than this value times the width of the bounds in
+    every dimension.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion. The
+    optimagic default for global optimizers is much lower than for local
+    optimizers to keep runtimes manageable.
+
+    """
+
     locally_biased: bool = False
+    """Whether the locally biased variant DIRECT_L of the algorithm is used.
+
+    The locally biased variant tends to be more efficient for objective functions
+    without too many local minima. See :cite:`Gablonsky2001` for details.
+
+    """
+
     random_search: bool = False
+    """Whether the randomized variant of the locally biased algorithm is used.
+
+    The randomized variant uses some randomization to decide which dimension to
+    halve next in the case of near-ties. It is only available for the locally
+    biased version of the algorithm, i.e. this option requires
+    ``locally_biased=True``; setting it to True with ``locally_biased=False`` raises
+    an error.
+
+    """
+
     unscaled_bounds: bool = False
+    """Whether the "NOSCAL" variant of the algorithm is used, which does not
+    rescale the bounds to a unit hypercube.
+
+    Skipping the rescaling can be beneficial if the search region is long and skinny
+    but the objective function varies at about the same speed in all directions.
+
+    """
+
     seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    Only used if ``random_search=True``. If None, NLopt's current random state is
+    used and results can differ between runs. NLopt's random state is shared by all
+    NLopt optimizers on the same thread, so nested optimizations can change the
+    random stream of an outer optimization.
+
+    NLopt 2.10.1 uses the deterministic implementation for the unscaled randomized
+    variant (``random_search=True, unscaled_bounds=True``), so the seed has no
+    effect there.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -633,12 +1569,81 @@ class NloptDirect(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptESCH(Algorithm):
+    """Minimize a scalar function using the ESCH algorithm.
+
+    ESCH is an evolutionary algorithm for global optimization developed by Carlos
+    Henrique da Silva Santos :cite:`DaSilva2010`, :cite:`DaSilva2010a`. It is a
+    modified evolution strategy :cite:`Beyer2002` that evolves a population of
+    candidate points (40 parents and 60 offspring) via crossover, Cauchy mutation
+    and selection; see also :cite:`Vent1975`.
+
+    Use it for global optimization of scalar problems when no derivatives are
+    available. Finite bounds on all parameters are required. The algorithm
+    supports bound constraints only; nonlinear constraints are not supported.
+
+    Like most evolutionary algorithms, it typically needs many function
+    evaluations, and there is no guarantee that the global optimum is found within
+    a finite budget. Results differ between runs unless ``seed`` is set.
+
+    .. note::
+        ESCH ignores all ``convergence_*`` criteria; it always runs until
+        ``stopping_maxfun`` is reached.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Relative tolerance on the parameters (NLopt's ``xtol_rel``); ignored by ESCH.
+
+    NLopt's ESCH implementation does not check this criterion and only stops when
+    ``stopping_maxfun`` is reached.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Absolute tolerance on the parameters (NLopt's ``xtol_abs``); ignored by ESCH.
+
+    NLopt's ESCH implementation does not check this criterion and only stops when
+    ``stopping_maxfun`` is reached.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Relative tolerance on the function value (NLopt's ``ftol_rel``); ignored by
+    ESCH.
+
+    NLopt's ESCH implementation does not check this criterion and only stops when
+    ``stopping_maxfun`` is reached.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Absolute tolerance on the function value (NLopt's ``ftol_abs``); ignored by
+    ESCH.
+
+    NLopt's ESCH implementation does not check this criterion and only stops when
+    ``stopping_maxfun`` is reached.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion. The
+    optimagic default for global optimizers is much lower than for local
+    optimizers to keep runtimes manageable. Since ESCH ignores all convergence
+    criteria, it always uses the full number of function evaluations.
+
+    """
+
     seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -676,12 +1681,85 @@ class NloptESCH(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptISRES(Algorithm):
+    """Minimize a scalar function using the ISRES algorithm.
+
+    ISRES (Improved Stochastic Ranking Evolution Strategy) is an evolutionary
+    algorithm for nonlinearly constrained global optimization
+    :cite:`PhilipRunarsson2005`. Its evolution strategy combines a mutation rule
+    (with a log-normal step-size update and exponential smoothing) with
+    differential variation (a Nelder-Mead-like update rule). For constrained
+    problems, individuals are ranked via the stochastic ranking procedure
+    described in :cite:`Thomas2000`.
+
+    Use it for global optimization of scalar problems when no derivatives are
+    available; it is one of the few global optimizers that supports nonlinear
+    equality and inequality constraints. Finite bounds on all parameters are
+    required. The algorithm has heuristics to escape local optima, but no proof
+    of global convergence is available.
+
+    In the implementation in NLopt :cite:`Johnson2007`, the population size
+    defaults to 20 * (number of parameters + 1); optimagic does not expose this
+    setting. Results differ between runs unless ``seed`` is set.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion. The
+    optimagic default for global optimizers is much lower than for local
+    optimizers to keep runtimes manageable.
+
+    """
+
     seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -719,13 +1797,90 @@ class NloptISRES(Algorithm):
 )
 @dataclass(frozen=True)
 class NloptCRS2LM(Algorithm):
+    """Minimize a scalar function using the CRS2_LM algorithm.
+
+    CRS2 (Controlled Random Search 2) with local mutation is a derivative-free
+    global optimizer. The CRS class of algorithms, originally described in
+    :cite:`Price1978` and :cite:`Price1983`, starts with a random population of
+    points and evolves these points by heuristic rules; the evolution somewhat
+    resembles a randomized Nelder-Mead algorithm. The implementation in NLopt
+    :cite:`Johnson2007` uses the CRS2 variant with the local mutation modification
+    described in :cite:`Kaelo2006`.
+
+    Use it for global optimization of scalar problems when no derivatives are
+    available. Finite bounds on all parameters are required. Like all stochastic
+    global optimizers, it typically needs many function evaluations and offers no
+    guarantee of finding the global optimum. Results differ between runs unless
+    ``seed`` is set.
+
+    """
+
     convergence_xtol_rel: NonNegativeFloat = CONVERGENCE_XTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    parameters by less than this value relative to their size.
+
+    More precisely, NLopt checks whether the sum of the absolute parameter changes is
+    smaller than this value times the sum of the absolute parameter values. This
+    corresponds to NLopt's ``xtol_rel`` stopping criterion. A value of 0 means that this
+    criterion is disabled.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes every
+    parameter by less than this absolute value.
+
+    This corresponds to NLopt's ``xtol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this value multiplied by the absolute
+    value of the function value.
+
+    This corresponds to NLopt's ``ftol_rel`` stopping criterion. A value of 0 means
+    that this criterion is disabled.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    """Stop when an optimization step (or an estimate of the optimum) changes the
+    objective function value by less than this absolute value.
+
+    This corresponds to NLopt's ``ftol_abs`` stopping criterion. A value of 0 means
+    that this criterion is disabled, which is the optimagic default.
+
+    """
+
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN_GLOBAL
+    """Maximum number of objective function evaluations.
+
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. This corresponds to NLopt's ``maxeval`` stopping criterion. The
+    optimagic default for global optimizers is much lower than for local
+    optimizers to keep runtimes manageable.
+
+    """
+
     population_size: PositiveInt | None = None
+    """Size of the random population of points that is evolved by the algorithm.
+
+    If None, the population size is set to 10 * (number of parameters + 1), which
+    is the default of the NLopt implementation. NLopt requires the population size
+    to be at least the number of parameters + 1.
+
+    """
+
     seed: _NloptSeed | None = None
+    """Seed for NLopt's random number generator, between 0 and 2**32 - 1.
+
+    If None, NLopt's current random state is used and results can differ between
+    runs. NLopt's random state is shared by all NLopt optimizers on the same thread,
+    so nested optimizations can change the random stream of an outer optimization.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
