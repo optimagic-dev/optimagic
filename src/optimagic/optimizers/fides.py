@@ -1,5 +1,7 @@
 """Implement the fides optimizer."""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Literal, TypeAlias, cast
@@ -61,31 +63,216 @@ instance from fides."""
 )
 @dataclass(frozen=True)
 class Fides(Algorithm):
+    """Minimize a scalar function using the Fides trust-region optimizer.
+
+    Fides implements an Interior Trust-Region Reflective method for bound-constrained
+    optimization, following the approach of :cite:`Coleman1994` and
+    :cite:`Coleman1996`. Accordingly, Fides is named after the Roman goddess of trust
+    and reliability. The optimizer is taken from the ``fides`` package
+    (:cite:`Froehlich2022`), which must be installed separately
+    (``pip install "fides>=0.7.4"``).
+
+    Fides is a gradient-based local optimizer for smooth, differentiable scalar
+    objective functions. It supports lower and upper bounds (including infinite
+    bounds) but no linear or nonlinear constraints. It requires first derivatives; the
+    Hessian is approximated internally using one of several quasi-Newton update
+    strategies, so no user-provided Hessian is needed.
+
+    In contrast to many other trust-region methods, Fides can solve the full
+    trust-region subproblem exactly rather than approximately; this is the case for
+    the default ``trustregion_subspace_dimension="full"``. This can yield
+    higher-quality proposal steps at a higher per-iteration cost, which makes Fides
+    especially attractive when the objective function is expensive to evaluate and
+    the cost of solving the trust-region subproblem is negligible in comparison.
+
+    .. note::
+        General linear and nonlinear constraints are not supported by optimagic.
+
+    """
+
     hessian_update_strategy: HessianUpdateStrategy = "bfgs"
+    r"""Quasi-Newton strategy used to approximate the Hessian of the objective.
+
+    Can be the (case-insensitive) name of a strategy or an instance of
+    ``fides.hessian_approximation.HessianApproximation``. The available names are:
+
+    - ``"bfgs"``: the Broyden-Fletcher-Goldfarb-Shanno update, a rank-2 update that
+      preserves symmetry and positive definiteness. This is the default.
+    - ``"dfp"``: the Davidon-Fletcher-Powell update.
+    - ``"sr1"``: the Symmetric Rank 1 update, described in :cite:`Nocedal1999`,
+      Chapter 6.2.
+    - ``"bb"``: Broyden's "bad" method, introduced in :cite:`Broyden1965`.
+    - ``"bg"``: Broyden's "good" method, introduced in :cite:`Broyden1965`.
+
+    The general Broyden class update is a convex combination of the BFGS and DFP
+    updates controlled by an interpolation parameter :math:`\phi`
+    (:cite:`Nocedal1999`, Chapter 6.3): :math:`\phi = 0` gives BFGS and
+    :math:`\phi = 1` gives DFP. For :math:`\phi \in [0, 1]` the update preserves
+    symmetry and positive semi-definiteness. It cannot be selected by name because
+    :math:`\phi` has no default; instead, create an instance of
+    ``fides.hessian_approximation.Broyden`` with the desired :math:`\phi` and pass
+    it here.
+
+    The residual-based approximations ``FX``, ``SSM``, ``TSSM`` and ``GNSBFGS``
+    provided by the ``fides`` package are not available, because optimagic does not
+    pass least-squares residuals to fides.
+
+    """
+
     convergence_ftol_abs: NonNegativeFloat = CONVERGENCE_FTOL_ABS
+    r"""Stop when the absolute change in the objective becomes small.
+
+    Denoting the absolute criterion tolerance by :math:`\alpha` (this parameter) and
+    the relative criterion tolerance by :math:`\beta`
+    (``convergence_ftol_rel``), Fides stops successfully when
+
+    .. math::
+
+        |f_k - f_{k-1}| < \alpha + \beta \, |f_{k-1}|
+
+    in an iteration in which the trust-region radius was not increased. Here,
+    :math:`f_k` is the objective value at the proposed point and :math:`f_{k-1}` the
+    one at the current iterate.
+
+    This parameter therefore governs convergence on its own only when
+    ``convergence_ftol_rel`` is set to 0. Note that optimagic defaults to 0, whereas
+    the ``fides`` package itself defaults to 1e-8.
+
+    """
+
     convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
+    r"""Stop when the relative change in the objective becomes small.
+
+    This is the relative criterion tolerance :math:`\beta` in the joint convergence
+    condition documented under ``convergence_ftol_abs``. It governs convergence on its
+    own only when ``convergence_ftol_abs`` is set to 0 (as is the default). Note that
+    optimagic defaults to 2e-9, whereas the ``fides`` package itself defaults to
+    1e-8.
+
+    """
+
     convergence_xtol_abs: NonNegativeFloat = CONVERGENCE_XTOL_ABS
+    r"""Stop when the step size becomes small.
+
+    The optimization terminates successfully when the norm of the step
+    :math:`\|x_{k} - x_{k-1}\|` falls below this tolerance.
+
+    """
+
     convergence_gtol_abs: NonNegativeFloat = CONVERGENCE_GTOL_ABS
+    """Stop when the gradient norm is less than or equal to this tolerance.
+
+    Note that optimagic defaults to 1e-5, whereas the ``fides`` package itself
+    defaults to 1e-6.
+
+    """
+
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+    """Stop when the gradient norm divided by the absolute function value is less than
+    or equal to this tolerance.
+
+    Note that optimagic defaults to 1e-8, whereas the ``fides`` package itself
+    defaults to 0, i.e. deactivates this criterion.
+
+    """
+
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
+    """Maximum number of iterations.
+
+    Note that optimagic defaults to 1,000,000, whereas the ``fides`` package itself
+    defaults to 1,000.
+
+    """
+
     stopping_max_seconds: float = np.inf
+    """Maximum number of wall-clock seconds. Deactivated (infinite) by default."""
+
     trustregion_initial_radius: PositiveFloat = 1.0
+    """Initial trust-region radius."""
+
     trustregion_stepback_strategy: Literal[
         "truncate",
         "reflect",
         "reflect_single",
         "mixed",
     ] = "truncate"
+    """Refinement strategy applied when a proposed step reaches a parameter bound.
+
+    The available options are:
+
+    - ``"truncate"``: truncate the step at the boundary and re-solve the restricted
+      subproblem. This is optimagic's default.
+    - ``"reflect"``: recursive reflections at the boundary.
+    - ``"reflect_single"``: a single reflection at the boundary.
+    - ``"mixed"``: mix reflections and truncations.
+
+    Note that optimagic defaults to ``"truncate"``, whereas the ``fides`` package
+    itself defaults to ``"reflect"``.
+
+    """
+
     trustregion_subspace_dimension: Literal[
         "full",
         "2D",
         "scg",
     ] = "full"
+    """Dimension of the subspace in which the trust-region subproblem is solved.
+
+    The available options are:
+
+    - ``"full"``: use the full parameter dimensionality. This is optimagic's default.
+    - ``"2D"``: a two-dimensional Newton/gradient subspace.
+    - ``"scg"``: a conjugate-gradient subspace via Steihaug's method.
+
+    Note that optimagic defaults to ``"full"``, whereas the ``fides`` package itself
+    defaults to ``"2D"``.
+
+    """
+
     trustregion_max_stepback_fraction: float = 0.95
+    """Controls how close steps are allowed to get to the boundary.
+
+    It is the maximal fraction of a step to take if the full step would reach a
+    breakpoint (the bound).
+
+    """
+
     trustregion_decrease_threshold: float = 0.25
+    r"""Threshold for the trust-region ratio at or below which the radius is decreased.
+
+    Note that this is not an acceptance threshold: fides accepts every step with a
+    positive trust-region ratio. This is the ``mu`` option of fides; its default is
+    the value used in algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
+
     trustregion_increase_threshold: float = 0.75
+    r"""Threshold for the trust-region ratio at or above which the radius may be
+    increased.
+
+    The radius is only increased if, in addition, the norm of the proposed step is at
+    least 90% of the current radius. This is the ``eta`` option of fides; its default
+    is the value used in algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
+
     trustregion_decrease_factor: float = 0.25
+    r"""Factor by which the trust-region radius is multiplied when it is decreased.
+
+    More precisely, the decreased radius is :math:`\min(\gamma_1 \Delta, \|s\| / 4)`,
+    where :math:`\gamma_1` is this factor, :math:`\Delta` the current radius and
+    :math:`s` the proposed step. This is the ``gamma1`` option of fides; its default
+    is the value used in algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
+
     trustregion_increase_factor: float = 2.0
+    r"""Factor by which the trust-region radius is multiplied when it is increased.
+
+    This is the ``gamma2`` option of fides; its default is the value used in
+    algorithm 4.1 of :cite:`Nocedal2006`.
+
+    """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
@@ -152,14 +339,13 @@ def fides_internal(
 ) -> InternalOptimizeResult:
     """Minimize a scalar function using the Fides Optimizer.
 
-    For details see
-    :ref: `fides_algorithm`.
+    For details see :class:`Fides`.
 
     """
     if not IS_FIDES_INSTALLED:
         raise NotInstalledError(
             "The 'fides' algorithm requires the fides package to be installed. "
-            "You can install it with `pip install fides>=0.7.4`."
+            'You can install it with `pip install "fides>=0.7.4"`.'
         )
 
     from fides import Optimizer
