@@ -75,102 +75,37 @@ def test_box_constr():
     assert 0 <= result.params["value"].to_numpy()[1] <= 0.3
 
 
-def test_max_iters():
-    rng = get_rng(5473)
-    true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
-    start_params = true_params.copy()
-    start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
+@mark.least_squares
+def _rosenbrock_residuals(x):
+    return np.array([x[0] - 1, 10 * (x[1] - x[0] ** 2), x[2] + 2])
 
-    exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = mark.least_squares(
-        functools.partial(_ols_criterion, endog=endog, exog=exog)
-    )
+
+@pytest.mark.parametrize(
+    ("algo_options", "expected_message"),
+    [
+        ({"stopping_maxiter": 3}, "maxits reached"),
+        (
+            {"convergence_gtol_abs": 1e-2},
+            "absolute_gradient_tolerance below critical value",
+        ),
+        (
+            {"convergence_gtol_rel": 1e-2},
+            "relative_gradient_tolerance below critical value",
+        ),
+        (
+            {"convergence_gtol_scaled": 1e-2},
+            "scaled_gradient_tolerance below critical value",
+        ),
+    ],
+)
+def test_stopping_criteria(algo_options, expected_message):
     result = minimize(
-        criterion_func,
-        start_params,
+        _rosenbrock_residuals,
+        np.array([3.0, 2.0, 1.0]),
         "tao_pounders",
-        algo_options={"stopping.maxiter": 25},
+        algo_options=algo_options,
     )
-
-    assert result.message in ("user defined", "step size small")
-
-
-def test_grtol():
-    rng = get_rng(5474)
-    true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
-    start_params = true_params.copy()
-    start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
-
-    exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = mark.least_squares(
-        functools.partial(_ols_criterion, endog=endog, exog=exog)
-    )
-    result = minimize(
-        criterion_func,
-        start_params,
-        "tao_pounders",
-        algo_options={
-            "convergence.gtol_abs": False,
-            "convergence.gtol_scaled": False,
-        },
-    )
-
-    assert result.message in (
-        "relative_gradient_tolerance below critical value",
-        "step size small",
-    )
-
-
-def test_gatol():
-    rng = get_rng(5475)
-    true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
-    start_params = true_params.copy()
-    start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
-
-    exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = mark.least_squares(
-        functools.partial(_ols_criterion, endog=endog, exog=exog)
-    )
-    result = minimize(
-        criterion_func,
-        start_params,
-        "tao_pounders",
-        algo_options={
-            "convergence.gtol_rel": False,
-            "convergence.gtol_scaled": False,
-        },
-    )
-
-    assert result.message in (
-        "absolute_gradient_tolerance below critical value",
-        "step size small",
-    )
-
-
-def test_gttol():
-    rng = get_rng(5476)
-    true_params = get_random_params(2, rng, 0.3, 0.4, 0, 0.3)
-    start_params = true_params.copy()
-    start_params["value"] = get_random_params(2, rng, 0.1, 0.2)["value"]
-
-    exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    criterion_func = mark.least_squares(
-        functools.partial(_ols_criterion, endog=endog, exog=exog)
-    )
-    result = minimize(
-        criterion_func,
-        start_params,
-        "tao_pounders",
-        algo_options={
-            "convergence.gtol_rel": False,
-            "convergence.gtol_abs": False,
-        },
-    )
-
-    assert result.message in (
-        "gradient_total_tolerance below critical value",
-        "step size small",
-    )
+    assert result.message == expected_message
 
 
 def test_tol():
