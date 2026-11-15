@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import functools
 from dataclasses import dataclass
 
 import numpy as np
@@ -97,11 +96,6 @@ class TAOPounders(Algorithm):
     trust-region radius. Setting this option to zero restores TAO's default
     (1e-8) instead of disabling the criterion.
 
-    .. note::
-        This criterion has no effect, because optimagic always installs
-        a custom convergence test for ``stopping_maxiter`` that replaces TAO's
-        default convergence test.
-
     """
 
     convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
@@ -115,11 +109,6 @@ class TAOPounders(Algorithm):
     This is the relative gradient tolerance ``grtol`` in the TAO documentation.
     Setting this option to zero restores TAO's default (1e-8) instead of disabling
     the criterion.
-
-    .. note::
-        This criterion has no effect, because optimagic always installs
-        a custom convergence test for ``stopping_maxiter`` that replaces TAO's
-        default convergence test.
 
     """
 
@@ -136,11 +125,6 @@ class TAOPounders(Algorithm):
     Setting this option to zero restores TAO's default (0), which disables the
     criterion.
 
-    .. note::
-        This criterion has no effect, because optimagic always installs
-        a custom convergence test for ``stopping_maxiter`` that replaces TAO's
-        default convergence test.
-
     """
 
     trustregion_initial_radius: NonNegativeFloat | None = None
@@ -155,12 +139,10 @@ class TAOPounders(Algorithm):
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations.
 
-    This limit is always enforced via a custom convergence test that replaces TAO's
-    default convergence test, so the ``convergence_gtol_*`` criteria are ignored.
-    Reaching the limit is reported as a successful convergence with the message
-    "user defined". POUNDERS can still stop earlier on its own if the same
-    interpolation model is used in two successive iterations without a change of
-    the trust-region radius (message "step size small").
+    If reached, the optimization stops, but this is not counted as successful
+    convergence. POUNDERS can also stop on its own if the same interpolation model
+    is used in two successive iterations without a change of the trust-region radius
+    (message "step size small").
 
     """
 
@@ -291,22 +273,9 @@ def tao_pounders(
         gttol=default_gttol,
     )
 
-    # Set user defined convergence tests. Beware that specifying multiple tests could
-    # overwrite others or lead to unclear behavior.
-    if stopping_maxiter is not None:
-        tao.setConvergenceTest(functools.partial(_max_iters, stopping_maxiter))
-    elif convergence_gtol_scaled is False and convergence_gtol_abs is False:
-        tao.setConvergenceTest(functools.partial(_grtol_conv, convergence_gtol_rel))
-    elif convergence_gtol_rel is False and convergence_gtol_scaled is False:
-        tao.setConvergenceTest(functools.partial(_gatol_conv, convergence_gtol_abs))
-    elif convergence_gtol_scaled is False:
-        tao.setConvergenceTest(
-            functools.partial(
-                _grtol_gatol_conv,
-                convergence_gtol_rel,
-                convergence_gtol_abs,
-            )
-        )
+    # Use TAO's default convergence test, which checks the gradient tolerances and the
+    # maximum number of iterations.
+    tao.setMaximumIterations(stopping_maxiter)
 
     # Run the problem.
     tao.solve()
@@ -342,49 +311,6 @@ def _initialise_petsc_array(len_or_array):
         array.array = len_or_array
 
     return array
-
-
-def _max_iters(max_iterations, tao):
-    if tao.getSolutionStatus()[0] < max_iterations:
-        return 0
-    elif tao.getSolutionStatus()[0] >= max_iterations:
-        tao.setConvergedReason(8)
-
-
-def _gatol_conv(absolute_gradient_tolerance, tao):
-    if tao.getSolutionStatus()[2] >= absolute_gradient_tolerance:
-        return 0
-    elif tao.getSolutionStatus()[2] < absolute_gradient_tolerance:
-        tao.setConvergedReason(3)
-
-
-def _grtol_conv(relative_gradient_tolerance, tao):
-    if (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        >= relative_gradient_tolerance
-    ):
-        return 0
-    elif (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        < relative_gradient_tolerance
-    ):
-        tao.setConvergedReason(4)
-
-
-def _grtol_gatol_conv(relative_gradient_tolerance, absolute_gradient_tolerance, tao):
-    if (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        >= relative_gradient_tolerance
-    ):
-        return 0
-    elif (
-        tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        < relative_gradient_tolerance
-    ):
-        tao.setConvergedReason(4)
-
-    elif tao.getSolutionStatus()[2] < absolute_gradient_tolerance:
-        tao.setConvergedReason(3)
 
 
 def _translate_tao_convergence_reason(tao_resaon):
