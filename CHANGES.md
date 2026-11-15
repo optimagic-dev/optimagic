@@ -10,6 +10,10 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
+- {gh}`742` Ignores derivatives with respect to parameters that do not depend on
+  internal parameters, e.g. fixed parameters. Infinite or NaN entries of a user
+  provided derivative for such parameters no longer make the optimization fail
+  ({ghuser}`janosg`).
 - {gh}`739` Fixes `tao_pounders` ignoring `convergence_gtol_abs`,
   `convergence_gtol_rel` and `convergence_gtol_scaled`. Reaching `stopping_maxiter` is
   now reported as unsuccessful with the message "maxits reached" instead of as

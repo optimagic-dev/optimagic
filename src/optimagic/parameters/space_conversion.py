@@ -103,6 +103,12 @@ def get_space_converter(
         post_replacements=constr_info["post_replacements"]
     )
 
+    _depends_on_internal = get_mask_of_params_that_depend_on_internal(
+        transformations=transformations,
+        pre_replace_jac=_pre_replace_jac,
+        post_replace_jac=_post_replace_jac,
+    )
+
     _derivative_to_internal = partial(
         convert_external_derivative_to_internal,
         fixed_values=constr_info["internal_fixed_values"],
@@ -110,6 +116,7 @@ def get_space_converter(
         transformations=transformations,
         pre_replace_jac=_pre_replace_jac,
         post_replace_jac=_post_replace_jac,
+        depends_on_internal=_depends_on_internal,
     )
 
     _has_transforming_constraints = bool(transformations)
@@ -242,6 +249,7 @@ def convert_external_derivative_to_internal(
     post_replacements=None,
     pre_replace_jac=None,
     post_replace_jac=None,
+    depends_on_internal=None,
 ):
     r"""Compute the derivative of the criterion utilizing an external derivative.
 
@@ -262,6 +270,10 @@ def convert_external_derivative_to_internal(
     second part denotes the derivative of the parameter transform from inner
     to external.
 
+    Entries of the external derivative that belong to external parameters that do not
+    depend on any internal parameter (e.g. fixed parameters) are ignored. They do not
+    influence the result, even if they are infinite or NaN.
+
     Args:
         external_derivative (numpy.ndarray): The external derivative evaluated at
             external values mapped from ``internal_values``.
@@ -279,7 +291,9 @@ def convert_external_derivative_to_internal(
             vector that has to be copied to duplicated and copied to the i_th position
             of the external parameter vector.
         pre_replace_jac (np.ndarray): 2d Array with the jacobian of pre_replace
-        post_replacment_jacobian (np.ndarray): 2d Array with the jacobian post_replace
+        post_replace_jac (np.ndarray): 2d Array with the jacobian post_replace
+        depends_on_internal (np.ndarray): 1d boolean array of length n_external. True
+            for external parameters that depend on at least one internal parameter.
 
     Returns:
         deriv (numpy.ndarray): The gradient or Jacobian.
@@ -300,9 +314,23 @@ def convert_external_derivative_to_internal(
     if post_replace_jac is None:
         post_replace_jac = post_replace_jacobian(post_replacements)
 
+    if depends_on_internal is None:
+        depends_on_internal = get_mask_of_params_that_depend_on_internal(
+            transformations=transformations,
+            pre_replace_jac=pre_replace_jac,
+            post_replace_jac=post_replace_jac,
+        )
+
     transform_jac = transformation_jacobian(transformations, pre_replaced)
 
     external_derivative = np.atleast_2d(external_derivative)
+
+    # The rows of the transformation Jacobians that belong to parameters that do not
+    # depend on internal parameters are zero. Multiplying them with infinite or NaN
+    # entries of the external derivative would spread NaNs to the whole result.
+    if not depends_on_internal.all():
+        external_derivative = np.where(depends_on_internal, external_derivative, 0)
+
     tall_external = external_derivative.shape[0] > external_derivative.shape[1]
 
     mat_list = [
@@ -321,6 +349,53 @@ def convert_external_derivative_to_internal(
     if deriv.shape[0] == 1:
         deriv = deriv.flatten()
     return deriv
+
+
+def get_mask_of_params_that_depend_on_internal(
+    transformations, pre_replace_jac, post_replace_jac
+):
+    """Determine which external parameters depend on at least one internal parameter.
+
+    External parameters that do not depend on any internal parameter are constant
+    during the optimization. Examples are fixed parameters and parameters that are
+    equal to a fixed parameter.
+
+    The dependence is determined from the structure of the reparametrization and not
+    from the values of a Jacobian. All parameters of a transforming constraint are
+    treated as dependent if at least one of them depends on an internal parameter.
+
+    Args:
+        transformations (list): Processed transforming constraints.
+        pre_replace_jac (np.ndarray): 2d Array of shape (n_external, n_internal) with
+            the jacobian of pre_replace.
+        post_replace_jac (np.ndarray): 2d Array of shape (n_external, n_external) with
+            the jacobian of post_replace.
+
+    Returns:
+        np.ndarray: 1d boolean array of length n_external.
+
+    Examples:
+        >>> # Note: The Jacobians are the ones from the doctests of
+        >>> # pre_replace_jacobian and post_replace_jacobian
+        >>> pre_replace_jac = np.array([[0., 1.], [0., 0.], [1., 0.]])
+        >>> post_replace_jac = np.array([[1., 0., 0.], [0., 1., 0.], [0., 1., 0.]])
+        >>> get_mask_of_params_that_depend_on_internal(
+        ...     transformations=[],
+        ...     pre_replace_jac=pre_replace_jac,
+        ...     post_replace_jac=post_replace_jac,
+        ... )
+        array([ True, False, False])
+
+    """
+    # dependence after the pre-replacement step
+    depends = pre_replace_jac.any(axis=1)
+
+    # dependence after the transformation step
+    for constr in transformations:
+        depends[constr["index"]] = depends[constr["index"]].any()
+
+    # dependence after the post-replacement step
+    return post_replace_jac.astype(bool) @ depends
 
 
 def _multiply_from_left(mat_list):
