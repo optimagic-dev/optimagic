@@ -138,6 +138,40 @@ def test_get_bounds_numpy_error(array_params):
         )
 
 
+@pytest.mark.parametrize("container", [np.array, list])
+@pytest.mark.parametrize(
+    "lower, upper, expected_lower, expected_upper",
+    [
+        ([-np.inf, -np.inf], [np.inf, np.inf], None, None),
+        ([np.inf, np.inf], None, [np.inf, np.inf], None),
+        (None, [-np.inf, -np.inf], None, [-np.inf, -np.inf]),
+        ([-np.inf, np.inf], None, [-np.inf, np.inf], None),
+        (None, [-np.inf, np.inf], None, [-np.inf, np.inf]),
+    ],
+)
+def test_get_bounds_infinite_sides(
+    container, lower, upper, expected_lower, expected_upper
+):
+    bounds = Bounds(
+        lower=None if lower is None else container(lower),
+        upper=None if upper is None else container(upper),
+    )
+
+    got_lower, got_upper = get_internal_bounds(np.ones(2), bounds=bounds)
+
+    assert_array_equal(got_lower, expected_lower)
+    assert_array_equal(got_upper, expected_upper)
+
+
+@pytest.mark.parametrize("container", [np.array, list])
+@pytest.mark.parametrize("lower, upper", [(np.inf, 5), (0, -np.inf), (np.inf, -np.inf)])
+def test_get_bounds_infinite_sides_invalid(container, lower, upper):
+    bounds = Bounds(lower=container([lower, lower]), upper=container([upper, upper]))
+
+    with pytest.raises(InvalidBoundsError):
+        get_internal_bounds(np.ones(2), bounds=bounds)
+
+
 def test_get_fast_path_bounds_both_none():
     got_lower, got_upper = _get_fast_path_bounds(Bounds(lower=None, upper=None))
     assert got_lower is None
