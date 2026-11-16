@@ -987,10 +987,10 @@ class GFOEvolutionStrategy(Algorithm, GFOCommonOptions):
 
     .. math::
 
-        \\text{total_rate} = \\text{mutation_rate} + \\text{crossover_rate}
+        \\text{total\\_rate} = \\text{mutation\\_rate} + \\text{crossover\\_rate}
     .. math::
 
-        R = \\text{random_float} (0 ... \\text{total_rate})
+        R = \\text{random\\_float} (0 ... \\text{total\\_rate})
 
     .. code-block::
 

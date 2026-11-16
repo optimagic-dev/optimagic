@@ -14,18 +14,6 @@ from optimagic.typing import BatchEvaluatorLiteral
 class NumdiffOptions:
     """Options for numerical differentiation.
 
-    Attributes:
-        method: The method to use for numerical differentiation. Can be "central",
-            "forward", or "backward".
-        step_size: The step size to use for numerical differentiation. If None, the
-            default step size will be used.
-        scaling_factor: The scaling factor to use for numerical differentiation.
-        min_steps: The minimum step size to use for numerical differentiation. If None,
-            the default minimum step size will be used.
-        n_cores: The number of cores to use for numerical differentiation.
-        batch_evaluator: The evaluator to use for batch evaluation. Allowed are
-            "joblib", "pathos", and "threading", or a custom callable.
-
     Raises:
         InvalidNumdiffError: If the numdiff options cannot be processed, e.g. because
             they do not have the correct type.
@@ -35,11 +23,26 @@ class NumdiffOptions:
     method: Literal[
         "central", "forward", "backward", "central_cross", "central_average"
     ] = "central"
+    """The method to use for numerical differentiation. Can be "central", "forward", or
+    "backward"."""
+
     step_size: float | None = None
+    """The step size to use for numerical differentiation. If None, the default step
+    size will be used."""
+
     scaling_factor: float = 1
+    """The scaling factor to use for numerical differentiation."""
+
     min_steps: float | None = None
+    """The minimum step size to use for numerical differentiation. If None, the default
+    minimum step size will be used."""
+
     n_cores: int = DEFAULT_N_CORES
+    """The number of cores to use for numerical differentiation."""
+
     batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib"
+    """The evaluator to use for batch evaluation. Allowed are "joblib", "pathos", and
+    "threading", or a custom callable."""
 
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
