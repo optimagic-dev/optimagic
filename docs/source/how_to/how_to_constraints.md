@@ -516,5 +516,5 @@ res = om.minimize(
 )
 ```
 
-[here]: ../../explanation/implementation_of_constraints.md
+[here]: ../explanation/implementation_of_constraints.md
 [this tutorial]: ../tutorials/optimization_overview.ipynb

@@ -142,7 +142,7 @@ class NagDFOLS(Algorithm):
     .. math::
 
         \min_{x\in\mathbb{R}^n}  &\quad  f(x) := \sum_{i=1}^{m}r_{i}(x)^2 \\
-        \text{s.t.} &\quad  \text{lower_bounds} \leq x \leq \text{upper_bounds}
+        \text{s.t.} &\quad  \text{lower\_bounds} \leq x \leq \text{upper\_bounds}
 
     The :math:`r_{i}` are the least-squares residuals. To use DFO-LS, decorate your
     criterion function with ``om.mark.least_squares`` and return the residuals
@@ -189,7 +189,7 @@ class NagDFOLS(Algorithm):
 
     3. when a sufficient reduction of the criterion value relative to its value at
        the start parameters has been reached, i.e. when
-       :math:`f(x_k)/f(x_0) \leq \textsf{convergence_ftol_scaled}`.
+       :math:`f(x_k)/f(x_0) \leq \textsf{convergence\_ftol\_scaled}`.
 
     4. when all evaluations on the interpolation points fall within a scaled version
        of the noise level of the criterion function. This is only applicable if the
@@ -256,7 +256,7 @@ class NagDFOLS(Algorithm):
     convergence_ftol_scaled: NonNegativeFloat = 0.0
     r"""Stop if the criterion value falls below this fraction of its value at the
     start parameters, i.e. terminate if
-    :math:`f(x_k)/f(x_0) \leq \textsf{convergence_ftol_scaled}` is reached.
+    :math:`f(x_k)/f(x_0) \leq \textsf{convergence\_ftol\_scaled}` is reached.
 
     This is ``model.rel_tol`` in the DFO-LS documentation. With the default of 0.0
     this criterion is deactivated. Note that DFO-LS additionally stops successfully
@@ -301,7 +301,7 @@ class NagDFOLS(Algorithm):
     base point :math:`x_b`; that is, they store :math:`\{y_t - x_b\}`, which reduces
     the risk of roundoff errors. The base point :math:`x_b` is shifted to the current
     iterate :math:`x_k` when
-    :math:`\text{proposed step} \leq \textsf{interpolation_rounding_error} \cdot
+    :math:`\text{proposed step} \leq \textsf{interpolation\_rounding\_error} \cdot
     \|x_k - x_b\|`. This is ``general.rounding_error_constant`` in the DFO-LS
     documentation, from which the default value is taken.
 
@@ -364,7 +364,7 @@ class NagDFOLS(Algorithm):
     r"""Threshold for when to call the safety step (:math:`\gamma_s`).
 
     A safety step is called when
-    :math:`\text{proposed step} \leq \textsf{threshold_for_safety_step} \cdot
+    :math:`\text{proposed step} \leq \textsf{threshold\_for\_safety\_step} \cdot
     \rho_k`, where :math:`\rho_k` is the current lower trust-region radius. The
     default value is taken from DFO-LS.
 
@@ -1012,7 +1012,7 @@ class NagPyBOBYQA(Algorithm):
     base point :math:`x_b`; that is, they store :math:`\{y_t - x_b\}`, which reduces
     the risk of roundoff errors. The base point :math:`x_b` is shifted to the current
     iterate :math:`x_k` when
-    :math:`\text{proposed step} \leq \textsf{interpolation_rounding_error} \cdot
+    :math:`\text{proposed step} \leq \textsf{interpolation\_rounding\_error} \cdot
     \|x_k - x_b\|`. This is ``general.rounding_error_constant`` in the Py-BOBYQA
     documentation, from which the default value is taken.
 
@@ -1091,7 +1091,7 @@ class NagPyBOBYQA(Algorithm):
     r"""Threshold for when to call the safety step (:math:`\gamma_s`).
 
     A safety step is called when
-    :math:`\text{proposed step} \leq \textsf{threshold_for_safety_step} \cdot
+    :math:`\text{proposed step} \leq \textsf{threshold\_for\_safety\_step} \cdot
     \rho_k`, where :math:`\rho_k` is the current lower trust-region radius. The
     default value is taken from Py-BOBYQA.
 
@@ -1147,7 +1147,7 @@ class NagPyBOBYQA(Algorithm):
     Py-BOBYQA requires
 
     .. math::
-        n + 1 \leq \textsf{trustregion_n_interpolation_points} \leq (n+1)(n+2)/2.
+        n + 1 \leq \textsf{trustregion\_n\_interpolation\_points} \leq (n+1)(n+2)/2.
 
     """
 

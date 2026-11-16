@@ -20,39 +20,6 @@ from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral, PyTree
 class MultistartOptions:
     """Multistart options in optimization problems.
 
-    Attributes:
-        n_samples: The number of points at which the objective function is evaluated
-            during the exploration phase. If None, n_samples is set to 100 times the
-            number of parameters.
-        stopping_maxopt: The maximum number of local optimizations to run. Defaults to
-            10% of n_samples. This number may not be reached if multistart converges
-            earlier.
-        sampling_distribution: The distribution from which the exploration sample is
-            drawn. Allowed are "uniform" and "triangular". Defaults to "uniform".
-        sampling_method: The method used to draw the exploration sample. Allowed are
-            "sobol", "random", "halton", and "latin_hypercube". Defaults to "random".
-        sample: A sequence of PyTrees or None. If None, a sample is drawn from the
-            sampling distribution.
-        mixing_weight_method: The method used to determine the mixing weight, i,e, how
-            start parameters for local optimizations are calculated. Allowed are
-            "tiktak" and "linear", or a custom callable. Defaults to "tiktak".
-        mixing_weight_bounds: The lower and upper bounds for the mixing weight.
-            Defaults to (0.1, 0.995).
-        convergence_max_discoveries: The maximum number of discoveries for convergence.
-            Determines after how many re-descoveries of the currently best local
-            optima the multistart algorithm stops. Defaults to 2.
-        convergence_xtol_rel: The relative tolerance in parameters
-            for convergence. Determines the maximum relative distance two parameter
-            vecctors can have to be considered equal. Defaults to 0.01.
-        n_cores: The number of cores to use for parallelization. Defaults to 1.
-        batch_evaluator: The evaluator to use for batch evaluation. Allowed are
-            "joblib", "pathos", and "threading", or a custom callable.
-        batch_size: The batch size for batch evaluation. Must be larger than n_cores
-            or None.
-        seed: The seed for the random number generator.
-        error_handling: The error handling for exploration and optimization errors.
-            Allowed are "raise" and "continue".
-
     Raises:
         InvalidMultistartError: If the multistart options cannot be processed, e.g.
             because they do not have the correct type.
@@ -60,21 +27,63 @@ class MultistartOptions:
     """
 
     n_samples: int | None = None
+    """The number of points at which the objective function is evaluated during the
+    exploration phase. If None, n_samples is set to 100 times the number of
+    parameters."""
+
     stopping_maxopt: int | None = None
+    """The maximum number of local optimizations to run. Defaults to 10% of n_samples.
+    This number may not be reached if multistart converges earlier."""
+
     sampling_distribution: Literal["uniform", "triangular"] = "uniform"
+    """The distribution from which the exploration sample is drawn. Allowed are
+    "uniform" and "triangular". Defaults to "uniform"."""
+
     sampling_method: Literal["sobol", "random", "halton", "latin_hypercube"] = "random"
+    """The method used to draw the exploration sample. Allowed are "sobol", "random",
+    "halton", and "latin_hypercube". Defaults to "random"."""
+
     sample: Sequence[PyTree] | None = None
+    """A sequence of PyTrees or None. If None, a sample is drawn from the sampling
+    distribution."""
+
     mixing_weight_method: (
         Literal["tiktak", "linear"] | Callable[[int, int, float, float], float]
     ) = "tiktak"
+    """The method used to determine the mixing weight, i.e. how start parameters for
+    local optimizations are calculated. Allowed are "tiktak" and "linear", or a custom
+    callable. Defaults to "tiktak"."""
+
     mixing_weight_bounds: tuple[float, float] = (0.1, 0.995)
+    """The lower and upper bounds for the mixing weight. Defaults to (0.1, 0.995)."""
+
     convergence_xtol_rel: float | None = None
+    """The relative tolerance in parameters for convergence. Determines the maximum
+    relative distance two parameter vectors can have to be considered equal. Defaults
+    to 0.01."""
+
     convergence_max_discoveries: int = 2
+    """The maximum number of discoveries for convergence. Determines after how many
+    rediscoveries of the currently best local optima the multistart algorithm stops.
+    Defaults to 2."""
+
     n_cores: int = 1
+    """The number of cores to use for parallelization. Defaults to 1."""
+
     batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib"
+    """The evaluator to use for batch evaluation. Allowed are "joblib", "pathos", and
+    "threading", or a custom callable."""
+
     batch_size: int | None = None
+    """The batch size for batch evaluation. Must be larger than n_cores or None."""
+
     seed: int | np.random.Generator | None = None
+    """The seed for the random number generator."""
+
     error_handling: Literal["raise", "continue"] | None = None
+    """The error handling for exploration and optimization errors. Allowed are "raise"
+    and "continue"."""
+
     # Deprecated attributes
     share_optimization: float | None = None
     convergence_relative_params_tolerance: float | None = None

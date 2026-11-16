@@ -21,6 +21,12 @@ from optimagic.logging.logger import LogReader, SQLiteLogOptions, SQLiteLogReade
 
 @dataclass
 class OptimizeLogReader:
+    """Deprecated reader for optimization logs stored in a SQLite database.
+
+    Use ``optimagic.logging.SQLiteLogReader`` instead.
+
+    """
+
     def __new__(cls, *args: Any, **kwargs: Any) -> LogReader[SQLiteLogOptions]:
         warnings.warn(
             "OptimizeLogReader is deprecated and will be removed in a future "
