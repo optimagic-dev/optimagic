@@ -1,4 +1,6 @@
+import functools
 import warnings
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from functools import cached_property
 from typing import Any, Dict
@@ -25,10 +27,8 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic import deprecations, mark
-from optimagic.deprecations import (
-    replace_and_warn_about_deprecated_bounds,
-)
+from optimagic import mark
+from optimagic.constraints import pre_process_constraints
 from optimagic.differentiation.derivatives import first_derivative, second_derivative
 from optimagic.differentiation.numdiff_options import (
     NumdiffPurpose,
@@ -69,11 +69,6 @@ def estimate_ml(
     hessian_kwargs=None,
     hessian_numdiff_options=None,
     design_info=None,
-    # deprecated
-    log_options=None,
-    lower_bounds=None,
-    upper_bounds=None,
-    numdiff_options=None,
 ):
     """Do a maximum likelihood (ml) estimation.
 
@@ -109,38 +104,27 @@ def estimate_ml(
             bound type mirrors the structure of params. Check our how-to guide on bounds
             for examples. If params is a flat numpy array, you can also provide bounds
             via any format that is supported by scipy.optimize.minimize.
-        constraints (list, dict): List with constraint dictionaries or single dict.
-            See :ref:`constraints`.
-        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
-            the file extension ``.db``. If the file does not exist, it will be created.
-        log_options (dict): Additional keyword arguments to configure the logging.
-            - "fast_logging": A boolean that determines if "unsafe" settings are used
-            to speed up write processes to the database. This should only be used for
-            very short running criterion functions where the main purpose of the log
-            is monitoring and it would not be catastrophic to get a
-            corrupted database in case of a sudden system shutdown. If one evaluation
-            of the criterion function (and gradient if applicable) takes more than
-            100 ms, the logging overhead is negligible.
-            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
-            do if the tables we want to write to already exist. Default "extend".
-            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
-            do if the database we want to write to already exists. Default "extend".
+        constraints (Constraint or list): A single optimagic constraint object or a
+            list of constraint objects. See :ref:`constraints`.
+        logging (pathlib.Path, str, LogOptions or None): Path to sqlite3 file (which
+            typically has the file extension ``.db``. If the file does not exist, it
+            will be created. For more customization, provide LogOptions.
         loglike_kwargs (dict): Additional keyword arguments for loglike.
         jacobian (callable or None): A function that takes ``params`` and potentially
-            other keyword arguments and returns the jacobian of loglike["contributions"]
-            with respect to the params. Note that you only need to pass a Jacobian
-            function if you have a closed form Jacobian. If you pass None, a numerical
-            Jacobian will be calculated.
+            other keyword arguments and returns the jacobian of the likelihood
+            contributions with respect to the params. Note that you only need to pass a
+            Jacobian function if you have a closed form Jacobian. If you pass None, a
+            numerical Jacobian will be calculated.
         jacobian_kwargs (dict): Additional keyword arguments for the Jacobian function.
         jacobian_numdiff_options (dict): Keyword arguments for the calculation of
             numerical derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details.
         hessian (callable or None or False): A function that takes ``params`` and
-            potentially other keyword arguments and returns the Hessian of
-            loglike["value"] with respect to the params.  If you pass None, a numerical
-            Hessian will be calculated. If you pass ``False``, you signal that no
-            Hessian should be calculated. Thus, no result that requires the Hessian will
-            be calculated.
+            potentially other keyword arguments and returns the Hessian of the
+            log-likelihood value with respect to the params. If you pass None, a
+            numerical Hessian will be calculated. If you pass ``False``, you signal that
+            no Hessian should be calculated. Thus, no result that requires the Hessian
+            will be calculated.
         hessian_kwargs (dict): Additional keyword arguments for the Hessian function.
         hessian_numdiff_options (dict): Keyword arguments for the calculation of
             numerical derivatives for the calculation of standard errors.
@@ -154,34 +138,15 @@ def estimate_ml(
 
     """
     # ==================================================================================
-    # handle deprecations
-    # ==================================================================================
-
-    bounds = replace_and_warn_about_deprecated_bounds(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        bounds=bounds,
-    )
-
-    if numdiff_options is not None:
-        deprecations.throw_numdiff_options_deprecated_in_estimate_ml_future_warning()
-        if jacobian_numdiff_options is None:
-            jacobian_numdiff_options = numdiff_options
-        if hessian_numdiff_options is None:
-            hessian_numdiff_options = numdiff_options
-
-    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
-
-    # ==================================================================================
     # Check and process inputs
     # ==================================================================================
 
-    loglike = mark.likelihood(loglike)
+    loglike = mark.likelihood(_fail_for_dict_with_contributions(loglike))
 
     bounds = pre_process_bounds(bounds)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     hessian_numdiff_options = pre_process_numdiff_options(hessian_numdiff_options)
-    processed_constraints = deprecations.pre_process_constraints(constraints)
+    processed_constraints = pre_process_constraints(constraints)
 
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(
@@ -218,8 +183,6 @@ def estimate_ml(
     # ==================================================================================
     # Calculate estimates via maximization (if necessary)
     # ==================================================================================
-    # Note: We do not need to handle deprecations for the optimization because that
-    # is already done inside `maximize`.
     if is_optimized:
         estimates = params
         opt_res = None
@@ -231,7 +194,6 @@ def estimate_ml(
             bounds=bounds,
             constraints=constraints,
             logging=logging,
-            log_options=log_options,
             **optimize_options,
         )
         estimates = opt_res.params
@@ -271,17 +233,12 @@ def estimate_ml(
         hessian_eval = None
 
     # ==================================================================================
-    # Handle deprecated function output
+    # Enforce the return type of the likelihood function
     # ==================================================================================
-    if deprecations.is_dict_output(loglike_eval):
-        deprecations.throw_dict_output_warning()
-        loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
-        loglike = deprecations.replace_dict_output(loglike)
-    else:
-        loglike_eval = convert_fun_output_to_function_value(
-            loglike_eval, AggregationLevel.LIKELIHOOD
-        )
-        loglike = enforce_return_type(AggregationLevel.LIKELIHOOD)(loglike)
+    loglike_eval = convert_fun_output_to_function_value(
+        loglike_eval, AggregationLevel.LIKELIHOOD
+    )
+    loglike = enforce_return_type(AggregationLevel.LIKELIHOOD)(loglike)
 
     # ==================================================================================
     # Get the converter for params and function outputs
@@ -309,10 +266,6 @@ def estimate_ml(
         def func(x):
             p = converter.params_from_internal(x)
             loglike_eval = loglike(p, **loglike_kwargs)
-            if deprecations.is_dict_output(loglike_eval):
-                deprecations.throw_dict_output_warning()
-                loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
-
             out = loglike_eval.internal_value(AggregationLevel.LIKELIHOOD)
             return out
 
@@ -361,10 +314,6 @@ def estimate_ml(
         def func(x):
             p = converter.params_from_internal(x)
             loglike_eval = loglike(p, **loglike_kwargs)
-            if deprecations.is_dict_output(loglike_eval):
-                deprecations.throw_dict_output_warning()
-                loglike_eval = deprecations.convert_dict_to_function_value(loglike_eval)
-
             out = loglike_eval.internal_value(AggregationLevel.SCALAR)
             return out
 
@@ -436,6 +385,36 @@ def estimate_ml(
     )
 
     return res
+
+
+def _fail_for_dict_with_contributions(
+    loglike: Callable[..., Any],
+) -> Callable[..., Any]:
+    """Raise an error if loglike returns a dictionary with the entry "contributions".
+
+    Before version 0.6.0, likelihood functions could return a dictionary with the
+    special entries "contributions" and "value". Such a dictionary would now be
+    interpreted as a pytree of likelihood contributions and lead to wrong standard
+    errors without any error or warning.
+
+    """
+
+    @functools.wraps(loglike)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        out = loglike(*args, **kwargs)
+        if isinstance(out, dict) and "contributions" in out:
+            msg = (
+                "loglike returned a dictionary with the entry 'contributions'. "
+                "Dictionaries with the special entries 'contributions' and 'value' "
+                "are not supported anymore. Please return the likelihood contributions "
+                "directly or use an optimagic.FunctionValue object to return "
+                "additional information. For more details see the documentation: "
+                "https://optimagic.readthedocs.io/en/latest/how_to/how_to_criterion_function.html"
+            )
+            raise InvalidFunctionError(msg)
+        return out
+
+    return wrapper
 
 
 @dataclass

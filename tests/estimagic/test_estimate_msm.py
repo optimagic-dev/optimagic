@@ -103,7 +103,7 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
 
 def test_check_and_process_optimize_options_with_invalid_entries():
     with pytest.raises(ValueError):
-        check_optimization_options({"criterion": lambda x: x}, "estimate_msm")
+        check_optimization_options({"fun": lambda x: x}, "estimate_msm")
 
 
 ls_test_cases = list(

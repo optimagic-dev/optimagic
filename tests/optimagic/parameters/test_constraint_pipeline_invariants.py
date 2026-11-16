@@ -39,7 +39,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 import optimagic as om
 from optimagic import first_derivative
-from optimagic.deprecations import pre_process_constraints
+from optimagic.constraints import pre_process_constraints
 from optimagic.exceptions import InvalidConstraintError, InvalidParamsError
 from optimagic.parameters.conversion import get_converter
 from optimagic.pytree import tree_leaves
@@ -850,17 +850,6 @@ def test_negative_probability_at_start_raises_invalid_params_error():
         )
 
 
-def test_fix_that_differs_from_start_value_raises_invalid_params_error():
-    """Uses the old dict interface because the new constraint objects do not have a
-    value attribute.
-    """
-    with pytest.raises(InvalidParamsError):
-        _raises(
-            np.arange(3),
-            [{"selector": lambda x: x[1], "value": 10, "type": "fixed"}],
-        )
-
-
 def test_covariance_probability_overlap_raises_invalid_constraint_error():
     with pytest.raises(InvalidConstraintError):
         _raises(
@@ -932,15 +921,6 @@ def test_duplicate_selection_raises_invalid_constraint_error():
         _raises(
             np.array([1.0, 2.0, 3.0]),
             [om.EqualityConstraint(selector=lambda x: x[[0, 0, 1]])],
-        )
-
-
-def test_invalid_selector_field_raises_invalid_constraint_error():
-    """Loc selectors are not allowed for general pytree params."""
-    with pytest.raises(InvalidConstraintError):
-        _raises(
-            {"a": 1.0, "b": 2.0},
-            [{"type": "fixed", "loc": "a"}],
         )
 
 

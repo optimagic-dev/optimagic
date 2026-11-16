@@ -8,8 +8,10 @@ from numpy.testing import assert_array_equal
 import optimagic as om
 from optimagic.logging import SQLiteLogOptions
 from optimagic.logging.logger import LogStore
+from optimagic.optimization.history import History
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import Direction, EvalTask, IterationHistory
 from optimagic.visualization.backends import (
     BACKEND_AVAILABILITY_AND_LINE_PLOT_FUNCTION,
 )
@@ -17,6 +19,7 @@ from optimagic.visualization.history_plots import (
     LineData,
     _extract_criterion_plot_lines,
     _extract_params_plot_lines,
+    _get_elapsed_time,
     _harmonize_inputs_to_dict,
     _PlottingMultistartHistory,
     _retrieve_optimization_data_from_results,
@@ -238,6 +241,28 @@ def _compare_plotting_multistart_history_with_result(
     assert data.name == res_name
     assert_array_equal(data.start_params, res.start_params)
     assert data.is_multistart == (res.multistart_info is not None)
+
+
+def test_get_elapsed_time_of_history():
+    history = History(
+        direction=Direction.MINIMIZE,
+        params=[np.arange(2)] * 3,
+        fun=[3.0, 2.0, 1.0],
+        start_time=[10.0, 10.5, 12.0],
+        stop_time=[10.25, 11.0, 13.0],
+        batches=[0, 1, 2],
+        task=[EvalTask.FUN] * 3,
+    )
+    assert _get_elapsed_time(history) == [0.0, 0.5, 2.0]
+
+
+def test_get_elapsed_time_of_iteration_history():
+    history = IterationHistory(
+        params=[np.arange(2)] * 3,
+        fun=[3.0, 2.0, 1.0],
+        time=np.array([0.0, 0.5, 2.0]),
+    )
+    assert _get_elapsed_time(history) == [0.0, 0.5, 2.0]
 
 
 def test_retrieve_data_from_result(minimize_result):

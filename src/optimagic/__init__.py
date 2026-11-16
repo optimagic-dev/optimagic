@@ -32,7 +32,6 @@ from optimagic.logging import (
 from optimagic.logging import (
     SQLiteLogReader as SQLiteLogReader,
 )
-from optimagic.logging.read_log import OptimizeLogReader
 from optimagic.optimization.fun_value import (
     FunctionValue,
     LeastSquaresFunctionValue,
@@ -78,7 +77,6 @@ __all__ = [
     "params_plot",
     "count_free_params",
     "check_constraints",
-    "OptimizeLogReader",
     "OptimizeResult",
     "Bounds",
     "mark",

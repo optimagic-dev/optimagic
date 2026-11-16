@@ -1,23 +1,16 @@
 import functools
 import itertools
-import re
 from dataclasses import dataclass
 from itertools import product
 from typing import Any, Callable, Literal, NamedTuple, cast
 
 import numpy as np
-import pandas as pd
 from numpy.typing import NDArray
 
-from optimagic import batch_evaluators, deprecations
+from optimagic import batch_evaluators
 from optimagic.config import DEFAULT_N_CORES
-from optimagic.deprecations import (
-    replace_and_warn_about_deprecated_base_steps,
-    replace_and_warn_about_deprecated_bounds,
-)
 from optimagic.differentiation import finite_differences
 from optimagic.differentiation.generate_steps import generate_steps
-from optimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from optimagic.parameters.block_trees import hessian_to_block_tree, matrix_to_block_tree
 from optimagic.parameters.bounds import Bounds, get_internal_bounds, pre_process_bounds
 from optimagic.pytree import (
@@ -60,28 +53,17 @@ class NumdiffResult:
 
     derivative: PyTree
     func_value: PyTree | None = None
-    # deprecated
-    _func_evals: pd.DataFrame | dict[str, pd.DataFrame | None] | None = None
-    _derivative_candidates: pd.DataFrame | None = None
-
-    @property
-    def func_evals(self) -> pd.DataFrame | dict[str, pd.DataFrame | None] | None:
-        deprecations.throw_numdiff_result_func_evals_future_warning()
-        return self._func_evals
-
-    @property
-    def derivative_candidates(self) -> pd.DataFrame | None:
-        deprecations.throw_numdiff_result_derivative_candidates_future_warning()
-        return self._derivative_candidates
-
-    def __getitem__(self, key: str) -> Any:
-        deprecations.throw_dict_access_future_warning(key, obj_name=type(self).__name__)
-        return getattr(self, key)
 
 
 class Evals(NamedTuple):
     pos: NDArray[np.float64]
     neg: NDArray[np.float64]
+
+
+# The finite difference formulae are written for step arrays with a leading axis for
+# multiple steps per direction, but we always take just one step per direction.
+N_STEPS = 1
+STEP_RATIO = 2.0
 
 
 def first_derivative(
@@ -99,15 +81,6 @@ def first_derivative(
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
     batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib",
     unpacker: Callable[[Any], PyTree] | None = None,
-    # deprecated
-    lower_bounds: PyTree | None = None,
-    upper_bounds: PyTree | None = None,
-    base_steps: PyTree | None = None,
-    key: str | None = None,
-    step_ratio: float | None = None,
-    n_steps: int | None = None,
-    return_info: bool | None = None,
-    return_func_value: bool | None = None,
 ) -> NumdiffResult:
     """Evaluate first derivative of func at params according to method and step options.
 
@@ -135,15 +108,15 @@ def first_derivative(
         func_kwargs: Additional keyword arguments for func, optional.
         method: One of ["central", "forward", "backward"], default "central".
         step_size: 1d array of the same length as params.
-            step_size * scaling_factor is the absolute value of the first (and possibly
-            only) step used in the finite differences approximation of the derivative.
+            step_size * scaling_factor is the absolute value of the step used in the
+            finite differences approximation of the derivative.
             If step_size * scaling_factor conflicts with bounds, the actual steps will
             be adjusted. If step_size is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
         scaling_factor: Scaling factor which is applied to step_size. If it is an
             numpy.ndarray, it needs to be as long as params. scaling_factor is useful if
-            you want to increase or decrease the base_step relative to the rule-of-thumb
-            or user provided base_step, for example to benchmark the effect of the step
+            you want to increase or decrease the step size relative to the rule-of-thumb
+            or user provided step size, for example to benchmark the effect of the step
             size. Default 1.
         min_steps: Minimal possible step sizes that can be chosen to accommodate bounds.
             Must have same length as params. By default min_steps is equal to step_size,
@@ -169,47 +142,6 @@ def first_derivative(
         NumdiffResult: A numerical differentiation result.
 
     """
-    # ==================================================================================
-    # handle deprecations
-    # ==================================================================================
-    bounds = replace_and_warn_about_deprecated_bounds(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        bounds=bounds,
-    )
-
-    step_size = replace_and_warn_about_deprecated_base_steps(
-        step_size=step_size,
-        base_steps=base_steps,
-    )
-
-    if key is not None:
-        deprecations.throw_key_warning_in_derivatives()
-        if unpacker is None:
-            unpacker = lambda x: x[key]
-
-    if step_ratio is not None:
-        deprecations.throw_derivatives_step_ratio_future_warning()
-    else:
-        step_ratio = 2
-
-    if n_steps is not None:
-        deprecations.throw_derivatives_n_steps_future_warning()
-    else:
-        n_steps = 1
-
-    if return_info is not None:
-        deprecations.throw_derivatives_return_info_future_warning()
-    else:
-        return_info = False
-
-    if return_func_value is not None:
-        deprecations.throw_derivatives_return_func_value_future_warning()
-    else:
-        return_func_value = True
-
-    # ==================================================================================
-
     bounds = pre_process_bounds(bounds)
     unpacker = _process_unpacker(unpacker)
 
@@ -267,12 +199,12 @@ def first_derivative(
     step_size = generate_steps(
         x=x,
         method=method,
-        n_steps=n_steps,
+        n_steps=N_STEPS,
         target="first_derivative",
         base_steps=step_size,
         scaling_factor=scaling_factor,
         bounds=Bounds(lower=internal_lb, upper=internal_ub),
-        step_ratio=step_ratio,
+        step_ratio=STEP_RATIO,
         min_steps=min_steps,
     )
     step_size = cast(NDArray[np.float64], step_size)
@@ -280,7 +212,7 @@ def first_derivative(
     # generate parameter vectors at which func has to be evaluated as numpy arrays
     evaluation_points: list[float | np.ndarray] = []
     for step_arr in step_size:
-        for i, j in product(range(n_steps), range(len(x))):
+        for i, j in product(range(N_STEPS), range(len(x))):
             if np.isnan(step_arr[i, j]):
                 evaluation_points.append(np.nan)
             else:
@@ -344,7 +276,7 @@ def first_derivative(
     )
 
     # apply finite difference formulae
-    evals_data = np.array(raw_evals_arr).reshape(2, n_steps, len(x), -1)
+    evals_data = np.array(raw_evals_arr).reshape(2, N_STEPS, len(x), -1)
     evals_data_transposed = np.transpose(evals_data, axes=(0, 1, 3, 2))
     evals = Evals(pos=evals_data_transposed[0], neg=evals_data_transposed[1])
 
@@ -360,14 +292,7 @@ def first_derivative(
         "backward": ["backward", "forward"],
     }
 
-    if n_steps == 1:
-        jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
-        updated_candidates = None
-    else:
-        richardson_candidates = _compute_richardson_candidates(
-            jac_candidates, step_size, n_steps
-        )
-        jac, updated_candidates = _consolidate_extrapolated(richardson_candidates)
+    jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
 
     # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(jac).any():
@@ -381,15 +306,7 @@ def first_derivative(
     else:
         derivative = matrix_to_block_tree(jac, f0_tree, params)
 
-    result = {"derivative": derivative}
-    if return_func_value:
-        result["func_value"] = func_value
-    if return_info:
-        info = _collect_additional_info(
-            step_size, evals, updated_candidates, target="first_derivative"
-        )
-        result = {**result, **info}
-    return NumdiffResult(**result)  # ty:ignore[invalid-argument-type]
+    return NumdiffResult(derivative=derivative, func_value=func_value)
 
 
 def second_derivative(
@@ -409,15 +326,6 @@ def second_derivative(
     error_handling: Literal["continue", "raise", "raise_strict"] = "continue",
     batch_evaluator: BatchEvaluatorLiteral | Callable = "joblib",
     unpacker: Callable[[Any], PyTree] | None = None,
-    # deprecated
-    lower_bounds: PyTree | None = None,
-    upper_bounds: PyTree | None = None,
-    base_steps: PyTree | None = None,
-    step_ratio: float | None = None,
-    n_steps: int | None = None,
-    return_info: bool | None = None,
-    return_func_value: bool | None = None,
-    key: str | None = None,
 ) -> NumdiffResult:
     """Evaluate second derivative of func at params according to method and step
 
@@ -455,15 +363,15 @@ def second_derivative(
             in Rideout [2009] but is the natural extension of equation 7 to the backward
             case. Default "central_cross".
         step_size: 1d array of the same length as params.
-            step_size * scaling_factor is the absolute value of the first (and possibly
-            only) step used in the finite differences approximation of the derivative.
+            step_size * scaling_factor is the absolute value of the step used in the
+            finite differences approximation of the derivative.
             If step_size * scaling_factor conflicts with bounds, the actual steps will
             be adjusted. If step_size is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
         scaling_factor: Scaling factor which is applied to
             step_size. If it is an numpy.ndarray, it needs to be as long as params.
-            scaling_factor is useful if you want to increase or decrease the base_step
-            relative to the rule-of-thumb or user provided base_step, for example to
+            scaling_factor is useful if you want to increase or decrease the step size
+            relative to the rule-of-thumb or user provided step size, for example to
             benchmark the effect of the step size. Default 1.
         min_steps: Minimal possible step sizes that can be chosen to
             accommodate bounds. Must have same length as params. By default min_steps is
@@ -490,46 +398,6 @@ def second_derivative(
         NumdiffResult: A numerical differentiation result.
 
     """
-    # ==================================================================================
-    # handle deprecations
-    # ==================================================================================
-    bounds = replace_and_warn_about_deprecated_bounds(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        bounds=bounds,
-    )
-
-    step_size = replace_and_warn_about_deprecated_base_steps(
-        step_size=step_size,
-        base_steps=base_steps,
-    )
-
-    if step_ratio is not None:
-        deprecations.throw_derivatives_step_ratio_future_warning()
-    else:
-        step_ratio = 2
-
-    if n_steps is not None:
-        deprecations.throw_derivatives_n_steps_future_warning()
-    else:
-        n_steps = 1
-
-    if return_info is not None:
-        deprecations.throw_derivatives_return_info_future_warning()
-    else:
-        return_info = False
-
-    if return_func_value is not None:
-        deprecations.throw_derivatives_return_func_value_future_warning()
-    else:
-        return_func_value = True
-
-    if key is not None:
-        deprecations.throw_key_warning_in_derivatives()
-        if unpacker is None:
-            unpacker = lambda x: x[key]
-
-    # ==================================================================================
     bounds = pre_process_bounds(bounds)
     unpacker = _process_unpacker(unpacker)
 
@@ -586,12 +454,12 @@ def second_derivative(
     step_size = generate_steps(
         x=x,
         method=("central" if "central" in method else method),
-        n_steps=n_steps,
+        n_steps=N_STEPS,
         target="second_derivative",
         base_steps=step_size,
         scaling_factor=scaling_factor,
         bounds=Bounds(lower=internal_lb, upper=internal_ub),
-        step_ratio=step_ratio,
+        step_ratio=STEP_RATIO,
         min_steps=min_steps,
     )
     step_size = cast(NDArray[np.float64], step_size)
@@ -604,7 +472,7 @@ def second_derivative(
     }
     for step_arr in step_size:
         # single direction steps
-        for i, j in product(range(n_steps), range(len(x))):
+        for i, j in product(range(N_STEPS), range(len(x))):
             if np.isnan(step_arr[i, j]):
                 evaluation_points["one_step"].append(np.nan)
             else:
@@ -612,7 +480,7 @@ def second_derivative(
                 point[j] += step_arr[i, j]
                 evaluation_points["one_step"].append(point)
         # two and cross direction steps
-        for i, j, k in product(range(n_steps), range(len(x)), range(len(x))):
+        for i, j, k in product(range(N_STEPS), range(len(x)), range(len(x))):
             if j > k or np.isnan(step_arr[i, j]) or np.isnan(step_arr[i, k]):
                 evaluation_points["two_step"].append(np.nan)
                 evaluation_points["cross_step"].append(np.nan)
@@ -685,10 +553,10 @@ def second_derivative(
     # reshape arrays into dimension (n_steps, dim_f, dim_x) or (n_steps, dim_f, dim_x,
     # dim_x) for finite differences
     evals = {}
-    evals["one_step"] = _reshape_one_step_evals(raw_evals["one_step"], n_steps, len(x))
-    evals["two_step"] = _reshape_two_step_evals(raw_evals["two_step"], n_steps, len(x))
+    evals["one_step"] = _reshape_one_step_evals(raw_evals["one_step"], N_STEPS, len(x))
+    evals["two_step"] = _reshape_two_step_evals(raw_evals["two_step"], N_STEPS, len(x))
     evals["cross_step"] = _reshape_cross_step_evals(
-        raw_evals["cross_step"], n_steps, len(x), f0
+        raw_evals["cross_step"], N_STEPS, len(x), f0
     )
 
     # apply finite difference formulae
@@ -705,13 +573,7 @@ def second_derivative(
         "backward": ["backward", "forward", "central_average", "central_cross"],
     }
 
-    if n_steps == 1:
-        hess = _consolidate_one_step_derivatives(hess_candidates, orders[method])
-        updated_candidates = None
-    else:
-        raise ValueError(
-            "Richardson extrapolation is not implemented for the second derivative yet."
-        )
+    hess = _consolidate_one_step_derivatives(hess_candidates, orders[method])
 
     # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(hess).any():
@@ -720,15 +582,7 @@ def second_derivative(
     # results processing
     derivative = hessian_to_block_tree(hess, f0_tree, params)
 
-    result = {"derivative": derivative}
-    if return_func_value:
-        result["func_value"] = func_value
-    if return_info:
-        info = _collect_additional_info(
-            step_size, evals, updated_candidates, target="second_derivative"
-        )
-        result = {**result, **info}
-    return NumdiffResult(**result)  # ty:ignore[invalid-argument-type]
+    return NumdiffResult(derivative=derivative, func_value=func_value)
 
 
 def _is_1d_array(candidate: Any) -> bool:
@@ -854,82 +708,6 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     return evals
 
 
-def _convert_evaluation_data_to_frame(steps, evals):
-    """Convert evaluation data to (tidy) data frame.
-
-    Args:
-        steps (namedtuple): Namedtuple with field names pos and neg. Is generated by
-            :func:`~optimagic.differentiation.generate_steps.generate_steps`.
-        evals (namedtuple): Namedtuple with field names pos and neg. Contains function
-            evaluation corresponding to steps.
-
-    Returns:
-        df (pandas.DataFrame): Tidy data frame with index (sign, step_number, dim_x
-            dim_f), where sign corresponds to pos or neg in steps and evals, step_number
-            indexes the step, dim_x is the dimension of the input vector and dim_f is
-            the dimension of the function output. The data is given by the two columns
-            step and eval. The data frame has 2 * n_steps * dim_x * dim_f rows.
-
-    """
-    n_steps, dim_f, dim_x = evals.pos.shape
-
-    dfs = []
-    for direction, step_arr, eval_arr in zip((1, -1), steps, evals, strict=False):
-        df_steps = pd.DataFrame(step_arr, columns=range(dim_x))
-        df_steps = df_steps.reset_index()
-        df_steps = df_steps.rename(columns={"index": "step_number"})
-        df_steps = df_steps.melt(
-            id_vars="step_number", var_name="dim_x", value_name="step"
-        )
-        df_steps = df_steps.sort_values("step_number")
-        df_steps = df_steps.reset_index(drop=True)
-        df_steps = df_steps.apply(lambda col: col.abs() if col.name == "step" else col)
-
-        reshaped_eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
-        df_evals = pd.concat((df_steps, pd.DataFrame(reshaped_eval_arr)), axis=1)
-        df_evals = df_evals.melt(
-            id_vars=["step_number", "dim_x", "step"],
-            var_name="dim_f",
-            value_name="eval",
-        )
-        df_evals = df_evals.assign(sign=direction)
-        df_evals = df_evals.set_index(["sign", "step_number", "dim_x", "dim_f"])
-        df_evals = df_evals.sort_index()
-
-        dfs.append(df_evals)
-
-    df = pd.concat(dfs).astype({"step": float, "eval": float})
-    return df
-
-
-def _convert_richardson_candidates_to_frame(jac, err):
-    """Convert (richardson) jacobian candidates and errors to pandas data frame.
-
-    Args:
-        jac (dict): Dict with richardson jacobian candidates.
-        err (dict): Dict with errors corresponding to richardson jacobian candidates.
-
-    Returns:
-        df (pandas.DataFrame): Frame with column "der" and "err" and index ["method",
-            "num_term", "dim_x", "dim_f"] with respective meaning: type of method used,
-            e.g. central or foward; kind of value, e.g. derivative or error.
-
-    """
-    dim_f, dim_x = jac["forward1"].shape
-    dfs = []
-    for key, value in jac.items():
-        method, num_term = _split_into_str_and_int(key)
-        df = pd.DataFrame(value.T, columns=range(dim_f))
-        df = df.assign(dim_x=range(dim_x))
-        df = df.melt(id_vars="dim_x", var_name="dim_f", value_name="der")
-        df = df.assign(method=method, num_term=num_term, err=err[key].T.flatten())
-        dfs.append(df)
-
-    df = pd.concat(dfs)
-    df = df.set_index(["method", "num_term", "dim_x", "dim_f"])
-    return df
-
-
 def _convert_evals_to_numpy(
     raw_evals, unpacker, namespace, is_scalar_out=False, is_vector_out=False
 ):
@@ -1000,123 +778,6 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
     return consolidated.reshape(consolidated.shape[1:])
 
 
-def _consolidate_extrapolated(candidates):
-    """Get the best possible derivative estimate, given an error estimate.
-
-    Going through ``candidates`` select the best derivative estimate element-wise using
-    the estimated candidates, where best is defined as minimizing the error estimate
-    from the Richardson extrapolation.
-
-    See https://tinyurl.com/ubn3nv5 for corresponding code in numdifftools and
-    https://tinyurl.com/snle7mb for an explanation of how errors of Richardson
-    extrapolated derivative estimates can be estimated.
-
-    Args:
-        candidates (dict): Dictionary containing different derivative estimates and
-            their error estimates.
-
-    Returns:
-        consolidated (np.ndarray): Array of same shape as input derivative estimates.
-        candidate_der_dict (dict): Best derivative estimate given method.
-        candidate_err_dict (dict): Errors corresponding to best derivatives given method
-
-    """
-    # first find minimum over steps for each method
-    candidate_der_dict = {}
-    candidate_err_dict = {}
-
-    for key in candidates:
-        _der = candidates[key]["derivative"]
-        _err = candidates[key]["error"]
-        derivative, error = _select_minimizer_along_axis(_der, _err)
-        candidate_der_dict[key] = derivative
-        candidate_err_dict[key] = error
-
-    # second find minimum over methods
-    candidate_der = np.stack(list(candidate_der_dict.values()))
-    candidate_err = np.stack(list(candidate_err_dict.values()))
-    consolidated, _ = _select_minimizer_along_axis(candidate_der, candidate_err)
-
-    updated_candidates = (candidate_der_dict, candidate_err_dict)
-    return consolidated, updated_candidates
-
-
-def _compute_richardson_candidates(jac_candidates, steps, n_steps):
-    """Compute derivative candidates using Richardson extrapolation.
-
-    Args:
-        jac_candidates (dict): Dictionary with (traditional) derivative estimates from
-            different methods.
-        steps (namedtuple): Namedtuple with the field names pos and neg. Each field
-            contains a numpy array of shape (n_steps, len(x)) with the steps in
-            the corresponding direction. The steps are always symmetric, in the sense
-            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
-        n_steps (int): Number of steps needed. For central methods, this is
-            the number of steps per direction. It is 1 if no Richardson extrapolation
-            is used.
-
-    Returns:
-        richardson_candidates (dict): Dictionary with derivative estimates and error
-            estimates from different methods.
-            - Keys correspond to the method used, i.e. forward, backward or central
-            differences and the number of terms used in the Richardson extrapolation.
-            - Values represent the corresponding derivative estimate and error
-            estimate, stored as np.ndarrays in a sub-dictionary under "derivative" and
-            "error" respectively, with the first dimensions coinciding with that of an
-            element of ``jac_candidates`` and depending on num_terms, possibly one
-            further dimension.
-
-    """
-    richardson_candidates = {}
-    for method in ["forward", "backward", "central"]:
-        for num_terms in range(1, n_steps):
-            derivative, error = richardson_extrapolation(
-                jac_candidates[method], steps, method, num_terms
-            )
-            richardson_candidates[method + str(num_terms)] = {
-                "derivative": derivative,
-                "error": error,
-            }
-
-    return richardson_candidates
-
-
-def _select_minimizer_along_axis(derivative, errors):
-    """Select best derivative estimates element wise.
-
-    Select elements from ``derivative`` which correspond to minimum in ``errors`` along
-    first axis.
-
-    Args:
-        derivative (np.ndarray): Derivative estimates from Richardson approximation.
-            First axis (axis 0) denotes the potentially multiple estimates. Following
-            dimensions represent the dimension of the derivative, i.e. for a classical
-            gradient ``derivative`` has 2 dimensions, while for a classical jacobian
-            ``derivative`` has 3 dimensions.
-        errors (np.ndarray): Error estimates of ``derivative`` estimates. Has the same
-            shape as ``derivative``.
-
-    Returns:
-        derivative_minimal (np.ndarray): Best derivate estimates chosen with respect
-            to minimizing ``errors``. Note that the best values are selected
-            element-wise. Has shape ``(derivative.shape[1], derivative.shape[2])``.
-
-        error_minimal (np.ndarray): Minimal errors selected element-wise along axis
-            0 of ``errors``.
-
-    """
-    if derivative.shape[0] == 1:
-        jac_minimal = np.squeeze(derivative, axis=0)
-        error_minimal = np.squeeze(errors, axis=0)
-    else:
-        minimizer = np.nanargmin(errors, axis=0)
-        jac_minimal = np.take_along_axis(derivative, minimizer[np.newaxis, :], axis=0)
-        jac_minimal = np.squeeze(jac_minimal, axis=0)
-        error_minimal = np.nanmin(errors, axis=0)
-
-    return jac_minimal, error_minimal
-
-
 def _nan_skipping_batch_evaluator(
     func, arguments, n_cores, error_handling, batch_evaluator
 ):
@@ -1163,51 +824,6 @@ def _nan_skipping_batch_evaluator(
             results.append(next(evaluations))
 
     return results
-
-
-def _split_into_str_and_int(s):
-    """Splits string in str and int parts.
-
-    Args:
-        s (str): The string.
-
-    Returns:
-        str_part (str): The str part.
-        int_part (int): The int part.
-
-    Example:
-    >>> s = "forward1"
-    >>> _split_into_str_and_int(s)
-    ('forward', 1)
-
-    """
-    str_part, int_part = re.findall(r"(\w+?)(\d+)", s)[0]
-    return str_part, int(int_part)
-
-
-def _collect_additional_info(steps, evals, updated_candidates, target):
-    """Combine additional information in dict if return_info is True."""
-    info = {}
-    # save function evaluations to accessible data frame
-    if target == "first_derivative":
-        func_evals = _convert_evaluation_data_to_frame(steps, evals)
-        info["_func_evals"] = func_evals
-    else:
-        one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
-        info["_func_evals"] = {
-            "one_step": one_step,
-            "two_step": None,
-            "cross_step": None,
-        }
-
-    if updated_candidates is not None:
-        # combine derivative candidates in accessible data frame
-        derivative_candidates = _convert_richardson_candidates_to_frame(
-            *updated_candidates
-        )
-        info["_derivative_candidates"] = derivative_candidates
-
-    return info
 
 
 def _is_scalar_nan(value):

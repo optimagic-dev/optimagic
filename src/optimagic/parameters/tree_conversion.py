@@ -112,33 +112,6 @@ def _get_params_unflatten(treedef):
     return params_unflatten
 
 
-def _get_best_key_and_aggregator(needed_key, available_keys):
-    if needed_key in available_keys:
-        key = needed_key
-        if needed_key == "value":
-            aggregate = lambda x: float(x[0])
-        else:
-            aggregate = lambda x: np.array(x).astype(float)
-    elif needed_key == "contributions" and "root_contributions" in available_keys:
-        key = "root_contributions"
-        aggregate = lambda x: np.array(x).astype(float) ** 2
-    elif needed_key == "value" and "contributions" in available_keys:
-        key = "contributions"
-        aggregate = lambda x: float(np.sum(x))
-    elif needed_key == "value" and "root_contributions" in available_keys:
-        key = "root_contributions"
-        aggregate = lambda x: float((np.array(x) ** 2).sum())
-    else:
-        msg = (
-            "The optimizer you requested requires a criterion function that returns "
-            f"a dictionary with the entry '{needed_key}'. Your function returns a "
-            f"dictionary that only contains the entries {available_keys}."
-        )
-        raise InvalidFunctionError(msg)
-
-    return key, aggregate
-
-
 def _get_derivative_flatten(namespace, solver_type, params, func_eval, derivative_eval):
     # gradient case
     if solver_type == AggregationLevel.SCALAR:

@@ -201,11 +201,11 @@
 ## Log reading
 
 ```{eval-rst}
-.. dropdown:: OptimizeLogReader
+.. dropdown:: SQLiteLogReader
 
-    .. autoclass:: OptimizeLogReader
-
-
+    .. autoclass:: SQLiteLogReader
+        :members:
+        :inherited-members:
 
 ```
 

@@ -32,10 +32,8 @@ from estimagic.shared_covs import (
     transform_free_cov_to_cov,
     transform_free_values_to_params_tree,
 )
-from optimagic import deprecations, mark
-from optimagic.deprecations import (
-    replace_and_warn_about_deprecated_bounds,
-)
+from optimagic import mark
+from optimagic.constraints import pre_process_constraints
 from optimagic.differentiation.derivatives import first_derivative
 from optimagic.differentiation.numdiff_options import (
     NumdiffPurpose,
@@ -76,11 +74,6 @@ def estimate_msm(
     jacobian=None,
     jacobian_kwargs=None,
     jacobian_numdiff_options=None,
-    # deprecated
-    log_options=None,
-    lower_bounds=None,
-    upper_bounds=None,
-    numdiff_options=None,
 ):
     """Do a method of simulated moments or indirect inference estimation.
 
@@ -129,27 +122,11 @@ def estimate_msm(
         weights (str): One of "diagonal" (default), "identity" or "optimal".
             Note that "optimal" refers to the asymptotically optimal weighting matrix
             and is often not a good choice due to large finite sample bias.
-        constraints (list, dict): List with constraint dictionaries or single dict.
-            See :ref:`constraints`.
-        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
-            the file extension ``.db``. If the file does not exist, it will be created.
-
-        log_options (dict): Additional keyword arguments to configure the logging.
-
-            - "fast_logging" (bool):
-                A boolean that determines if "unsafe" settings are used to speed up
-                write processes to the database. This should only be used for very short
-                running criterion functions where the main purpose of the log is a
-                monitoring and it would not be catastrophic to get a corrupted
-                database in case of a sudden system shutdown. If one evaluation of the
-                criterion function (and gradient if applicable) takes more than 100 ms,
-                the logging overhead is negligible.
-            - "if_table_exists" (str):
-                One of "extend", "replace", "raise". What to do if the tables we want to
-                write to already exist. Default "extend".
-            - "if_database_exists" (str):
-                One of "extend", "replace", "raise". What to do if the database we want
-                to write to already exists. Default "extend".
+        constraints (Constraint or list): A single optimagic constraint object or a
+            list of constraint objects. See :ref:`constraints`.
+        logging (pathlib.Path, str, LogOptions or None): Path to sqlite3 file (which
+            typically has the file extension ``.db``. If the file does not exist, it
+            will be created. For more customization, provide LogOptions.
         jacobian (callable): A function that take ``params`` and
             potentially other keyword arguments and returns the jacobian of
             simulate_moments with respect to the params.
@@ -166,28 +143,11 @@ def estimate_msm(
 
     """
     # ==================================================================================
-    # handle deprecations
-    # ==================================================================================
-
-    bounds = replace_and_warn_about_deprecated_bounds(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        bounds=bounds,
-    )
-
-    if numdiff_options is not None:
-        deprecations.throw_numdiff_options_deprecated_in_estimate_msm_future_warning()
-        if jacobian_numdiff_options is not None:
-            jacobian_numdiff_options = numdiff_options
-
-    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
-
-    # ==================================================================================
     # Check and process inputs
     # ==================================================================================
 
     bounds = pre_process_bounds(bounds)
-    processed_constraints = deprecations.pre_process_constraints(constraints)
+    processed_constraints = pre_process_constraints(constraints)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
     if jacobian_numdiff_options is None:
         jacobian_numdiff_options = get_default_numdiff_options(
@@ -255,7 +215,6 @@ def estimate_msm(
             bounds=bounds,
             constraints=constraints,
             logging=logging,
-            log_options=log_options,
             params=params,
             **funcs,  # contains the criterion func and possibly more
             **optimize_options,

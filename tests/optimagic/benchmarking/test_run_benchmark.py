@@ -13,7 +13,7 @@ def test_run_benchmark_dict_options():
         "default_lbfgsb": "scipy_lbfgsb",
         "tuned_lbfgsb": {
             "algorithm": "scipy_lbfgsb",
-            "algo_options": {"convergence.relative_criterion_tolerance": 1e-10},
+            "algo_options": {"convergence.ftol_rel": 1e-10},
         },
     }
 

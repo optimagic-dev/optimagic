@@ -27,19 +27,17 @@ type of constraint.
 ## How testcases are implemented
 
 We consider different implementations of each criterion and its gradient. All algorithms
-accept criterion functions specified in a dictionary, while a subset also accepts the
-criterion specified in scalar form. Likewise, if specified, the gradient of a criterion
-can be an np.ndarray or a pandas object. We test for all possible cases. For instance,
-for rotated hyper ellipsoid, we implement the following functions:
+accept criterion functions that return a scalar, while least squares algorithms need a
+criterion that returns the residuals and is marked with the `om.mark.least_squares`
+decorator. Likewise, if specified, the gradient of a criterion can be an np.ndarray or a
+pandas object. We test for all possible cases. For instance, for rotated hyper
+ellipsoid, we implement the following functions:
 
-- rotated_hyper_ellipsoid_scalar_criterion
-- rotated_hyper_ellipsoid_dict_criterion: This provides a dictionary wherein the
-  `contributions` and `root_contributions` keys present the criterion as a least squares
-  problem, relevant when we are testing a least squares algorithm.
-- rotated_hyper_ellipsoid_gradient
-- rotated_hyper_ellipsoid_pandas_gradient: Computes the gradient of the rotated hyper
-  ellipsoid function, as a pandas object.
-- rotated_hyper_ellipsoid_criterion_and_gradient
+- rhe_scalar
+- rhe_ls: This presents the criterion as a least squares problem, relevant when we are
+  testing a least squares algorithm.
+- rhe_gradient
+- rhe_fun_and_gradient
 
 These criterion functions are specified in the `examples` directory. For an overview of
 all constraints supported in optimagic, please see [this how-to guide].
@@ -47,8 +45,8 @@ all constraints supported in optimagic, please see [this how-to guide].
 We write several test functions, each corresponding to the case of one constraint. Given
 the constraint, the test function considers all possible combinations of the algorithm,
 whether to maximize or to minimize, criterion function implementation, gradient
-implementation for that criterion (if provided), and whether `criterion_and_derivative`
-has been provided or not.
+implementation for that criterion (if provided), and whether `fun_and_jac` has been
+provided or not.
 
 Below, we show the calculations behind the true values, for each testcase (one criterion
 and one constraint).
@@ -72,7 +70,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
+        constraints = [om.FixedConstraint(selector=lambda p: p.loc["x_1"])]
 
     :math:`x_{1} = 1 \rightarrow f(x) = (x_2 - 1)^2 + (x_3 - 1)^2 - x_2 - x_3 x_2 \\
     \Rightarrow \frac{\delta f({x})}{\delta x_2} = 2x_2 - 3 - x_3 = 0
@@ -88,7 +86,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
+        constraints = [om.ProbabilityConstraint(selector=lambda p: p.loc[["x_1", "x_2"]])]
 
     :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
     \rightarrow f({x}) = 3x_1^2 - 3x_1 - 3x_3 + x_3^2 + x_1 x_3 + 2 \\
@@ -105,7 +103,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
+        constraints = [om.IncreasingConstraint(selector=lambda p: p.loc[["x_2", "x_3"]])]
 
     :math:`\mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 -
     x_3 x_2 - \lambda(x_3 - x_2)\\
@@ -127,7 +125,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
+        constraints = [om.DecreasingConstraint(selector=lambda p: p.loc[["x_1", "x_2"]])]
 
     Solution unavailable.
 ```
@@ -137,7 +135,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
+        constraints = [om.EqualityConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 
     :math:`x_{1} = x_{2} = x_{3} = x \\
     \rightarrow f({x}) = x^2 - 6x + 3\\
@@ -151,7 +149,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
+        constraints = [om.PairwiseEqualityConstraint(selectors=[lambda p: p.loc["x_1"], lambda p: p.loc["x_2"]])]
 
     :math:`x_{1} = x_{2} \\
     \rightarrow f({x}) = 2(x_1 - 1)^2 + (x_3 - 1)^2 - x_1^2 - x_3 x_1\\
@@ -168,7 +166,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
+        constraints = [om.FlatCovConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 
     Solution unavailable.
 
@@ -179,7 +177,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
+        constraints = [om.FlatSDCorrConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 
     Solution unavailable.
 ```
@@ -189,7 +187,7 @@ and one constraint).
 
     .. code-block:: python
 
-        constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
+        constraints = [om.LinearConstraint(selector=lambda p: p.loc[["x_1", "x_2"]], weights=[1, 2], value=4)]
 
     :math:`x_1 + 2x_2 = 4\\
     \mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 - x_3 x_2
@@ -229,7 +227,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
+> >         constraints = [om.FixedConstraint(selector=lambda p: p.loc["x_1"])]
 > >
 > >     :math:`x_{1} = 1
 > >     \rightarrow x* = (1, 0, 0)`
@@ -240,7 +238,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
+> >         constraints = [om.ProbabilityConstraint(selector=lambda p: p.loc[["x_1", "x_2"]])]
 > >
 > >     :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
 > >     \mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)\\
@@ -262,7 +260,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
+> >         constraints = [om.IncreasingConstraint(selector=lambda p: p.loc[["x_2", "x_3"]])]
 > >
 > >     Not binding :math:`\rightarrow x* = (0, 0, 0)`
 > >
@@ -273,7 +271,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
+> >         constraints = [om.DecreasingConstraint(selector=lambda p: p.loc[["x_1", "x_2"]])]
 > >
 > >     Not binding :math:`\rightarrow x* = (0, 0, 0)`
 > >
@@ -284,7 +282,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
+> >         constraints = [om.EqualityConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 > >
 > >     Not binding :math:`\rightarrow x* = (0, 0, 0)`
 > >
@@ -295,7 +293,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
+> >         constraints = [om.PairwiseEqualityConstraint(selectors=[lambda p: p.loc["x_1"], lambda p: p.loc["x_2"]])]
 > >
 > >     Not binding :math:`\rightarrow x* = (0, 0, 0)`
 > >
@@ -306,7 +304,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
+> >         constraints = [om.FlatCovConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 > >
 > >     Not binding :math:`\rightarrow x* = (0, 0, 0)`
 > >
@@ -318,7 +316,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
+> >         constraints = [om.FlatSDCorrConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 > >
 > >     Not binding :math:`\rightarrow x* = (0, 0, 0)`
 > >
@@ -329,7 +327,7 @@ and one constraint).
 > >
 > >     .. code-block:: python
 > >
-> >         constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
+> >         constraints = [om.LinearConstraint(selector=lambda p: p.loc[["x_1", "x_2"]], weights=[1, 2], value=4)]
 > >
 > >     :math:`x_1 + 2x_2 = 4\\\mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) +
 > >     (x^2_1 + x^2_2 + x^2_3) -\lambda(x_1 +2x_2-4)\\
@@ -371,7 +369,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->        constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
+>        constraints = [om.FixedConstraint(selector=lambda p: p.loc["x_1"])]
 >
 >     :math:`x_{1} = 1 \rightarrow x* = (1, 1, 1)`
 > ```
@@ -381,7 +379,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
+>         constraints = [om.ProbabilityConstraint(selector=lambda p: p.loc[["x_1", "x_2"]])]
 >
 >     No solution available.
 > ```
@@ -391,7 +389,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
+>         constraints = [om.IncreasingConstraint(selector=lambda p: p.loc[["x_2", "x_3"]])]
 >
 >     Not binding :math:`\rightarrow x* = (1, 1, 1)`
 >
@@ -402,7 +400,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
+>         constraints = [om.DecreasingConstraint(selector=lambda p: p.loc[["x_1", "x_2"]])]
 >
 >     Not binding :math:`\rightarrow x* = (1, 1, 1)`
 > ```
@@ -412,7 +410,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
+>         constraints = [om.EqualityConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 >
 >     Not binding :math:`\rightarrow x* = (1, 1, 1)`
 > ```
@@ -422,7 +420,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
+>         constraints = [om.PairwiseEqualityConstraint(selectors=[lambda p: p.loc["x_1"], lambda p: p.loc["x_2"]])]
 >
 >     Not binding :math:`\rightarrow x* = (1, 1, 1)`
 > ```
@@ -432,7 +430,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
+>         constraints = [om.FlatCovConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 >
 >     Not binding :math:`\rightarrow x* = (1, 1, 1)`
 > ```
@@ -442,7 +440,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
+>         constraints = [om.FlatSDCorrConstraint(selector=lambda p: p.loc[["x_1", "x_2", "x_3"]])]
 >
 >     Not binding :math:`\rightarrow x* = (1, 1, 1)`
 > ```
@@ -452,7 +450,7 @@ Global minima: $x* = (1, 1, 1)$
 >
 >     .. code-block:: python
 >
->         constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
+>         constraints = [om.LinearConstraint(selector=lambda p: p.loc[["x_1", "x_2"]], weights=[1, 2], value=4)]
 >
 >     No solution available.
 > ```

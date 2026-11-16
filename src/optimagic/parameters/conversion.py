@@ -91,7 +91,7 @@ def get_converter(
     )
 
     # Temporary seam during the constraints refactoring: checking and consolidation
-    # still work on the deprecated dictionary representation of constraints.
+    # still work on a dictionary representation of constraints.
     flat_constraints = to_legacy_dicts(resolved_constraints)
 
     space_converter, internal_params = get_space_converter(

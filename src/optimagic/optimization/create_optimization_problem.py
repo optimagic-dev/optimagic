@@ -4,14 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Type
 
-from optimagic import deprecations
 from optimagic.algorithms import ALL_ALGORITHMS
-from optimagic.constraints import Constraint
-from optimagic.deprecations import (
-    handle_log_options_throw_deprecated_warning,
-    replace_and_warn_about_deprecated_algo_options,
-    replace_and_warn_about_deprecated_bounds,
-)
+from optimagic.constraints import Constraint, pre_process_constraints
 from optimagic.differentiation.numdiff_options import (
     NumdiffOptions,
     NumdiffPurpose,
@@ -60,8 +54,7 @@ class OptimizationProblem:
     sequence of tuples, a scipy.optimize.Bounds object or an optimagic.Bounds when
     calling `maximize` or `minimize` is converted to an optimagic.Bounds object.
 
-    All deprecated arguments are removed and all scipy aliases are replaced by their
-    optimagic counterparts.
+    All scipy aliases are replaced by their optimagic counterparts.
 
     All user provided functions are partialled if corresponding `kwargs` dictionaries
     were provided.
@@ -78,7 +71,6 @@ class OptimizationProblem:
     jac: Callable[[PyTree], PyTree] | None
     fun_and_jac: Callable[[PyTree], tuple[SpecificFunctionValue, PyTree]] | None
     numdiff_options: NumdiffOptions
-    # TODO: logging will become None | Logger and log_options will be removed
     error_handling: ErrorHandling
     logging: LogOptions | None
     error_penalty: dict[str, Any] | None
@@ -131,26 +123,12 @@ def create_optimization_problem(
     # scipy arguments that will never be supported
     options,
     tol,
-    # deprecated arguments
-    criterion,
-    criterion_kwargs,
-    derivative,
-    derivative_kwargs,
-    criterion_and_derivative,
-    criterion_and_derivative_kwargs,
-    lower_bounds,
-    log_options,
-    upper_bounds,
-    soft_lower_bounds,
-    soft_upper_bounds,
-    scaling_options,
-    multistart_options,
 ):
     # ==================================================================================
     # error handling needed as long as fun is an optional argument
     # ==================================================================================
 
-    if fun_and_jac is None and fun is None and criterion is None:
+    if fun_and_jac is None and fun is None:
         msg = (
             "Missing objective function. Please provide an objective function as the "
             "first positional argument or as the keyword argument `fun` or "
@@ -172,7 +150,7 @@ def create_optimization_problem(
         )
         raise MissingInputError(msg)
 
-    if fun_and_jac is not None and fun is None and criterion is None:
+    if fun_and_jac is not None and fun is None:
         if isinstance(fun_and_jac, Sequence):
             raise NotImplementedError(
                 "If `fun_and_jac` is a sequence of callables, `fun` is not optional. "
@@ -182,70 +160,6 @@ def create_optimization_problem(
     else:
         split_fun_and_jac_candidate = None
 
-    # ==================================================================================
-    # deprecations
-    # ==================================================================================
-
-    if log_options is not None:
-        logging = handle_log_options_throw_deprecated_warning(log_options, logging)
-
-    if criterion is not None:
-        deprecations.throw_criterion_future_warning()
-        fun = criterion if fun is None else fun
-
-    if criterion_kwargs is not None:
-        deprecations.throw_criterion_kwargs_future_warning()
-        fun_kwargs = criterion_kwargs if fun_kwargs is None else fun_kwargs
-
-    if derivative is not None:
-        deprecations.throw_derivative_future_warning()
-        jac = derivative if jac is None else jac
-
-    if derivative_kwargs is not None:
-        deprecations.throw_derivative_kwargs_future_warning()
-        jac_kwargs = derivative_kwargs if jac_kwargs is None else jac_kwargs
-
-    if criterion_and_derivative is not None:
-        deprecations.throw_criterion_and_derivative_future_warning()
-        fun_and_jac = criterion_and_derivative if fun_and_jac is None else fun_and_jac
-
-    if criterion_and_derivative_kwargs is not None:
-        deprecations.throw_criterion_and_derivative_kwargs_future_warning()
-        fun_and_jac_kwargs = (
-            criterion_and_derivative_kwargs
-            if fun_and_jac_kwargs is None
-            else fun_and_jac_kwargs
-        )
-
-    if scaling_options is not None:
-        deprecations.throw_scaling_options_future_warning()
-        if scaling is True and scaling_options is not None:
-            scaling = scaling_options
-
-    if multistart_options is not None:
-        deprecations.throw_multistart_options_future_warning()
-        if multistart is True and multistart_options is not None:
-            multistart = multistart_options
-
-    deprecations.throw_dict_constraints_future_warning_if_required(constraints)
-
-    algo_options = replace_and_warn_about_deprecated_algo_options(algo_options)
-
-    bounds = replace_and_warn_about_deprecated_bounds(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        bounds=bounds,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
-    )
-
-    if isinstance(jac, dict):
-        jac = deprecations.replace_and_warn_about_deprecated_derivatives(jac, "jac")
-
-    if isinstance(fun_and_jac, dict):
-        fun_and_jac = deprecations.replace_and_warn_about_deprecated_derivatives(
-            fun_and_jac, "fun_and_jac"
-        )
     # ==================================================================================
     # handle scipy aliases
     # ==================================================================================
@@ -358,14 +272,17 @@ def create_optimization_problem(
     scaling = pre_process_scaling(scaling)
     multistart = pre_process_multistart(multistart)
     numdiff_options = pre_process_numdiff_options(numdiff_options)
-    constraints = deprecations.pre_process_constraints(constraints)
+    constraints = pre_process_constraints(constraints)
 
     if numdiff_options is None:
         numdiff_options = get_default_numdiff_options(purpose=NumdiffPurpose.OPTIMIZE)
 
     fun_kwargs = {} if fun_kwargs is None else fun_kwargs
-    constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
+    if isinstance(algo_options, dict):
+        # option names can be written with dots instead of underscores, e.g.
+        # "stopping.maxfun" instead of "stopping_maxfun"
+        algo_options = {k.replace(".", "_"): v for k, v in algo_options.items()}
     jac_kwargs = {} if jac_kwargs is None else jac_kwargs
     fun_and_jac_kwargs = {} if fun_and_jac_kwargs is None else fun_and_jac_kwargs
     error_penalty = {} if error_penalty is None else error_penalty
@@ -384,9 +301,8 @@ def create_optimization_problem(
         skip_checks=skip_checks,
     )
 
-    # This should be done as late as possible; It has to be done here to infer the
-    # problem type until the decorator approach becomes mandatory.
-    # TODO: Move this into `_optimize` as soon as we reach 0.6.0
+    # TODO: This should be done as late as possible. Since the problem type is
+    # inferred from the `mark` decorators, it can be moved into `_optimize`.
     try:
         if split_fun_and_jac_candidate is None:
             fun_eval = fun(params)
@@ -409,17 +325,11 @@ def create_optimization_problem(
         msg = "Error while evaluating fun at start params."
         raise InvalidFunctionError(msg) from e
 
-    if deprecations.is_dict_output(fun_eval):
-        deprecations.throw_dict_output_warning()
-
     # ==================================================================================
     # infer the problem type
     # ==================================================================================
 
-    if deprecations.is_dict_output(fun_eval):
-        problem_type = deprecations.infer_problem_type_from_dict_output(fun_eval)
-    else:
-        problem_type = infer_aggregation_level(fun)
+    problem_type = infer_aggregation_level(fun)
 
     if (
         problem_type == AggregationLevel.LEAST_SQUARES
@@ -431,11 +341,7 @@ def create_optimization_problem(
     # process the fun_eval; Can be removed once the first evaluation gets moved to
     # a later point where the `enforce` decorator has already been applied.
     # ==================================================================================
-    if deprecations.is_dict_output(fun_eval):
-        fun_eval = deprecations.convert_dict_to_function_value(fun_eval)
-        fun = deprecations.replace_dict_output(fun)
-    else:
-        fun_eval = convert_fun_output_to_function_value(fun_eval, problem_type)
+    fun_eval = convert_fun_output_to_function_value(fun_eval, problem_type)
 
     fun = enforce_return_type(problem_type)(fun)
 
@@ -496,8 +402,6 @@ def create_optimization_problem(
             name="criterion_and_derivative",
             skip_checks=skip_checks,
         )
-        fun_and_jac = deprecations.replace_dict_output(fun_and_jac)
-
         fun_and_jac = enforce_return_type_with_jac(algorithm.algo_info.solver_type)(
             fun_and_jac
         )
@@ -549,9 +453,6 @@ def create_optimization_problem(
             raise ValueError(
                 "logging must be a boolean, a path, a LogOptions instance or None"
             )
-
-        if not isinstance(log_options, dict | None):
-            raise ValueError("log_options must be a dictionary or None")
 
         if not isinstance(error_penalty, dict | None):
             raise ValueError("error_penalty must be a dictionary or None")
