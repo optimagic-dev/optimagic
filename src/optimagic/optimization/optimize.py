@@ -72,21 +72,18 @@ from optimagic.typing import (
 
 FunType = Callable[..., float | PyTree | FunctionValue]
 AlgorithmType = str | Algorithm | Type[Algorithm]
-ConstraintsType = Constraint | dict[str, Any] | Sequence[Constraint | dict[str, Any]]
+ConstraintsType = Constraint | Sequence[Constraint]
 JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]
 CallbackType = Callable[[PyTree], None]
-
-CriterionType = Callable[..., float | dict[str, Any]]
-CriterionAndDerivativeType = Callable[..., tuple[float | dict[str, Any], PyTree]]
 
 
 from optimagic.logging.logger import LogOptions
 
 
 def maximize(
-    fun: FunType | CriterionType | None = None,
+    fun: FunType | None = None,
     params: PyTree | None = None,
     algorithm: AlgorithmType | None = None,
     *,
@@ -96,10 +93,7 @@ def maximize(
     algo_options: dict[str, Any] | None = None,
     jac: JacType | Sequence[JacType] | Literal[True] | None = None,
     jac_kwargs: dict[str, Any] | None = None,
-    fun_and_jac: FunAndJacType
-    | CriterionAndDerivativeType
-    | Sequence[FunAndJacType]
-    | None = None,
+    fun_and_jac: FunAndJacType | Sequence[FunAndJacType] | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
     # TODO: add typed-dict support?
@@ -121,20 +115,6 @@ def maximize(
     # scipy arguments that will never be supported
     options: dict[str, Any] | None = None,
     tol: NonNegativeFloat | None = None,
-    # deprecated arguments
-    criterion: CriterionType | None = None,
-    criterion_kwargs: dict[str, Any] | None = None,
-    derivative: JacType | None = None,
-    derivative_kwargs: dict[str, Any] | None = None,
-    criterion_and_derivative: CriterionAndDerivativeType | None = None,
-    criterion_and_derivative_kwargs: dict[str, Any] | None = None,
-    log_options: dict[str, Any] | None = None,
-    lower_bounds: PyTree | None = None,
-    upper_bounds: PyTree | None = None,
-    soft_lower_bounds: PyTree | None = None,
-    soft_upper_bounds: PyTree | None = None,
-    scaling_options: dict[str, Any] | None = None,
-    multistart_options: dict[str, Any] | None = None,
 ) -> OptimizeResult:
     """Maximize fun using algorithm subject to constraints.
 
@@ -232,18 +212,6 @@ def maximize(
             ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
-        criterion: Deprecated. Use fun instead.
-        criterion_kwargs: Deprecated. Use fun_kwargs instead.
-        derivative: Deprecated. Use jac instead.
-        derivative_kwargs: Deprecated. Use jac_kwargs instead.
-        criterion_and_derivative: Deprecated. Use fun_and_jac instead.
-        criterion_and_derivative_kwargs: Deprecated. Use fun_and_jac_kwargs instead.
-        lower_bounds: Deprecated. Use bounds instead.
-        upper_bounds: Deprecated. Use bounds instead.
-        soft_lower_bounds: Deprecated. Use bounds instead.
-        soft_upper_bounds: Deprecated. Use bounds instead.
-        scaling_options: Deprecated. Use scaling instead.
-        multistart_options: Deprecated. Use multistart instead.
 
     """
     problem = create_optimization_problem(
@@ -261,7 +229,6 @@ def maximize(
         fun_and_jac_kwargs=fun_and_jac_kwargs,
         numdiff_options=numdiff_options,
         logging=logging,
-        log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
         scaling=scaling,
@@ -279,25 +246,12 @@ def maximize(
         # scipy arguments that will never be supported
         options=options,
         tol=tol,
-        # deprecated arguments
-        criterion=criterion,
-        criterion_kwargs=criterion_kwargs,
-        derivative=derivative,
-        derivative_kwargs=derivative_kwargs,
-        criterion_and_derivative=criterion_and_derivative,
-        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
-        scaling_options=scaling_options,
-        multistart_options=multistart_options,
     )
     return _optimize(problem)
 
 
 def minimize(
-    fun: FunType | CriterionType | None = None,
+    fun: FunType | None = None,
     params: PyTree | None = None,
     algorithm: AlgorithmType | None = None,
     *,
@@ -307,10 +261,7 @@ def minimize(
     algo_options: dict[str, Any] | None = None,
     jac: JacType | Sequence[JacType] | Literal[True] | None = None,
     jac_kwargs: dict[str, Any] | None = None,
-    fun_and_jac: FunAndJacType
-    | CriterionAndDerivativeType
-    | Sequence[FunAndJacType]
-    | None = None,
+    fun_and_jac: FunAndJacType | Sequence[FunAndJacType] | None = None,
     fun_and_jac_kwargs: dict[str, Any] | None = None,
     numdiff_options: NumdiffOptions | NumdiffOptionsDict | None = None,
     # TODO: add typed-dict support?
@@ -332,20 +283,6 @@ def minimize(
     # scipy arguments that will never be supported
     options: dict[str, Any] | None = None,
     tol: NonNegativeFloat | None = None,
-    # deprecated arguments
-    criterion: CriterionType | None = None,
-    criterion_kwargs: dict[str, Any] | None = None,
-    derivative: JacType | None = None,
-    derivative_kwargs: dict[str, Any] | None = None,
-    criterion_and_derivative: CriterionAndDerivativeType | None = None,
-    criterion_and_derivative_kwargs: dict[str, Any] | None = None,
-    log_options: dict[str, Any] | None = None,
-    lower_bounds: PyTree | None = None,
-    upper_bounds: PyTree | None = None,
-    soft_lower_bounds: PyTree | None = None,
-    soft_upper_bounds: PyTree | None = None,
-    scaling_options: dict[str, Any] | None = None,
-    multistart_options: dict[str, Any] | None = None,
 ) -> OptimizeResult:
     """Minimize criterion using algorithm subject to constraints.
 
@@ -443,18 +380,6 @@ def minimize(
             ``callback(intermediate_result)`` interface is not yet supported.
         options: Not yet supported.
         tol: Not yet supported.
-        criterion: Deprecated. Use fun instead.
-        criterion_kwargs: Deprecated. Use fun_kwargs instead.
-        derivative: Deprecated. Use jac instead.
-        derivative_kwargs: Deprecated. Use jac_kwargs instead.
-        criterion_and_derivative: Deprecated. Use fun_and_jac instead.
-        criterion_and_derivative_kwargs: Deprecated. Use fun_and_jac_kwargs instead.
-        lower_bounds: Deprecated. Use bounds instead.
-        upper_bounds: Deprecated. Use bounds instead.
-        soft_lower_bounds: Deprecated. Use bounds instead.
-        soft_upper_bounds: Deprecated. Use bounds instead.
-        scaling_options: Deprecated. Use scaling instead.
-        multistart_options: Deprecated. Use multistart instead.
 
     """
     problem = create_optimization_problem(
@@ -489,20 +414,6 @@ def minimize(
         # scipy arguments that will never be supported
         options=options,
         tol=tol,
-        # deprecated arguments
-        criterion=criterion,
-        criterion_kwargs=criterion_kwargs,
-        derivative=derivative,
-        derivative_kwargs=derivative_kwargs,
-        criterion_and_derivative=criterion_and_derivative,
-        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
-        lower_bounds=lower_bounds,
-        log_options=log_options,
-        upper_bounds=upper_bounds,
-        soft_lower_bounds=soft_lower_bounds,
-        soft_upper_bounds=soft_upper_bounds,
-        scaling_options=scaling_options,
-        multistart_options=multistart_options,
     )
     return _optimize(problem)
 

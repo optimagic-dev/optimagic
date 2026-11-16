@@ -18,6 +18,7 @@ from estimagic.examples.logit import (
     scalar_logit_fun_and_jac,
 )
 from optimagic import mark
+from optimagic.exceptions import InvalidFunctionError
 from optimagic.optimizers import scipy_optimizers
 from optimagic.parameters.bounds import Bounds
 
@@ -471,3 +472,33 @@ def test_caching(normal_inputs):
 
     cov = got.cov(method="robust", return_type="array", seed=0)
     assert_array_equal(list(got._cache.values())[0], cov)
+
+
+@pytest.mark.parametrize("optimize_options", ["scipy_lbfgsb", False])
+def test_estimate_ml_raises_for_dict_output_with_contributions(optimize_options):
+    def loglike(params):
+        contributions = -((params - 1) ** 2)
+        return {"contributions": contributions, "value": contributions.sum()}
+
+    with pytest.raises(InvalidFunctionError) as exc_info:
+        estimate_ml(
+            loglike=loglike,
+            params=np.ones(3),
+            optimize_options=optimize_options,
+        )
+
+    assert "entry 'contributions'" in str(exc_info.value.__cause__)
+
+
+def test_estimate_ml_with_pytree_of_contributions():
+    def loglike(params):
+        contributions = -((params - 1) ** 2)
+        return {"first": contributions[:2], "second": contributions[2:]}
+
+    got = estimate_ml(
+        loglike=loglike,
+        params=np.zeros(3),
+        optimize_options="scipy_lbfgsb",
+    )
+
+    aaae(got.params, np.ones(3), decimal=4)

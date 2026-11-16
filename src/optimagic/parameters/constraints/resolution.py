@@ -155,8 +155,6 @@ def to_legacy_dicts(resolved: list[ResolvedConstraint]) -> list[dict[str, Any]]:
         new: dict[str, Any]
         if isinstance(constraint, ResolvedFixedConstraint):
             new = {"type": "fixed", "index": constraint.index}
-            if constraint.value is not None:
-                new["value"] = constraint.value
         elif isinstance(constraint, ResolvedEqualityConstraint):
             new = {"type": "equality", "index": constraint.index}
         elif isinstance(constraint, ResolvedPairwiseEqualityConstraint):

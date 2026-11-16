@@ -14,6 +14,7 @@ user actually wrote, even after constraints have been rewritten or merged.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import KW_ONLY, dataclass
 from typing import TYPE_CHECKING, Any, Callable, TypeAlias
 
@@ -54,9 +55,7 @@ class ConstraintSource:
     """User constraint from which an internal constraint was derived.
 
     Attributes:
-        constraint: The user provided constraint object. Dictionary constraints are
-            converted to constraint objects before resolution, so this is always a
-            Constraint instance.
+        constraint: The user provided constraint object.
         position: The position of the constraint in the user provided list of
             constraints.
 
@@ -123,16 +122,11 @@ class ResolvedFixedConstraint(ResolvedConstraint):
     Attributes:
         index: Positions of the fixed parameters in the flat parameter vector.
         sources: The user constraints this constraint was derived from.
-        value: Explicit values at which the parameters are fixed. None means the
-            parameters are fixed at their start values. Explicit values only exist
-            for deprecated dictionary constraints and must coincide with the start
-            values.
 
     """
 
     index: IntArray
     sources: tuple[ConstraintSource, ...]
-    value: Any = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "index", _as_position_array(self.index))
@@ -777,3 +771,48 @@ def _all_none(*args: Any) -> bool:
 
 def _select_non_none(**kwargs: Any) -> dict[str, Any]:
     return {k: v for k, v in kwargs.items() if v is not None}
+
+
+def pre_process_constraints(
+    constraints: Constraint | Sequence[Constraint] | None,
+) -> list[Constraint]:
+    """Convert all ways of specifying constraints to a list of Constraint objects.
+
+    Args:
+        constraints: The user provided constraints.
+
+    Returns:
+        The constraints as a list. None is converted to an empty list.
+
+    Raises:
+        InvalidConstraintError: If constraints is neither a constraint object nor a
+            sequence of constraint objects.
+
+    """
+    if constraints is None:
+        return []
+
+    # The types of the elements are validated below.
+    candidates: list[Any]
+    if isinstance(constraints, Constraint):
+        candidates = [constraints]
+    elif isinstance(constraints, Sequence) and not isinstance(constraints, str):
+        candidates = list(constraints)
+    else:
+        msg = (
+            f"Invalid constraint type: {type(constraints)}. Must be a constraint "
+            "object or list thereof imported from `optimagic`. For more details see "
+            "the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/how_to_constraints.html"
+        )
+        raise InvalidConstraintError(msg)
+
+    invalid_types = {type(c) for c in candidates if not isinstance(c, Constraint)}
+    if invalid_types:
+        msg = (
+            f"Invalid constraint types: {invalid_types}. Must be a constraint "
+            "object imported from `optimagic`."
+        )
+        raise InvalidConstraintError(msg)
+
+    return candidates

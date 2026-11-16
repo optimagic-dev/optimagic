@@ -26,6 +26,7 @@ from optimagic.constraints import (
     ResolvedProbabilityConstraint,
     _all_none,
     _select_non_none,
+    pre_process_constraints,
 )
 from optimagic.exceptions import InvalidConstraintError
 from optimagic.parameters.constraints.resolution import ResolutionContext
@@ -254,13 +255,6 @@ def test_resolve_empty_selection_returns_none(constraint):
     assert constraint._resolve(make_context(constraint)) is None
 
 
-def test_resolve_fixed_constraint_has_no_explicit_value():
-    constr = FixedConstraint(selector=lambda x: x[[0, 2]])
-    resolved = constr._resolve(make_context(constr))
-    assert isinstance(resolved, ResolvedFixedConstraint)
-    assert resolved.value is None
-
-
 def test_resolve_pairwise_equality_constraint():
     constr = PairwiseEqualityConstraint(
         selectors=[lambda x: x[[0, 2]], lambda x: x[[1, 3]]]
@@ -333,3 +327,58 @@ def test_resolve_nonlinear_constraint_raises():
     )
     with pytest.raises(NotImplementedError, match="must not be resolved"):
         constr._resolve(make_context(constr))
+
+
+# ======================================================================================
+# pre_process_constraints
+# ======================================================================================
+
+
+def test_pre_process_constraints_none_case():
+    assert pre_process_constraints(None) == []
+
+
+def test_pre_process_constraints_single_constraint(dummy_func):
+    constraints = FixedConstraint(selector=dummy_func)
+    expected = [FixedConstraint(selector=dummy_func)]
+    assert pre_process_constraints(constraints) == expected
+
+
+@pytest.mark.parametrize("container", [list, tuple])
+def test_pre_process_constraints_sequence_of_constraints(dummy_func, container):
+    constraints = container(
+        [
+            FixedConstraint(selector=dummy_func),
+            IncreasingConstraint(selector=dummy_func),
+        ]
+    )
+    expected = [
+        FixedConstraint(selector=dummy_func),
+        IncreasingConstraint(selector=dummy_func),
+    ]
+    assert pre_process_constraints(constraints) == expected
+
+
+def test_pre_process_constraints_does_not_modify_input(dummy_func):
+    constraints = [FixedConstraint(selector=dummy_func)]
+    got = pre_process_constraints(constraints)
+    assert got is not constraints
+
+
+@pytest.mark.parametrize(
+    "constraints", ["invalid", {"type": "fixed", "loc": [0, 1]}, 1]
+)
+def test_pre_process_constraints_invalid_type(constraints):
+    msg = "Invalid constraint type: <class"
+    with pytest.raises(InvalidConstraintError, match=msg):
+        pre_process_constraints(constraints)
+
+
+def test_pre_process_constraints_invalid_element_types(dummy_func):
+    constraints = [
+        FixedConstraint(selector=dummy_func),
+        {"type": "fixed", "selector": dummy_func},
+        "invalid",
+    ]
+    with pytest.raises(InvalidConstraintError, match="Invalid constraint types:"):
+        pre_process_constraints(constraints)  # ty:ignore[invalid-argument-type]

@@ -211,20 +211,6 @@ def test_constrained_minimization(
     aaae(calculated, expected, decimal=4)  # ty:ignore[invalid-argument-type]
 
 
-@pytest.mark.filterwarnings("ignore:Specifying constraints as a dictionary is")
-def test_fix_that_differs_from_start_value_raises_an_error():
-    # We use the old constraint interface here, as the new interface prohibits the
-    # usage of the 'value' attribute, rendering the test useless.
-    # TODO: Remove this test when the old constraint interface is deprecated.
-    with pytest.raises(InvalidParamsError):
-        minimize(
-            fun=lambda x: x @ x,
-            params=np.arange(3),
-            algorithm="scipy_lbfgsb",
-            constraints=[{"selector": lambda x: x[1], "value": 10, "type": "fixed"}],
-        )
-
-
 def test_three_independent_constraints():
     params = np.arange(10)
     params[0] = 2

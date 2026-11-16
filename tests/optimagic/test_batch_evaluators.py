@@ -104,9 +104,10 @@ def test_get_batch_evaluator_invalid_value():
         process_batch_evaluator("bla")  # ty:ignore[invalid-argument-type]
 
 
-def test_get_batch_evaluator_invalid_type():
+@pytest.mark.parametrize("batch_evaluator", [3, None])
+def test_get_batch_evaluator_invalid_type(batch_evaluator):
     with pytest.raises(TypeError):
-        process_batch_evaluator(3)  # ty:ignore[invalid-argument-type]
+        process_batch_evaluator(batch_evaluator)
 
 
 def test_get_batch_evaluator_with_callable():

@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from optimagic import mark
 from optimagic.config import IS_JAX_INSTALLED
 from optimagic.optimization.optimize import minimize
 
@@ -73,26 +74,27 @@ def params_is_1d_array():
 
 @pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")
 @pytest.mark.parametrize("algorithm", ["scipy_lbfgsb", "scipy_ls_lm"])
-def test_dict_output_works(algorithm):
+def test_least_squares_function_with_multiple_jacs(algorithm):
+    @mark.least_squares
     def criterion(x):
-        return {"root_contributions": x, "value": x @ x}
+        return x
 
-    def scalar_wrapper(x):
-        return criterion(x)["value"]
+    def scalar_criterion(x):
+        return x @ x
 
-    def ls_wrapper(x):
-        return criterion(x)["root_contributions"]
+    def ls_criterion(x):
+        return x
 
-    deriv_dict = {
-        "value": jax.grad(scalar_wrapper),
-        "root_contributions": jax.jacobian(ls_wrapper),
-    }
+    jacs = [
+        mark.scalar(jax.grad(scalar_criterion)),
+        mark.least_squares(jax.jacobian(ls_criterion)),
+    ]
 
     res = minimize(
         fun=criterion,
         params=jnp.array([1.0, 2.0, 3.0]),
         algorithm=algorithm,
-        jac=deriv_dict,  # ty:ignore[invalid-argument-type]
+        jac=jacs,
     )
 
     assert isinstance(res.params, jnp.ndarray)
@@ -101,14 +103,15 @@ def test_dict_output_works(algorithm):
 
 @pytest.mark.skipif(not IS_JAX_INSTALLED, reason="Needs jax.")
 def test_least_squares_optimizer_pytree():
+    @mark.least_squares
     def criterion(x):
-        return {"root_contributions": x}
+        return x
 
-    def ls_wrapper(x):
-        return criterion(x)["root_contributions"]
+    def ls_criterion(x):
+        return x
 
     params = {"a": 1.0, "b": 2.0, "c": jnp.array([1.0, 2.0])}
-    jac = jax.jacobian(ls_wrapper)
+    jac = mark.least_squares(jax.jacobian(ls_criterion))
 
     res = minimize(
         fun=criterion,
