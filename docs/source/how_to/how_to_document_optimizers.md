@@ -139,7 +139,7 @@ More formally, this is expressed as
 .. math::
 
     \frac{f^k - f^{k+1}}{\max\{|f^k|, |f^{k+1}|, 1\}} \leq
-    \textsf{convergence_ftol_rel}.
+    \textsf{convergence\_ftol\_rel}.
 
 """
 

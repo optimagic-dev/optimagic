@@ -176,7 +176,7 @@ class Tranquilo(Algorithm):
 
     .. math::
 
-        |f^k - f^{k+1}| \leq \textsf{convergence_ftol_abs}.
+        |f^k - f^{k+1}| \leq \textsf{convergence\_ftol\_abs}.
 
     With the default of 0.0, this criterion only triggers if the change is exactly
     zero. Use ``disable_convergence=True`` to switch off all convergence criteria.
@@ -207,7 +207,7 @@ class Tranquilo(Algorithm):
 
     .. math::
 
-        \lVert x^k - x^{k+1} \rVert \leq \textsf{convergence_xtol_abs}.
+        \lVert x^k - x^{k+1} \rVert \leq \textsf{convergence\_xtol\_abs}.
 
     With the default of 0.0, this criterion only triggers if the change is exactly
     zero.
@@ -220,7 +220,7 @@ class Tranquilo(Algorithm):
 
     .. math::
 
-        \frac{|f^k - f^{k+1}|}{\max\{|f^k|, 1\}} \leq \textsf{convergence_ftol_rel}.
+        \frac{|f^k - f^{k+1}|}{\max\{|f^k|, 1\}} \leq \textsf{convergence\_ftol\_rel}.
 
     """
 
@@ -233,7 +233,7 @@ class Tranquilo(Algorithm):
     .. math::
 
         \frac{\lVert g^k \rVert}{\max\{\lVert g^k \rVert, 1\}} \leq
-        \textsf{convergence_gtol_rel}.
+        \textsf{convergence\_gtol\_rel}.
 
     """
 
@@ -245,7 +245,7 @@ class Tranquilo(Algorithm):
     .. math::
 
         \left\lVert \frac{x^k - x^{k+1}}{\max\{|x^k|, 1\}} \right\rVert \leq
-        \textsf{convergence_xtol_rel},
+        \textsf{convergence\_xtol\_rel},
 
     where the division and the maximum are taken element-wise.
 
@@ -795,7 +795,7 @@ class TranquiloLS(Algorithm):
 
     .. math::
 
-        |f^k - f^{k+1}| \leq \textsf{convergence_ftol_abs}.
+        |f^k - f^{k+1}| \leq \textsf{convergence\_ftol\_abs}.
 
     With the default of 0.0, this criterion only triggers if the change is exactly
     zero. Use ``disable_convergence=True`` to switch off all convergence criteria.
@@ -826,7 +826,7 @@ class TranquiloLS(Algorithm):
 
     .. math::
 
-        \lVert x^k - x^{k+1} \rVert \leq \textsf{convergence_xtol_abs}.
+        \lVert x^k - x^{k+1} \rVert \leq \textsf{convergence\_xtol\_abs}.
 
     With the default of 0.0, this criterion only triggers if the change is exactly
     zero.
@@ -839,7 +839,7 @@ class TranquiloLS(Algorithm):
 
     .. math::
 
-        \frac{|f^k - f^{k+1}|}{\max\{|f^k|, 1\}} \leq \textsf{convergence_ftol_rel}.
+        \frac{|f^k - f^{k+1}|}{\max\{|f^k|, 1\}} \leq \textsf{convergence\_ftol\_rel}.
 
     """
 
@@ -852,7 +852,7 @@ class TranquiloLS(Algorithm):
     .. math::
 
         \frac{\lVert g^k \rVert}{\max\{\lVert g^k \rVert, 1\}} \leq
-        \textsf{convergence_gtol_rel}.
+        \textsf{convergence\_gtol\_rel}.
 
     """
 
@@ -864,7 +864,7 @@ class TranquiloLS(Algorithm):
     .. math::
 
         \left\lVert \frac{x^k - x^{k+1}}{\max\{|x^k|, 1\}} \right\rVert \leq
-        \textsf{convergence_xtol_rel},
+        \textsf{convergence\_xtol\_rel},
 
     where the division and the maximum are taken element-wise.
 
