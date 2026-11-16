@@ -220,34 +220,30 @@ def validated_dataclass(
 
 @dataclass(frozen=True)
 class IterationHistory(DictLikeAccess):
-    """History of iterations in a process.
-
-    Attributes:
-        params: A list of parameters used in each iteration.
-        criterion: A list of criterion values obtained in each iteration.
-        runtime: A list or array of runtimes associated with each iteration.
-
-    """
+    """History of iterations in a process."""
 
     params: list[PyTree]
+    """A list of parameters used in each iteration."""
+
     fun: list[float]
+    """A list of criterion values obtained in each iteration."""
+
     time: list[float] | NDArray[np.float64]
+    """A list or array of runtimes associated with each iteration."""
 
 
 @dataclass(frozen=True)
 class MultiStartIterationHistory(TupleLikeAccess):
-    """History of multiple start iterations.
-
-    Attributes:
-        history: The main iteration history, representing the best end value.
-        local_histories: Optional, a list of local iteration histories.
-        exploration: Optional, iteration history for exploration steps.
-
-    """
+    """History of multiple start iterations."""
 
     history: IterationHistory
+    """The main iteration history, representing the best end value."""
+
     local_histories: list[IterationHistory] | None = None
+    """Optional, a list of local iteration histories."""
+
     exploration: IterationHistory | None = None
+    """Optional, iteration history for exploration steps."""
 
 
 class PyTreeNamespace(StrEnum):

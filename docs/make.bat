@@ -7,6 +7,11 @@ REM Command file for Sphinx documentation
 if "%SPHINXBUILD%" == "" (
 	set SPHINXBUILD=sphinx-build
 )
+REM -W turns warnings into errors; --keep-going still reports all of them.
+REM Sphinx does not support parallel builds (-j) on Windows.
+if "%SPHINXOPTS%" == "" (
+	set SPHINXOPTS=-W --keep-going
+)
 set SOURCEDIR=source
 set BUILDDIR=build
 set SPHINXPROJ=optimagic

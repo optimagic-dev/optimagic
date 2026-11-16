@@ -2,7 +2,9 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
+# -W turns warnings into errors; --keep-going still reports all of them. -j auto reads
+# sources (including notebook execution) and writes pages on all available cores.
+SPHINXOPTS    = -W --keep-going -j auto
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = optimagic
 SOURCEDIR     = source
