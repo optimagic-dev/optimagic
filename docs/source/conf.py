@@ -19,7 +19,10 @@ import datetime as dt
 import os
 from importlib.metadata import version
 
+from docutils import nodes
 from intersphinx_registry import get_intersphinx_mapping
+from nbclient import NotebookClient
+from sphinxcontrib.mermaid import mermaid
 
 year = dt.datetime.now().year
 
@@ -187,6 +190,25 @@ nb_mime_priority_overrides = [
 nb_merge_streams = True
 nb_scroll_outputs = True
 
+# Make plotly figures embed themselves as HTML in all notebooks. With plotly's default
+# renderer, the figures only have a JSON representation that myst-nb cannot render.
+os.environ["PLOTLY_RENDERER"] = "notebook_connected"
+suppress_warnings = [
+    # Bokeh figures carry bokeh specific mime types next to the HTML and JavaScript
+    # that is rendered. myst-nb warns about every mime type it does not know.
+    "mystnb.unknown_mime_type",
+    # Interactive figures only have an HTML representation, which is deliberately
+    # left out of the Markdown files that sphinx-llm generates for llms.txt. The
+    # setting has to be the same for the HTML and the Markdown build. Otherwise, the
+    # Markdown build cannot reuse the HTML doctrees and executes all notebooks again.
+    "mystnb.mime_priority",
+]
+
+# Kill notebook kernels as soon as all cells have run. A graceful shutdown waits about
+# two seconds for the worker processes of notebooks that run something in parallel.
+# myst-nb has no option for this, so we change the default of nbclient.
+NotebookClient.shutdown_kernel.default_value = "immediate"
+
 # Notebook cell execution timeout; defaults to 30.
 nb_execution_timeout = 1000
 
@@ -284,3 +306,45 @@ html_theme_options = {
         },
     ],
 }
+
+
+# -- Markdown output for llms.txt ------------------------------------------
+
+# The Markdown translator used by sphinx-llm drops nodes it does not know (with a
+# warning). The handlers below render the node types that occur in our docs.
+
+
+def _keep_children(translator, node):
+    """Render a node by rendering its children, e.g. the `*` in signatures."""
+
+
+def _visit_caption(translator, node):
+    """Render a figure caption inline behind its image."""
+    translator.add(" ")
+
+
+def _visit_citation(translator, node):
+    """Render a bibliography entry like a footnote."""
+    translator.visit_footnote(node)
+
+
+def _depart_citation(translator, node):
+    translator.depart_footnote(node)
+
+
+def _visit_mermaid(translator, node):
+    """Render a mermaid diagram as fenced code block."""
+    translator.add(f"```mermaid\n{node['code']}\n```", prefix_eol=2, suffix_eol=2)
+    raise nodes.SkipNode
+
+
+def setup(app):
+    handlers = {
+        nodes.abbreviation: (_keep_children, _keep_children),
+        nodes.caption: (_visit_caption, _keep_children),
+        nodes.citation: (_visit_citation, _depart_citation),
+        mermaid: (_visit_mermaid, None),
+    }
+    for node, handler in handlers.items():
+        app.add_node(node, override=True, **{"llms-markdown": handler})
+    return {"parallel_read_safe": True, "parallel_write_safe": True}

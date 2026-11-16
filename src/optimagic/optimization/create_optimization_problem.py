@@ -36,6 +36,7 @@ from optimagic.optimization.multistart_options import (
     pre_process_multistart,
 )
 from optimagic.optimization.scipy_aliases import (
+    get_entry_of_fun_and_jac_output,
     map_method_to_algorithm,
     split_fun_and_jac,
 )
@@ -87,6 +88,13 @@ class OptimizationProblem:
     skip_checks: bool
     direction: Direction
     fun_eval: SpecificFunctionValue
+    fun_and_jac_eval: PyTree | None
+    """Derivative at the start params, as returned by ``fun_and_jac``.
+
+    Only available if ``fun`` was derived from ``fun_and_jac``, such that the derivative
+    is a byproduct of the first evaluation of ``fun``. None otherwise.
+
+    """
     callback: Callable[[PyTree], None] | None
 
 
@@ -170,6 +178,9 @@ def create_optimization_problem(
                 "If `fun_and_jac` is a sequence of callables, `fun` is not optional. "
             )
         fun = split_fun_and_jac(fun_and_jac, target="fun")
+        split_fun_and_jac_candidate = fun_and_jac
+    else:
+        split_fun_and_jac_candidate = None
 
     # ==================================================================================
     # deprecations
@@ -284,6 +295,15 @@ def create_optimization_problem(
         if fun_and_jac is None:
             fun_and_jac = fun
             fun = split_fun_and_jac(fun_and_jac, target="fun")
+            split_fun_and_jac_candidate = fun_and_jac
+
+    # If fun is derived from fun_and_jac, both are the same user function and need the
+    # same keyword arguments. Users only have to provide them once.
+    if split_fun_and_jac_candidate is not None:
+        if fun_kwargs is None:
+            fun_kwargs = fun_and_jac_kwargs
+        elif fun_and_jac_kwargs is None:
+            fun_and_jac_kwargs = fun_kwargs
 
     # ==================================================================================
     # Handle scipy arguments that are not yet implemented
@@ -368,7 +388,21 @@ def create_optimization_problem(
     # problem type until the decorator approach becomes mandatory.
     # TODO: Move this into `_optimize` as soon as we reach 0.6.0
     try:
-        fun_eval = fun(params)
+        if split_fun_and_jac_candidate is None:
+            fun_eval = fun(params)
+            fun_and_jac_eval = None
+        else:
+            # fun is the first output of fun_and_jac. Evaluate fun_and_jac instead of
+            # fun to keep the derivative. This saves an evaluation of fun_and_jac at
+            # the start params.
+            raw_eval = partial_func_of_params(
+                func=split_fun_and_jac_candidate,
+                kwargs=fun_kwargs,
+                name="criterion",
+                skip_checks=skip_checks,
+            )(params)
+            fun_eval = get_entry_of_fun_and_jac_output(raw_eval, 0)
+            fun_and_jac_eval = get_entry_of_fun_and_jac_output(raw_eval, 1)
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
@@ -468,6 +502,14 @@ def create_optimization_problem(
             fun_and_jac
         )
 
+    # The derivative from the first evaluation can only be used if fun_and_jac is used
+    # for the optimization and gets the same keyword arguments as fun.
+    same_kwargs = fun_kwargs is fun_and_jac_kwargs or (
+        not fun_kwargs and not fun_and_jac_kwargs
+    )
+    if fun_and_jac is None or not same_kwargs:
+        fun_and_jac_eval = None
+
     # ==================================================================================
     # Check types of arguments
     # ==================================================================================
@@ -560,6 +602,7 @@ def create_optimization_problem(
         skip_checks=skip_checks,
         direction=direction,
         fun_eval=fun_eval,
+        fun_and_jac_eval=fun_and_jac_eval,
         callback=callback,
     )
 
