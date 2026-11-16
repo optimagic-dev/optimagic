@@ -17,6 +17,16 @@ pytree handling and uses **pydantic** to validate algorithm options.
   `convergence_gtol_rel` and `convergence_gtol_scaled`. Reaching `stopping_maxiter` is
   now reported as unsuccessful with the message "maxits reached" instead of as
   successful with "user defined" ({ghuser}`janosg`).
+- {gh}`727` Raises an `InvalidFunctionError` if the objective function or a user
+  provided derivative is not finite at the start params. The error message lists the
+  paths of the non-finite entries ({ghuser}`janosg`).
+- {gh}`727` Derivative-free algorithms no longer evaluate `jac` and `fun_and_jac` at the
+  start params. `fun_and_jac` is only evaluated once at the start params if `fun` is
+  derived from it ({ghuser}`janosg`).
+- {gh}`727` Fixes keyword arguments that were not passed to both the objective and the
+  derivative if `fun` is derived from `fun_and_jac`, i.e. if only `fun_and_jac` is
+  provided or `jac=True`. It is now enough to provide either `fun_kwargs` or
+  `fun_and_jac_kwargs` ({ghuser}`janosg`).
 - {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
   `maximize`. The callback is called after each objective evaluation; its behavior might
   change in upcoming releases ({ghuser}`Pragati5-DEBUG`).

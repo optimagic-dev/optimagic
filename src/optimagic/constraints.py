@@ -90,16 +90,14 @@ def identity_selector(x: PyTree) -> PyTree:
 class FixedConstraint(Constraint):
     """Constraint that fixes the selected parameters at their starting values.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-
     Raises:
         InvalidConstraintError: If the selector is not callable.
 
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "fixed", "selector": self.selector}
@@ -136,16 +134,14 @@ class ResolvedFixedConstraint(ResolvedConstraint):
 class IncreasingConstraint(Constraint):
     """Constraint that ensures the selected parameters are increasing.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-
     Raises:
         InvalidConstraintError: If the selector is not callable.
 
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "increasing", "selector": self.selector}
@@ -185,16 +181,14 @@ class ResolvedIncreasingConstraint(ResolvedConstraint):
 class DecreasingConstraint(Constraint):
     """Constraint that ensures that the selected parameters are decreasing.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-
     Raises:
         InvalidConstraintError: If the selector is not callable.
 
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "decreasing", "selector": self.selector}
@@ -234,16 +228,14 @@ class ResolvedDecreasingConstraint(ResolvedConstraint):
 class EqualityConstraint(Constraint):
     """Constraint that ensures that the selected parameters are equal.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-
     Raises:
         InvalidConstraintError: If the selector is not callable.
 
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "equality", "selector": self.selector}
@@ -283,16 +275,14 @@ class ProbabilityConstraint(Constraint):
     This constraint ensures that each of the selected parameters is positive and that
     the sum of the selected parameters is 1.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-
     Raises:
         InvalidConstraintError: If the selector is not callable.
 
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "probability", "selector": self.selector}
@@ -333,16 +323,14 @@ class PairwiseEqualityConstraint(Constraint):
 
     This constraint ensures that each pair between the selected parameters is equal.
 
-    Attributes:
-        selectors: A list of functions that take as input the parameters and return the
-            subsets of parameters to be constrained.
-
     Raises:
         InvalidConstraintError: If the selector is not callable.
 
     """
 
     selectors: list[Callable[[PyTree], PyTree]]
+    """A list of functions that take as input the parameters and return the subsets of
+    parameters to be constrained."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {"type": "pairwise_equality", "selectors": self.selectors}
@@ -399,14 +387,6 @@ class ResolvedPairwiseEqualityConstraint(ResolvedConstraint):
 class FlatCovConstraint(Constraint):
     """Constraint that ensures the selected parameters are a valid covariance matrix.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-        regularization: Helps in guiding the optimization towards finding a
-            positive definite covariance matrix instead of only a positive semi-definite
-            matrix. Larger values correspond to a higher likelihood of positive
-            definiteness. Defaults to 0.
-
     Raises:
         InvalidConstraintError: If the selector is not callable or regularization is
             not a non-negative float or int.
@@ -414,8 +394,15 @@ class FlatCovConstraint(Constraint):
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
+
     _: KW_ONLY
+
     regularization: float = 0.0
+    """Helps in guiding the optimization towards finding a positive definite covariance
+    matrix instead of only a positive semi-definite matrix. Larger values correspond to
+    a higher likelihood of positive definiteness. Defaults to 0."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -467,18 +454,12 @@ class ResolvedFlatCovConstraint(ResolvedConstraint):
 
 @dataclass(frozen=True)
 class FlatSDCorrConstraint(Constraint):
-    """Constraint that ensures the selected parameters are a valid correlation matrix.
+    """Constraint that ensures valid standard deviations and correlations.
 
-    This constraint ensures that each of the selected parameters is positive and that
-    the sum of the selected parameters is 1.
-
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-        regularization: Helps in guiding the optimization towards finding a
-            positive definite covariance matrix instead of only a positive semi-definite
-            matrix. Larger values correspond to a higher likelihood of positive
-            definiteness. Defaults to 0.
+    The selected parameters are interpreted as the standard deviations of a set of
+    random variables, followed by the lower triangle (excluding the diagonal) of their
+    correlation matrix. This constraint ensures that the implied covariance matrix is
+    valid, i.e. symmetric and positive semi-definite.
 
     Raises:
         InvalidConstraintError: If the selector is not callable or regularization is
@@ -487,8 +468,15 @@ class FlatSDCorrConstraint(Constraint):
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
+
     _: KW_ONLY
+
     regularization: float = 0.0
+    """Helps in guiding the optimization towards finding a positive definite covariance
+    matrix instead of only a positive semi-definite matrix. Larger values correspond to
+    a higher likelihood of positive definiteness. Defaults to 0."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -551,16 +539,6 @@ class LinearConstraint(Constraint):
     the 'weights' is either equal to 'value', or is bounded by 'lower_bound' and
     'upper_bound'.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-        weights: The weights for the linear combination. If a scalar is provided, it is
-            used for all parameters. Otherwise, it must have the same structure as the
-            selected parameters.
-        lower_bound: The lower bound for the linear combination. Defaults to None.
-        upper_bound: The upper bound for the linear combination. Defaults to None.
-        value: The value to compare the linear combination to. Defaults to None.
-
     Raises:
         InvalidConstraintError: If the selector is not callable, or if the weights,
             lower_bound, upper_bound, or value are not valid.
@@ -570,11 +548,24 @@ class LinearConstraint(Constraint):
     selector: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float | int] = (
         identity_selector
     )
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
+
     _: KW_ONLY
+
     weights: ArrayLike | "pd.Series[float]" | float | int | None = None
+    """The weights for the linear combination. If a scalar is provided, it is used for
+    all parameters. Otherwise, it must have the same structure as the selected
+    parameters."""
+
     lower_bound: float | int | None = None
+    """The lower bound for the linear combination. Defaults to None."""
+
     upper_bound: float | int | None = None
+    """The upper bound for the linear combination. Defaults to None."""
+
     value: float | int | None = None
+    """The value to compare the linear combination to. Defaults to None."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {
@@ -688,21 +679,6 @@ class NonlinearConstraint(Constraint):
     This constraint ensures that a nonlinear function of the selected parameters is
     either equal to 'value', or is bounded by 'lower_bound' and 'upper_bound'.
 
-    Attributes:
-        selector: A function that takes as input the parameters and returns the subset
-            of parameters to be constrained. By default, all parameters are constrained.
-        func: The constraint function which is applied to the selected parameters.
-        derivative: The derivative of the constraint function with respect to the
-            selected parameters. Defaults to None.
-        lower_bound: The lower bound for the nonlinear function. Can be a scalar or of
-            the same structure as output of the constraint function. Defaults to None.
-        upper_bound: The upper bound for the nonlinear function. Can be a scalar or of
-            the same structure as output of the constraint function. Defaults to None.
-        value: The value to compare the nonlinear function to. Can be a scalar or of
-            the same structure as output of the constraint function. Defaults to None.
-        tol: The tolerance for the constraint function. Defaults to
-            `optimagic.optimization.algo_options.CONSTRAINTS_ABSOLUTE_TOLERANCE`.
-
     Raises:
         InvalidConstraintError: If the selector is not callable, or if the func,
             derivative, lower_bound, upper_bound, or value are not valid.
@@ -710,13 +686,33 @@ class NonlinearConstraint(Constraint):
     """
 
     selector: Callable[[PyTree], PyTree] = identity_selector
+    """A function that takes as input the parameters and returns the subset of
+    parameters to be constrained. By default, all parameters are constrained."""
+
     _: KW_ONLY
+
     func: Callable[[PyTree], ArrayLike | "pd.Series[float]" | float] | None = None
+    """The constraint function which is applied to the selected parameters."""
+
     derivative: Callable[[PyTree], PyTree] | None = None
+    """The derivative of the constraint function with respect to the selected
+    parameters. Defaults to None."""
+
     lower_bound: ArrayLike | "pd.Series[float]" | float | None = None
+    """The lower bound for the nonlinear function. Can be a scalar or of the same
+    structure as output of the constraint function. Defaults to None."""
+
     upper_bound: ArrayLike | "pd.Series[float]" | float | None = None
+    """The upper bound for the nonlinear function. Can be a scalar or of the same
+    structure as output of the constraint function. Defaults to None."""
+
     value: ArrayLike | "pd.Series[float]" | float | None = None
+    """The value to compare the nonlinear function to. Can be a scalar or of the same
+    structure as output of the constraint function. Defaults to None."""
+
     tol: float = CONSTRAINTS_ABSOLUTE_TOLERANCE
+    """The tolerance for the constraint function. Defaults to
+    `optimagic.optimization.algo_options.CONSTRAINTS_ABSOLUTE_TOLERANCE`."""
 
     def _to_dict(self) -> dict[str, Any]:
         return {

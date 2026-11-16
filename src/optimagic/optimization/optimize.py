@@ -18,6 +18,8 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Sequence, Type, cast
 
 import numpy as np
+import pandas as pd
+from numpy.typing import NDArray
 from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.batch_evaluators import process_batch_evaluator
@@ -35,7 +37,7 @@ from optimagic.optimization.create_optimization_problem import (
     create_optimization_problem,
 )
 from optimagic.optimization.error_penalty import get_error_penalty_function
-from optimagic.optimization.fun_value import FunctionValue
+from optimagic.optimization.fun_value import FunctionValue, SpecificFunctionValue
 from optimagic.optimization.internal_optimization_problem import (
     InternalBounds,
     InternalOptimizationProblem,
@@ -57,10 +59,12 @@ from optimagic.optimization.process_results import (
 )
 from optimagic.parameters.bounds import Bounds
 from optimagic.parameters.conversion import (
+    Converter,
     get_converter,
 )
 from optimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from optimagic.parameters.scaling import ScalingOptions, ScalingOptionsDict
+from optimagic.pytree import leaf_names, tree_leaves
 from optimagic.typing import (
     AggregationLevel,
     Direction,
@@ -68,6 +72,7 @@ from optimagic.typing import (
     ErrorHandlingLiteral,
     NonNegativeFloat,
     PyTree,
+    PyTreeNamespace,
 )
 
 FunType = Callable[..., float | PyTree | FunctionValue]
@@ -77,6 +82,12 @@ JacType = Callable[..., PyTree]
 FunAndJacType = Callable[..., tuple[float | PyTree | FunctionValue, PyTree]]
 HessType = Callable[..., PyTree]
 CallbackType = Callable[[PyTree], None]
+
+MAX_PATHS_IN_ERROR_MESSAGE = 20
+"""Maximal number of paths of non-finite entries that are listed in an error."""
+
+MAX_ENTRIES_SHOWN_IN_FULL = 50
+"""Numpy arrays and pandas objects with more entries are abbreviated in errors."""
 
 
 from optimagic.logging.logger import LogOptions
@@ -127,7 +138,8 @@ def maximize(
         params: The start parameters for the optimization. Params can be numpy arrays,
             dictionaries, pandas.Series, pandas.DataFrames, NamedTuples, floats, lists,
             and any nested combination thereof. See :ref:`params` for details and
-            examples.
+            examples. The objective function has to be finite at the start parameters.
+            This also holds for global optimizers and multistart optimizations.
         algorithm: The optimization algorithm to use. Can be a string, subclass of
             :class:`optimagic.Algorithm` or an instance of a subclass of
             :class:`optimagic.Algorithm`. For guidelines on how to choose an algorithm
@@ -295,7 +307,8 @@ def minimize(
         params: The start parameters for the optimization. Params can be numpy arrays,
             dictionaries, pandas.Series, pandas.DataFrames, NamedTuples, floats, lists,
             and any nested combination thereof. See :ref:`params` for details and
-            examples.
+            examples. The objective function has to be finite at the start parameters.
+            This also holds for global optimizers and multistart optimizations.
         algorithm: The optimization algorithm to use. Can be a string, subclass of
             :class:`optimagic.Algorithm` or an instance of a subclass of
             :class:`optimagic.Algorithm`. For guidelines on how to choose an algorithm
@@ -443,32 +456,39 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     # Do first evaluation of user provided functions
     # ==================================================================================
     first_crit_eval = problem.fun_eval
+    _check_fun_is_finite_at_start(first_crit_eval)
 
-    # do first derivative evaluation (if given)
-    if problem.jac is not None:
-        try:
-            first_deriv_eval = problem.jac(problem.params)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            msg = "Error while evaluating derivative at start params."
-            raise InvalidFunctionError(msg) from e
+    # do first derivative evaluation (if given and used by the algorithm)
+    derivative_evals = {}
+    if problem.algorithm.algo_info.needs_jac:
+        if problem.jac is not None:
+            try:
+                derivative_evals["jac"] = problem.jac(problem.params)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception as e:
+                msg = "Error while evaluating derivative at start params."
+                raise InvalidFunctionError(msg) from e
 
-    if problem.fun_and_jac is not None:
-        try:
-            first_crit_and_deriv_eval = problem.fun_and_jac(problem.params)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            msg = "Error while evaluating criterion_and_derivative at start params."
-            raise InvalidFunctionError(msg) from e
+        if problem.fun_and_jac is not None:
+            if problem.fun_and_jac_eval is not None:
+                # fun_and_jac was already evaluated to get the first objective value
+                derivative_evals["fun_and_jac"] = problem.fun_and_jac_eval
+            else:
+                try:
+                    derivative_evals["fun_and_jac"] = problem.fun_and_jac(
+                        problem.params
+                    )[1]
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except Exception as e:
+                    msg = (
+                        "Error while evaluating criterion_and_derivative at start "
+                        "params."
+                    )
+                    raise InvalidFunctionError(msg) from e
 
-    if problem.jac is not None:
-        used_deriv = first_deriv_eval
-    elif problem.fun_and_jac is not None:
-        used_deriv = first_crit_and_deriv_eval[1]
-    else:
-        used_deriv = None
+    used_deriv = derivative_evals.get("jac", derivative_evals.get("fun_and_jac"))
 
     # ==================================================================================
     # Get the converter (for tree flattening, constraints and scaling)
@@ -482,6 +502,10 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
         scaling=problem.scaling,
         derivative_eval=used_deriv,
         add_soft_bounds=problem.multistart is not None,
+    )
+
+    _check_derivatives_are_finite_at_start(
+        derivative_evals, converter=converter, x=internal_params.values
     )
 
     # ==================================================================================
@@ -672,3 +696,134 @@ def _optimize(problem: OptimizationProblem) -> OptimizeResult:
     res.logger = log_reader
 
     return res
+
+
+def _check_fun_is_finite_at_start(fun_eval: SpecificFunctionValue) -> None:
+    """Raise an error if the objective is not finite at the start parameters.
+
+    No optimizer can make progress from such a point, and the penalty used with
+    ``error_handling="continue"`` is derived from the start value.
+
+    """
+    if not np.isfinite(fun_eval.internal_value(AggregationLevel.SCALAR)):
+        details = _describe_non_finite_entries(
+            fun_eval.value,
+            label="returned by the objective function",
+            reason_if_all_finite=(
+                "the sum of the contributions or squared residuals is not"
+            ),
+        )
+        msg = (
+            "The objective function is not finite (inf or nan) at the start params. "
+            "Choose start params at which the objective function is finite. This is "
+            "required for all algorithms, including global optimizers and multistart "
+            f"optimizations.{details}\n\nThe objective function returned:"
+            f"\n\n{_format_abbreviated(fun_eval.value)}"
+        )
+        raise InvalidFunctionError(msg)
+
+
+def _check_derivatives_are_finite_at_start(
+    derivative_evals: dict[str, PyTree],
+    converter: Converter,
+    x: NDArray[np.float64],
+) -> None:
+    """Raise an error if a user provided derivative is not finite at the start params.
+
+    The check is done on the derivative with respect to the internal parameters,
+    because this is what the optimizer sees.
+
+    Args:
+        derivative_evals: Derivatives at the start params by the name of the argument
+            through which they were provided.
+        converter: Converter between external and internal parameters.
+        x: Internal start parameters. Has shape (n_internal,).
+
+    """
+    for name, derivative_eval in derivative_evals.items():
+        internal = converter.derivative_to_internal(derivative_eval, x)
+        if not np.all(np.isfinite(internal)):
+            details = _describe_non_finite_entries(
+                derivative_eval,
+                label="of the derivative",
+                reason_if_all_finite=(
+                    "the derivative is not finite after the constraints and the "
+                    "scaling are applied"
+                ),
+            )
+            msg = (
+                f"The derivative provided via {name} is not finite (inf or nan) at the "
+                "start params. Check the derivative function or choose start params "
+                f"at which it is finite.{details}\n\n{name} returned the following "
+                f"derivative:\n\n{_format_abbreviated(derivative_eval)}"
+            )
+            raise InvalidFunctionError(msg)
+
+
+def _describe_non_finite_entries(
+    tree: PyTree, label: str, reason_if_all_finite: str
+) -> str:
+    """Describe which entries of a pytree are not finite.
+
+    The entries are identified by their paths, i.e. the names that optimagic uses for
+    the entries of a pytree. For a one-dimensional numpy array, the paths are the
+    positions of the entries.
+
+    Args:
+        tree: A pytree with numbers, e.g. the output of the objective function.
+        label: Describes where the entries come from. It is placed after
+            "entries" in the description.
+        reason_if_all_finite: Describes what is not finite if all entries of the
+            pytree are finite.
+
+    Returns:
+        A paragraph for an error message that starts with two line breaks. Empty if
+        the pytree has just one entry.
+
+    """
+    names = leaf_names(tree, namespace=PyTreeNamespace.VALUE)
+    leaves = np.array(
+        tree_leaves(tree, namespace=PyTreeNamespace.VALUE), dtype=np.float64
+    )
+    paths = [
+        name
+        for name, is_finite in zip(names, np.isfinite(leaves), strict=True)
+        if not is_finite
+    ]
+    n_entries = len(names)
+
+    if n_entries == 1:
+        return ""
+
+    if not paths:
+        out = f"All {n_entries} entries {label} are finite, but {reason_if_all_finite}."
+    elif len(paths) == 1:
+        out = (
+            f"1 of the {n_entries} entries {label} is not finite. Its path is: "
+            f"{paths[0]}"
+        )
+    else:
+        shown = ", ".join(paths[:MAX_PATHS_IN_ERROR_MESSAGE])
+        n_omitted = len(paths) - MAX_PATHS_IN_ERROR_MESSAGE
+        if n_omitted > 0:
+            shown += f" (and {n_omitted} more)"
+        out = (
+            f"{len(paths)} of the {n_entries} entries {label} are not finite. Their "
+            f"paths are: {shown}"
+        )
+
+    return f"\n\n{out}"
+
+
+def _format_abbreviated(value: PyTree) -> str:
+    """Represent a pytree and abbreviate large numpy arrays and pandas objects."""
+    with (
+        np.printoptions(threshold=MAX_ENTRIES_SHOWN_IN_FULL),
+        pd.option_context(
+            "display.max_rows",
+            MAX_ENTRIES_SHOWN_IN_FULL,
+            "display.min_rows",
+            10,
+        ),
+    ):
+        return repr(value)

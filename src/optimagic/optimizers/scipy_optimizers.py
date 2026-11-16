@@ -139,7 +139,7 @@ class ScipyLBFGSB(Algorithm):
     .. math::
 
         \frac{f^k - f^{k+1}}{\max\{{|f^k|, |f^{k+1}|, 1}\}} \leq
-        \textsf{convergence_ftol_rel}.
+        \textsf{convergence\_ftol\_rel}.
 
     """
 
@@ -431,7 +431,7 @@ class ScipyPowell(Algorithm):
 
     .. math::
 
-        2 (f^k - f^{k+1}) \leq \textsf{convergence_ftol_rel} \cdot
+        2 (f^k - f^{k+1}) \leq \textsf{convergence\_ftol\_rel} \cdot
         (|f^k| + |f^{k+1}|) + 10^{-20},
 
     where :math:`f^k` and :math:`f^{k+1}` are the criterion values before and after
@@ -556,7 +556,7 @@ class ScipyBFGS(Algorithm):
 
     .. math::
 
-        f(x_k + \alpha p_k) \leq f(x_k) + \textsf{armijo_condition} \cdot \alpha
+        f(x_k + \alpha p_k) \leq f(x_k) + \textsf{armijo\_condition} \cdot \alpha
         \nabla f(x_k)^\top p_k,
 
     so each step yields at least a fraction ``armijo_condition`` of the predicted
@@ -572,7 +572,7 @@ class ScipyBFGS(Algorithm):
 
     .. math::
 
-        |\nabla f(x_k + \alpha p_k)^\top p_k| \leq \textsf{curvature_condition}
+        |\nabla f(x_k + \alpha p_k)^\top p_k| \leq \textsf{curvature\_condition}
         \cdot |\nabla f(x_k)^\top p_k|,
 
     so the slope at the new point is sufficiently reduced in absolute value.

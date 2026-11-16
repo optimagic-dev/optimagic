@@ -52,15 +52,33 @@ def split_fun_and_jac(fun_and_jac, target="fun"):
     @functools.wraps(fun_and_jac)
     def fun(*args, **kwargs):
         raw = fun_and_jac(*args, **kwargs)
-        try:
-            out = raw[index]
-        except TypeError as e:
-            msg = (
-                "If you set `jac=True`, `fun` needs to return a tuple where the first "
-                "entry is the value of your objective function and the second entry "
-                "is its derivative."
-            )
-            raise InvalidFunctionError(msg) from e
-        return out
+        return get_entry_of_fun_and_jac_output(raw, index)
 
     return fun
+
+
+def get_entry_of_fun_and_jac_output(raw, index):
+    """Get the objective value or the derivative from the output of fun_and_jac.
+
+    Args:
+        raw: The output of a function that returns the objective value and its
+            derivative.
+        index: 0 for the objective value and 1 for the derivative.
+
+    Returns:
+        The selected entry of the output.
+
+    Raises:
+        InvalidFunctionError: If the output cannot be indexed.
+
+    """
+    try:
+        out = raw[index]
+    except TypeError as e:
+        msg = (
+            "If you set `jac=True`, `fun` needs to return a tuple where the first "
+            "entry is the value of your objective function and the second entry "
+            "is its derivative."
+        )
+        raise InvalidFunctionError(msg) from e
+    return out
