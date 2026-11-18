@@ -30,7 +30,7 @@ transformed problem.
 
 The functions and classes below are everything you need to know to add an optimizer to
 optimagic. To see them in action look at
-[this guide](../how_to/how_to_add_optimizers.ipynb)
+[this guide](../how_to/how_to_add_optimizers.md)
 
 ```{eval-rst}
 .. currentmodule:: optimagic.mark

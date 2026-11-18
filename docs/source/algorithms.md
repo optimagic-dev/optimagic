@@ -968,8 +968,12 @@ need to have [petsc4py](https://pypi.org/project/petsc4py/) installed.
 We wrap two algorithms from the numerical algorithms group. To use them, you need to
 install each of them separately:
 
-- `pip install DFO-LS`
-- `pip install Py-BOBYQA`
+- `pip install "DFO-LS>=1.6.5"`
+- `pip install "Py-BOBYQA>=1.5.0"`
+
+Both algorithms have a few options of their own and several option groups, for example
+`restart_options`. An option group can be passed as a dictionary or as an instance of
+the class that is documented below the algorithm.
 
 ```{eval-rst}
 .. dropdown:: nag_dfols
@@ -990,7 +994,10 @@ install each of them separately:
         om.minimize(
             fun=fun,
             params=np.array([1.0, 2.0, 3.0]),
-            algorithm=om.algos.nag_dfols(stopping_maxfun=10_000),
+            algorithm=om.algos.nag_dfols(
+                stopping_maxfun=10_000,
+                restart_options={"use_restarts": True, "max_unsuccessful_restarts": 3},
+            ),
         )
 
     or using the string interface:
@@ -1010,7 +1017,13 @@ install each of them separately:
             fun=fun,
             params=np.array([1.0, 2.0, 3.0]),
             algorithm="nag_dfols",
-            algo_options={"stopping_maxfun": 10_000},
+            algo_options={
+                "stopping_maxfun": 10_000,
+                "restart_options": {
+                    "use_restarts": True,
+                    "max_unsuccessful_restarts": 3,
+                },
+            },
         )
 
     **Description and available options:**
@@ -1018,6 +1031,40 @@ install each of them separately:
     .. autoclass:: optimagic.optimizers.nag_optimizers.NagDFOLS
         :members:
         :inherited-members: Algorithm, object
+
+    **Option groups:**
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.NagInitOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.NagTrustregionOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.NagSlowProgressOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.NagNoiseOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.DfolsInterpolationOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.DfolsRegressionOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.DfolsRestartOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.DfolsGrowingOptions
+        :members:
+        :inherited-members: object
 ```
 
 ```{eval-rst}
@@ -1034,7 +1081,8 @@ install each of them separately:
             fun=lambda x: x @ x,
             params=np.array([1.0, 2.0, 3.0]),
             algorithm=om.algos.nag_pybobyqa(
-                convergence_minimal_trustregion_radius_tolerance=1e-6,
+                convergence_min_trustregion_radius=1e-6,
+                trustregion_options={"expansion_factor": 3.0},
             ),
         )
 
@@ -1049,7 +1097,10 @@ install each of them separately:
             fun=lambda x: x @ x,
             params=np.array([1.0, 2.0, 3.0]),
             algorithm="nag_pybobyqa",
-            algo_options={"convergence_minimal_trustregion_radius_tolerance": 1e-6},
+            algo_options={
+                "convergence_min_trustregion_radius": 1e-6,
+                "trustregion_options": {"expansion_factor": 3.0},
+            },
         )
 
     **Description and available options:**
@@ -1057,6 +1108,23 @@ install each of them separately:
     .. autoclass:: optimagic.optimizers.nag_optimizers.NagPyBOBYQA
         :members:
         :inherited-members: Algorithm, object
+
+    **Option groups:**
+
+    The groups ``init_options``, ``trustregion_options``, ``slow_progress_options``
+    and ``noise_options`` are the same as for ``nag_dfols``: see
+    :class:`~optimagic.optimizers.nag_optimizers.NagInitOptions`,
+    :class:`~optimagic.optimizers.nag_optimizers.NagTrustregionOptions`,
+    :class:`~optimagic.optimizers.nag_optimizers.NagSlowProgressOptions` and
+    :class:`~optimagic.optimizers.nag_optimizers.NagNoiseOptions`.
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.PybobyqaInterpolationOptions
+        :members:
+        :inherited-members: object
+
+    .. autoclass:: optimagic.optimizers.nag_optimizers.PybobyqaRestartOptions
+        :members:
+        :inherited-members: object
 ```
 
 (pygmo-algorithms)=
@@ -1747,7 +1815,8 @@ To use ipopt, you need to have
 optimagic supports the
 [Fides Optimizer](https://fides-optimizer.readthedocs.io/en/latest). To use Fides, you
 need to have [the fides package](https://github.com/fides-dev/fides) installed
-(`pip install fides>=0.7.4`).
+(`pip install fides>=0.8.2`). The [fides tutorial](fides_tutorial) shows how to use its
+advanced options.
 
 ```{eval-rst}
 .. dropdown:: fides
@@ -1762,7 +1831,7 @@ need to have [the fides package](https://github.com/fides-dev/fides) installed
         om.minimize(
             fun=lambda x: x @ x,
             params=np.array([1.0, 2.0, 3.0]),
-            algorithm=om.algos.fides(hessian_update_strategy="bfgs"),
+            algorithm=om.algos.fides(hessian_update="sr1", subspace_solver="2D"),
         )
 
     or using the string interface:
@@ -1776,7 +1845,7 @@ need to have [the fides package](https://github.com/fides-dev/fides) installed
             fun=lambda x: x @ x,
             params=np.array([1.0, 2.0, 3.0]),
             algorithm="fides",
-            algo_options={"hessian_update_strategy": "bfgs"},
+            algo_options={"hessian_update": "sr1", "subspace_solver": "2D"},
         )
 
     **Description and available options:**

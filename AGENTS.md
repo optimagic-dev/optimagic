@@ -22,5 +22,8 @@ Consult the relevant sections of the documentation for your task:
 - Contribution workflow: [contributor guide](docs/source/development/how_to_contribute.md).
 - Code changes: [style guide](docs/source/development/styleguide.md).
 - Typing and public interfaces: [EP-02](docs/source/development/ep-02-typing.md).
+- Optimizer wrappers (adding or changing one):
+  [how to add optimizers](docs/source/how_to/how_to_add_optimizers.md). The
+  user-invoked `wrap-optimizer` skill runs the full workflow.
 - GitHub activity: read the contributor guide's AI-use section and\
   follow its guidance before publishing.

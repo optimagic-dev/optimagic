@@ -29,6 +29,37 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
   validators of algorithm options are built when an algorithm is instantiated for the
   first time and the classes behind `om.algos` are no longer dataclasses. The minimum
   supported version of pydantic is now 2.10 ({ghuser}`janosg`).
+- {gh}`746` Modernizes the `fides` wrapper, which now requires `fides>=0.8.2`. Options
+  are renamed to stay closer to fides (`hessian_update`, `subspace_solver`,
+  `stepback_strategy`, `max_stepback_fraction`, `stopping_maxtime`) and to follow a new
+  convention for trust-region options (`trustregion_shrinking_threshold`,
+  `trustregion_expansion_threshold`, `trustregion_shrinking_factor`,
+  `trustregion_expansion_factor`). The old names are deprecated and will be removed in
+  0.7.0. `stepback_strategy="refine"` is new. For problems with bounds, the default of
+  `stepback_strategy` will change from `"truncate"` to `"reflect"` in 0.7.0. A new
+  tutorial shows how to use the advanced options of fides ({ghuser}`janosg`).
+- {gh}`746` Modernizes `nag_dfols` and `nag_pybobyqa`, which now require
+  `DFO-LS>=1.6.5` and `Py-BOBYQA>=1.5.0`. Options that belong together are bundled in
+  option groups that mirror the solvers (`init_options`, `trustregion_options`,
+  `slow_progress_options`, `noise_options`, `interpolation_options`,
+  `regression_options`, `restart_options`, `growing_options`), noisy functions are
+  declared with `noisy=True` and all options of the solvers that optimagic can serve
+  are available. The old option names are deprecated and will be removed in 0.7.0
+  ({ghuser}`janosg`).
+- {gh}`746` Fixes several bugs in `nag_dfols` and `nag_pybobyqa`: `n_evals_per_point`
+  (formerly `noise_n_evals_per_point`) could not be used, `n_fun_evals` counted points
+  instead of evaluations or was missing, `stopping_maxfun` was ignored by
+  `nag_pybobyqa` and some options were never passed to the solvers. The solvers no
+  longer compute diagnostics in every iteration, which makes them about twice as fast
+  on cheap functions; in turn `n_iterations` is no longer reported. Options the
+  solvers reject now raise an `InvalidAlgoOptionError` ({ghuser}`janosg`).
+- {gh}`746` Adds tools for the options of algorithm wrappers: `mark.minimizer` takes
+  `deprecated_options` to keep old option names working with a `FutureWarning`, and
+  related options can be bundled in validated option groups. Adds detailed wrapper
+  tests that are selected with markers such as `-m fides_wrappers` and run monthly
+  against the newest releases of the wrapped libraries. The guides on adding and
+  documenting optimizers describe the new standards for wrappers, and a
+  `wrap-optimizer` skill guides coding agents through them ({ghuser}`janosg`).
 - {gh}`739` Fixes `tao_pounders` ignoring `convergence_gtol_abs`,
   `convergence_gtol_rel` and `convergence_gtol_scaled`. Reaching `stopping_maxiter` is
   now reported as unsuccessful with the message "maxits reached" instead of as
