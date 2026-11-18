@@ -874,6 +874,19 @@ def test_option_group_instance_works_in_algo_options(algo_name, solve_calls):
     assert solve_calls[algo_name]["user_params"]["tr_radius.gamma_inc"] == 3.0
 
 
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_stopping_maxfun_works_in_algo_options(algo_name, solve_calls):
+    res = om.minimize(
+        _as_fun(_residuals, algo_name),
+        START,
+        algorithm=algo_name,
+        algo_options={"stopping_maxfun": 8},
+    )
+
+    assert solve_calls[algo_name]["maxfun"] == 8
+    assert res.n_fun_evals == 8
+
+
 # ======================================================================================
 # Behavior: stopping and convergence
 # ======================================================================================
