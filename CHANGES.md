@@ -41,22 +41,24 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
 - {gh}`746` Modernizes `nag_dfols` and `nag_pybobyqa`, which now require
   `DFO-LS>=1.6.5` and `Py-BOBYQA>=1.5.0`. Options that belong together are bundled in
   option groups that mirror the solvers (`init_options`, `trustregion_options`,
-  `slow_progress_options`, `noise_options`, `interpolation_options`,
-  `regression_options`, `restart_options`, `growing_options`), noisy functions are
-  declared with `noisy=True` and all options of the solvers that optimagic can serve
-  are available. The old option names are deprecated and will be removed in 0.7.0
-  ({ghuser}`janosg`).
+  `slow_progress_options`, `interpolation_options`, `regression_options`,
+  `growing_options`). Restarts are switched on with `restarts=True` or configured with
+  an instance of the restart options, noisy functions are declared with `noisy=True`
+  or with an instance of `NagNoiseOptions`, and all options of the solvers that
+  optimagic can serve are available. The old option names are deprecated and will be
+  removed in 0.7.0 ({ghuser}`janosg`).
 - {gh}`746` Fixes several bugs in `nag_dfols` and `nag_pybobyqa`: `n_evals_per_point`
   (formerly `noise_n_evals_per_point`) could not be used, `n_fun_evals` counted points
   instead of evaluations or was missing, `stopping_maxfun` was ignored by
-  `nag_pybobyqa` and some options were never passed to the solvers. Options the
-  solvers reject now raise an `InvalidAlgoOptionError` ({ghuser}`janosg`).
+  `nag_pybobyqa`, `n_iterations` was one too low and some options were never passed
+  to the solvers. Options the solvers reject now raise an `InvalidAlgoOptionError`.
+  `fides` now reports `status`, `n_fun_evals` and `n_jac_evals` ({ghuser}`janosg`).
 - {gh}`746` Adds tools for the options of algorithm wrappers: the
   `mark.deprecated_options` decorator keeps old option names working with a
   `FutureWarning`, and related options can be bundled in validated option groups,
-  which are passed as instances of their class. Adds detailed wrapper
-  tests that are selected with markers such as `-m fides_wrappers` and run monthly
-  against the newest releases of the wrapped libraries. The guides on adding and
+  which are passed as instances of their class. Adds detailed wrapper tests that are
+  selected with markers such as `-m fides_wrappers`, do not run by default and run
+  monthly against the newest releases of the wrapped libraries. The guides on adding and
   documenting optimizers describe the new standards for wrappers, and a
   `wrap-optimizer` skill guides coding agents through them ({ghuser}`janosg`).
 - {gh}`739` Fixes `tao_pounders` ignoring `convergence_gtol_abs`,

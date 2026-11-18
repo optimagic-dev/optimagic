@@ -63,6 +63,19 @@ DEPRECATED_OPTIONS = {
     "nag_pybobyqa": nag.PYBOBYQA_DEPRECATED_OPTIONS,
 }
 
+# Options that are a boolean or an option group, with the class of the group. The
+# boolean switches a feature on or off, the group switches it on with settings.
+SWITCHABLE_GROUPS: dict[str, dict[str, Any]] = {
+    "nag_dfols": {
+        "noisy": nag.NagNoiseOptions,
+        "restarts": nag.DfolsRestartOptions,
+    },
+    "nag_pybobyqa": {
+        "noisy": nag.NagNoiseOptions,
+        "restarts": nag.PybobyqaRestartOptions,
+    },
+}
+
 # Arguments of the upstream solve functions that the wrapper fills itself.
 FILLED_BY_WRAPPER = {"objfun", "x0", "bounds", "user_params"}
 
@@ -128,15 +141,22 @@ def _as_fun(residuals, algo_name, noise_scale=0.0, seed=0):
     return _scalar
 
 
-def _group(algo_name, option, **entries):
-    """Create an option group of an algorithm, e.g. its ``restart_options``.
+def _group_class(algo_name, option):
+    """Get the class of the option group of an option, or None if it has no group.
 
-    The classes of some groups differ between the algorithms. Therefore, the class is
-    taken from the default value of the option.
+    The classes of some groups differ between the algorithms. For options that are
+    always a group, the class is taken from the default value of the option.
 
     """
-    group_cls = type(getattr(ALGORITHMS[algo_name](), option))
-    return group_cls(**entries)
+    if option in SWITCHABLE_GROUPS[algo_name]:
+        return SWITCHABLE_GROUPS[algo_name][option]
+    default = getattr(ALGORITHMS[algo_name](), option, None)
+    return type(default) if is_dataclass(default) else None
+
+
+def _group(algo_name, option, **entries):
+    """Create an option group of an algorithm, e.g. for its ``restarts`` option."""
+    return _group_class(algo_name, option)(**entries)
 
 
 def _with_groups(algo_name, options):
@@ -144,13 +164,12 @@ def _with_groups(algo_name, options):
 
     The tables in this module spell option groups as dictionaries of their entries,
     because the class of a group depends on the algorithm. Algorithms only accept
-    instances of the group classes.
+    instances of the group classes. Values of deprecated options stay dictionaries.
 
     """
-    defaults = ALGORITHMS[algo_name]()
     return {
         name: _group(algo_name, name, **value)
-        if is_dataclass(getattr(defaults, name, None))
+        if isinstance(value, dict) and _group_class(algo_name, name) is not None
         else value
         for name, value in options.items()
     }
@@ -168,22 +187,34 @@ def _nest(algo_name, options):
     return _with_groups(algo_name, out)
 
 
-def _get(obj, path):
-    for name in path.split("."):
-        obj = getattr(obj, name)
-    return obj
+def _default(algo_name, path):
+    """Get the default of an option or of an entry of its option group."""
+    option, _, entry = path.partition(".")
+    if entry:
+        return getattr(_group(algo_name, option), entry)
+    return getattr(ALGORITHMS[algo_name](), option)
 
 
-def _option_paths(algo):
-    """Paths of all options of an algorithm, with entries of groups spelled out."""
+def _option_paths(algo_name):
+    """Paths of all options of an algorithm, with entries of groups spelled out.
+
+    An option that is a boolean or an option group has a path for the option itself
+    and one for each entry of the group.
+
+    """
     out = []
-    for field in fields(algo):
-        value = getattr(algo, field.name)
-        if is_dataclass(value):
-            out += [f"{field.name}.{entry.name}" for entry in fields(value)]
-        else:
+    for field in fields(ALGORITHMS[algo_name]()):
+        group_cls = _group_class(algo_name, field.name)
+        if group_cls is None or field.name in SWITCHABLE_GROUPS[algo_name]:
             out.append(field.name)
+        if group_cls is not None:
+            out += [f"{field.name}.{entry.name}" for entry in fields(group_cls)]
     return out
+
+
+def _is_entry_of_switchable_group(algo_name, path):
+    option, _, entry = path.partition(".")
+    return bool(entry) and option in SWITCHABLE_GROUPS[algo_name]
 
 
 def _minimize(algo_name, residuals=_residuals, x0=START, noise_scale=0.0, **options):
@@ -240,28 +271,38 @@ def raw_results(monkeypatch):
 # ======================================================================================
 
 
-def _upstream_parameter_lists(algo_name):
+def _upstream_parameter_lists(algo_name, only_noisy=False):
     """Default advanced options of the solver in several contexts.
 
     The contexts differ in the number of parameters, interpolation points and function
     evaluations, in whether the function is noisy and in whether a global optimum is
     searched.
 
+    Args:
+        algo_name: The name of the algorithm.
+        only_noisy: Whether only contexts with a noisy function are returned. These
+            are the contexts in which the entries of ``noisy`` are passed.
+
     """
     if algo_name == "nag_dfols":
-        return [
-            DfolsParameterList(3, 4, 100, objfun_has_noise=False).params,
-            DfolsParameterList(3, 4, 100, objfun_has_noise=True).params,
-            DfolsParameterList(5, 9, 500, objfun_has_noise=False).params,
+        contexts = [
+            (False, DfolsParameterList(3, 4, 100, objfun_has_noise=False).params),
+            (True, DfolsParameterList(3, 4, 100, objfun_has_noise=True).params),
+            (True, DfolsParameterList(5, 9, 500, objfun_has_noise=True).params),
+            (False, DfolsParameterList(5, 9, 500, objfun_has_noise=False).params),
         ]
-    out = [
-        PybobyqaParameterList(
-            3, 7, 100, objfun_has_noise=noisy, seek_global_minimum=seek_global
-        ).params
-        for noisy, seek_global in itertools.product([False, True], repeat=2)
-    ]
-    out.append(PybobyqaParameterList(5, 11, 500).params)
-    return out
+    else:
+        contexts = [
+            (
+                noisy,
+                PybobyqaParameterList(
+                    3, 7, 100, objfun_has_noise=noisy, seek_global_minimum=seek_global
+                ).params,
+            )
+            for noisy, seek_global in itertools.product([False, True], repeat=2)
+        ]
+        contexts.append((False, PybobyqaParameterList(5, 11, 500).params))
+    return [params for noisy, params in contexts if noisy or not only_noisy]
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -287,7 +328,7 @@ def test_all_advanced_options_are_mapped_or_unsupported(algo_name):
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_all_options_of_the_wrapper_are_mapped(algo_name):
     mapped = set(SOLVE_ARGUMENTS[algo_name]) | set(ADVANCED_OPTIONS[algo_name])
-    assert set(_option_paths(ALGORITHMS[algo_name]())) == mapped
+    assert set(_option_paths(algo_name)) == mapped
 
 
 @pytest.mark.parametrize(
@@ -301,7 +342,7 @@ def test_all_options_of_the_wrapper_are_mapped(algo_name):
 def test_defaults_of_solve_arguments_match_upstream(algo_name, path, upstream_name):
     signature = inspect.signature(UPSTREAM[algo_name].solve)
     upstream_default = signature.parameters[upstream_name].default
-    wrapper_default = _get(ALGORITHMS[algo_name](), path)
+    wrapper_default = _default(algo_name, path)
 
     deviations = DELIBERATE_DEFAULT_DEVIATIONS[algo_name]
     if upstream_name in deviations:
@@ -309,6 +350,24 @@ def test_defaults_of_solve_arguments_match_upstream(algo_name, path, upstream_na
         assert wrapper_default != upstream_default
     else:
         assert wrapper_default == upstream_default
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_flags_of_switchable_groups_are_decided_by_the_solver(algo_name):
+    """The contexts in which the solver restarts are the documented ones."""
+    use_restarts = [
+        params["restarts.use_restarts"]
+        for params in _upstream_parameter_lists(algo_name)
+    ]
+    noisy_only = [
+        params["restarts.use_restarts"]
+        for params in _upstream_parameter_lists(algo_name, only_noisy=True)
+    ]
+
+    assert _default(algo_name, "restarts") is None
+    assert set(use_restarts) == {True, False}
+    assert all(noisy_only)
+    assert _default(algo_name, "noisy") is False
 
 
 def test_stopping_maxfun_uses_the_harmonized_default():
@@ -325,10 +384,17 @@ def test_stopping_maxfun_uses_the_harmonized_default():
     ],
 )
 def test_defaults_of_advanced_options_match_upstream(algo_name, path, upstream_name):
-    """Constant upstream defaults are copied, all others are None in the wrapper."""
-    wrapper_default = _get(ALGORITHMS[algo_name](), path)
+    """Constant upstream defaults are copied, all others are None in the wrapper.
+
+    The entries of ``noisy`` are only passed for noisy functions, so their defaults
+    are compared with the upstream defaults for noisy functions.
+
+    """
+    wrapper_default = _default(algo_name, path)
+    only_noisy = path.startswith("noisy.")
     upstream_defaults = [
-        params[upstream_name] for params in _upstream_parameter_lists(algo_name)
+        params[upstream_name]
+        for params in _upstream_parameter_lists(algo_name, only_noisy=only_noisy)
     ]
     is_constant = all(default == upstream_defaults[0] for default in upstream_defaults)
 
@@ -390,23 +456,23 @@ _COMMON_TEST_VALUES = {
     "slow_progress_options.history_for_slow": 6,
     "slow_progress_options.threshold_for_slow": 1e-6,
     "slow_progress_options.max_slow_iterations": 7,
-    "noise_options.quit_on_noise_level": True,
-    "noise_options.scale_factor_for_quit": 2.0,
-    "noise_options.multiplicative_noise_level": 0.1,
-    "noise_options.additive_noise_level": 0.1,
+    "noisy.quit_on_noise_level": False,
+    "noisy.scale_factor_for_quit": 2.0,
+    "noisy.multiplicative_noise_level": 0.1,
+    "noisy.additive_noise_level": 0.1,
     "interpolation_options.precondition": False,
-    "restart_options.use_restarts": True,
-    "restart_options.max_unsuccessful_restarts": 2,
-    "restart_options.convergence_min_radius_scale": 0.5,
-    "restart_options.use_soft_restarts": False,
-    "restart_options.soft_n_geometry_steps": 2,
-    "restart_options.soft_move_iterate": False,
-    "restart_options.soft_max_fake_successful_steps": 9,
-    "restart_options.hard_use_old_fun_value": False,
-    "restart_options.auto_detect": False,
-    "restart_options.auto_detect_history": 20,
-    "restart_options.auto_detect_min_model_change_slope": 0.02,
-    "restart_options.auto_detect_min_correlation": 0.2,
+    "restarts": True,
+    "restarts.max_unsuccessful_restarts": 2,
+    "restarts.convergence_min_radius_scale": 0.5,
+    "restarts.use_soft_restarts": False,
+    "restarts.soft_n_geometry_steps": 2,
+    "restarts.soft_move_iterate": False,
+    "restarts.soft_max_fake_successful_steps": 9,
+    "restarts.hard_use_old_fun_value": False,
+    "restarts.auto_detect": False,
+    "restarts.auto_detect_history": 20,
+    "restarts.auto_detect_min_model_change_slope": 0.02,
+    "restarts.auto_detect_min_correlation": 0.2,
 }
 
 TEST_VALUES = {
@@ -419,11 +485,11 @@ TEST_VALUES = {
         "regression_options.n_extra_steps": 1,
         "regression_options.increase_n_extra_steps_with_restart": 1,
         "regression_options.momentum_extra_steps": True,
-        "restart_options.increase_n_interpolation_points": True,
-        "restart_options.increase_n_interpolation_points_amount": 2,
-        "restart_options.hard_increase_n_initial_directions_amount": 2,
-        "restart_options.max_n_interpolation_points": 6,
-        "restart_options.throw_error_on_nans": True,
+        "restarts.increase_n_interpolation_points": True,
+        "restarts.increase_n_interpolation_points_amount": 2,
+        "restarts.hard_increase_n_initial_directions_amount": 2,
+        "restarts.max_n_interpolation_points": 6,
+        "restarts.throw_error_on_nans": True,
         "growing_options.n_initial_directions": 2,
         "growing_options.n_new_directions_each_iteration": 1,
         "growing_options.radius_scale_new_directions": 0.5,
@@ -446,8 +512,8 @@ TEST_VALUES = {
         "convergence_target_value": 0.5,
         "seek_global_optimum": True,
         "interpolation_options.minimum_change_hessian": False,
-        "restart_options.max_unsuccessful_restarts_total": 5,
-        "restart_options.initial_radius_scale_after_unsuccessful_restart": 1.2,
+        "restarts.max_unsuccessful_restarts_total": 5,
+        "restarts.initial_radius_scale_after_unsuccessful_restart": 1.2,
     },
 }
 
@@ -472,12 +538,12 @@ FORWARDING_CASES = [
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_there_is_a_forwarding_test_for_every_option(algo_name):
     tested = set(TEST_VALUES[algo_name]) | CONVERTED_BY_WRAPPER
-    assert tested == set(_option_paths(ALGORITHMS[algo_name]()))
+    assert tested == set(_option_paths(algo_name))
 
 
 @pytest.mark.parametrize(("algo_name", "path", "value"), FORWARDING_CASES)
 def test_option_is_forwarded_to_solver(algo_name, path, value, solve_calls):
-    assert value != _get(ALGORITHMS[algo_name](), path)
+    assert value != _default(algo_name, path)
 
     options = {"stopping_maxfun": 12, **REQUIRED_COMPANIONS.get(path, {}), path: value}
     fun = _as_fun(_residuals, algo_name)
@@ -499,18 +565,93 @@ def test_option_is_forwarded_to_solver(algo_name, path, value, solve_calls):
 
     assert forwarded == value
     assert type(forwarded) is type(value)
+    if _is_entry_of_switchable_group(algo_name, path):
+        # Setting an entry switches the feature on.
+        option = path.partition(".")[0]
+        flags = {
+            "noisy": call["objfun_has_noise"],
+            "restarts": call["user_params"].get("restarts.use_restarts"),
+        }
+        assert flags[option] is True
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_options_that_are_none_are_not_passed_to_solver(algo_name, solve_calls):
-    algo = ALGORITHMS[algo_name]()
     _minimize(algo_name)
     call = solve_calls[algo_name]
 
+    def _is_passed_at_defaults(path):
+        # The entries of `noisy` and `restarts` are only passed for an option group.
+        if _is_entry_of_switchable_group(algo_name, path):
+            return False
+        return _default(algo_name, path) is not None
+
     for path, upstream_name in SOLVE_ARGUMENTS[algo_name].items():
-        assert (upstream_name in call) is (_get(algo, path) is not None)
+        assert (upstream_name in call) is _is_passed_at_defaults(path)
     for path, upstream_name in ADVANCED_OPTIONS[algo_name].items():
-        assert (upstream_name in call["user_params"]) is (_get(algo, path) is not None)
+        assert (upstream_name in call["user_params"]) is _is_passed_at_defaults(path)
+
+
+def _forwarded_group(call, prefix):
+    """The advanced options of one upstream group that the solver was called with."""
+    return {
+        key: value
+        for key, value in call["user_params"].items()
+        if key.startswith(prefix)
+    }
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_restarts_as_none_or_boolean_only_forwards_the_flag(algo_name, solve_calls):
+    expected: dict[Any, dict[str, bool]] = {
+        None: {},
+        False: {"restarts.use_restarts": False},
+        True: {"restarts.use_restarts": True},
+    }
+    for restarts, forwarded in expected.items():
+        _minimize(algo_name, restarts=restarts, stopping_maxfun=12)
+        assert _forwarded_group(solve_calls[algo_name], "restarts.") == forwarded
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_restarts_as_option_group_forwards_flag_and_entries(algo_name, solve_calls):
+    group = _group(algo_name, "restarts", max_unsuccessful_restarts=2)
+    _minimize(algo_name, restarts=group, stopping_maxfun=12)
+    forwarded = _forwarded_group(solve_calls[algo_name], "restarts.")
+
+    expected = {"restarts.use_restarts": True}
+    for path, upstream_name in ADVANCED_OPTIONS[algo_name].items():
+        option, _, entry = path.partition(".")
+        if option == "restarts" and entry and getattr(group, entry) is not None:
+            expected[upstream_name] = getattr(group, entry)
+
+    assert forwarded == expected
+    assert forwarded["restarts.max_unsuccessful_restarts"] == 2
+    assert len(forwarded) > 10
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_noisy_as_boolean_only_forwards_the_flag(algo_name, solve_calls):
+    for noisy in (False, True):
+        _minimize(algo_name, noisy=noisy, stopping_maxfun=12)
+        call = solve_calls[algo_name]
+
+        assert call["objfun_has_noise"] is noisy
+        assert _forwarded_group(call, "noise.") == {}
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_noisy_as_option_group_forwards_flag_and_entries(algo_name, solve_calls):
+    group = nag.NagNoiseOptions(additive_noise_level=0.1)
+    _minimize(algo_name, noisy=group, stopping_maxfun=12)
+    call = solve_calls[algo_name]
+
+    assert call["objfun_has_noise"] is True
+    assert _forwarded_group(call, "noise.") == {
+        "noise.quit_on_noise_level": True,
+        "noise.scale_factor_for_quit": 1.0,
+        "noise.additive_noise_level": 0.1,
+    }
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -547,9 +688,7 @@ def test_integers_are_converted_for_options_that_need_floats(algo_name, solve_ca
         trustregion_options=_group(
             algo_name, "trustregion_options", expansion_factor=3
         ),
-        restart_options=_group(
-            algo_name, "restart_options", convergence_min_radius_scale=1
-        ),
+        restarts=_group(algo_name, "restarts", convergence_min_radius_scale=1),
     )
     user_params = solve_calls[algo_name]["user_params"]
 
@@ -578,15 +717,36 @@ def test_result_at_defaults(algo_name):
         "n_runs": 1,
         "n_evaluated_points": res.n_fun_evals,
     }
+    assert res.hess is None
+    assert res.hess_inv is None
+
+
+def test_result_of_dfols_contains_the_estimated_jacobian_of_the_residuals():
+    res = _minimize("nag_dfols")
+    # `_residuals` has one residual per parameter and a constant one.
+    expected = np.vstack([np.eye(3), np.zeros(3)])
+
+    np.testing.assert_allclose(res.jac, expected, atol=1e-6)
+
+
+def test_result_of_pybobyqa_contains_the_estimated_gradient():
+    res: Any = om.minimize(
+        _as_fun(_residuals, "nag_pybobyqa"),
+        START,
+        algorithm=NagPyBOBYQA(),
+        bounds=om.Bounds(upper=np.array([0.5, np.inf, np.inf])),
+    )
+    # The first parameter ends at its bound, where the gradient is not zero.
+    expected = np.array([2 * (0.5 - OPTIMUM[0]), 0.0, 0.0])
+
+    np.testing.assert_allclose(res.params, [0.5, 2.0, 3.0], atol=1e-6)
+    np.testing.assert_allclose(res.jac, expected, atol=1e-4)
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_n_iterations_is_the_total_over_all_runs(algo_name, raw_results):
     res = _minimize(
-        algo_name,
-        restart_options=_group(
-            algo_name, "restart_options", use_restarts=True, max_unsuccessful_restarts=2
-        ),
+        algo_name, restarts=_group(algo_name, "restarts", max_unsuccessful_restarts=2)
     )
     info = raw_results[algo_name].diagnostic_info
     rows_per_run = info.groupby("nruns").size()
@@ -606,6 +766,8 @@ def test_n_iterations_is_zero_if_solver_stops_before_the_first_iteration(algo_na
 
     assert not res.success
     assert res.n_iterations == 0
+    # The solver did not build a model from which it could estimate derivatives.
+    assert res.jac is None
 
 
 def test_n_iterations_is_none_without_diagnostic_information():
@@ -631,7 +793,10 @@ def test_contradicting_growing_options_raise():
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_invalid_entry_of_option_group_raises(algo_name):
     with pytest.raises(InvalidAlgoOptionError, match="RestartOptions"):
-        _group(algo_name, "restart_options", use_resets=True)
+        _group(algo_name, "restarts", use_resets=True)
+    with pytest.raises(InvalidAlgoOptionError, match="RestartOptions"):
+        # The flag is the option itself and not an entry of the group anymore.
+        _group(algo_name, "restarts", use_restarts=True)
     with pytest.raises(InvalidAlgoOptionError, match="NagTrustregionOptions"):
         nag.NagTrustregionOptions(shrinking_threshold=1.5)
 
@@ -652,6 +817,47 @@ def test_option_group_as_dictionary_is_rejected(algo_name):
             algorithm=algo_name,
             algo_options={"trustregion_options": entries},
         )
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+@pytest.mark.parametrize("option", ["restarts", "noisy"])
+def test_dictionary_is_rejected_for_boolean_or_option_group(algo_name, option):
+    group_cls = SWITCHABLE_GROUPS[algo_name][option]
+    entries = {
+        field.name: getattr(group_cls(), field.name) for field in fields(group_cls)
+    }
+    match = f"instance of {group_cls.__name__}"
+
+    with pytest.raises(InvalidAlgoOptionError, match=match):
+        ALGORITHMS[algo_name](**{option: entries})
+    with pytest.raises(InvalidAlgoOptionError, match=match):
+        ALGORITHMS[algo_name]().with_option(**{option: entries})
+    with pytest.raises(InvalidAlgoOptionError, match=match):
+        om.minimize(
+            _as_fun(_residuals, algo_name),
+            START,
+            algorithm=algo_name,
+            algo_options={option: entries},
+        )
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_restarts_and_noisy_work_in_algo_options(algo_name, solve_calls):
+    om.minimize(
+        _as_fun(_residuals, algo_name),
+        START,
+        algorithm=algo_name,
+        algo_options={
+            "noisy": True,
+            "restarts": _group(algo_name, "restarts", max_unsuccessful_restarts=1),
+            "stopping_maxfun": 30,
+        },
+    )
+    call = solve_calls[algo_name]
+
+    assert call["objfun_has_noise"] is True
+    assert call["user_params"]["restarts.use_restarts"] is True
+    assert call["user_params"]["restarts.max_unsuccessful_restarts"] == 1
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -875,9 +1081,15 @@ def test_noisy_function_is_restarted(algo_name, solve_calls):
     assert solve_calls[algo_name]["objfun_has_noise"] is False
     noisy = _minimize(algo_name, noisy=True, **kwargs)
     assert solve_calls[algo_name]["objfun_has_noise"] is True
+    # Describing the noise also declares the function as noisy.
+    described = _minimize(algo_name, noisy=nag.NagNoiseOptions(), **kwargs)
+    assert solve_calls[algo_name]["objfun_has_noise"] is True
+    without_restarts = _minimize(algo_name, noisy=True, restarts=False, **kwargs)
 
     assert not_noisy.algorithm_output["n_runs"] == 1
     assert noisy.algorithm_output["n_runs"] > 1
+    assert described.algorithm_output["n_runs"] > 1
+    assert without_restarts.algorithm_output["n_runs"] == 1
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -889,24 +1101,19 @@ def test_quit_on_noise_level(algo_name, level):
         "residuals": _rosenbrock_residuals,
         "x0": ROSENBROCK_START,
         "noise_scale": 0.01,
-        "noisy": True,
         "stopping_maxfun": 300,
-        "restart_options": _group(algo_name, "restart_options", use_restarts=False),
+        "restarts": False,
     }
 
-    def _noise_options(**entries):
-        return _group(algo_name, "noise_options", **entries)
+    def _noise(**entries):
+        return _group(algo_name, "noisy", **entries)
 
-    unknown_level = _minimize(algo_name, **kwargs)
-    large_level = _minimize(
-        algo_name, noise_options=_noise_options(**{level: 5.0}), **kwargs
-    )
-    tiny_level = _minimize(
-        algo_name, noise_options=_noise_options(**{level: 1e-12}), **kwargs
-    )
+    unknown_level = _minimize(algo_name, noisy=True, **kwargs)
+    large_level = _minimize(algo_name, noisy=_noise(**{level: 5.0}), **kwargs)
+    tiny_level = _minimize(algo_name, noisy=_noise(**{level: 1e-12}), **kwargs)
     switched_off = _minimize(
         algo_name,
-        noise_options=_noise_options(**{level: 5.0}, quit_on_noise_level=False),
+        noisy=_noise(**{level: 5.0}, quit_on_noise_level=False),
         **kwargs,
     )
 
@@ -923,8 +1130,7 @@ def test_only_one_noise_level_can_be_set(algo_name):
     with pytest.raises(InvalidAlgoOptionError, match="exactly one of additive"):
         _minimize(
             algo_name,
-            noisy=True,
-            noise_options=nag.NagNoiseOptions(
+            noisy=nag.NagNoiseOptions(
                 additive_noise_level=0.1, multiplicative_noise_level=0.1
             ),
         )
@@ -936,21 +1142,29 @@ def test_only_one_noise_level_can_be_set(algo_name):
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
-def test_use_restarts(algo_name):
-    without = _minimize(algo_name)
-    with_restarts = _minimize(
-        algo_name,
-        restart_options=_group(
-            algo_name, "restart_options", use_restarts=True, max_unsuccessful_restarts=2
-        ),
+def test_restarts(algo_name):
+    default = _minimize(algo_name)
+    switched_off = _minimize(algo_name, restarts=False)
+    switched_on = _minimize(algo_name, restarts=True)
+    with_settings = _minimize(
+        algo_name, restarts=_group(algo_name, "restarts", max_unsuccessful_restarts=2)
     )
 
-    assert without.algorithm_output["n_runs"] == 1
-    # the first run and two restarts that cannot improve the exact optimum
-    assert with_restarts.algorithm_output["n_runs"] == 3
-    assert with_restarts.success
-    assert "unsuccessful restarts" in with_restarts.message
-    assert with_restarts.n_fun_evals > without.n_fun_evals
+    # Without noise the solver does not restart by default.
+    for res in (default, switched_off):
+        assert res.algorithm_output["n_runs"] == 1
+        assert "rho has reached rhoend" in res.message
+    assert switched_off.n_fun_evals == default.n_fun_evals
+
+    # The solver stops after 10 restarts in a row that did not improve the result,
+    # or after 2 with the settings. A restart can improve the result marginally,
+    # which starts the count again.
+    assert switched_on.algorithm_output["n_runs"] >= 11
+    assert with_settings.algorithm_output["n_runs"] == 3
+    for res in (switched_on, with_settings):
+        assert res.success
+        assert "unsuccessful restarts" in res.message
+    assert switched_on.n_fun_evals > with_settings.n_fun_evals > default.n_fun_evals
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -968,10 +1182,9 @@ def test_use_soft_restarts(algo_name):
         results[soft] = _minimize(
             algo_name,
             trustregion_initial_radius=radius,
-            restart_options=_group(
+            restarts=_group(
                 algo_name,
-                "restart_options",
-                use_restarts=True,
+                "restarts",
                 use_soft_restarts=soft,
                 max_unsuccessful_restarts=2,
             ),
@@ -1040,7 +1253,6 @@ _OLD_RESET_OPTIONS = {
     "max_consecutive_unsuccessful_resets": 4,
 }
 _NEW_RESTART_OPTIONS = {
-    "use_restarts": True,
     "convergence_min_radius_scale": 0.5,
     "use_soft_restarts": False,
     "soft_move_iterate": False,
@@ -1156,32 +1368,67 @@ _COMMON_DEPRECATION_CASES = [
         {"convergence_slow_progress": {"comparison_period": 6}},
         {"slow_progress_options": {"history_for_slow": 6}},
     ),
-    (
-        {"convergence_noise_corrected_criterion_tolerance": 2.0},
-        {"noise_options": {"scale_factor_for_quit": 2.0}},
-    ),
-    (
-        {"convergence_noise_corrected_criterion_tolerance": 0.0},
-        {"noise_options": {"quit_on_noise_level": False}},
-    ),
-    (
-        {"noise_additive_level": 0.1},
-        {"noisy": True, "noise_options": {"additive_noise_level": 0.1}},
-    ),
+    # A noise level used to be the only way to declare the function as noisy.
+    ({"noise_additive_level": 0.1}, {"noisy": {"additive_noise_level": 0.1}}),
     (
         {"noise_multiplicative_level": 0.1},
-        {"noisy": True, "noise_options": {"multiplicative_noise_level": 0.1}},
+        {"noisy": {"multiplicative_noise_level": 0.1}},
     ),
     (
         {"noise_additive_level": 0.1, "noise_multiplicative_level": 0.2},
+        {"noisy": {"additive_noise_level": 0.1, "multiplicative_noise_level": 0.2}},
+    ),
+    # The tolerance only had an effect together with a noise level.
+    (
         {
-            "noisy": True,
-            "noise_options": {
-                "additive_noise_level": 0.1,
-                "multiplicative_noise_level": 0.2,
-            },
+            "convergence_noise_corrected_criterion_tolerance": 2.0,
+            "noise_additive_level": 0.1,
+        },
+        {"noisy": {"additive_noise_level": 0.1, "scale_factor_for_quit": 2.0}},
+    ),
+    (
+        {
+            "convergence_noise_corrected_criterion_tolerance": 0.0,
+            "noise_multiplicative_level": 0.1,
+        },
+        {"noisy": {"multiplicative_noise_level": 0.1, "quit_on_noise_level": False}},
+    ),
+    # `use_resets` used to switch restarts on and off.
+    ({"trustregion_reset_options": {"use_resets": True}}, {"restarts": True}),
+    ({"trustregion_reset_options": {"use_resets": False}}, {"restarts": False}),
+    (
+        {"trustregion_reset_options": {"use_resets": False, "reset_type": "hard"}},
+        {"restarts": False},
+    ),
+    (
+        {"trustregion_reset_options": {"use_resets": True, "reset_type": "soft"}},
+        {"restarts": {"use_soft_restarts": True}},
+    ),
+    # Without `use_resets` the solver decided. It restarts for noisy functions.
+    (
+        {
+            "noise_additive_level": 0.1,
+            "trustregion_reset_options": {"reset_type": "hard"},
+        },
+        {
+            "noisy": {"additive_noise_level": 0.1},
+            "restarts": {"use_soft_restarts": False},
         },
     ),
+]
+
+# Old keyword arguments that are accepted with a warning but have no effect.
+_COMMON_CASES_WITHOUT_EFFECT = [
+    # A noise level of None or zero did not declare the function as noisy.
+    {"noise_additive_level": None},
+    {"noise_multiplicative_level": 0.0},
+    # The tolerance only had an effect together with a noise level.
+    {"convergence_noise_corrected_criterion_tolerance": 2.0},
+    # Without `use_resets` the solver decided, and it only restarts for noisy
+    # functions. Without restarts the other entries had no effect.
+    {"trustregion_reset_options": {"max_consecutive_unsuccessful_resets": 4}},
+    {"trustregion_reset_options": {"use_resets": None, "reset_type": "hard"}},
+    {"trustregion_reset_options": None},
 ]
 
 DEPRECATION_CASES = {
@@ -1211,7 +1458,7 @@ DEPRECATION_CASES = {
                 }
             },
             {
-                "restart_options": {
+                "restarts": {
                     **_NEW_RESTART_OPTIONS,
                     "max_n_interpolation_points": 8,
                     "increase_n_interpolation_points": True,
@@ -1222,16 +1469,27 @@ DEPRECATION_CASES = {
             },
         ),
         (
-            {"trustregion_reset_options": {"reset_type": "soft"}},
-            {"restart_options": {"use_soft_restarts": True}},
+            {
+                "trustregion_reset_options": {
+                    "use_resets": True,
+                    "n_extra_interpolation_points_per_soft_reset": 0,
+                }
+            },
+            {"restarts": {"increase_n_interpolation_points": False}},
         ),
+        # An entry that belongs to another option group does not switch restarts on
+        # by itself.
         (
             {
                 "trustregion_reset_options": {
-                    "n_extra_interpolation_points_per_soft_reset": 0
+                    "use_resets": True,
+                    "n_additional_extra_points_to_replace_per_reset": 1,
                 }
             },
-            {"restart_options": {"increase_n_interpolation_points": False}},
+            {
+                "restarts": True,
+                "regression_options": {"increase_n_extra_steps_with_restart": 1},
+            },
         ),
         (
             {"trustregion_fast_start_options": _OLD_FAST_START_OPTIONS},
@@ -1264,7 +1522,7 @@ DEPRECATION_CASES = {
                 }
             },
             {
-                "restart_options": {
+                "restarts": {
                     **_NEW_RESTART_OPTIONS,
                     "max_unsuccessful_restarts_total": 5,
                     "initial_radius_scale_after_unsuccessful_restart": 1.2,
@@ -1280,11 +1538,28 @@ DEPRECATION_PARAMETRIZATION = [
     for i, (old, new) in enumerate(DEPRECATION_CASES[algo_name])
 ]
 
-# Old options that are accepted with a warning but have no effect anymore.
-DEPRECATED_WITHOUT_REPLACEMENT = {
-    "nag_dfols": [],
-    "nag_pybobyqa": [{"clip_criterion_if_overflowing": False}],
+CASES_WITHOUT_EFFECT = {
+    "nag_dfols": [
+        *_COMMON_CASES_WITHOUT_EFFECT,
+        {
+            "trustregion_reset_options": {
+                "n_additional_extra_points_to_replace_per_reset": 1
+            }
+        },
+    ],
+    "nag_pybobyqa": [
+        *_COMMON_CASES_WITHOUT_EFFECT,
+        # Py-BOBYQA only catches an OverflowError of the function, which optimagic
+        # handles before the solver sees it.
+        {"clip_criterion_if_overflowing": False},
+    ],
 }
+
+WITHOUT_EFFECT_PARAMETRIZATION = [
+    pytest.param(algo_name, old, id=f"{algo_name}-{'-'.join(old)}-{i}")
+    for algo_name in ALGORITHMS
+    for i, old in enumerate(CASES_WITHOUT_EFFECT[algo_name])
+]
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -1292,7 +1567,7 @@ def test_there_is_a_test_for_every_deprecated_option(algo_name):
     tested = set()
     for old, _ in DEPRECATION_CASES[algo_name]:
         tested |= set(old)
-    for old in DEPRECATED_WITHOUT_REPLACEMENT[algo_name]:
+    for old in CASES_WITHOUT_EFFECT[algo_name]:
         tested |= set(old)
 
     assert tested == {dep.name for dep in DEPRECATED_OPTIONS[algo_name]}
@@ -1325,20 +1600,26 @@ def test_deprecated_option_in_with_option(algo_name, old, new):
     # Start from a configured algorithm to check that other entries are kept.
     start = ALGORITHMS[algo_name](
         stopping_maxfun=77,
-        restart_options=_group(algo_name, "restart_options", auto_detect_history=25),
+        restarts=_group(algo_name, "restarts", auto_detect_history=25),
     )
     with pytest.warns(FutureWarning):
         algo = start.with_option(**old)
 
-    expected_options = {
-        name: replace(getattr(start, name), **value)
-        if is_dataclass(getattr(start, name))
-        else value
-        for name, value in new.items()
-    }
+    expected_options = {}
+    for name, value in new.items():
+        if not isinstance(value, dict):
+            expected_options[name] = value
+        elif is_dataclass(getattr(start, name)):
+            # The entries are merged into the group of the configured algorithm.
+            expected_options[name] = replace(getattr(start, name), **value)
+        else:
+            # A boolean is replaced by a group with default entries.
+            expected_options[name] = _group(algo_name, name, **value)
+
     assert algo == start.with_option(**expected_options)
-    if "auto_detect_history" not in new.get("restart_options", {}):
-        assert algo.restart_options.auto_detect_history == 25
+    new_restarts = new.get("restarts", {})
+    if isinstance(new_restarts, dict) and "auto_detect_history" not in new_restarts:
+        assert algo.restarts.auto_detect_history == 25
 
 
 @pytest.mark.parametrize(("algo_name", "old", "new"), DEPRECATION_PARAMETRIZATION)
@@ -1369,9 +1650,10 @@ def test_deprecated_option_together_with_its_group_raises(algo_name):
     [("nag_dfols", "DfolsRestartOptions"), ("nag_pybobyqa", "PybobyqaRestartOptions")],
 )
 def test_deprecation_warning_shows_the_option_group_class(algo_name, group_cls):
-    match = rf"Use `restart_options={group_cls}\(use_soft_restarts=True\)` instead"
+    match = rf"Use `restarts={group_cls}\(use_soft_restarts=True\)` instead"
+    old = {"use_resets": True, "reset_type": "soft"}
     with pytest.warns(FutureWarning, match=match):
-        ALGORITHMS[algo_name](trustregion_reset_options={"reset_type": "soft"})
+        ALGORITHMS[algo_name](trustregion_reset_options=old)
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -1394,10 +1676,66 @@ def test_deprecated_options_work_in_algo_options(algo_name, solve_calls):
     assert user_params["restarts.use_restarts"] is False
 
 
-def test_deprecated_option_without_replacement_warns():
-    with pytest.warns(FutureWarning, match="has no effect anymore"):
-        algo = ALGORITHMS["nag_pybobyqa"](clip_criterion_if_overflowing=False)
-    assert algo == NagPyBOBYQA()
+@pytest.mark.parametrize(("algo_name", "old"), WITHOUT_EFFECT_PARAMETRIZATION)
+def test_deprecated_option_without_effect_warns(algo_name, old):
+    with pytest.warns(FutureWarning, match="The value you passed has no effect"):
+        algo = ALGORITHMS[algo_name](**old)
+    assert algo == ALGORITHMS[algo_name]()
+
+    # Applied to a configured algorithm, nothing changes either.
+    start = ALGORITHMS[algo_name](
+        noisy=True, restarts=_group(algo_name, "restarts", auto_detect_history=25)
+    )
+    with pytest.warns(FutureWarning, match="The value you passed has no effect"):
+        assert start.with_option(**old) == start
+
+
+def test_deprecated_reset_options_apply_if_pybobyqa_seeks_a_global_optimum():
+    # Without `use_resets` the solver decided. Py-BOBYQA also restarts if it searches
+    # for a global optimum.
+    with pytest.warns(FutureWarning):
+        algo = ALGORITHMS["nag_pybobyqa"](
+            seek_global_optimum=True,
+            trustregion_reset_options={"max_unsuccessful_resets": 5},
+        )
+    assert algo == NagPyBOBYQA(
+        seek_global_optimum=True,
+        restarts=nag.PybobyqaRestartOptions(max_unsuccessful_restarts_total=5),
+    )
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_deprecated_reset_options_apply_if_noisy_is_passed_with_them(algo_name):
+    with pytest.warns(FutureWarning):
+        algo = ALGORITHMS[algo_name](
+            noisy=True, trustregion_reset_options={"reset_type": "hard"}
+        )
+    assert algo == ALGORITHMS[algo_name](
+        noisy=True, restarts=_group(algo_name, "restarts", use_soft_restarts=False)
+    )
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_deprecated_noise_options_behave_like_before(algo_name, solve_calls):
+    """The old wrappers declared noise and its level with one option."""
+    kwargs = {"stopping_maxfun": 30}
+    with pytest.warns(FutureWarning):
+        _minimize(algo_name, noise_additive_level=0.1, **kwargs)
+    call = solve_calls[algo_name]
+
+    assert call["objfun_has_noise"] is True
+    assert call["user_params"]["noise.additive_noise_level"] == 0.1
+    # Restarts are left to the solver, which uses them for noisy functions.
+    assert "restarts.use_restarts" not in call["user_params"]
+
+    with pytest.warns(FutureWarning):
+        _minimize(
+            algo_name, convergence_noise_corrected_criterion_tolerance=2.0, **kwargs
+        )
+    call = solve_calls[algo_name]
+
+    assert call["objfun_has_noise"] is False
+    assert not any(key.startswith("noise.") for key in call["user_params"])
 
 
 @pytest.mark.parametrize(
@@ -1436,25 +1774,18 @@ def test_invalid_value_of_deprecated_option_raises(old):
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
-def test_deprecated_noise_level_of_none_does_not_make_function_noisy(algo_name):
-    with pytest.warns(FutureWarning):
-        algo = ALGORITHMS[algo_name](noise_additive_level=None)
-    assert algo == ALGORITHMS[algo_name]()
-
-
-@pytest.mark.parametrize("algo_name", ALGORITHMS)
-def test_deprecated_noise_level_can_be_combined_with_noisy(algo_name):
-    """The old noise levels imply `noisy=True`, so passing it explicitly is fine."""
-    with pytest.warns(FutureWarning):
-        algo = ALGORITHMS[algo_name](noise_additive_level=0.1, noisy=True)
-    assert algo == ALGORITHMS[algo_name](
-        noisy=True, noise_options=nag.NagNoiseOptions(additive_noise_level=0.1)
-    )
-    with (
-        pytest.warns(FutureWarning),
-        pytest.raises(InvalidAlgoOptionError, match="cannot be combined"),
-    ):
-        ALGORITHMS[algo_name](noise_additive_level=0.1, noisy=False)
+@pytest.mark.parametrize(
+    "old",
+    [
+        {"noise_additive_level": 0.1},
+        {"convergence_noise_corrected_criterion_tolerance": 2.0},
+    ],
+)
+@pytest.mark.parametrize("noisy", [True, False, nag.NagNoiseOptions()])
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_deprecated_noise_options_cannot_be_combined_with_noisy(algo_name, old, noisy):
+    with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
+        ALGORITHMS[algo_name](noisy=noisy, **old)
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -1463,7 +1794,7 @@ def test_new_options_do_not_warn(algo_name):
         warnings.simplefilter("error")
         _minimize(
             algo_name,
-            noisy=True,
+            noisy=nag.NagNoiseOptions(additive_noise_level=0.1),
             stopping_maxfun=30,
-            restart_options=_group(algo_name, "restart_options", use_restarts=False),
+            restarts=_group(algo_name, "restarts", max_unsuccessful_restarts=1),
         )

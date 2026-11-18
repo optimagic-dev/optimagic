@@ -64,15 +64,15 @@ def test_nag_dfols_starting_at_optimum():
 def test_nag_dfols_with_option_groups_and_evaluation_count():
     algo = DFOLS(
         n_evals_per_point=2,
-        restart_options=DfolsRestartOptions(
-            use_restarts=True, max_unsuccessful_restarts=1
-        ),
+        restarts=DfolsRestartOptions(max_unsuccessful_restarts=1),
         growing_options=DfolsGrowingOptions(n_initial_directions=1),
     )
     res: Any = minimize(fun=sos, params=np.arange(3.0) + 1, algorithm=algo)
 
     aaae(res.params, np.zeros(3))
     assert res.n_iterations > 0
+    # the estimated Jacobian of the residuals
+    assert res.jac.shape == (3, 3)
     assert res.n_fun_evals == len(res.history.fun)
     assert res.n_fun_evals == 2 * res.algorithm_output["n_evaluated_points"]
 
@@ -82,15 +82,15 @@ def test_nag_pybobyqa_with_option_groups_and_evaluation_count():
     algo = PYBOBYQA(
         n_evals_per_point=lambda radius, min_radius, n_iterations, n_restarts: 2,
         convergence_target_value=1e-10,
-        restart_options=PybobyqaRestartOptions(
-            use_restarts=True, max_unsuccessful_restarts=1
-        ),
+        restarts=True,
     )
     res: Any = minimize(fun=lambda x: x @ x, params=np.arange(3.0) + 1, algorithm=algo)
 
     aaae(res.params, np.zeros(3), decimal=4)
     assert res.fun <= 1e-10
     assert res.n_iterations > 0
+    # the estimated gradient
+    assert res.jac.shape == (3,)
     assert res.n_fun_evals == len(res.history.fun)
     assert res.n_fun_evals == 2 * res.algorithm_output["n_evaluated_points"]
 
@@ -115,15 +115,12 @@ def test_nag_dfols_deprecated_options():
     }
     new = {
         "check_fun_for_overflow": False,
-        "noisy": True,
         "init_options": NagInitOptions(random_initial_directions=True),
-        "noise_options": NagNoiseOptions(
-            additive_noise_level=0.1, quit_on_noise_level=False
-        ),
+        "noisy": NagNoiseOptions(additive_noise_level=0.1, quit_on_noise_level=False),
         "regression_options": DfolsRegressionOptions(momentum_extra_steps=True),
         "trustregion_options": NagTrustregionOptions(shrinking_threshold=0.2),
         "slow_progress_options": NagSlowProgressOptions(history_for_slow=6),
-        "restart_options": DfolsRestartOptions(
+        "restarts": DfolsRestartOptions(
             use_soft_restarts=False,
             max_n_interpolation_points=8,
             increase_n_interpolation_points=True,
@@ -148,11 +145,8 @@ def test_nag_pybobyqa_deprecated_options():
     }
     new = {
         "stopping_maxfun": 50,
-        "noisy": True,
-        "noise_options": NagNoiseOptions(multiplicative_noise_level=0.1),
-        "restart_options": PybobyqaRestartOptions(
-            use_restarts=True, use_soft_restarts=True
-        ),
+        "noisy": NagNoiseOptions(multiplicative_noise_level=0.1),
+        "restarts": PybobyqaRestartOptions(use_soft_restarts=True),
     }
     with pytest.warns(FutureWarning, match="removed in optimagic 0.7.0"):
         algo = PYBOBYQA(**old)
@@ -182,18 +176,43 @@ def test_nag_dfols_invalid_deprecated_options(old):
 
 
 def test_nag_dfols_deprecated_dict_options_can_be_none():
-    with pytest.warns(FutureWarning, match="has no effect anymore"):
+    with pytest.warns(FutureWarning, match="has no effect"):
         algo = DFOLS(convergence_slow_progress=None, trustregion_reset_options=None)
     assert algo == DFOLS()
 
 
+@pytest.mark.parametrize(
+    ("use_resets", "expected"),
+    [
+        (False, False),
+        (True, DfolsRestartOptions(max_unsuccessful_restarts=3)),
+        # The old default left the decision to the solver, which only restarts for
+        # noisy functions. Without restarts the other entries had no effect.
+        (None, None),
+    ],
+)
+def test_nag_dfols_deprecated_use_resets(use_resets, expected):
+    old = {"use_resets": use_resets, "max_consecutive_unsuccessful_resets": 3}
+    with pytest.warns(FutureWarning):
+        algo = DFOLS(trustregion_reset_options=old)
+    assert algo.restarts == expected
+
+
+def test_nag_restarts_and_noisy_are_a_boolean_or_an_option_group():
+    assert DFOLS().restarts is None
+    assert DFOLS().noisy is False
+    assert DFOLS(restarts=True, noisy=True) == DFOLS(noisy=True, restarts=True)
+    assert PYBOBYQA(restarts=False).restarts is False
+    assert PYBOBYQA(noisy=NagNoiseOptions()).noisy == NagNoiseOptions()
+
+
 def test_nag_option_groups_are_rejected_as_dictionaries():
-    with pytest.raises(InvalidAlgoOptionError, match="instance of DfolsRestartOptions"):
-        DFOLS(restart_options={"use_restarts": True})
-    with pytest.raises(
-        InvalidAlgoOptionError, match="instance of PybobyqaRestartOptions"
-    ):
-        PYBOBYQA().with_option(restart_options={"use_restarts": True})
+    with pytest.raises(InvalidAlgoOptionError, match="NagTrustregionOptions"):
+        DFOLS(trustregion_options={"expansion_factor": 3.0})
+    with pytest.raises(InvalidAlgoOptionError, match="DfolsRestartOptions"):
+        DFOLS(restarts={"max_unsuccessful_restarts": 3})
+    with pytest.raises(InvalidAlgoOptionError, match="NagNoiseOptions"):
+        PYBOBYQA().with_option(noisy={"additive_noise_level": 0.1})
 
 
 @needs_dfols

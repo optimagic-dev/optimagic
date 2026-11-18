@@ -33,19 +33,24 @@ Read the papers and the documentation, then establish every fact from the instal
 source: documentation goes stale. For each option, follow it from the entry point to
 the lines that use it and note its default, the range and type it accepts, and its
 effect. Note also whether the library treats an absent option differently from one
-passed as `None`, and whether a default depends on the problem. Where the source
-leaves a doubt, run the library directly on a small problem and look.
+passed as `None`, whether a default depends on the problem, and whether a flag makes
+other options ineffective while it is off. Where the source leaves a doubt, run the
+library directly on a small problem and look.
+
+List what the library returns and which fields of `InternalOptimizeResult` it can
+fill, directly or with a counter in the wrapper.
 
 **Existing:** also list every defect of the current wrapper: options that are never
 passed, passed under a wrong key, typed so that they cannot be used, results read
 from the wrong field. Check whether `replace_and_warn_about_deprecated_algo_options`
 in `src/optimagic/deprecations.py` renames an option of this wrapper before it
-arrives. Note every value the wrapper reports in the result (success, message,
-counts of evaluations and iterations): the new wrapper has to report them too.
+arrives.
 
 Done when every argument of the library's entry point, every key of its option
-dictionaries and every attribute of its configuration objects has a row, and for each
-row you can name the function in the library's source where the option takes effect.
+dictionaries and every attribute of its configuration objects has a row, for each
+row you can name the function in the library's source where the option takes effect,
+and every field of `InternalOptimizeResult` is marked as filled or as impossible to
+fill with the reason.
 
 ## 2. Draft the option table
 
@@ -53,7 +58,8 @@ Read "The option table", "Which options to expose", "Keep the library's grouping
 "Names of options" and "Defaults".
 
 Fill every column of every row, and list the options that are not exposed with their
-reasons.
+reasons. A flag together with the options it switches on becomes one row group for an
+option of the form `bool | <group>`.
 
 A default that deviates from the library needs **evidence**, and so does adopting a
 library default that the current wrapper deviates from. See
@@ -70,6 +76,7 @@ test, and every default that differs from the library's has a benchmark result o
 Present to the user, in plain language with examples from this library:
 
 - the option table and the list of options that are not exposed,
+- the fields of the result the wrapper will fill and those it cannot,
 - the defaults that deviate or change, with the evidence,
 - **Existing:** the defects found and the deprecations the table implies,
 - whether a tutorial is due (section "Tutorials"),
@@ -80,7 +87,7 @@ applied to it.
 
 ## 4. Implement
 
-Read "Keep the library's grouping" and "Changing an existing wrapper".
+Read "Keep the library's grouping", "The result" and "Changing an existing wrapper".
 
 Put the tables that tests and wrapper share into the wrapper module as public
 constants: library name to optimagic name, options that are not exposed with reasons,
@@ -93,8 +100,8 @@ defaults for the minor release after the one that ships the change (see `CHANGES
 and the latest git tag for the current version).
 
 Done when every row of the approved table is in the code under its approved name and
-default, every defect from the audit is fixed, the result reports every value it
-reported before, and
+default, every defect from the audit is fixed, the result has every field the audit
+marked as filled, and
 `pixi run tests tests/optimagic/optimization/test_many_algorithms.py -k <algorithm>`
 passes.
 

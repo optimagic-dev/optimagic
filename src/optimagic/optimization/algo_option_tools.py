@@ -12,8 +12,8 @@ The module contains what wrappers need beyond plain dataclass fields:
 from __future__ import annotations
 
 import warnings
-from dataclasses import MISSING, dataclass, replace
-from typing import Any, Callable, Mapping, TypeVar
+from dataclasses import MISSING, dataclass, is_dataclass, replace
+from typing import Any, Callable, Mapping, TypeVar, get_args
 
 import pydantic
 from pydantic_core import core_schema
@@ -30,6 +30,11 @@ def option_group(cls: type[OptionGroupT]) -> type[OptionGroupT]:
     Invalid entries raise an ``InvalidAlgoOptionError`` when the group is created. An
     algorithm field that is annotated with the decorated class only accepts instances
     of the class. Dictionaries are rejected.
+
+    If the group belongs to a feature that can be switched on and off, annotate the
+    field of the algorithm with ``bool | <group class>`` instead of adding a switch
+    to the group: ``True`` switches the feature on with default entries, and an
+    instance switches it on with the given entries.
 
     Args:
         cls: A frozen dataclass with one attribute per option of the group.
@@ -63,13 +68,18 @@ class DeprecatedOption:
     name: str
     """The deprecated name of the option."""
 
-    replacement: str | Callable[[Any], dict[str, Any]]
+    replacement: str | Callable[[Any, Mapping[str, Any]], dict[str, Any]]
     """The new spelling of the option.
 
-    Either the name of the option that takes over the value unchanged or a function
-    that maps the deprecated value to a dictionary of new option names and values. An
-    entry of an option group is addressed as ``"<group option>.<entry>"``, e.g.
-    ``"restart_options.use_restarts"``.
+    Either the name of the option that takes over the value unchanged, or a function
+    that returns a dictionary of new option names and values. The function is called
+    with the deprecated value and with all options that were passed together with it,
+    for the case that the new spelling depends on another option.
+
+    An entry of an option group is addressed as ``"<group option>.<entry>"``, e.g.
+    ``"trustregion_options.shrinking_factor"``. If the option also accepts a boolean
+    (``bool | <group class>``), setting an entry switches the feature on, and the
+    option itself can be set to ``True`` or ``False``.
 
     """
 
@@ -112,27 +122,26 @@ def replace_deprecated_options(options: Mapping[str, Any], algo: Any) -> dict[st
         if isinstance(dep.replacement, str):
             new = {dep.replacement: value}
         else:
-            new = dep.replacement(value)
+            new = dep.replacement(value, options)
 
         warnings.warn(_deprecation_message(dep, new, algo), FutureWarning, stacklevel=3)
 
         for target, new_value in new.items():
             group, _, entry = target.partition(".")
             if not entry:
-                # A converter may set an option as a side effect, e.g. a noise level
-                # that implies `noisy=True`. This is compatible with the same value
-                # being passed explicitly.
-                is_side_effect = not isinstance(dep.replacement, str) and (
-                    target in options and _is_same(options[target], new_value)
-                )
-                if target in options and not is_side_effect:
+                if target in options:
                     raise _mixed_spelling_error(dep.name, target, algo_name)
-                if target in out and not _is_same(out[target], new_value):
+                is_contradiction = target in group_updates or (
+                    target in out and not _is_same(out[target], new_value)
+                )
+                if is_contradiction:
                     raise _conflicting_values_error(dep.name, target, algo_name)
                 out[target] = new_value
             else:
                 if group in options:
                     raise _mixed_spelling_error(dep.name, group, algo_name)
+                if group in out:
+                    raise _conflicting_values_error(dep.name, group, algo_name)
                 updates = group_updates.setdefault(group, {})
                 if entry in updates and not _is_same(updates[entry], new_value):
                     raise _conflicting_values_error(dep.name, target, algo_name)
@@ -145,13 +154,30 @@ def replace_deprecated_options(options: Mapping[str, Any], algo: Any) -> dict[st
 
 
 def _get_option_group(algo: Any, group: str) -> Any:
-    """Get the value of an option group of an algorithm or the default of a class."""
+    """Get the option group that entries of deprecated options are merged into.
+
+    This is the current value of the group for a configured algorithm and its default
+    for an algorithm class. If the value is not a group but a boolean or None, i.e.
+    the option is annotated as ``bool | <group class>``, it is a group with default
+    entries.
+
+    """
     if not isinstance(algo, type):
-        return getattr(algo, group)
-    field = algo.__dataclass_fields__[group]
-    if field.default_factory is not MISSING:
-        return field.default_factory()
-    return field.default
+        value = getattr(algo, group)
+        algo_cls = type(algo)
+    else:
+        field = algo.__dataclass_fields__[group]
+        has_factory = field.default_factory is not MISSING
+        value = field.default_factory() if has_factory else field.default
+        algo_cls = algo
+
+    if is_dataclass(value):
+        return value
+
+    annotation = algo_cls.__pydantic_fields__[group].annotation
+    candidates = [annotation, *get_args(annotation)]
+    group_cls = next(c for c in candidates if isinstance(c, type) and is_dataclass(c))
+    return group_cls()
 
 
 def resolve_changed_default(
@@ -201,7 +227,7 @@ def _deprecation_message(
         f"be removed in optimagic {dep.removed_in}. "
     )
     if not new:
-        return msg + "The value you passed has no effect anymore."
+        return msg + "The value you passed has no effect."
 
     flat: dict[str, Any] = {}
     groups: dict[str, dict[str, Any]] = {}
