@@ -1,9 +1,13 @@
 from functools import wraps
-from typing import Any, Callable, ParamSpec, Protocol, TypeVar, cast
+from typing import Any, Callable, ParamSpec, Protocol, Sequence, TypeVar, cast
 
 import pydantic
 
 from optimagic.exceptions import InvalidAlgoOptionError
+from optimagic.optimization.algo_option_tools import (
+    DeprecatedOption,
+    replace_deprecated_options,
+)
 from optimagic.optimization.algorithm import AlgoInfo
 from optimagic.typing import (
     DEFAULT_PYDANTIC_CONFIG,
@@ -74,6 +78,7 @@ def minimizer(
     supports_nonlinear_constraints: bool,
     disable_history: bool = False,
     experimental: bool = False,
+    deprecated_options: Sequence[DeprecatedOption] = (),
 ) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
     """Mark an algorithm as a optimagic minimizer and add AlgoInfo.
 
@@ -114,6 +119,10 @@ def minimizer(
             `nonlinear_constraints` as an argument.
         disable_history: Whether the algorithm should disable history collection.
         experimental: Whether the algorithm is experimental and should skip tests.
+        deprecated_options: Old option names that keep working for one deprecation
+            cycle. They are replaced by their new spelling with a ``FutureWarning``
+            wherever options are set: when the algorithm is created, in
+            ``with_option`` and in ``algo_options``.
 
     """
 
@@ -142,6 +151,18 @@ def minimizer(
             config=DEFAULT_PYDANTIC_CONFIG, make_error=make_error
         )(cast("type[Any]", cls))
         out.__algo_info__ = algo_info
+        out.__deprecated_options__ = tuple(deprecated_options)
+
+        if deprecated_options:
+            validated_init = out.__init__
+
+            @wraps(validated_init)
+            def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
+                kwargs = replace_deprecated_options(kwargs, deprecated_options, name)
+                validated_init(self, *args, **kwargs)
+
+            out.__init__ = __init__
+
         return cast("AlgorithmSubclass", out)
 
     return decorator
