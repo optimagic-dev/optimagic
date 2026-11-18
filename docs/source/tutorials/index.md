@@ -67,6 +67,25 @@ Tutorial on the bayes_opt optimizer in optimagic.
 
 ````
 
+````{grid-item-card}
+:text-align: center
+:img-top: ../_static/images/optimization.svg
+:class-img-top: index-card-image
+:shadow: md
+
+```{button-link} fides_tutorial.html
+---
+click-parent:
+ref-type: ref
+class: stretched-link index-card-link sd-text-primary
+---
+fides Optimizer
+```
+
+Learn when and how to use the advanced options of fides.
+
+````
+
 `````
 
 ```{toctree}
@@ -77,4 +96,5 @@ maxdepth: 1
 optimization_overview
 numdiff_overview
 bayes_opt_tutorial
+fides_tutorial
 ```
