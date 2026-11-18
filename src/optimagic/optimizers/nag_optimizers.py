@@ -1,25 +1,28 @@
 """Implement algorithms by the `Numerical Algorithms Group <https://www.nag.com/>`_.
 
-The following arguments are not supported as ``algo_options``:
+The module wraps DFO-LS (``nag_dfols``) and Py-BOBYQA (``nag_pybobyqa``). Both solvers
+take a few arguments directly and a dictionary of advanced options with keys such as
+``"restarts.use_restarts"``. The wrappers keep this structure: arguments and the
+miscellaneous ``general.*`` options are options of the algorithm, every other group of
+advanced options is one option group, e.g. ``restart_options``.
 
-- ``scaling_within_bounds``
-- ``init.run_in_parallel``
-- ``do_logging``, ``print_progress`` and all their advanced options.
+The dictionaries below map optimagic options to the upstream names. They are the single
+source of truth for the wrappers and their tests.
 
 """
 
 from __future__ import annotations
 
-import warnings
-from dataclasses import dataclass
-from typing import Any, Callable, Literal, cast
+from dataclasses import dataclass, field
+from typing import Any, Callable, Mapping
 
 import numpy as np
 from numpy.typing import NDArray
 
 from optimagic import mark
 from optimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
-from optimagic.exceptions import NotInstalledError
+from optimagic.exceptions import InvalidAlgoOptionError, NotInstalledError
+from optimagic.optimization.algo_option_tools import DeprecatedOption, option_group
 from optimagic.optimization.algo_options import STOPPING_MAXFUN
 from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
@@ -29,90 +32,1451 @@ from optimagic.typing import (
     AggregationLevel,
     NonNegativeFloat,
     NonNegativeInt,
+    PositiveFloat,
     PositiveInt,
+    ProbabilityFloat,
 )
-from optimagic.utilities import calculate_trustregion_initial_radius
 
-CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE = 1e-8
+# ======================================================================================
+# Mapping from optimagic options to upstream names
+# ======================================================================================
 
-CONVERGENCE_SLOW_PROGRESS = {
-    "threshold_to_characterize_as_slow": 1e-8,
-    "max_insufficient_improvements": None,
-    "comparison_period": 5,
+_COMMON_SOLVE_ARGUMENTS = {
+    "stopping_maxfun": "maxfun",
+    "convergence_min_trustregion_radius": "rhoend",
+    "trustregion_initial_radius": "rhobeg",
+    "n_interpolation_points": "npt",
+    "noisy": "objfun_has_noise",
+    "n_evals_per_point": "nsamples",
 }
 
-THRESHOLD_FOR_SAFETY_STEP = 0.5
+_COMMON_ADVANCED_OPTIONS = {
+    "convergence_target_value": "model.abs_tol",
+    "rounding_error_constant": "general.rounding_error_constant",
+    "safety_step_threshold": "general.safety_step_thresh",
+    "init_options.random_initial_directions": "init.random_initial_directions",
+    "init_options.random_directions_make_orthogonal": (
+        "init.random_directions_make_orthogonal"
+    ),
+    "trustregion_options.shrinking_threshold": "tr_radius.eta1",
+    "trustregion_options.expansion_threshold": "tr_radius.eta2",
+    "trustregion_options.shrinking_factor": "tr_radius.gamma_dec",
+    "trustregion_options.expansion_factor": "tr_radius.gamma_inc",
+    "trustregion_options.step_expansion_factor": "tr_radius.gamma_inc_overline",
+    "trustregion_options.min_radius_shrinking_factor": "tr_radius.alpha1",
+    "trustregion_options.radius_factor_after_min_radius_shrinking": "tr_radius.alpha2",
+    "slow_progress_options.history_for_slow": "slow.history_for_slow",
+    "slow_progress_options.threshold_for_slow": "slow.thresh_for_slow",
+    "slow_progress_options.max_slow_iterations": "slow.max_slow_iters",
+    "noise_options.quit_on_noise_level": "noise.quit_on_noise_level",
+    "noise_options.scale_factor_for_quit": "noise.scale_factor_for_quit",
+    "noise_options.multiplicative_noise_level": "noise.multiplicative_noise_level",
+    "noise_options.additive_noise_level": "noise.additive_noise_level",
+    "interpolation_options.precondition": "interpolation.precondition",
+    "restart_options.use_restarts": "restarts.use_restarts",
+    "restart_options.max_unsuccessful_restarts": "restarts.max_unsuccessful_restarts",
+    "restart_options.convergence_min_radius_scale": "restarts.rhoend_scale",
+    "restart_options.use_soft_restarts": "restarts.use_soft_restarts",
+    "restart_options.soft_n_geometry_steps": "restarts.soft.num_geom_steps",
+    "restart_options.soft_move_iterate": "restarts.soft.move_xk",
+    "restart_options.soft_max_fake_successful_steps": (
+        "restarts.soft.max_fake_successful_steps"
+    ),
+    "restart_options.auto_detect": "restarts.auto_detect",
+    "restart_options.auto_detect_history": "restarts.auto_detect.history",
+    "restart_options.auto_detect_min_correlation": "restarts.auto_detect.min_correl",
+}
 
-CONVERGENCE_NOISE_CORRECTED_FTOL = 1.0
+DFOLS_SOLVE_ARGUMENTS: Mapping[str, str] = dict(_COMMON_SOLVE_ARGUMENTS)
+"""Options of ``nag_dfols`` and the arguments of ``dfols.solve`` they are passed to."""
+
+DFOLS_ADVANCED_OPTIONS: Mapping[str, str] = {
+    **_COMMON_ADVANCED_OPTIONS,
+    "convergence_ftol_scaled": "model.rel_tol",
+    "check_fun_for_overflow": "general.check_objfun_for_overflow",
+    "interpolation_options.throw_error_on_nans": "interpolation.throw_error_on_nans",
+    "regression_options.n_extra_steps": "regression.num_extra_steps",
+    "regression_options.increase_n_extra_steps_with_restart": (
+        "regression.increase_num_extra_steps_with_restart"
+    ),
+    "regression_options.momentum_extra_steps": "regression.momentum_extra_steps",
+    "restart_options.hard_use_old_fun_value": "restarts.hard.use_old_rk",
+    "restart_options.auto_detect_min_model_change_slope": (
+        "restarts.auto_detect.min_chgJ_slope"
+    ),
+    "restart_options.increase_n_interpolation_points": "restarts.increase_npt",
+    "restart_options.increase_n_interpolation_points_amount": (
+        "restarts.increase_npt_amt"
+    ),
+    "restart_options.hard_increase_n_initial_directions_amount": (
+        "restarts.hard.increase_ndirs_initial_amt"
+    ),
+    "restart_options.max_n_interpolation_points": "restarts.max_npt",
+    "restart_options.throw_error_on_nans": "restarts.throw_error_on_nans",
+    "growing_options.n_initial_directions": "growing.ndirs_initial",
+    "growing_options.n_new_directions_each_iteration": (
+        "growing.num_new_dirns_each_iter"
+    ),
+    "growing_options.radius_scale_new_directions": "growing.delta_scale_new_dirns",
+    "growing_options.do_geometry_steps": "growing.do_geom_steps",
+    "growing_options.reset_radius": "growing.reset_delta",
+    "growing_options.reset_min_radius": "growing.reset_rho",
+    "growing_options.shrinking_factor": "growing.gamma_dec",
+    "growing_options.do_safety_step": "growing.safety.do_safety_step",
+    "growing_options.safety_reduce_radius": "growing.safety.reduce_delta",
+    "growing_options.safety_full_geometry_step": "growing.safety.full_geom_step",
+    "growing_options.use_full_rank_interpolation": (
+        "growing.full_rank.use_full_rank_interp"
+    ),
+    "growing_options.perturb_trust_region_step": "growing.perturb_trust_region_step",
+    "growing_options.full_rank_scale_factor": "growing.full_rank.scale_factor",
+    "growing_options.full_rank_svd_scale_factor": "growing.full_rank.svd_scale_factor",
+    "growing_options.full_rank_min_singular_value": "growing.full_rank.min_sing_val",
+    "growing_options.full_rank_max_jacobian_condition_number": (
+        "growing.full_rank.svd_max_jac_cond"
+    ),
+}
+"""Options of ``nag_dfols`` and the keys of ``user_params`` they are passed to."""
+
+DFOLS_UNSUPPORTED_SOLVE_ARGUMENTS: tuple[str, ...] = (
+    # handled by optimagic
+    "argsf",
+    "scaling_within_bounds",
+    "do_logging",
+    "print_progress",
+    # regularizer, not supported yet
+    "h",
+    "lh",
+    "prox_uh",
+    "argsh",
+    "argsprox",
+    # convex constraints given as projections, not supported yet
+    "projections",
+)
+"""Arguments of ``dfols.solve`` that cannot be set through optimagic."""
+
+DFOLS_UNSUPPORTED_ADVANCED_OPTIONS: tuple[str, ...] = (
+    # handled by optimagic
+    "logging.n_to_print_whole_x_vector",
+    "logging.save_diagnostic_info",
+    "logging.save_poisedness",
+    "logging.save_xk",
+    "logging.save_rk",
+    # does not evaluate in parallel
+    "init.run_in_parallel",
+    # regularizer, not supported yet
+    "func_tol.criticality_measure",
+    "func_tol.tr_step",
+    "func_tol.max_iters",
+    "sfista.max_iters_scaling",
+    # convex constraints given as projections, not supported yet
+    "dykstra.d_tol",
+    "dykstra.max_iters",
+    "matrix_rank.r_tol",
+    # evaluation database, not supported yet
+    "database.new_direction_tol",
+)
+"""Keys of the DFO-LS ``user_params`` that cannot be set through optimagic."""
+
+PYBOBYQA_SOLVE_ARGUMENTS: Mapping[str, str] = {
+    **_COMMON_SOLVE_ARGUMENTS,
+    "seek_global_optimum": "seek_global_minimum",
+}
+"""Options of ``nag_pybobyqa`` and the arguments of ``pybobyqa.solve`` they are passed
+to."""
+
+PYBOBYQA_ADVANCED_OPTIONS: Mapping[str, str] = {
+    **_COMMON_ADVANCED_OPTIONS,
+    "interpolation_options.minimum_change_hessian": (
+        "interpolation.minimum_change_hessian"
+    ),
+    "restart_options.hard_use_old_fun_value": "restarts.hard.use_old_fk",
+    "restart_options.auto_detect_min_model_change_slope": (
+        "restarts.auto_detect.min_chg_model_slope"
+    ),
+    "restart_options.max_unsuccessful_restarts_total": (
+        "restarts.max_unsuccessful_restarts_total"
+    ),
+    "restart_options.initial_radius_scale_after_unsuccessful_restart": (
+        "restarts.rhobeg_scale_after_unsuccessful_restart"
+    ),
+}
+"""Options of ``nag_pybobyqa`` and the keys of ``user_params`` they are passed to."""
+
+PYBOBYQA_UNSUPPORTED_SOLVE_ARGUMENTS: tuple[str, ...] = (
+    # handled by optimagic
+    "args",
+    "scaling_within_bounds",
+    "do_logging",
+    "print_progress",
+    # convex constraints given as projections, not supported yet
+    "projections",
+)
+"""Arguments of ``pybobyqa.solve`` that cannot be set through optimagic."""
+
+PYBOBYQA_UNSUPPORTED_ADVANCED_OPTIONS: tuple[str, ...] = (
+    # handled by optimagic
+    "logging.n_to_print_whole_x_vector",
+    "logging.save_diagnostic_info",
+    "logging.save_poisedness",
+    "logging.save_xk",
+    # does not evaluate in parallel
+    "init.run_in_parallel",
+    # only catches errors of the function, which optimagic handles
+    "general.check_objfun_for_overflow",
+    # convex constraints given as projections, not supported yet
+    "projections.dykstra.d_tol",
+    "projections.dykstra.max_iters",
+    "projections.feasible_tol",
+    "projections.pgd_tol",
+)
+"""Keys of the Py-BOBYQA ``user_params`` that cannot be set through optimagic."""
 
 
-TRUSTREGION_THRESHOLD_SUCCESSFUL = 0.1
-
-TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL = 0.7
-
-TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL = None
-
-TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL = 2.0
-
-TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL = 4.0
-
-TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS = None
-
-TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS = None
-
-RANDOM_DIRECTIONS_ORTHOGONAL = True
+# ======================================================================================
+# Option groups
+# ======================================================================================
 
 
-INTERPOLATION_ROUNDING_ERROR = 0.1
+@option_group
+@dataclass(frozen=True)
+class NagInitOptions:
+    """Options for the first set of points at which the function is evaluated.
 
-CLIP_CRITERION_IF_OVERFLOWING = True
+    Before the first step, the solver evaluates the function at the start parameters
+    and at one point per search direction around them.
+
+    """
+
+    random_initial_directions: bool = False
+    """Whether the first points are placed in random directions.
+
+    With ``False``, each point changes one parameter at a time. Random directions
+    can help if the parameters are strongly correlated or if moving along single
+    parameters is uninformative; the results then depend on the state of NumPy's
+    global random number generator.
+
+    This is ``init.random_initial_directions`` of the solver, from which the default
+    is taken.
+
+    """
+
+    random_directions_make_orthogonal: bool = True
+    """Whether random directions are made orthogonal to each other.
+
+    Orthogonal directions spread the first points evenly, which makes the first model
+    more reliable. Only relevant if ``random_initial_directions`` is ``True``.
+
+    This is ``init.random_directions_make_orthogonal`` of the solver, from which the
+    default is taken.
+
+    """
 
 
-TRUSTREGION_PRECONDITION_INTERPOLATION = True
+@option_group
+@dataclass(frozen=True)
+class NagTrustregionOptions:
+    """Options that control how the trust-region radius changes.
+
+    The solver works with two radii. The trust-region radius is the size of the
+    region in which the next step is searched. It grows after good steps and shrinks
+    after bad ones. The minimal radius is a lower bound of the trust-region radius
+    that only shrinks. It measures how precise the solution already is: the
+    optimization converges when it reaches ``convergence_min_trustregion_radius``.
+
+    The quality of a step is the improvement of the function value divided by the
+    improvement the model predicted.
+
+    """
+
+    shrinking_threshold: ProbabilityFloat = 0.1
+    """Step quality below which the trust-region radius shrinks.
+
+    Larger values make the solver more cautious: more steps count as bad and the
+    radius shrinks more often.
+
+    This is ``tr_radius.eta1`` of the solver, from which the default is taken.
+
+    """
+
+    expansion_threshold: ProbabilityFloat = 0.7
+    """Step quality above which the trust-region radius grows.
+
+    Smaller values make the solver more aggressive: more steps count as very good
+    and the radius grows more often. Must be larger than ``shrinking_threshold``.
+
+    This is ``tr_radius.eta2`` of the solver, from which the default is taken.
+
+    """
+
+    shrinking_factor: ProbabilityFloat | None = None
+    """Factor by which the trust-region radius is multiplied after a bad step.
+
+    Values close to 1 shrink the radius slowly, which is what noisy functions need:
+    a step can look bad just because of noise. Smaller values give up on a region
+    faster.
+
+    This is ``tr_radius.gamma_dec`` of the solver. With ``None`` the solver uses its
+    default, which is 0.5, or 0.98 if ``noisy`` is ``True``.
+
+    """
+
+    expansion_factor: PositiveFloat = 2.0
+    """Factor by which the trust-region radius is multiplied after a very good step.
+
+    Larger values let the solver take long steps sooner, at the risk of leaving the
+    region in which the model is reliable.
+
+    This is ``tr_radius.gamma_inc`` of the solver, from which the default is taken.
+
+    """
+
+    step_expansion_factor: PositiveFloat = 4.0
+    """Multiple of the step length to which the trust-region radius may grow.
+
+    After a very good step the new radius is the larger of ``expansion_factor``
+    times the old radius and this factor times the length of the step. Larger values
+    let the radius grow faster after long successful steps.
+
+    This is ``tr_radius.gamma_inc_overline`` of the solver, from which the default is
+    taken.
+
+    """
+
+    min_radius_shrinking_factor: ProbabilityFloat | None = None
+    """Factor by which the minimal radius is multiplied when it shrinks.
+
+    Values close to 1 approach the final precision in small steps. This costs more
+    function evaluations but is more robust for noisy functions.
+
+    This is ``tr_radius.alpha1`` of the solver. With ``None`` the solver uses its
+    default, which is 0.1, or 0.9 if ``noisy`` is ``True``.
+
+    """
+
+    radius_factor_after_min_radius_shrinking: ProbabilityFloat | None = None
+    """Factor that sets the trust-region radius when the minimal radius shrinks.
+
+    The trust-region radius is then set to this factor times the old minimal radius,
+    but not below the new minimal radius. Larger values keep the search region wider
+    after the minimal radius was reduced.
+
+    This is ``tr_radius.alpha2`` of the solver. With ``None`` the solver uses its
+    default, which is 0.5, or 0.95 if ``noisy`` is ``True``.
+
+    """
 
 
-RESET_OPTIONS = {
-    "use_resets": None,
-    "minimal_trustregion_radius_tolerance_scaling_at_reset": 1.0,
-    "reset_type": "soft",
-    "move_center_at_soft_reset": True,
-    "reuse_criterion_value_at_hard_reset": True,
-    "max_iterations_without_new_best_after_soft_reset": None,
-    "auto_detect": True,
-    "auto_detect_history": 30,
-    "auto_detect_min_jacobian_increase": 0.015,
-    "auto_detect_min_correlations": 0.1,
-    "points_to_replace_at_soft_reset": 3,
-    "max_consecutive_unsuccessful_resets": 10,
-    # just bobyqa
-    "max_unsuccessful_resets": None,
-    "trust_region_scaling_at_unsuccessful_reset": None,
-    # just dfols
-    "max_interpolation_points": None,
-    "n_extra_interpolation_points_per_soft_reset": 0,
-    "n_extra_interpolation_points_per_hard_reset": 0,
-    "n_additional_extra_points_to_replace_per_reset": 0,
+@option_group
+@dataclass(frozen=True)
+class NagSlowProgressOptions:
+    """Options for stopping (or restarting) because of slow progress.
+
+    An iteration is slow if the function value improved too little over the last few
+    iterations. After too many slow iterations in a row the optimization stops
+    without success, or restarts if restarts are used.
+
+    This is only a safety net. The main convergence criterion is
+    ``convergence_min_trustregion_radius``.
+
+    """
+
+    history_for_slow: PositiveInt = 5
+    """Number of iterations over which the improvement is measured.
+
+    Each function value is compared with the one from this many iterations before.
+    Larger values smooth over single iterations without improvement.
+
+    This is ``slow.history_for_slow`` of the solver, from which the default is taken.
+
+    """
+
+    threshold_for_slow: NonNegativeFloat = 1e-8
+    """Average improvement per iteration below which an iteration is slow.
+
+    Larger values stop the optimization earlier when progress stalls and save
+    function evaluations, but can stop before an optimum is reached. DFO-LS measures
+    the improvement in the logarithm of the function value, i.e. relative to its
+    size. Py-BOBYQA measures it in the function value itself.
+
+    This is ``slow.thresh_for_slow`` of the solver. The default of Py-BOBYQA is also
+    1e-8. DFO-LS uses 1e-4; optimagic is stricter such that slow progress only ends
+    an optimization that is really stuck.
+
+    """
+
+    max_slow_iterations: PositiveInt | None = None
+    """Number of consecutive slow iterations after which the optimization stops.
+
+    Smaller values stop a stalled optimization earlier.
+
+    This is ``slow.max_slow_iters`` of the solver. With ``None`` the solver uses its
+    default, which is 20 times the number of parameters.
+
+    """
+
+
+@option_group
+@dataclass(frozen=True)
+class NagNoiseOptions:
+    """Options that describe the noise in the function.
+
+    They are only used if ``noisy`` is ``True``. If you know how large the noise is,
+    the solver can stop (or restart) as soon as the differences between the function
+    values it compares are no larger than the noise.
+
+    """
+
+    quit_on_noise_level: bool | None = None
+    """Whether to stop (or restart) when all compared function values are within the
+    noise level.
+
+    This saves function evaluations that cannot improve the result anymore. It only
+    has an effect if you set ``additive_noise_level`` or
+    ``multiplicative_noise_level``.
+
+    This is ``noise.quit_on_noise_level`` of the solver. With ``None`` the solver
+    uses its default, which is ``True`` if ``noisy`` is ``True`` and ``False``
+    otherwise.
+
+    """
+
+    scale_factor_for_quit: NonNegativeFloat = 1.0
+    """Multiple of the noise level that counts as "within the noise level".
+
+    Larger values stop earlier. Values much smaller than 1 make the criterion
+    useless because differences are rarely that far below the noise.
+
+    This is ``noise.scale_factor_for_quit`` of the solver, from which the default is
+    taken.
+
+    """
+
+    multiplicative_noise_level: NonNegativeFloat | None = None
+    """Size of the noise relative to the function value.
+
+    Use this if the noise grows with the function value, e.g. 0.01 if the function
+    value is off by about one percent. You can only set this or
+    ``additive_noise_level``, not both.
+
+    This is ``noise.multiplicative_noise_level`` of the solver, from which the
+    default is taken.
+
+    """
+
+    additive_noise_level: NonNegativeFloat | None = None
+    """Size of the noise in units of the function value.
+
+    Use this if the noise does not depend on the function value, e.g. the standard
+    deviation of repeated evaluations at the same parameters. You can only set this
+    or ``multiplicative_noise_level``, not both.
+
+    This is ``noise.additive_noise_level`` of the solver, from which the default is
+    taken.
+
+    """
+
+
+@option_group
+@dataclass(frozen=True)
+class DfolsInterpolationOptions:
+    """Options for fitting the model of the residuals to the evaluated points."""
+
+    precondition: bool = True
+    """Whether the linear system that determines the model is rescaled.
+
+    Rescaling makes the solution of the system more accurate. There is rarely a
+    reason to switch it off.
+
+    This is ``interpolation.precondition`` of DFO-LS, from which the default is taken.
+
+    """
+
+    throw_error_on_nans: bool = False
+    """Whether NaN function values raise an error.
+
+    With ``False``, the optimization ends with an unsuccessful result if the model
+    cannot be built because the function returned NaN. With ``True``, a
+    ``numpy.linalg.LinAlgError`` is raised instead.
+
+    This is ``interpolation.throw_error_on_nans`` of DFO-LS, from which the default
+    is taken.
+
+    """
+
+
+@option_group
+@dataclass(frozen=True)
+class PybobyqaInterpolationOptions:
+    """Options for fitting the quadratic model to the evaluated points."""
+
+    precondition: bool = True
+    """Whether the linear system that determines the model is rescaled.
+
+    Rescaling makes the solution of the system more accurate. There is rarely a
+    reason to switch it off.
+
+    This is ``interpolation.precondition`` of Py-BOBYQA, from which the default is
+    taken.
+
+    """
+
+    minimum_change_hessian: bool = True
+    """Whether a new model keeps its curvature as close as possible to the old one.
+
+    Usually there are fewer points than needed to pin down a quadratic model. With
+    ``True``, the remaining freedom is used to change the Hessian of the model as
+    little as possible, as in Powell's original BOBYQA. With ``False``, the Hessian
+    itself is made as small as possible, which forgets curvature learned in earlier
+    iterations.
+
+    This is ``interpolation.minimum_change_hessian`` of Py-BOBYQA, from which the
+    default is taken.
+
+    """
+
+
+@option_group
+@dataclass(frozen=True)
+class DfolsRegressionOptions:
+    """Options for using more interpolation points than strictly needed.
+
+    They are relevant if ``n_interpolation_points`` is larger than the number of
+    parameters plus one. The model is then fitted by regression, which averages out
+    noise. An iteration normally replaces one point. Replacing more points keeps the
+    larger set of points up to date.
+
+    """
+
+    n_extra_steps: NonNegativeInt = 0
+    """Number of additional points that are replaced after each successful step.
+
+    Larger values renew the set of points faster and cost that many extra function
+    evaluations per successful iteration.
+
+    This is ``regression.num_extra_steps`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    increase_n_extra_steps_with_restart: NonNegativeInt = 0
+    """Amount by which ``n_extra_steps`` grows with each restart.
+
+    Useful together with ``increase_n_interpolation_points`` of the
+    ``restart_options``, such that a growing set of points is still renewed fast
+    enough.
+
+    This is ``regression.increase_num_extra_steps_with_restart`` of DFO-LS, from
+    which the default is taken.
+
+    """
+
+    momentum_extra_steps: bool = False
+    """Whether the additional points are placed in the direction of the last step.
+
+    With ``False``, they are placed where they improve the spread of the points most.
+    With ``True``, they are placed in random directions that point the same way as
+    the last step.
+
+    This is ``regression.momentum_extra_steps`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+
+@option_group
+@dataclass(frozen=True)
+class DfolsRestartOptions:
+    """Options for restarting DFO-LS instead of stopping.
+
+    Restarts are the main tool of DFO-LS for noisy functions. A restart is triggered
+    when the minimal radius reaches ``convergence_min_trustregion_radius``, when all
+    compared function values are within the noise level, when progress is slow, or
+    when the solver detects that it is stuck.
+
+    """
+
+    use_restarts: bool | None = None
+    """Whether the optimization restarts instead of stopping.
+
+    A restart enlarges the trust region again and continues from the best point
+    found so far. This helps for noisy functions, where the solver can get stuck
+    because of the noise. With restarts, the optimization runs until
+    ``stopping_maxfun`` is reached or until several restarts in a row did not improve
+    the result.
+
+    This is ``restarts.use_restarts`` of DFO-LS. With ``None`` DFO-LS uses its
+    default, which is ``True`` if ``noisy`` is ``True`` and ``False`` otherwise.
+
+    """
+
+    max_unsuccessful_restarts: NonNegativeInt = 10
+    """Number of restarts in a row without improvement after which the optimization
+    stops.
+
+    Smaller values save function evaluations, larger values try harder to improve
+    the result.
+
+    This is ``restarts.max_unsuccessful_restarts`` of DFO-LS, from which the
+    default is taken.
+
+    """
+
+    convergence_min_radius_scale: NonNegativeFloat = 1.0
+    """Factor by which ``convergence_min_trustregion_radius`` is multiplied at each
+    restart.
+
+    Values below 1 let every restart run to a higher precision than the previous
+    one.
+
+    This is ``restarts.rhoend_scale`` of DFO-LS, from which the default is taken.
+
+    """
+
+    use_soft_restarts: bool = True
+    """Whether restarts are soft or hard.
+
+    A soft restart keeps most of the evaluated points and only moves a few of them,
+    which is cheap. A hard restart builds a completely new set of points around the
+    best point found so far.
+
+    This is ``restarts.use_soft_restarts`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    soft_n_geometry_steps: NonNegativeInt = 3
+    """Number of points that are moved at a soft restart.
+
+    More points make a soft restart more similar to a hard one and cost that many
+    function evaluations.
+
+    This is ``restarts.soft.num_geom_steps`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    soft_move_iterate: bool = True
+    """Whether a soft restart continues from the best of the newly evaluated points.
+
+    With ``False``, it continues from the point at which the previous run ended.
+
+    This is ``restarts.soft.move_xk`` of DFO-LS, from which the default is taken.
+
+    """
+
+    soft_max_fake_successful_steps: PositiveInt | None = None
+    """Number of steps after a soft restart that may improve the current run without
+    beating the best value of earlier runs.
+
+    When the number is reached, the optimization stops without success. Smaller
+    values end runs that do not catch up with earlier runs sooner.
+
+    This is ``restarts.soft.max_fake_successful_steps`` of DFO-LS. With ``None``
+    DFO-LS uses its default, which is ``stopping_maxfun``.
+
+    """
+
+    hard_use_old_fun_value: bool = True
+    """Whether a hard restart reuses the function value at the best point.
+
+    This saves one function evaluation per hard restart. Set it to ``False`` for
+    noisy functions if you want a fresh evaluation at the best point.
+
+    This is ``restarts.hard.use_old_rk`` of DFO-LS, from which the default is taken.
+
+    """
+
+    auto_detect: bool = True
+    """Whether the solver also restarts when it detects that it is stuck.
+
+    The solver then restarts before the minimal radius is reached, if the
+    trust-region radius only shrank recently and the model keeps changing more and
+    more from iteration to iteration. This is typical for noise. It only has an
+    effect if restarts are used.
+
+    This is ``restarts.auto_detect`` of DFO-LS, from which the default is taken.
+
+    """
+
+    auto_detect_history: PositiveInt = 30
+    """Number of recent iterations that are used to detect that the solver is stuck.
+
+    Larger values make the detection slower but less likely to trigger by accident.
+
+    This is ``restarts.auto_detect.history`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    auto_detect_min_model_change_slope: NonNegativeFloat = 0.015
+    """Rate at which the model changes must grow to trigger a restart.
+
+    The rate is the slope of a line fitted to the logarithm of the model changes over
+    the recent iterations. Larger values trigger fewer restarts.
+
+    This is ``restarts.auto_detect.min_chgJ_slope`` of DFO-LS, from which the default
+    is taken.
+
+    """
+
+    auto_detect_min_correlation: ProbabilityFloat = 0.1
+    """Correlation between iteration number and model changes needed to trigger a
+    restart.
+
+    Larger values require a clearer upward trend of the model changes and trigger
+    fewer restarts.
+
+    This is ``restarts.auto_detect.min_correl`` of DFO-LS, from which the default
+    is taken.
+
+    """
+
+    increase_n_interpolation_points: bool = False
+    """Whether the number of interpolation points grows with each restart.
+
+    More points average out noise better. Each restart then becomes more robust and
+    more expensive than the previous one.
+
+    This is ``restarts.increase_npt`` of DFO-LS, from which the default is taken.
+
+    """
+
+    increase_n_interpolation_points_amount: NonNegativeInt = 1
+    """Number of interpolation points that are added at each restart.
+
+    Only relevant if ``increase_n_interpolation_points`` is ``True``.
+
+    This is ``restarts.increase_npt_amt`` of DFO-LS, from which the default is taken.
+
+    """
+
+    hard_increase_n_initial_directions_amount: NonNegativeInt = 1
+    """Amount by which ``n_initial_directions`` of the ``growing_options`` grows with
+    each hard restart.
+
+    Only relevant if you start with fewer points than usual (see
+    ``growing_options``). Set it to the same value as
+    ``increase_n_interpolation_points_amount`` to avoid a growing phase after
+    restarts.
+
+    This is ``restarts.hard.increase_ndirs_initial_amt`` of DFO-LS, from which the
+    default is taken.
+
+    """
+
+    max_n_interpolation_points: PositiveInt | None = None
+    """Largest number of interpolation points that restarts may reach.
+
+    Only relevant if ``increase_n_interpolation_points`` is ``True``.
+
+    This is ``restarts.max_npt`` of DFO-LS. With ``None`` DFO-LS uses its default,
+    which is ``n_interpolation_points``. You therefore have to set this option if the
+    number of points should grow.
+
+    """
+
+    throw_error_on_nans: bool = False
+    """Whether NaN function values raise an error when the solver checks if it is
+    stuck.
+
+    With ``False``, the optimization ends with an unsuccessful result. With ``True``,
+    a ``numpy.linalg.LinAlgError`` is raised instead.
+
+    This is ``restarts.throw_error_on_nans`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+
+@option_group
+@dataclass(frozen=True)
+class PybobyqaRestartOptions:
+    """Options for restarting Py-BOBYQA instead of stopping.
+
+    Restarts are the main tool of Py-BOBYQA for noisy functions and for escaping
+    local optima. A restart is triggered when the minimal radius reaches
+    ``convergence_min_trustregion_radius``, when all compared function values are
+    within the noise level, when progress is slow, or when the solver detects that it
+    is stuck.
+
+    """
+
+    use_restarts: bool | None = None
+    """Whether the optimization restarts instead of stopping.
+
+    A restart enlarges the trust region again and continues from the best point
+    found so far. This helps for noisy functions, where the solver can get stuck
+    because of the noise, and for escaping local optima. With restarts, the
+    optimization runs until ``stopping_maxfun`` is reached or until several restarts
+    in a row did not improve the result.
+
+    This is ``restarts.use_restarts`` of Py-BOBYQA. With ``None`` Py-BOBYQA uses its
+    default, which is ``True`` if ``noisy`` or ``seek_global_optimum`` is ``True`` and
+    ``False`` otherwise.
+
+    """
+
+    max_unsuccessful_restarts: NonNegativeInt = 10
+    """Number of restarts in a row without improvement after which the optimization
+    stops.
+
+    Smaller values save function evaluations, larger values try harder to improve
+    the result.
+
+    This is ``restarts.max_unsuccessful_restarts`` of Py-BOBYQA, from which the
+    default is taken.
+
+    """
+
+    convergence_min_radius_scale: NonNegativeFloat = 1.0
+    """Factor by which ``convergence_min_trustregion_radius`` is multiplied at each
+    restart.
+
+    Values below 1 let every restart run to a higher precision than the previous
+    one.
+
+    This is ``restarts.rhoend_scale`` of Py-BOBYQA, from which the default is taken.
+
+    """
+
+    use_soft_restarts: bool = True
+    """Whether restarts are soft or hard.
+
+    A soft restart keeps most of the evaluated points and only moves a few of them,
+    which is cheap. A hard restart builds a completely new set of points around the
+    best point found so far.
+
+    This is ``restarts.use_soft_restarts`` of Py-BOBYQA, from which the default is
+    taken.
+
+    """
+
+    soft_n_geometry_steps: NonNegativeInt = 3
+    """Number of points that are moved at a soft restart.
+
+    More points make a soft restart more similar to a hard one and cost that many
+    function evaluations.
+
+    This is ``restarts.soft.num_geom_steps`` of Py-BOBYQA, from which the default is
+    taken.
+
+    """
+
+    soft_move_iterate: bool = True
+    """Whether a soft restart continues from the best of the newly evaluated points.
+
+    With ``False``, it continues from the point at which the previous run ended.
+
+    This is ``restarts.soft.move_xk`` of Py-BOBYQA, from which the default is taken.
+
+    """
+
+    soft_max_fake_successful_steps: PositiveInt | None = None
+    """Number of steps after a soft restart that may improve the current run without
+    beating the best value of earlier runs.
+
+    When the number is reached, the optimization stops without success. Smaller
+    values end runs that do not catch up with earlier runs sooner.
+
+    This is ``restarts.soft.max_fake_successful_steps`` of Py-BOBYQA. With ``None``
+    Py-BOBYQA uses its default, which is ``stopping_maxfun``.
+
+    """
+
+    hard_use_old_fun_value: bool = True
+    """Whether a hard restart reuses the function value at the best point.
+
+    This saves one function evaluation per hard restart. Set it to ``False`` for
+    noisy functions if you want a fresh evaluation at the best point.
+
+    This is ``restarts.hard.use_old_fk`` of Py-BOBYQA, from which the default is
+    taken.
+
+    """
+
+    auto_detect: bool = True
+    """Whether the solver also restarts when it detects that it is stuck.
+
+    The solver then restarts before the minimal radius is reached, if the
+    trust-region radius only shrank recently and the model keeps changing more and
+    more from iteration to iteration. This is typical for noise. It only has an
+    effect if restarts are used.
+
+    This is ``restarts.auto_detect`` of Py-BOBYQA, from which the default is taken.
+
+    """
+
+    auto_detect_history: PositiveInt = 30
+    """Number of recent iterations that are used to detect that the solver is stuck.
+
+    Larger values make the detection slower but less likely to trigger by accident.
+
+    This is ``restarts.auto_detect.history`` of Py-BOBYQA, from which the default is
+    taken.
+
+    """
+
+    auto_detect_min_model_change_slope: NonNegativeFloat = 0.015
+    """Rate at which the model changes must grow to trigger a restart.
+
+    The rate is the slope of a line fitted to the logarithm of the model changes over
+    the recent iterations. Larger values trigger fewer restarts.
+
+    This is ``restarts.auto_detect.min_chg_model_slope`` of Py-BOBYQA, from which the
+    default is taken.
+
+    """
+
+    auto_detect_min_correlation: ProbabilityFloat = 0.1
+    """Correlation between iteration number and model changes needed to trigger a
+    restart.
+
+    Larger values require a clearer upward trend of the model changes and trigger
+    fewer restarts.
+
+    This is ``restarts.auto_detect.min_correl`` of Py-BOBYQA, from which the default
+    is taken.
+
+    """
+
+    max_unsuccessful_restarts_total: NonNegativeInt | None = None
+    """Total number of restarts without improvement after which the optimization
+    stops.
+
+    In contrast to ``max_unsuccessful_restarts``, the restarts do not have to be in a
+    row. Smaller values limit the cost of a search for a global optimum.
+
+    This is ``restarts.max_unsuccessful_restarts_total`` of Py-BOBYQA. With ``None``
+    Py-BOBYQA uses its default, which is 20 if ``seek_global_optimum`` is ``True`` and
+    ``stopping_maxfun`` otherwise.
+
+    """
+
+    initial_radius_scale_after_unsuccessful_restart: PositiveFloat | None = None
+    """Factor by which the initial trust-region radius grows after a restart without
+    improvement.
+
+    Values above 1 make every further restart search a wider region, which helps to
+    leave a local optimum.
+
+    This is ``restarts.rhobeg_scale_after_unsuccessful_restart`` of Py-BOBYQA. With
+    ``None`` Py-BOBYQA uses its default, which is 1.1 if ``seek_global_optimum`` is
+    ``True`` and 1 otherwise.
+
+    """
+
+
+@option_group
+@dataclass(frozen=True)
+class DfolsGrowingOptions:
+    """Options for starting with fewer function evaluations than usual.
+
+    DFO-LS normally evaluates the function once per parameter before it takes its
+    first step. If this is too expensive, set ``n_initial_directions`` to a smaller
+    number. DFO-LS then starts to take steps earlier and adds the missing points
+    while it runs. This is called the growing phase. If ``n_initial_directions`` is
+    not set, the other options of this group have no effect.
+
+    """
+
+    n_initial_directions: PositiveInt | None = None
+    """Number of points that are evaluated before the first step, not counting the
+    start parameters.
+
+    Smaller values let DFO-LS make progress after very few function evaluations, at
+    the price of less reliable first steps. Only use values below the number of
+    parameters, and keep ``n_interpolation_points`` at its default.
+
+    This is ``growing.ndirs_initial`` of DFO-LS. With ``None`` DFO-LS uses its
+    default, which is ``n_interpolation_points - 1``, i.e. no growing phase.
+
+    """
+
+    n_new_directions_each_iteration: NonNegativeInt = 0
+    """Number of extra points that are added in each iteration of the growing phase.
+
+    Larger values end the growing phase sooner but spend function evaluations on
+    points that are not steps of the optimization. DFO-LS does not recommend this.
+
+    This is ``growing.num_new_dirns_each_iter`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    radius_scale_new_directions: PositiveFloat | None = None
+    """Length of the steps that explore new directions, as a multiple of the
+    trust-region radius.
+
+    This is ``growing.delta_scale_new_dirns`` of DFO-LS. With ``None`` DFO-LS uses its
+    default, which is 1, or 0.1 if the trust-region step is perturbed (see
+    ``perturb_trust_region_step``).
+
+    """
+
+    do_geometry_steps: bool = False
+    """Whether points are moved to improve the spread of the points during the growing
+    phase.
+
+    Such steps cost function evaluations that do not reduce the function value
+    directly, which works against the purpose of a cheap start.
+
+    This is ``growing.do_geom_steps`` of DFO-LS, from which the default is taken.
+
+    """
+
+    reset_radius: bool = False
+    """Whether the trust-region radius is set back to its initial value when the
+    growing phase ends.
+
+    Use this if the radius shrinks too much while the model is still incomplete.
+
+    This is ``growing.reset_delta`` of DFO-LS, from which the default is taken.
+
+    """
+
+    reset_min_radius: bool = False
+    """Whether the minimal radius is set back to its initial value when the growing
+    phase ends.
+
+    Requires ``reset_radius`` to be ``True``.
+
+    This is ``growing.reset_rho`` of DFO-LS, from which the default is taken.
+
+    """
+
+    shrinking_factor: ProbabilityFloat | None = None
+    """Factor by which the trust-region radius is multiplied after a bad step during
+    the growing phase.
+
+    Values close to 1 keep the radius large while the model is still incomplete.
+
+    This is ``growing.gamma_dec`` of DFO-LS. With ``None`` DFO-LS uses its default,
+    which is 0.5, or 0.98 if ``noisy`` is ``True``. It does not follow a value you
+    set for ``shrinking_factor`` of the ``trustregion_options``.
+
+    """
+
+    do_safety_step: bool = True
+    """Whether very short steps are replaced by safety steps during the growing phase.
+
+    A safety step does not evaluate the function at a point that is very close to
+    the current one. It shrinks the radius or improves the set of points instead.
+
+    This is ``growing.safety.do_safety_step`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    safety_reduce_radius: bool = False
+    """Whether safety steps shrink the trust-region radius during the growing phase.
+
+    Cannot be combined with ``safety_full_geometry_step``.
+
+    This is ``growing.safety.reduce_delta`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    safety_full_geometry_step: bool = False
+    """Whether safety steps also improve the spread of the points during the growing
+    phase, as they do after the growing phase.
+
+    Cannot be combined with ``safety_reduce_radius``.
+
+    This is ``growing.safety.full_geom_step`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    use_full_rank_interpolation: bool | None = None
+    """Whether the incomplete model is filled up such that steps can go in all
+    directions.
+
+    During the growing phase the model only knows the directions explored so far.
+    With ``True``, DFO-LS adds small artificial components for the other directions.
+    The alternative is ``perturb_trust_region_step``. Exactly one of the two must be
+    ``True`` if you set them.
+
+    This is ``growing.full_rank.use_full_rank_interp`` of DFO-LS. With ``None``
+    DFO-LS chooses: ``True`` if there are at least as many residuals as parameters
+    and ``False`` otherwise.
+
+    """
+
+    perturb_trust_region_step: bool | None = None
+    """Whether each step is perturbed in a direction that has not been explored yet.
+
+    This is the alternative to ``use_full_rank_interpolation``. It is the method that
+    works if there are fewer residuals than parameters.
+
+    This is ``growing.perturb_trust_region_step`` of DFO-LS. With ``None`` DFO-LS
+    chooses: ``True`` if there are fewer residuals than parameters and ``False``
+    otherwise.
+
+    """
+
+    full_rank_scale_factor: NonNegativeFloat = 1e-2
+    """Size of the artificial components that fill up the incomplete model.
+
+    Larger values make the steps move more into unexplored directions. Only relevant
+    if the model is filled up (see ``use_full_rank_interpolation``).
+
+    This is ``growing.full_rank.scale_factor`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    full_rank_svd_scale_factor: ProbabilityFloat = 1.0
+    """Lower bound for the singular values of the filled-up model Jacobian, as a
+    multiple of its smallest nonzero singular value.
+
+    Only relevant if the model is filled up (see ``use_full_rank_interpolation``).
+
+    This is ``growing.full_rank.svd_scale_factor`` of DFO-LS, from which the default
+    is taken.
+
+    """
+
+    full_rank_min_singular_value: ProbabilityFloat = 1e-6
+    """Absolute lower bound for the singular values of the filled-up model Jacobian.
+
+    Only relevant if the model is filled up (see ``use_full_rank_interpolation``).
+
+    This is ``growing.full_rank.min_sing_val`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    full_rank_max_jacobian_condition_number: PositiveFloat = 1e8
+    """Largest condition number the filled-up model Jacobian may have.
+
+    Smaller values make the first steps more stable but less informed by the points
+    evaluated so far. Only relevant if the model is filled up (see
+    ``use_full_rank_interpolation``).
+
+    This is ``growing.full_rank.svd_max_jac_cond`` of DFO-LS, from which the default
+    is taken.
+
+    """
+
+
+# ======================================================================================
+# Deprecated options
+# ======================================================================================
+
+_REMOVED_IN = "0.7.0"
+
+_OLD_SLOW_PROGRESS_KEYS = {
+    "threshold_to_characterize_as_slow": "slow_progress_options.threshold_for_slow",
+    "max_insufficient_improvements": "slow_progress_options.max_slow_iterations",
+    "comparison_period": "slow_progress_options.history_for_slow",
+}
+
+_OLD_RESET_KEYS = {
+    "use_resets": "restart_options.use_restarts",
+    "minimal_trustregion_radius_tolerance_scaling_at_reset": (
+        "restart_options.convergence_min_radius_scale"
+    ),
+    "move_center_at_soft_reset": "restart_options.soft_move_iterate",
+    "reuse_criterion_value_at_hard_reset": "restart_options.hard_use_old_fun_value",
+    "max_iterations_without_new_best_after_soft_reset": (
+        "restart_options.soft_max_fake_successful_steps"
+    ),
+    "auto_detect": "restart_options.auto_detect",
+    "auto_detect_history": "restart_options.auto_detect_history",
+    "auto_detect_min_jacobian_increase": (
+        "restart_options.auto_detect_min_model_change_slope"
+    ),
+    "auto_detect_min_correlations": "restart_options.auto_detect_min_correlation",
+    "points_to_replace_at_soft_reset": "restart_options.soft_n_geometry_steps",
+    "max_consecutive_unsuccessful_resets": "restart_options.max_unsuccessful_restarts",
+}
+
+_OLD_PYBOBYQA_RESET_KEYS = {
+    **_OLD_RESET_KEYS,
+    "max_unsuccessful_resets": "restart_options.max_unsuccessful_restarts_total",
+    "trust_region_scaling_at_unsuccessful_reset": (
+        "restart_options.initial_radius_scale_after_unsuccessful_restart"
+    ),
+}
+
+_OLD_DFOLS_RESET_KEYS = {
+    **_OLD_RESET_KEYS,
+    "max_interpolation_points": "restart_options.max_n_interpolation_points",
+    "n_additional_extra_points_to_replace_per_reset": (
+        "regression_options.increase_n_extra_steps_with_restart"
+    ),
+}
+
+_OLD_FAST_START_KEYS = {
+    "min_inital_points": "growing_options.n_initial_directions",
+    "scale_of_trustregion_step_perturbation": (
+        "growing_options.radius_scale_new_directions"
+    ),
+    "scale_of_jacobian_components_perturbation": (
+        "growing_options.full_rank_scale_factor"
+    ),
+    "floor_of_jacobian_singular_values": "growing_options.full_rank_svd_scale_factor",
+    "jacobian_max_condition_number": (
+        "growing_options.full_rank_max_jacobian_condition_number"
+    ),
+    "geometry_improving_steps": "growing_options.do_geometry_steps",
+    "safety_steps": "growing_options.do_safety_step",
+    "shrink_upper_radius_in_safety_steps": "growing_options.safety_reduce_radius",
+    "full_geometry_improving_step": "growing_options.safety_full_geometry_step",
+    "reset_trustregion_radius_after_fast_start": "growing_options.reset_radius",
+    "reset_min_trustregion_radius_after_fast_start": "growing_options.reset_min_radius",
+    "shrinking_factor_not_successful": "growing_options.shrinking_factor",
+    "n_extra_search_directions_per_iteration": (
+        "growing_options.n_new_directions_each_iteration"
+    ),
 }
 
 
-TRUSTREGION_FAST_START_OPTIONS = {
-    "min_inital_points": None,
-    "method": "auto",
-    "scale_of_trustregion_step_perturbation": None,
-    "scale_of_jacobian_components_perturbation": 1e-2,
-    # corresponds to DFO-LS's growing.full_rank.svd_scale_factor, which optimagic
-    # currently does not pass to DFO-LS.
-    "floor_of_jacobian_singular_values": 1,
-    "jacobian_max_condition_number": 1e8,
-    "geometry_improving_steps": False,
-    "safety_steps": True,
-    "shrink_upper_radius_in_safety_steps": False,
-    "full_geometry_improving_step": False,
-    "reset_trustregion_radius_after_fast_start": False,
-    "reset_min_trustregion_radius_after_fast_start": False,
-    "shrinking_factor_not_successful": None,
-    "n_extra_search_directions_per_iteration": 0,
-}
+def _rename_old_keys(
+    value: Mapping[str, Any] | None,
+    key_map: Mapping[str, str],
+    option: str,
+    special_keys: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """Translate the entries of a deprecated dictionary that were simply renamed.
+
+    Only the entries the user passed are translated. Entries in ``special_keys`` are
+    skipped because they are handled by the caller.
+
+    """
+    if value is None:
+        return {}
+    unknown = sorted(set(value) - set(key_map) - set(special_keys))
+    if unknown:
+        valid = sorted([*key_map, *special_keys])
+        msg = (
+            f"The deprecated option `{option}` has no entries {unknown}. Valid "
+            f"entries were {valid}."
+        )
+        raise InvalidAlgoOptionError(msg)
+    return {key_map[key]: val for key, val in value.items() if key in key_map}
+
+
+def _translate_slow_progress(value: Mapping[str, Any] | None) -> dict[str, Any]:
+    return _rename_old_keys(
+        value, _OLD_SLOW_PROGRESS_KEYS, option="convergence_slow_progress"
+    )
+
+
+def _translate_reset_type(value: Mapping[str, Any]) -> dict[str, Any]:
+    if "reset_type" not in value:
+        return {}
+    if value["reset_type"] not in ("soft", "hard"):
+        msg = (
+            "The entry `reset_type` of the deprecated option "
+            "`trustregion_reset_options` must be 'soft' or 'hard'."
+        )
+        raise InvalidAlgoOptionError(msg)
+    return {"restart_options.use_soft_restarts": value["reset_type"] == "soft"}
+
+
+def _translate_pybobyqa_reset_options(
+    value: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    out = _rename_old_keys(
+        value,
+        _OLD_PYBOBYQA_RESET_KEYS,
+        option="trustregion_reset_options",
+        special_keys=("reset_type",),
+    )
+    return out | _translate_reset_type(value or {})
+
+
+def _translate_dfols_reset_options(value: Mapping[str, Any] | None) -> dict[str, Any]:
+    soft_key = "n_extra_interpolation_points_per_soft_reset"
+    hard_key = "n_extra_interpolation_points_per_hard_reset"
+    out = _rename_old_keys(
+        value,
+        _OLD_DFOLS_RESET_KEYS,
+        option="trustregion_reset_options",
+        special_keys=("reset_type", soft_key, hard_key),
+    )
+    value = value or {}
+    out |= _translate_reset_type(value)
+
+    n_soft = value.get(soft_key, 0)
+    if soft_key in value:
+        out["restart_options.increase_n_interpolation_points"] = n_soft > 0
+        if n_soft > 0:
+            out["restart_options.increase_n_interpolation_points_amount"] = n_soft
+    if hard_key in value:
+        # The old entry was the number of points added per hard restart. DFO-LS wants
+        # the additional growth of the initial directions on top of the points that
+        # are added at every restart.
+        if value[hard_key] < n_soft:
+            msg = (
+                f"The entry `{hard_key}` of the deprecated option "
+                f"`trustregion_reset_options` must not be smaller than `{soft_key}`."
+            )
+            raise InvalidAlgoOptionError(msg)
+        out["restart_options.hard_increase_n_initial_directions_amount"] = (
+            value[hard_key] - n_soft
+        )
+    return out
+
+
+def _translate_fast_start_options(value: Mapping[str, Any] | None) -> dict[str, Any]:
+    out = _rename_old_keys(
+        value,
+        _OLD_FAST_START_KEYS,
+        option="trustregion_fast_start_options",
+        special_keys=("method",),
+    )
+    method = (value or {}).get("method", "auto")
+    if method not in ("auto", "jacobian", "trustregion"):
+        msg = (
+            "The entry `method` of the deprecated option "
+            "`trustregion_fast_start_options` must be 'auto', 'jacobian' or "
+            "'trustregion'."
+        )
+        raise InvalidAlgoOptionError(msg)
+    if method != "auto":
+        out["growing_options.use_full_rank_interpolation"] = method == "jacobian"
+        out["growing_options.perturb_trust_region_step"] = method == "trustregion"
+    return out
+
+
+def _translate_initial_directions(value: str) -> dict[str, Any]:
+    if value not in ("coordinate", "random"):
+        msg = (
+            "The deprecated option `initial_directions` must be 'coordinate' or "
+            "'random'."
+        )
+        raise InvalidAlgoOptionError(msg)
+    return {"init_options.random_initial_directions": value == "random"}
+
+
+def _translate_method_to_replace_extra_points(value: str | None) -> dict[str, Any]:
+    if value not in ("geometry_improving", "momentum", None):
+        msg = (
+            "The deprecated option `trustregion_method_to_replace_extra_points` must "
+            "be 'geometry_improving', 'momentum' or None."
+        )
+        raise InvalidAlgoOptionError(msg)
+    return {"regression_options.momentum_extra_steps": value == "momentum"}
+
+
+def _translate_noise_tolerance(value: float) -> dict[str, Any]:
+    # A tolerance of zero used to switch the criterion off.
+    if value == 0:
+        return {"noise_options.quit_on_noise_level": False}
+    return {"noise_options.scale_factor_for_quit": value}
+
+
+def _translate_additive_noise_level(value: float | None) -> dict[str, Any]:
+    # Setting a noise level used to be the only way to declare the function as noisy.
+    out: dict[str, Any] = {"noise_options.additive_noise_level": value}
+    if value:
+        out["noisy"] = True
+    return out
+
+
+def _translate_multiplicative_noise_level(value: float | None) -> dict[str, Any]:
+    out: dict[str, Any] = {"noise_options.multiplicative_noise_level": value}
+    if value:
+        out["noisy"] = True
+    return out
+
+
+def _deprecated(
+    name: str, replacement: str | Callable[[Any], dict[str, Any]]
+) -> DeprecatedOption:
+    return DeprecatedOption(name, replacement, removed_in=_REMOVED_IN)
+
+
+_COMMON_DEPRECATED_OPTIONS = (
+    _deprecated(
+        "convergence_minimal_trustregion_radius_tolerance",
+        "convergence_min_trustregion_radius",
+    ),
+    _deprecated("interpolation_rounding_error", "rounding_error_constant"),
+    _deprecated("threshold_for_safety_step", "safety_step_threshold"),
+    _deprecated("trustregion_n_interpolation_points", "n_interpolation_points"),
+    _deprecated("noise_n_evals_per_point", "n_evals_per_point"),
+    _deprecated("initial_directions", _translate_initial_directions),
+    _deprecated(
+        "random_directions_orthogonal", "init_options.random_directions_make_orthogonal"
+    ),
+    _deprecated(
+        "trustregion_threshold_successful", "trustregion_options.shrinking_threshold"
+    ),
+    _deprecated(
+        "trustregion_threshold_very_successful",
+        "trustregion_options.expansion_threshold",
+    ),
+    _deprecated(
+        "trustregion_shrinking_factor_not_successful",
+        "trustregion_options.shrinking_factor",
+    ),
+    _deprecated(
+        "trustregion_expansion_factor_successful",
+        "trustregion_options.expansion_factor",
+    ),
+    _deprecated(
+        "trustregion_expansion_factor_very_successful",
+        "trustregion_options.step_expansion_factor",
+    ),
+    _deprecated(
+        "trustregion_shrinking_factor_lower_radius",
+        "trustregion_options.min_radius_shrinking_factor",
+    ),
+    _deprecated(
+        "trustregion_shrinking_factor_upper_radius",
+        "trustregion_options.radius_factor_after_min_radius_shrinking",
+    ),
+    _deprecated(
+        "trustregion_precondition_interpolation", "interpolation_options.precondition"
+    ),
+    _deprecated("convergence_slow_progress", _translate_slow_progress),
+    _deprecated(
+        "convergence_noise_corrected_criterion_tolerance", _translate_noise_tolerance
+    ),
+    _deprecated("noise_additive_level", _translate_additive_noise_level),
+    _deprecated("noise_multiplicative_level", _translate_multiplicative_noise_level),
+)
+
+DFOLS_DEPRECATED_OPTIONS: tuple[DeprecatedOption, ...] = (
+    *_COMMON_DEPRECATED_OPTIONS,
+    _deprecated("clip_criterion_if_overflowing", "check_fun_for_overflow"),
+    _deprecated(
+        "trustregion_n_extra_points_to_replace_successful",
+        "regression_options.n_extra_steps",
+    ),
+    _deprecated(
+        "trustregion_method_to_replace_extra_points",
+        _translate_method_to_replace_extra_points,
+    ),
+    _deprecated("trustregion_reset_options", _translate_dfols_reset_options),
+    _deprecated("trustregion_fast_start_options", _translate_fast_start_options),
+)
+"""Old option names of ``nag_dfols`` that still work but warn."""
+
+PYBOBYQA_DEPRECATED_OPTIONS: tuple[DeprecatedOption, ...] = (
+    *_COMMON_DEPRECATED_OPTIONS,
+    # Py-BOBYQA only catches an OverflowError raised by the function. optimagic
+    # handles errors of the function itself, so the option never had an effect.
+    _deprecated("clip_criterion_if_overflowing", lambda value: {}),
+    _deprecated("stopping_max_criterion_evaluations", "stopping_maxfun"),
+    _deprecated("convergence_criterion_value", "convergence_target_value"),
+    _deprecated(
+        "trustregion_minimum_change_hession_for_underdetermined_interpolation",
+        "interpolation_options.minimum_change_hessian",
+    ),
+    _deprecated("trustregion_reset_options", _translate_pybobyqa_reset_options),
+)
+"""Old option names of ``nag_pybobyqa`` that still work but warn."""
+
+
+# ======================================================================================
+# Algorithms
+# ======================================================================================
 
 
 @mark.minimizer(
@@ -129,728 +1493,311 @@ TRUSTREGION_FAST_START_OPTIONS = {
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
+    deprecated_options=DFOLS_DEPRECATED_OPTIONS,
 )
 @dataclass(frozen=True)
 class NagDFOLS(Algorithm):
-    r"""Minimize a function with least-squares structure using the DFO-LS algorithm.
+    r"""Minimize a least-squares function without derivatives using DFO-LS.
 
-    The DFO-LS algorithm :cite:`Cartis2018b` is a model-based derivative-free
-    trust-region algorithm developed by the Numerical Algorithms Group and researchers
-    at the University of Oxford. It is designed to solve the nonlinear least-squares
-    minimization problem (with optional bound constraints)
+    DFO-LS :cite:`Cartis2018b` is a derivative-free trust-region algorithm developed
+    by the Numerical Algorithms Group and researchers at the University of Oxford. It
+    solves nonlinear least-squares problems with optional bounds:
 
     .. math::
 
         \min_{x\in\mathbb{R}^n}  &\quad  f(x) := \sum_{i=1}^{m}r_{i}(x)^2 \\
         \text{s.t.} &\quad  \text{lower\_bounds} \leq x \leq \text{upper\_bounds}
 
-    The :math:`r_{i}` are the least-squares residuals. To use DFO-LS, decorate your
-    criterion function with ``om.mark.least_squares`` and return the residuals
-    instead of their sum of squares.
+    To use it, decorate your function with ``om.mark.least_squares`` and return the
+    residuals :math:`r_i` instead of their sum of squares.
 
-    DFO-LS is a derivative-free algorithm: it does not require the user to provide the
-    derivatives of :math:`f(x)` or :math:`r_{i}(x)`, nor does it attempt to estimate
-    them internally (by using finite differencing, for instance). Instead, it
-    constructs an interpolation-based model of the residuals that exploits the
-    least-squares structure of the problem and minimizes this model within a trust
-    region.
+    DFO-LS does not use derivatives and does not approximate them with finite
+    differences. It evaluates the residuals at a set of points around the current
+    best parameters, fits a linear model of each residual to these points and
+    minimizes the resulting model of :math:`f` within a trust region.
 
-    There are two main situations when using a derivative-free algorithm (such as
-    DFO-LS) is preferable to a derivative-based algorithm (which is the vast majority
-    of least-squares solvers):
+    **When to use it**
 
-    1. If the residuals are noisy, then calculating or even estimating their
-       derivatives may be impossible (or at least very inaccurate). By noisy we mean
-       that if we evaluate :math:`r_{i}(x)` multiple times at the same value of x, we
-       get different results. This may happen when a Monte Carlo simulation is used,
-       for instance.
+    - The function is noisy, i.e. repeated evaluations at the same parameters give
+      different values, for example because it contains a simulation. Derivatives
+      are then unreliable. Set ``noisy=True``; see also ``n_evals_per_point``,
+      ``noise_options`` and ``restart_options``.
+    - The function is expensive and derivatives are only available via finite
+      differences. DFO-LS typically needs few function evaluations. If even one
+      evaluation per parameter is too much before the first step, see
+      ``growing_options``.
 
-    2. If the residuals are expensive to evaluate, then estimating derivatives (which
-       requires n evaluations of each :math:`r_{i}(x)` for every point of interest x)
-       may be prohibitively expensive. Derivative-free methods are designed to solve
-       the problem with the fewest number of evaluations of the criterion as
-       possible.
+    If your function has no least-squares structure, use ``nag_pybobyqa``, the
+    scalar counterpart from the same authors. If it has, DFO-LS typically needs far
+    fewer function evaluations because it uses the residuals. ``tranquilo_ls`` and
+    ``pounders`` are alternatives of the same type; DFO-LS stands out by its options
+    for noisy functions.
 
-    DFO-LS was developed by the same group as Py-BOBYQA (``nag_pybobyqa``), its
-    general-purpose scalar counterpart. If your problem has least-squares structure,
-    DFO-LS typically needs far fewer criterion evaluations than Py-BOBYQA and other
-    scalar optimizers because it exploits this structure.
+    **When the optimization stops**
 
-    There are five possible convergence criteria:
+    The main convergence criterion is ``convergence_min_trustregion_radius``: the
+    optimization converged when the solver cannot improve the result by steps that
+    are longer than this value. The optimization also ends successfully when the sum
+    of squares is practically zero (``convergence_target_value``,
+    ``convergence_ftol_scaled``), or, for noisy functions, when all compared function
+    values are within the noise level (``noise_options``). It ends without success if
+    progress is very slow for many iterations (``slow_progress_options``) or if
+    ``stopping_maxfun`` is reached. If restarts are used (``restart_options``, the
+    default for noisy functions), the solver restarts instead of stopping.
 
-    1. when the lower trust region radius is shrunk below a minimum
-       (``convergence_minimal_trustregion_radius_tolerance``).
+    **Options of DFO-LS that are not available**
 
-    2. when the improvements of iterations become very small
-       (``convergence_slow_progress``). This is similar to a relative criterion
-       tolerance, but more general, because you can specify not only the threshold
-       for convergence but also a period over which the improvements must have been
-       very small.
+    - Logging and printing options and ``argsf``: optimagic handles logging and
+      additional arguments of the function.
+    - ``scaling_within_bounds``: use the ``scaling`` argument of ``minimize``.
+    - ``init.run_in_parallel``: it does not evaluate the function in parallel.
+    - Regularizers (``h``, ``lh``, ``prox_uh`` and the related options): not supported
+      yet. Ridge penalties can be added as additional residuals.
+    - Convex constraints given as projections (``projections`` and the related
+      options): not supported yet. Many convex sets can be expressed with
+      optimagic's constraints.
+    - Starting from a database of earlier evaluations: not supported yet.
 
-    3. when a sufficient reduction of the criterion value relative to its value at
-       the start parameters has been reached, i.e. when
-       :math:`f(x_k)/f(x_0) \leq \textsf{convergence\_ftol\_scaled}`.
-
-    4. when all evaluations on the interpolation points fall within a scaled version
-       of the noise level of the criterion function. This is only applicable if the
-       criterion function is noisy. You can specify this criterion with
-       ``convergence_noise_corrected_criterion_tolerance``.
-
-    5. when the criterion value falls below 1e-12. This is ``model.abs_tol`` in the
-       DFO-LS documentation and cannot be changed through optimagic.
-
-    If resets are enabled (see ``trustregion_reset_options``; this is the default for
-    noisy criterion functions), criteria 1, 2 and 4 trigger a reset instead of
-    terminating the optimization.
-
-    DFO-LS supports resetting the optimization and doing a fast start by starting
-    with a smaller interpolation set and growing it dynamically. For more information
-    see `the detailed DFO-LS documentation
-    <https://numericalalgorithmsgroup.github.io/dfols/>`_ and :cite:`Cartis2018b`.
-
-    Remember to cite :cite:`Cartis2018b` when using DFO-LS in addition to optimagic.
-
-    .. note::
-        We recommend to install DFO-LS version 1.5.3 or higher. Versions 1.5.0 or
-        lower also work, but the versions 1.5.1 and 1.5.2 contain bugs that can lead
-        to errors being raised.
-
-    .. note::
-        The following arguments of ``dfols.solve`` are not supported by optimagic:
-        ``scaling_within_bounds``, ``init.run_in_parallel``, ``do_logging``,
-        ``print_progress`` and all their advanced options.
-
-    """
-
-    clip_criterion_if_overflowing: bool = CLIP_CRITERION_IF_OVERFLOWING
-    """Whether to clip the criterion if it would raise an ``OverflowError``
-    otherwise."""
-
-    convergence_minimal_trustregion_radius_tolerance: NonNegativeFloat = (
-        CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE  # noqa: E501
-    )
-    """Stop when the lower trust-region radius falls below this value.
-
-    If resets are enabled, a reset is triggered instead. This criterion is
-    approximately equivalent to an absolute parameter tolerance and corresponds to
-    ``rhoend`` in the DFO-LS documentation, from which the default value is taken.
-
-    """
-
-    convergence_noise_corrected_criterion_tolerance: NonNegativeFloat = (
-        CONVERGENCE_NOISE_CORRECTED_FTOL  # noqa: E501
-    )
-    """Stop when the evaluations on the set of interpolation points all fall within
-    this factor of the noise level.
-
-    If resets are enabled (the default for noisy criterion functions), a reset is
-    triggered instead. The default is 1, i.e. when all evaluations are within the
-    noise level. If you want to not use this criterion but still flag your criterion
-    function as noisy, set this tolerance to 0.0.
-
-    .. warning::
-        Very small values, as in most other tolerances, don't make sense here.
-
-    """
-
-    convergence_ftol_scaled: NonNegativeFloat = 0.0
-    r"""Stop if the criterion value falls below this fraction of its value at the
-    start parameters, i.e. terminate if
-    :math:`f(x_k)/f(x_0) \leq \textsf{convergence\_ftol\_scaled}` is reached.
-
-    This is ``model.rel_tol`` in the DFO-LS documentation. With the default of 0.0
-    this criterion is deactivated. Note that DFO-LS additionally stops successfully
-    when the criterion value falls below 1e-12 (``model.abs_tol``), which cannot be
-    changed through optimagic.
-
-    """
-
-    convergence_slow_progress: dict[str, Any] | None = None
-    r"""Specification of when to terminate (or reset) the optimization because of only
-    slow improvements.
-
-    This is similar to a relative criterion tolerance, only that instead of a single
-    improvement the average improvement over several iterations must be small.
-    DFO-LS measures improvements in :math:`\log f`. Possible entries are:
-
-    - ``threshold_to_characterize_as_slow`` (float): Threshold whether an improvement
-      is insufficient. Note that the improvement is divided by the
-      ``comparison_period``, so this is the required average improvement per
-      iteration over the comparison period. Default is 1e-8, whereas DFO-LS itself
-      defaults to 1e-4.
-    - ``max_insufficient_improvements`` (int): Number of consecutive insufficient
-      improvements before termination (or reset). Default is ``20 * len(x)``.
-    - ``comparison_period`` (int): How many iterations to go back to calculate the
-      improvement. For example 5 would mean that each criterion evaluation is
-      compared to the criterion value from 5 iterations before. Default is 5.
-
-    """
-
-    initial_directions: Literal[
-        "coordinate",
-        "random",
-    ] = "coordinate"
-    """Whether to draw the initial directions used to build the first interpolation
-    set as coordinate directions ("coordinate") or random directions ("random")."""
-
-    interpolation_rounding_error: float = INTERPOLATION_ROUNDING_ERROR
-    r"""Scaling factor that controls when the interpolation base point is re-centered
-    to reduce roundoff errors.
-
-    Internally, all the NAG algorithms store interpolation points with respect to a
-    base point :math:`x_b`; that is, they store :math:`\{y_t - x_b\}`, which reduces
-    the risk of roundoff errors. The base point :math:`x_b` is shifted to the current
-    iterate :math:`x_k` when
-    :math:`\text{proposed step} \leq \textsf{interpolation\_rounding\_error} \cdot
-    \|x_k - x_b\|`. This is ``general.rounding_error_constant`` in the DFO-LS
-    documentation, from which the default value is taken.
-
-    """
-
-    noise_additive_level: float | None = None
-    """Amount of additive noise in the criterion function.
-
-    It is used for determining the presence of noise and for the convergence
-    criterion that all evaluations on the interpolation points are within the noise
-    level. 0 means no additive noise. Only additive or multiplicative noise can be
-    specified, not both.
-
-    """
-
-    noise_multiplicative_level: float | None = None
-    """Amount of multiplicative noise in the criterion function.
-
-    It is used for determining the presence of noise and for the convergence
-    criterion that all evaluations on the interpolation points are within the noise
-    level. 0 means no multiplicative noise. Only additive or multiplicative noise can
-    be specified, not both.
-
-    """
-
-    noise_n_evals_per_point: NonNegativeInt | None = None
-    r"""How often to evaluate the criterion function at each point.
-
-    This is only applicable for criterion functions with noise, when averaging
-    multiple evaluations at the same point produces a more accurate value. The
-    solver calls the value positionally as
-    ``f(upper_trustregion_radius, lower_trustregion_radius, n_iterations, n_resets)``
-    (i.e. with :math:`\Delta`, :math:`\rho`, the number of iterations and the number
-    of resets) and expects the number of evaluations as an integer. The default is
-    no averaging, i.e. to evaluate the criterion only once at each point.
-
-    .. warning::
-        Currently, only the default ``None`` works: a callable is rejected by the
-        validation of algorithm options (``InvalidAlgoOptionError``), and an integer
-        raises a ``TypeError`` inside the solver because it is not callable.
-
-    """
-
-    random_directions_orthogonal: bool = RANDOM_DIRECTIONS_ORTHOGONAL
-    """Whether to make randomly drawn initial directions orthogonal.
-
-    This is only relevant if ``initial_directions`` is "random".
+    Cite :cite:`Cartis2018b` in addition to optimagic when using DFO-LS. The options
+    are described in more technical detail in the `DFO-LS documentation
+    <https://numericalalgorithmsgroup.github.io/dfols/>`_.
 
     """
 
     stopping_maxfun: PositiveInt = STOPPING_MAXFUN
-    """Maximum number of criterion evaluations.
+    """Maximum number of function evaluations.
 
-    If reached, the optimization stops, but this is not counted as successful
-    convergence.
+    If the number is reached, the optimization stops without success. Repeated
+    evaluations at the same parameters (see ``n_evals_per_point``) count separately.
 
-    """
-
-    threshold_for_safety_step: NonNegativeFloat = THRESHOLD_FOR_SAFETY_STEP
-    r"""Threshold for when to call the safety step (:math:`\gamma_s`).
-
-    A safety step is called when
-    :math:`\text{proposed step} \leq \textsf{threshold\_for\_safety\_step} \cdot
-    \rho_k`, where :math:`\rho_k` is the current lower trust-region radius. The
-    default value is taken from DFO-LS.
+    This is ``maxfun`` of DFO-LS. optimagic uses its common default instead of the
+    much smaller default of DFO-LS (100 evaluations per parameter, at most 1000).
 
     """
 
-    trustregion_expansion_factor_successful: NonNegativeFloat = (
-        TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL
+    convergence_min_trustregion_radius: NonNegativeFloat = 1e-8
+    """Stop when the minimal radius of the trust region reaches this value.
+
+    This is the main convergence criterion. The value is roughly the precision of
+    the solution in units of the parameters: the solver cannot improve the result
+    anymore with steps that are longer than this. Larger values stop earlier and
+    save function evaluations. For noisy functions, a precision far below the noise
+    is not reachable and larger values such as 1e-4 are reasonable. If restarts are
+    used, reaching the value triggers a restart instead.
+
+    This is ``rhoend`` of DFO-LS, from which the default is taken.
+
+    """
+
+    convergence_target_value: NonNegativeFloat = 1e-12
+    """Stop when the sum of squared residuals is at or below this value.
+
+    A sum of squares of practically zero cannot be improved. Increase the value if a
+    fit that is good enough is all you need. With 0 the optimization only stops if
+    all residuals are exactly zero.
+
+    This is ``model.abs_tol`` of DFO-LS, from which the default is taken.
+
+    """
+
+    convergence_ftol_scaled: ProbabilityFloat = 0.0
+    r"""Stop when the sum of squared residuals fell to this fraction of its value at
+    the start parameters.
+
+    The optimization stops successfully as soon as
+    :math:`f(x_k) / f(x_0) \leq \textsf{convergence\_ftol\_scaled}`. With the default
+    of 0 the criterion is switched off.
+
+    This is ``model.rel_tol`` of DFO-LS, which uses a default of 1e-20 that
+    practically never applies.
+
+    """
+
+    trustregion_initial_radius: PositiveFloat | None = None
+    r"""Initial radius of the trust region, i.e. the length of the first steps.
+
+    It is in units of the parameters. Choose it such that a step of this length
+    changes the function noticeably but stays in a region where the function can be
+    evaluated. Too small values waste the first iterations, too large values make
+    the first model unreliable. With bounds, the distance between lower and upper
+    bound must be at least twice the radius.
+
+    This is ``rhobeg`` of DFO-LS. With ``None`` DFO-LS uses its default, which is
+    :math:`0.1 \max(\|x_0\|_{\infty}, 1)`.
+
+    """
+
+    n_interpolation_points: PositiveInt | None = None
+    """Number of points to which the model of the residuals is fitted.
+
+    More points than the minimum of ``len(x) + 1`` make the model less sensitive to
+    noise, because it is then fitted by regression. Each additional point costs one
+    function evaluation at the start. See also ``regression_options``.
+
+    This is ``npt`` of DFO-LS. With ``None`` DFO-LS uses its default, which is
+    ``len(x) + 1``.
+
+    """
+
+    noisy: bool = False
+    """Whether the function is noisy.
+
+    A function is noisy if repeated evaluations at the same parameters give
+    different values. With ``True``, DFO-LS becomes more careful: it restarts instead
+    of stopping, shrinks the trust region more slowly and can stop when all compared
+    function values are within the noise level. These are the defaults of the
+    options that say so in their description; you can still set each of them.
+
+    This is ``objfun_has_noise`` of DFO-LS, from which the default is taken.
+
+    """
+
+    n_evals_per_point: PositiveInt | Callable[[float, float, int, int], int] | None = (
+        None
     )
-    r"""Ratio by which to expand the upper trust-region radius :math:`\Delta_k` in
-    very successful iterations (:math:`\gamma_{inc}` in the notation of the paper).
+    """How often the function is evaluated at each point.
 
-    The default value is taken from DFO-LS.
+    For noisy functions, the solver can evaluate the function several times at the
+    same parameters and average the residuals. More evaluations reduce the noise and
+    multiply the cost. You can pass a number or a function that returns the number
+    and is called as ``f(radius, min_radius, n_iterations, n_restarts)`` with the
+    current trust-region radius, the current minimal radius, the number of
+    iterations of the current run and the number of restarts so far. A function
+    allows to average more when the trust region is small, where noise hurts most.
+
+    This is ``nsamples`` of DFO-LS. With ``None`` DFO-LS uses its default, which is
+    one evaluation per point.
 
     """
 
-    trustregion_expansion_factor_very_successful: NonNegativeFloat = (
-        TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL  # noqa: E501
+    rounding_error_constant: NonNegativeFloat = 0.1
+    """Controls how often the solver re-centers its internal coordinates.
+
+    The solver stores points relative to a base point to limit rounding errors. The
+    base point is moved to the current best point when the step is shorter than this
+    value times the distance between the two. Larger values re-center more often.
+    There is rarely a reason to change it.
+
+    This is ``general.rounding_error_constant`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    safety_step_threshold: NonNegativeFloat = 0.5
+    """Steps shorter than this multiple of the minimal radius are not evaluated.
+
+    Evaluating the function at a point very close to the current one gives little
+    information. The solver then performs a safety step instead: it improves the
+    spread of its points or shrinks the trust region. Larger values treat more steps
+    as too short.
+
+    This is ``general.safety_step_thresh`` of DFO-LS, from which the default is
+    taken.
+
+    """
+
+    check_fun_for_overflow: bool = True
+    """Whether very large residuals are capped.
+
+    This avoids an ``OverflowError`` when the residuals are squared and summed. There
+    is rarely a reason to switch it off.
+
+    This is ``general.check_objfun_for_overflow`` of DFO-LS, from which the default
+    is taken.
+
+    """
+
+    init_options: NagInitOptions = field(default_factory=NagInitOptions)
+    """Options for the first set of points at which the function is evaluated.
+
+    An instance of :class:`NagInitOptions` or a dictionary with the same entries.
+
+    """
+
+    trustregion_options: NagTrustregionOptions = field(
+        default_factory=NagTrustregionOptions
     )
-    r"""Ratio of the proposed step (:math:`\|s_k\|`) by which to expand the upper
-    trust-region radius (:math:`\Delta_k`) in very successful iterations
-    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
+    """Options that control how the trust-region radius changes.
 
-    The default value is taken from DFO-LS.
-
-    """
-
-    trustregion_fast_start_options: dict[str, Any] | None = None
-    r"""Options to start the optimization while building the full trust-region model.
-
-    To activate this, set the number of interpolation points at which to evaluate the
-    criterion before doing the first step (``min_inital_points``) to something
-    smaller than the number of parameters. Possible entries are:
-
-    - ``min_inital_points`` (int): Number of initial interpolation points in addition
-      to the start point. This should only be changed to a value less than
-      ``len(x)``, and only if the default setup cost of ``len(x) + 1`` evaluations of
-      the criterion is impractical. In that case, keep
-      ``trustregion_n_interpolation_points`` at its default of ``len(x) + 1``
-      (DFO-LS requires at least ``len(x) + 1`` interpolation points). If the default
-      is used, all the other parameters have no effect. Default is
-      ``trustregion_n_interpolation_points - 1``. If the default setup costs of the
-      evaluations are very large, DFO-LS can start with less than ``len(x)``
-      interpolation points and add points to the trust-region model with every
-      iteration. Note that the option name is indeed ``min_inital_points``, i.e. it
-      contains a spelling mistake.
-    - ``method`` ("jacobian", "trustregion" or "auto"): When there are less
-      interpolation points than ``len(x)``, the model is underdetermined. This can be
-      fixed in two ways: If "jacobian", the interpolated Jacobian is perturbed to
-      have full rank, allowing the trust-region step to include components in the
-      full search space. If "trustregion", the trust-region step is perturbed by an
-      orthogonal direction not yet searched. The default is "auto". Note that in
-      optimagic "auto" currently always behaves like "jacobian": DFO-LS's automatic
-      switch to "trustregion" when there are fewer residuals than parameters is not
-      triggered. Set "trustregion" explicitly in that case.
-    - ``scale_of_trustregion_step_perturbation`` (float): When adding new search
-      directions, the length of the step is the trust-region radius multiplied by
-      this value. The default is 1.
-    - ``scale_of_jacobian_components_perturbation`` (float): Magnitude of the extra
-      components added to the Jacobian. The default is 1e-2.
-    - ``floor_of_jacobian_singular_values`` (float): Floor the singular values of the
-      Jacobian at this factor of the last non-zero value. This option currently has
-      no effect: optimagic does not pass it to DFO-LS and raises a warning if it is
-      not 1, so DFO-LS's default factor of 1 is always used.
-    - ``jacobian_max_condition_number`` (float): Cap on the condition number of the
-      Jacobian after applying floors to singular values (effectively another floor on
-      the smallest singular value, since the largest singular value is fixed).
-    - ``geometry_improving_steps`` (bool): Whether to do geometry-improving steps in
-      the trust-region algorithm, as per the usual algorithm during the fast start.
-    - ``safety_steps`` (bool): Whether to perform safety steps.
-    - ``shrink_upper_radius_in_safety_steps`` (bool): During the fast start, whether
-      to shrink the upper trust-region radius in safety steps.
-    - ``full_geometry_improving_step`` (bool): During the fast start, whether to do a
-      full geometry-improving step within safety steps (the same as the post fast
-      start phase of the algorithm). Since this involves reducing the upper
-      trust-region radius, this can only be ``True`` if
-      ``shrink_upper_radius_in_safety_steps`` is ``False``.
-    - ``reset_trustregion_radius_after_fast_start`` (bool): Whether to reset the
-      upper trust-region radius to its initial value at the end of the fast start
-      phase.
-    - ``reset_min_trustregion_radius_after_fast_start`` (bool): Whether to reset the
-      minimum trust-region radius (:math:`\rho_k`) to its initial value at the end of
-      the fast start phase.
-    - ``shrinking_factor_not_successful`` (float): Ratio by which to shrink the
-      trust-region radius when the realized improvement does not match the
-      ``trustregion_threshold_successful`` during the fast start phase. The default
-      is 0.98 if the criterion is noisy and 0.5 else, i.e. DFO-LS's default of
-      ``trustregion_shrinking_factor_not_successful``. It does not follow a
-      user-specified value of that option.
-    - ``n_extra_search_directions_per_iteration`` (int): Number of new search
-      directions to add with each iteration where we do not have a full set of search
-      directions. This approach is not recommended! Default is 0.
+    An instance of :class:`NagTrustregionOptions` or a dictionary with the same
+    entries.
 
     """
 
-    trustregion_initial_radius: NonNegativeFloat | None = None
-    r"""Initial value of the trust-region radius.
-
-    This is ``rhobeg`` in the DFO-LS documentation. By default it is set to
-    :math:`0.1 \max(\|x_0\|_{\infty}, 1)`, as in DFO-LS.
-
-    """
-
-    trustregion_method_to_replace_extra_points: (
-        Literal["geometry_improving", "momentum"] | None
-    ) = "geometry_improving"
-    """If replacing extra points in successful iterations, whether to use geometry
-    improving steps ("geometry_improving") or the momentum method ("momentum").
-
-    This is only relevant if
-    ``trustregion_n_extra_points_to_replace_successful > 0``.
-
-    """
-
-    trustregion_n_extra_points_to_replace_successful: NonNegativeInt = 0
-    """The number of extra points (other than accepting the trust-region step) to
-    replace in successful iterations.
-
-    This is ``regression.num_extra_steps`` in the DFO-LS documentation. It is useful
-    when ``trustregion_n_interpolation_points > len(x) + 1``.
-
-    """
-
-    trustregion_n_interpolation_points: NonNegativeInt | None = None
-    """The number of interpolation points to use.
-
-    This is ``npt`` in the DFO-LS documentation. The default is ``len(x) + 1``, as in
-    DFO-LS. If using resets, this is the number of points to use in the first run of
-    the solver, before any resets.
-
-    """
-
-    trustregion_precondition_interpolation: bool = (
-        TRUSTREGION_PRECONDITION_INTERPOLATION
+    slow_progress_options: NagSlowProgressOptions = field(
+        default_factory=NagSlowProgressOptions
     )
-    """Whether to scale the interpolation linear system to improve conditioning.
+    """Options for stopping (or restarting) because of slow progress.
 
-    The default value is taken from DFO-LS.
-
-    """
-
-    trustregion_reset_options: dict[str, Any] | None = None
-    r"""Options for resetting the optimization.
-
-    Possible entries are:
-
-    - ``use_resets`` (bool): Whether to do resets when the lower trust-region radius
-      (:math:`\rho_k`) reaches the stopping criterion (:math:`\rho_{end}`), or
-      (optionally) when all interpolation points are within the noise level. The
-      default is ``True`` if the criterion is noisy.
-    - ``minimal_trustregion_radius_tolerance_scaling_at_reset`` (float): Factor with
-      which the trust-region stopping criterion is multiplied at each reset.
-    - ``reset_type`` (str): Whether to use "soft" or "hard" resets. The default is
-      "soft".
-    - ``move_center_at_soft_reset`` (bool): Whether to move the trust-region center
-      (:math:`x_k`) to the best new point evaluated instead of keeping it constant.
-    - ``points_to_replace_at_soft_reset`` (int): Number of interpolation points to
-      move at each soft reset.
-    - ``reuse_criterion_value_at_hard_reset`` (bool): Whether or not to recycle the
-      criterion value at the best iterate found when performing a hard reset. This
-      saves one criterion evaluation.
-    - ``max_iterations_without_new_best_after_soft_reset`` (int): The maximum number
-      of successful steps in a given run where the new criterion value is worse than
-      the best value found in previous runs before terminating. The default is
-      ``stopping_maxfun``.
-    - ``auto_detect`` (bool): Whether or not to automatically determine when to
-      reset. This is an additional condition and resets can still be triggered by a
-      small upper trust-region radius, etc. There are two criteria used: upper
-      trust-region radius shrinkage (no increases over the history, more decreases
-      than no changes) and changes in the model Jacobian (consistently increasing
-      trend as measured by the slope and correlation coefficient of the line of best
-      fit).
-    - ``auto_detect_history`` (int): How many iterations of model changes and trust
-      region radii to store.
-    - ``auto_detect_min_jacobian_increase`` (float): Minimum rate of increase of
-      :math:`\log(\|J_k - J_{k-1}\|_F)`, i.e. of the change in the model Jacobian,
-      over past iterations to cause a reset.
-    - ``auto_detect_min_correlations`` (float): Minimum correlation of the data set
-      :math:`(k, \log(\|J_k - J_{k-1}\|_F))` required to cause a reset.
-    - ``max_consecutive_unsuccessful_resets`` (int): Maximum number of consecutive
-      unsuccessful resets allowed (i.e. resets which did not outperform the best
-      known value from earlier runs).
-    - ``max_interpolation_points`` (int): Maximum allowed value of the number of
-      interpolation points. This is useful if the number of interpolation points
-      increases with each reset, e.g. when
-      ``n_extra_interpolation_points_per_soft_reset > 0``. The default is
-      ``trustregion_n_interpolation_points``.
-    - ``n_extra_interpolation_points_per_soft_reset`` (int): Number of points to add
-      to the interpolation set with each reset (soft or hard). The default is 0.
-    - ``n_extra_interpolation_points_per_hard_reset`` (int): With each hard reset,
-      the number of initial search directions is increased by the difference
-      between this value and ``n_extra_interpolation_points_per_soft_reset``. It
-      must therefore be at least ``n_extra_interpolation_points_per_soft_reset``;
-      otherwise DFO-LS rejects the input and the optimization fails with an error.
-      The default is 0.
-    - ``n_additional_extra_points_to_replace_per_reset`` (int): This parameter
-      modifies ``trustregion_n_extra_points_to_replace_successful``. With each reset
-      it is increased by this number.
+    An instance of :class:`NagSlowProgressOptions` or a dictionary with the same
+    entries.
 
     """
 
-    trustregion_shrinking_factor_not_successful: NonNegativeFloat | None = (
-        TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL  # noqa: E501
+    noise_options: NagNoiseOptions = field(default_factory=NagNoiseOptions)
+    """Options that describe the noise in the function.
+
+    An instance of :class:`NagNoiseOptions` or a dictionary with the same entries.
+
+    """
+
+    interpolation_options: DfolsInterpolationOptions = field(
+        default_factory=DfolsInterpolationOptions
     )
-    """Ratio by which to shrink the upper trust-region radius when the realized
-    improvement does not match the ``trustregion_threshold_successful``.
+    """Options for fitting the model of the residuals to the evaluated points.
 
-    This is ``tr_radius.gamma_dec`` in the DFO-LS documentation. The default is 0.98
-    if the criterion is noisy and 0.5 else, as in DFO-LS.
+    An instance of :class:`DfolsInterpolationOptions` or a dictionary with the same
+    entries.
 
     """
 
-    trustregion_shrinking_factor_lower_radius: NonNegativeFloat | None = (
-        TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS
+    regression_options: DfolsRegressionOptions = field(
+        default_factory=DfolsRegressionOptions
     )
-    r"""Ratio by which to shrink the lower trust-region radius (:math:`\rho_k`)
-    (:math:`\alpha_1` in the notation of the paper).
+    """Options for using more interpolation points than strictly needed.
 
-    The default is 0.9 if the criterion is noisy and 0.1 else, as in DFO-LS.
-
-    """
-
-    trustregion_shrinking_factor_upper_radius: NonNegativeFloat | None = (
-        TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS
-    )
-    r"""Ratio of the current lower trust-region radius (:math:`\rho_k`) by which to
-    shrink the upper trust-region radius (:math:`\Delta_k`) when the lower one is
-    shrunk (:math:`\alpha_2` in the notation of the paper).
-
-    The default is 0.95 if the criterion is noisy and 0.5 else, as in DFO-LS.
+    An instance of :class:`DfolsRegressionOptions` or a dictionary with the same
+    entries.
 
     """
 
-    trustregion_threshold_successful: float = TRUSTREGION_THRESHOLD_SUCCESSFUL
-    """Share of the predicted improvement that has to be achieved for a trust-region
-    iteration to count as successful.
+    restart_options: DfolsRestartOptions = field(default_factory=DfolsRestartOptions)
+    """Options for restarting the optimization instead of stopping.
 
-    This is ``tr_radius.eta1`` in the DFO-LS documentation, from which the default
-    value is taken.
+    An instance of :class:`DfolsRestartOptions` or a dictionary with the same
+    entries.
 
     """
 
-    trustregion_threshold_very_successful: float = TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
-    """Share of the predicted improvement that has to be achieved for a trust-region
-    iteration to count as very successful.
+    growing_options: DfolsGrowingOptions = field(default_factory=DfolsGrowingOptions)
+    """Options for starting with fewer function evaluations than usual.
 
-    This is ``tr_radius.eta2`` in the DFO-LS documentation, from which the default
-    value is taken.
+    An instance of :class:`DfolsGrowingOptions` or a dictionary with the same
+    entries.
 
     """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        res = nag_dfols_internal(
-            criterion=problem.fun,
-            x=x0,
-            lower_bounds=problem.bounds.lower,
-            upper_bounds=problem.bounds.upper,
-            clip_criterion_if_overflowing=self.clip_criterion_if_overflowing,
-            convergence_minimal_trustregion_radius_tolerance=self.convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
-            convergence_noise_corrected_criterion_tolerance=self.convergence_noise_corrected_criterion_tolerance,  # noqa: E501
-            convergence_ftol_scaled=self.convergence_ftol_scaled,
-            convergence_slow_progress=self.convergence_slow_progress,
-            initial_directions=self.initial_directions,
-            interpolation_rounding_error=self.interpolation_rounding_error,
-            noise_additive_level=self.noise_additive_level,
-            noise_multiplicative_level=self.noise_multiplicative_level,
-            noise_n_evals_per_point=self.noise_n_evals_per_point,
-            random_directions_orthogonal=self.random_directions_orthogonal,
-            stopping_maxfun=self.stopping_maxfun,
-            threshold_for_safety_step=self.threshold_for_safety_step,
-            trustregion_expansion_factor_successful=self.trustregion_expansion_factor_successful,
-            trustregion_expansion_factor_very_successful=self.trustregion_expansion_factor_very_successful,  # noqa: E501
-            trustregion_fast_start_options=self.trustregion_fast_start_options,
-            trustregion_initial_radius=self.trustregion_initial_radius,
-            trustregion_method_to_replace_extra_points=self.trustregion_method_to_replace_extra_points,
-            trustregion_n_extra_points_to_replace_successful=self.trustregion_n_extra_points_to_replace_successful,
-            trustregion_n_interpolation_points=self.trustregion_n_interpolation_points,
-            trustregion_precondition_interpolation=self.trustregion_precondition_interpolation,
-            trustregion_reset_options=self.trustregion_reset_options,
-            trustregion_shrinking_factor_not_successful=self.trustregion_shrinking_factor_not_successful,
-            trustregion_shrinking_factor_lower_radius=self.trustregion_shrinking_factor_lower_radius,
-            trustregion_shrinking_factor_upper_radius=self.trustregion_shrinking_factor_upper_radius,
-            trustregion_threshold_successful=self.trustregion_threshold_successful,
-            trustregion_threshold_very_successful=self.trustregion_threshold_very_successful,
+        if not IS_DFOLS_INSTALLED:
+            raise NotInstalledError(
+                "The 'nag_dfols' algorithm requires the DFO-LS package to be "
+                'installed. You can install it with `pip install "DFO-LS>=1.6.5"`.'
+            )
+        import dfols
+
+        raw_res = dfols.solve(
+            problem.fun,
+            x0=x0,
+            bounds=(problem.bounds.lower, problem.bounds.upper),
+            user_params=_collect_upstream_options(self, DFOLS_ADVANCED_OPTIONS),
+            scaling_within_bounds=False,
+            do_logging=False,
+            print_progress=False,
+            **_collect_solve_arguments(self, DFOLS_SOLVE_ARGUMENTS),
         )
-        return res
-
-
-def nag_dfols_internal(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    clip_criterion_if_overflowing,
-    convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
-    convergence_noise_corrected_criterion_tolerance,  # noqa: E501
-    convergence_ftol_scaled,
-    convergence_slow_progress,
-    initial_directions,
-    interpolation_rounding_error,
-    noise_additive_level,
-    noise_multiplicative_level,
-    noise_n_evals_per_point,
-    random_directions_orthogonal,
-    stopping_maxfun,
-    threshold_for_safety_step,
-    trustregion_expansion_factor_successful,
-    trustregion_expansion_factor_very_successful,  # noqa: E501
-    trustregion_fast_start_options,
-    trustregion_initial_radius,
-    trustregion_method_to_replace_extra_points,
-    trustregion_n_extra_points_to_replace_successful,
-    trustregion_n_interpolation_points,
-    trustregion_precondition_interpolation,
-    trustregion_reset_options,
-    trustregion_shrinking_factor_not_successful,  # noqa: E501
-    trustregion_shrinking_factor_lower_radius,
-    trustregion_shrinking_factor_upper_radius,
-    trustregion_threshold_successful,
-    trustregion_threshold_very_successful,
-):
-    r"""Minimize a function with least squares structure using DFO-LS.
-
-    For details see :class:`NagDFOLS`.
-
-    """
-    if not IS_DFOLS_INSTALLED:
-        raise NotInstalledError(
-            "The 'nag_dfols' algorithm requires the DFO-LS package to be installed."
-            "You can install it with 'pip install DFO-LS'. "
-            "For additional installation instructions visit: ",
-            r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
-        )
-    import dfols
-
-    if trustregion_method_to_replace_extra_points == "momentum":
-        trustregion_use_momentum = True
-    elif trustregion_method_to_replace_extra_points in ["geometry_improving", None]:
-        trustregion_use_momentum = False
-    else:
-        raise ValueError(
-            "trustregion_method_to_replace_extra_points must be "
-            "'geometry_improving', 'momentum' or None."
-        )
-
-    advanced_options, trustregion_reset_options = _create_nag_advanced_options(
-        x=x,
-        noise_multiplicative_level=noise_multiplicative_level,
-        noise_additive_level=noise_additive_level,
-        noise_n_evals_per_point=noise_n_evals_per_point,
-        convergence_noise_corrected_criterion_tolerance=convergence_noise_corrected_criterion_tolerance,  # noqa: E501
-        trustregion_initial_radius=trustregion_initial_radius,
-        trustregion_reset_options=trustregion_reset_options,
-        convergence_slow_progress=convergence_slow_progress,
-        interpolation_rounding_error=interpolation_rounding_error,
-        threshold_for_safety_step=threshold_for_safety_step,
-        clip_criterion_if_overflowing=clip_criterion_if_overflowing,
-        initial_directions=initial_directions,
-        random_directions_orthogonal=random_directions_orthogonal,
-        trustregion_precondition_interpolation=trustregion_precondition_interpolation,
-        trustregion_threshold_successful=trustregion_threshold_successful,
-        trustregion_threshold_very_successful=trustregion_threshold_very_successful,
-        trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
-        trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
-        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa: E501
-        trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
-        trustregion_shrinking_factor_upper_radius=trustregion_shrinking_factor_upper_radius,  # noqa: E501
-    )
-
-    fast_start = _build_options_dict(
-        user_input=trustregion_fast_start_options,
-        default_options=TRUSTREGION_FAST_START_OPTIONS,
-    )
-    if fast_start["floor_of_jacobian_singular_values"] != 1:
-        warnings.warn(
-            "Setting `floor_of_jacobian_singular_values` has no effect because "
-            "optimagic does not pass it to DFO-LS."
-        )
-    if (
-        fast_start["shrink_upper_radius_in_safety_steps"]
-        and fast_start["full_geometry_improving_step"]
-    ):
-        raise ValueError(
-            "full_geometry_improving_step of the trustregion_fast_start_options can "
-            "only be True if shrink_upper_radius_in_safety_steps is False."
-        )
-
-    (
-        faststart_jac,
-        faststart_step,
-    ) = _get_fast_start_method(fast_start["method"])
-
-    if (
-        trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"]
-        < trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"]
-    ):
-        raise ValueError(
-            "In the trustregion_reset_options "
-            "'n_extra_interpolation_points_per_hard_reset' must "
-            "be larger or the same as 'n_extra_interpolation_points_per_soft_reset'."
-        )
-
-    dfols_options = {
-        "growing.full_rank.use_full_rank_interp": faststart_jac,
-        "growing.perturb_trust_region_step": faststart_step,
-        "restarts.hard.use_old_rk": trustregion_reset_options[
-            "reuse_criterion_value_at_hard_reset"
-        ],
-        "restarts.auto_detect.min_chgJ_slope": trustregion_reset_options[
-            "auto_detect_min_jacobian_increase"
-        ],
-        "restarts.max_npt": trustregion_reset_options["max_interpolation_points"],
-        "restarts.increase_npt": trustregion_reset_options[
-            "n_extra_interpolation_points_per_soft_reset"
-        ]
-        > 0,
-        "restarts.increase_npt_amt": trustregion_reset_options[
-            "n_extra_interpolation_points_per_soft_reset"
-        ],
-        "restarts.hard.increase_ndirs_initial_amt": trustregion_reset_options[
-            "n_extra_interpolation_points_per_hard_reset"
-        ]
-        - trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"],
-        "model.rel_tol": convergence_ftol_scaled,
-        "regression.num_extra_steps": trustregion_n_extra_points_to_replace_successful,
-        "regression.momentum_extra_steps": trustregion_use_momentum,
-        "regression.increase_num_extra_steps_with_restart": trustregion_reset_options[
-            "n_additional_extra_points_to_replace_per_reset"
-        ],
-        "growing.ndirs_initial": fast_start["min_inital_points"],
-        "growing.delta_scale_new_dirns": fast_start[
-            "scale_of_trustregion_step_perturbation"
-        ],
-        "growing.full_rank.scale_factor": fast_start[
-            "scale_of_jacobian_components_perturbation"
-        ],
-        "growing.full_rank.svd_max_jac_cond": fast_start[
-            "jacobian_max_condition_number"
-        ],
-        "growing.do_geom_steps": fast_start["geometry_improving_steps"],
-        "growing.safety.do_safety_step": fast_start["safety_steps"],
-        "growing.safety.reduce_delta": fast_start[
-            "shrink_upper_radius_in_safety_steps"
-        ],
-        "growing.safety.full_geom_step": fast_start["full_geometry_improving_step"],
-        "growing.reset_delta": fast_start["reset_trustregion_radius_after_fast_start"],
-        "growing.reset_rho": fast_start[
-            "reset_min_trustregion_radius_after_fast_start"
-        ],
-        "growing.gamma_dec": fast_start["shrinking_factor_not_successful"],
-        "growing.num_new_dirns_each_iter": fast_start[
-            "n_extra_search_directions_per_iteration"
-        ],
-        "logging.save_diagnostic_info": True,
-        "logging.save_xk": True,
-    }
-
-    advanced_options.update(dfols_options)
-
-    raw_res = dfols.solve(
-        criterion,
-        x0=x,
-        bounds=(lower_bounds, upper_bounds),
-        maxfun=stopping_maxfun,
-        rhobeg=trustregion_initial_radius,
-        npt=trustregion_n_interpolation_points,
-        rhoend=convergence_minimal_trustregion_radius_tolerance,
-        nsamples=noise_n_evals_per_point,
-        objfun_has_noise=noise_additive_level or noise_multiplicative_level,
-        scaling_within_bounds=False,
-        do_logging=False,
-        print_progress=False,
-        user_params=advanced_options,
-    )
-
-    res = _process_nag_result(raw_res, len(x))
-    out = InternalOptimizeResult(
-        x=res["solution_x"],
-        fun=res["solution_criterion"],
-        success=res["success"],
-        message=res["message"],
-        n_iterations=res["n_iterations"],
-        n_fun_evals=res["n_fun_evals"],
-    )
-    return out
+        return _process_nag_result(raw_res, x0=x0, solver="DFO-LS")
 
 
 @mark.minimizer(
@@ -867,776 +1814,346 @@ def nag_dfols_internal(
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
+    deprecated_options=PYBOBYQA_DEPRECATED_OPTIONS,
 )
 @dataclass(frozen=True)
 class NagPyBOBYQA(Algorithm):
-    """Minimize a scalar function using the BOBYQA algorithm.
+    """Minimize a scalar function without derivatives using Py-BOBYQA.
 
-    BOBYQA (:cite:`Powell2009`, :cite:`Cartis2018`, :cite:`Cartis2018a`) is a
-    derivative-free trust-region method. It is designed to solve nonlinear local
-    minimization problems (with optional bound constraints).
+    Py-BOBYQA :cite:`Cartis2018` is a Python implementation of Powell's BOBYQA
+    algorithm (Bound Optimization BY Quadratic Approximation, :cite:`Powell2009`),
+    developed by the Numerical Algorithms Group and researchers at the University of
+    Oxford. It is a derivative-free trust-region algorithm for scalar functions with
+    optional bounds.
 
-    This wraps Py-BOBYQA, a flexible Python implementation of Powell's BOBYQA (Bound
-    Optimization BY Quadratic Approximation, :cite:`Powell2009`) developed by the
-    Numerical Algorithms Group and researchers at the University of Oxford
-    :cite:`Cartis2018`. In each iteration, the algorithm builds a quadratic model
-    that interpolates the criterion function at a set of points and minimizes this
-    model within a trust region. Compared to Powell's original implementation,
-    Py-BOBYQA adds features for noisy problems (averaging of multiple evaluations
-    and noise-aware termination), multiple restarts, and a heuristic for escaping
-    local minima (``seek_global_optimum``, :cite:`Cartis2018a`).
+    Py-BOBYQA does not use derivatives and does not approximate them with finite
+    differences. It evaluates the function at a set of points around the current
+    best parameters, fits a quadratic model to these points and minimizes the model
+    within a trust region. Compared to Powell's original implementation it adds
+    features for noisy functions, restarts and a heuristic for escaping local optima
+    (:cite:`Cartis2018a`).
 
-    Remember to cite :cite:`Powell2009` and :cite:`Cartis2018` when using Py-BOBYQA
-    in addition to optimagic. If you take advantage of the ``seek_global_optimum``
-    option, cite :cite:`Cartis2018a` additionally.
+    **When to use it**
 
-    There are two main situations when using a derivative-free algorithm like BOBYQA
-    is preferable to derivative-based algorithms:
+    - The function is noisy, i.e. repeated evaluations at the same parameters give
+      different values, for example because it contains a simulation. Derivatives
+      are then unreliable. Set ``noisy=True``; see also ``n_evals_per_point``,
+      ``noise_options`` and ``restart_options``.
+    - The function is expensive and derivatives are only available via finite
+      differences.
+    - The function has several local optima and you want to try to escape them
+      (``seek_global_optimum``).
 
-    1. The criterion function is not deterministic, i.e. if we evaluate the criterion
-       function multiple times at the same parameter vector we get different results.
+    If your function has least-squares structure, use ``nag_dfols`` instead, which
+    typically needs far fewer function evaluations. Compared to other derivative-free
+    scalar optimizers such as ``scipy_neldermead`` or ``nlopt_bobyqa``, Py-BOBYQA
+    stands out by its options for noisy functions and restarts. It is implemented in
+    pure Python, so the time the solver itself needs grows quickly with the number
+    of parameters.
 
-    2. The criterion function is very expensive to evaluate and only finite
-       differences are available to calculate its derivative.
+    **When the optimization stops**
 
-    Py-BOBYQA was developed by the same group as DFO-LS (``nag_dfols``). If your
-    criterion function has least-squares structure, use ``nag_dfols`` instead, which
-    exploits this structure and typically needs far fewer criterion evaluations.
+    The main convergence criterion is ``convergence_min_trustregion_radius``: the
+    optimization converged when the solver cannot improve the result by steps that
+    are longer than this value. The optimization also ends successfully when the
+    function value reaches ``convergence_target_value``, or, for noisy functions,
+    when all compared function values are within the noise level
+    (``noise_options``). It ends without success if progress is very slow for many
+    iterations (``slow_progress_options``) or if ``stopping_maxfun`` is reached. If
+    restarts are used (``restart_options``, the default for noisy functions and with
+    ``seek_global_optimum``), the solver restarts instead of stopping.
 
-    The detailed documentation of the algorithm can be found `in the Py-BOBYQA
-    documentation <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_.
+    **Options of Py-BOBYQA that are not available**
 
-    There are four possible convergence criteria:
+    - Logging and printing options and ``args``: optimagic handles logging and
+      additional arguments of the function.
+    - ``scaling_within_bounds``: use the ``scaling`` argument of ``minimize``.
+    - ``init.run_in_parallel``: it does not evaluate the function in parallel.
+    - ``general.check_objfun_for_overflow``: it only catches an ``OverflowError``
+      raised by your function. Use the ``error_handling`` argument of ``minimize``.
+    - Convex constraints given as projections (``projections`` and the related
+      options): not supported yet. Many convex sets can be expressed with
+      optimagic's constraints.
 
-    1. when the lower trust-region radius is shrunk below a minimum
-       (``convergence_minimal_trustregion_radius_tolerance``). This is approximately
-       equivalent to an absolute parameter tolerance.
-
-    2. when the criterion value falls below an absolute, user-specified value
-       (``convergence_criterion_value``), the optimization terminates successfully.
-
-    3. when insufficient improvements have been gained over a certain number of
-       iterations (``convergence_slow_progress``). The (absolute) threshold for what
-       constitutes an insufficient improvement, how many iterations have to be
-       insufficient and with which iteration to compare can all be specified by the
-       user.
-
-    4. when all evaluations on the interpolation points fall within a scaled version
-       of the noise level of the criterion function
-       (``convergence_noise_corrected_criterion_tolerance``). This is only applicable
-       if the criterion function is noisy.
-
-    If resets are enabled (see ``trustregion_reset_options``; this is the default for
-    noisy criterion functions and if ``seek_global_optimum`` is ``True``), criteria
-    1, 3 and 4 trigger a reset instead of terminating the optimization.
-
-    .. note::
-        The following arguments of ``pybobyqa.solve`` are not supported by optimagic:
-        ``scaling_within_bounds``, ``init.run_in_parallel``, ``do_logging``,
-        ``print_progress`` and all their advanced options.
+    Cite :cite:`Powell2009` and :cite:`Cartis2018` in addition to optimagic when using
+    Py-BOBYQA, and :cite:`Cartis2018a` if you use ``seek_global_optimum``. The options
+    are described in more technical detail in the `Py-BOBYQA documentation
+    <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_.
 
     """
 
-    clip_criterion_if_overflowing: bool = CLIP_CRITERION_IF_OVERFLOWING
-    """Whether to clip the criterion if it would raise an ``OverflowError``
-    otherwise."""
+    stopping_maxfun: PositiveInt = STOPPING_MAXFUN
+    """Maximum number of function evaluations.
 
-    convergence_minimal_trustregion_radius_tolerance: NonNegativeFloat = (
-        CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE  # noqa: E501
+    If the number is reached, the optimization stops without success. Repeated
+    evaluations at the same parameters (see ``n_evals_per_point``) count separately.
+
+    This is ``maxfun`` of Py-BOBYQA. optimagic uses its common default instead of the
+    much smaller default of Py-BOBYQA (100 evaluations per parameter, at most 1000).
+
+    """
+
+    convergence_min_trustregion_radius: NonNegativeFloat = 1e-8
+    """Stop when the minimal radius of the trust region reaches this value.
+
+    This is the main convergence criterion. The value is roughly the precision of
+    the solution in units of the parameters: the solver cannot improve the result
+    anymore with steps that are longer than this. Larger values stop earlier and
+    save function evaluations. For noisy functions, a precision far below the noise
+    is not reachable and larger values such as 1e-4 are reasonable. If restarts are
+    used, reaching the value triggers a restart instead.
+
+    This is ``rhoend`` of Py-BOBYQA, from which the default is taken.
+
+    """
+
+    convergence_target_value: float | None = None
+    """Stop when the function value is at or below this value.
+
+    Use it if you know which function value is good enough. The value refers to the
+    function that is minimized; in ``maximize`` this is the negative of your
+    function.
+
+    This is ``model.abs_tol`` of Py-BOBYQA. With ``None`` Py-BOBYQA uses its default
+    of -1e20, which switches the criterion off.
+
+    """
+
+    trustregion_initial_radius: PositiveFloat | None = None
+    r"""Initial radius of the trust region, i.e. the length of the first steps.
+
+    It is in units of the parameters. Choose it such that a step of this length
+    changes the function noticeably but stays in a region where the function can be
+    evaluated. Too small values waste the first iterations, too large values make
+    the first model unreliable. With bounds, the distance between lower and upper
+    bound must be at least twice the radius.
+
+    This is ``rhobeg`` of Py-BOBYQA. With ``None`` Py-BOBYQA uses its default, which
+    is :math:`0.1 \max(\|x_0\|_{\infty}, 1)`.
+
+    """
+
+    n_interpolation_points: PositiveInt | None = None
+    """Number of points to which the quadratic model is fitted.
+
+    More points make the model more accurate and less sensitive to noise. Each
+    additional point costs one function evaluation at the start and makes every
+    iteration slower. The number must be between ``len(x) + 1`` and
+    ``(len(x) + 1) * (len(x) + 2) / 2``.
+
+    This is ``npt`` of Py-BOBYQA. With ``None`` Py-BOBYQA uses its default, which is
+    ``2 * len(x) + 1``, or the maximum if ``noisy`` is ``True``.
+
+    """
+
+    noisy: bool = False
+    """Whether the function is noisy.
+
+    A function is noisy if repeated evaluations at the same parameters give
+    different values. With ``True``, Py-BOBYQA becomes more careful: it uses more
+    interpolation points, restarts instead of stopping, shrinks the trust region
+    more slowly and can stop when all compared function values are within the noise
+    level. These are the defaults of the options that say so in their description;
+    you can still set each of them.
+
+    This is ``objfun_has_noise`` of Py-BOBYQA, from which the default is taken.
+
+    """
+
+    n_evals_per_point: PositiveInt | Callable[[float, float, int, int], int] | None = (
+        None
     )
-    """Stop when the lower trust-region radius falls below this value.
+    """How often the function is evaluated at each point.
 
-    If resets are enabled, a reset is triggered instead. This criterion is
-    approximately equivalent to an absolute parameter tolerance and corresponds to
-    ``rhoend`` in the Py-BOBYQA documentation, from which the default value is
-    taken.
+    For noisy functions, the solver can evaluate the function several times at the
+    same parameters and average the values. More evaluations reduce the noise and
+    multiply the cost. You can pass a number or a function that returns the number
+    and is called as ``f(radius, min_radius, n_iterations, n_restarts)`` with the
+    current trust-region radius, the current minimal radius, the number of
+    iterations of the current run and the number of restarts so far. A function
+    allows to average more when the trust region is small, where noise hurts most.
 
-    """
-
-    convergence_noise_corrected_criterion_tolerance: NonNegativeFloat = (
-        CONVERGENCE_NOISE_CORRECTED_FTOL  # noqa: E501
-    )
-    """Stop when the evaluations on the set of interpolation points all fall within
-    this factor of the noise level.
-
-    If resets are enabled (the default for noisy criterion functions), a reset is
-    triggered instead. The default is 1, i.e. when all evaluations are within the
-    noise level. If you want to not use this criterion but still flag your criterion
-    function as noisy, set this tolerance to 0.0.
-
-    .. warning::
-        Very small values, as in most other tolerances, don't make sense here.
-
-    """
-
-    convergence_criterion_value: float | None = None
-    """Terminate successfully if the criterion value falls below this threshold.
-
-    This is deactivated (i.e. set to -inf) by default. It is ``model.abs_tol`` in the
-    Py-BOBYQA documentation.
-
-    """
-
-    convergence_slow_progress: dict[str, Any] | None = None
-    """Specification of when to terminate (or reset) the optimization because of only
-    slow improvements.
-
-    This is similar to an absolute criterion tolerance, only that instead of a single
-    improvement the average improvement over several iterations must be small.
-    Possible entries are:
-
-    - ``threshold_to_characterize_as_slow`` (float): Threshold whether an improvement
-      is insufficient. Note that the improvement is divided by the
-      ``comparison_period``, so this is the required average improvement per
-      iteration over the comparison period. Default is 1e-8.
-    - ``max_insufficient_improvements`` (int): Number of consecutive insufficient
-      improvements before termination (or reset). Default is ``20 * len(x)``.
-    - ``comparison_period`` (int): How many iterations to go back to calculate the
-      improvement. For example 5 would mean that each criterion evaluation is
-      compared to the criterion value from 5 iterations before. Default is 5.
-
-    """
-
-    initial_directions: Literal[
-        "coordinate",
-        "random",
-    ] = "coordinate"
-    """Whether to draw the initial directions used to build the first interpolation
-    set as coordinate directions ("coordinate") or random directions ("random")."""
-
-    interpolation_rounding_error: float = INTERPOLATION_ROUNDING_ERROR
-    r"""Scaling factor that controls when the interpolation base point is re-centered
-    to reduce roundoff errors.
-
-    Internally, all the NAG algorithms store interpolation points with respect to a
-    base point :math:`x_b`; that is, they store :math:`\{y_t - x_b\}`, which reduces
-    the risk of roundoff errors. The base point :math:`x_b` is shifted to the current
-    iterate :math:`x_k` when
-    :math:`\text{proposed step} \leq \textsf{interpolation\_rounding\_error} \cdot
-    \|x_k - x_b\|`. This is ``general.rounding_error_constant`` in the Py-BOBYQA
-    documentation, from which the default value is taken.
-
-    """
-
-    noise_additive_level: float | None = None
-    """Amount of additive noise in the criterion function.
-
-    It is used for determining the presence of noise and for the convergence
-    criterion that all evaluations on the interpolation points are within the noise
-    level. 0 means no additive noise. Only additive or multiplicative noise can be
-    specified, not both.
-
-    """
-
-    noise_multiplicative_level: float | None = None
-    """Amount of multiplicative noise in the criterion function.
-
-    It is used for determining the presence of noise and for the convergence
-    criterion that all evaluations on the interpolation points are within the noise
-    level. 0 means no multiplicative noise. Only additive or multiplicative noise can
-    be specified, not both.
-
-    """
-
-    noise_n_evals_per_point: NonNegativeInt | None = None
-    r"""How often to evaluate the criterion function at each point.
-
-    This is only applicable for criterion functions with noise, when averaging
-    multiple evaluations at the same point produces a more accurate value. The
-    solver calls the value positionally as
-    ``f(upper_trustregion_radius, lower_trustregion_radius, n_iterations, n_resets)``
-    (i.e. with :math:`\Delta`, :math:`\rho`, the number of iterations and the number
-    of resets) and expects the number of evaluations as an integer. The default is
-    no averaging, i.e. to evaluate the criterion only once at each point.
-
-    .. warning::
-        Currently, only the default ``None`` works: a callable is rejected by the
-        validation of algorithm options (``InvalidAlgoOptionError``), and an integer
-        raises a ``TypeError`` inside the solver because it is not callable.
-
-    """
-
-    random_directions_orthogonal: bool = RANDOM_DIRECTIONS_ORTHOGONAL
-    """Whether to make randomly drawn initial directions orthogonal.
-
-    This is only relevant if ``initial_directions`` is "random".
+    This is ``nsamples`` of Py-BOBYQA. With ``None`` Py-BOBYQA uses its default, which
+    is one evaluation per point.
 
     """
 
     seek_global_optimum: bool = False
-    """Whether to apply the heuristic to escape local minima presented in
-    :cite:`Cartis2018a`.
+    """Whether to try to escape local optima.
 
-    The heuristic repeatedly restarts the optimization from the best point found so
-    far with an enlarged trust-region radius. It is only a heuristic, so there is no
-    guarantee that the global optimum is found. To use it, both lower and upper
-    bounds must be specified (individual entries may be infinite); otherwise
-    Py-BOBYQA rejects the input and the optimization fails with an error.
+    With ``True``, Py-BOBYQA restarts from the best point found so far each time a
+    run converged, with a larger trust region after every restart that did not
+    improve the result. It stops when too many restarts did not improve the result
+    (see ``restart_options``). This is a heuristic without a guarantee to find the
+    global optimum, and it costs many more function evaluations. It requires lower
+    and upper bounds.
 
-    Setting this to ``True`` also changes the defaults of the ``use_resets``,
-    ``max_unsuccessful_resets`` and ``trust_region_scaling_at_unsuccessful_reset``
-    entries of ``trustregion_reset_options``.
+    This is ``seek_global_minimum`` of Py-BOBYQA, from which the default is taken.
 
     """
 
-    stopping_max_criterion_evaluations: PositiveInt = STOPPING_MAXFUN
-    """Maximum number of criterion evaluations.
+    rounding_error_constant: NonNegativeFloat = 0.1
+    """Controls how often the solver re-centers its internal coordinates.
 
-    If reached, the optimization stops, but this is not counted as successful
-    convergence.
+    The solver stores points relative to a base point to limit rounding errors. The
+    base point is moved to the current best point when the step is shorter than this
+    value times the distance between the two. Larger values re-center more often.
+    There is rarely a reason to change it.
 
-    """
-
-    threshold_for_safety_step: NonNegativeFloat = THRESHOLD_FOR_SAFETY_STEP
-    r"""Threshold for when to call the safety step (:math:`\gamma_s`).
-
-    A safety step is called when
-    :math:`\text{proposed step} \leq \textsf{threshold\_for\_safety\_step} \cdot
-    \rho_k`, where :math:`\rho_k` is the current lower trust-region radius. The
-    default value is taken from Py-BOBYQA.
+    This is ``general.rounding_error_constant`` of Py-BOBYQA, from which the default
+    is taken.
 
     """
 
-    trustregion_expansion_factor_successful: NonNegativeFloat = (
-        TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL
+    safety_step_threshold: NonNegativeFloat = 0.5
+    """Steps shorter than this multiple of the minimal radius are not evaluated.
+
+    Evaluating the function at a point very close to the current one gives little
+    information. The solver then performs a safety step instead: it improves the
+    spread of its points or shrinks the trust region. Larger values treat more steps
+    as too short.
+
+    This is ``general.safety_step_thresh`` of Py-BOBYQA, from which the default is
+    taken.
+
+    """
+
+    init_options: NagInitOptions = field(default_factory=NagInitOptions)
+    """Options for the first set of points at which the function is evaluated.
+
+    An instance of :class:`NagInitOptions` or a dictionary with the same entries.
+
+    """
+
+    trustregion_options: NagTrustregionOptions = field(
+        default_factory=NagTrustregionOptions
     )
-    r"""Ratio by which to expand the upper trust-region radius :math:`\Delta_k` in
-    very successful iterations (:math:`\gamma_{inc}` in the notation of the paper).
+    """Options that control how the trust-region radius changes.
 
-    The default value is taken from Py-BOBYQA.
+    An instance of :class:`NagTrustregionOptions` or a dictionary with the same
+    entries.
 
     """
 
-    trustregion_expansion_factor_very_successful: NonNegativeFloat = (
-        TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL  # noqa: E501
+    slow_progress_options: NagSlowProgressOptions = field(
+        default_factory=NagSlowProgressOptions
     )
-    r"""Ratio of the proposed step (:math:`\|s_k\|`) by which to expand the upper
-    trust-region radius (:math:`\Delta_k`) in very successful iterations
-    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
+    """Options for stopping (or restarting) because of slow progress.
 
-    The default value is taken from Py-BOBYQA.
-
-    """
-
-    trustregion_initial_radius: NonNegativeFloat | None = None
-    r"""Initial value of the trust-region radius.
-
-    This is ``rhobeg`` in the Py-BOBYQA documentation. By default it is set to
-    :math:`0.1 \max(\|x_0\|_{\infty}, 1)`, as in Py-BOBYQA.
+    An instance of :class:`NagSlowProgressOptions` or a dictionary with the same
+    entries.
 
     """
 
-    trustregion_minimum_change_hession_for_underdetermined_interpolation: bool = True
-    """Whether to solve the underdetermined quadratic interpolation problem by
-    minimizing the Frobenius norm of the change in the Hessian.
+    noise_options: NagNoiseOptions = field(default_factory=NagNoiseOptions)
+    """Options that describe the noise in the function.
 
-    If True (the default, as in Py-BOBYQA and Powell's original BOBYQA), the
-    quadratic model is chosen such that the Frobenius norm of the change in its
-    Hessian relative to the previous iteration is minimal. If False, the Frobenius
-    norm of the Hessian itself is minimized. This is
-    ``interpolation.minimum_change_hessian`` in the Py-BOBYQA documentation.
+    An instance of :class:`NagNoiseOptions` or a dictionary with the same entries.
 
     """
 
-    trustregion_n_interpolation_points: NonNegativeInt | None = None
-    r"""The number of interpolation points to use.
-
-    This is ``npt`` in the Py-BOBYQA documentation. With :math:`n` = ``len(x)``, the
-    default is :math:`2n+1` if the criterion is not noisy. Otherwise, it is set to
-    :math:`(n+1)(n+2)/2`. Larger values are particularly useful for noisy problems.
-    Py-BOBYQA requires
-
-    .. math::
-        n + 1 \leq \textsf{trustregion\_n\_interpolation\_points} \leq (n+1)(n+2)/2.
-
-    """
-
-    trustregion_precondition_interpolation: bool = (
-        TRUSTREGION_PRECONDITION_INTERPOLATION
+    interpolation_options: PybobyqaInterpolationOptions = field(
+        default_factory=PybobyqaInterpolationOptions
     )
-    """Whether to scale the interpolation linear system to improve conditioning.
+    """Options for fitting the quadratic model to the evaluated points.
 
-    The default value is taken from Py-BOBYQA.
-
-    """
-
-    trustregion_reset_options: dict[str, Any] | None = None
-    r"""Options for resetting the optimization.
-
-    Possible entries are:
-
-    - ``use_resets`` (bool): Whether to do resets when the lower trust-region radius
-      (:math:`\rho_k`) reaches the stopping criterion (:math:`\rho_{end}`), or
-      (optionally) when all interpolation points are within the noise level. The
-      default is ``True`` if the criterion is noisy or ``seek_global_optimum`` is
-      ``True``, and ``False`` else.
-    - ``minimal_trustregion_radius_tolerance_scaling_at_reset`` (float): Factor with
-      which the trust-region stopping criterion is multiplied at each reset.
-    - ``reset_type`` (str): Whether to use "soft" or "hard" resets. The default is
-      "soft".
-    - ``move_center_at_soft_reset`` (bool): Whether to move the trust-region center
-      (:math:`x_k`) to the best new point evaluated instead of keeping it constant.
-    - ``points_to_replace_at_soft_reset`` (int): Number of interpolation points to
-      move at each soft reset.
-    - ``reuse_criterion_value_at_hard_reset`` (bool): Whether or not to recycle the
-      criterion value at the best iterate found when performing a hard reset. This
-      saves one criterion evaluation.
-    - ``max_iterations_without_new_best_after_soft_reset`` (int): The maximum number
-      of successful steps in a given run where the new criterion value is worse than
-      the best value found in previous runs before terminating. The default is
-      ``stopping_max_criterion_evaluations``.
-    - ``auto_detect`` (bool): Whether or not to automatically determine when to
-      reset. This is an additional condition and resets can still be triggered by a
-      small upper trust-region radius, etc. There are two criteria used: upper
-      trust-region radius shrinkage (no increases over the history, more decreases
-      than no changes) and changes in the model gradient and Hessian (consistently
-      increasing trend as measured by the slope and correlation coefficient of the
-      line of best fit).
-    - ``auto_detect_history`` (int): How many iterations of model changes and trust
-      region radii to store.
-    - ``auto_detect_min_jacobian_increase`` (float): Minimum rate of increase of
-      :math:`\log(\|g_k - g_{k-1}\|)` and :math:`\log(\|H_k - H_{k-1}\|_F)`, i.e. of
-      the changes in the model gradient and Hessian, over past iterations to cause a
-      reset.
-    - ``auto_detect_min_correlations`` (float): Minimum correlation of the data sets
-      :math:`(k, \log(\|g_k - g_{k-1}\|))` and :math:`(k, \log(\|H_k - H_{k-1}\|_F))`
-      required to cause a reset.
-    - ``max_consecutive_unsuccessful_resets`` (int): Maximum number of consecutive
-      unsuccessful resets allowed (i.e. resets which did not outperform the best
-      known value from earlier runs).
-    - ``max_unsuccessful_resets`` (int): Number of total unsuccessful resets allowed.
-      The default is 20 if ``seek_global_optimum`` and else unrestricted.
-    - ``trust_region_scaling_at_unsuccessful_reset`` (float): Factor by which to
-      expand the initial lower trust-region radius (:math:`\rho_{beg}`) after
-      unsuccessful resets. The default is 1.1 if ``seek_global_optimum`` else 1.
+    An instance of :class:`PybobyqaInterpolationOptions` or a dictionary with the
+    same entries.
 
     """
 
-    trustregion_shrinking_factor_not_successful: NonNegativeFloat | None = (
-        TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL  # noqa: E501
+    restart_options: PybobyqaRestartOptions = field(
+        default_factory=PybobyqaRestartOptions
     )
-    """Ratio by which to shrink the upper trust-region radius when the realized
-    improvement does not match the ``trustregion_threshold_successful``.
+    """Options for restarting the optimization instead of stopping.
 
-    This is ``tr_radius.gamma_dec`` in the Py-BOBYQA documentation. The default is
-    0.98 if the criterion is noisy and 0.5 else, as in Py-BOBYQA.
-
-    """
-
-    trustregion_shrinking_factor_lower_radius: NonNegativeFloat | None = (
-        TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS
-    )
-    r"""Ratio by which to shrink the lower trust-region radius (:math:`\rho_k`)
-    (:math:`\alpha_1` in the notation of the paper).
-
-    The default is 0.9 if the criterion is noisy and 0.1 else, as in Py-BOBYQA.
-
-    """
-
-    trustregion_shrinking_factor_upper_radius: NonNegativeFloat | None = (
-        TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS
-    )
-    r"""Ratio of the current lower trust-region radius (:math:`\rho_k`) by which to
-    shrink the upper trust-region radius (:math:`\Delta_k`) when the lower one is
-    shrunk (:math:`\alpha_2` in the notation of the paper).
-
-    The default is 0.95 if the criterion is noisy and 0.5 else, as in Py-BOBYQA.
-
-    """
-
-    trustregion_threshold_successful: float = TRUSTREGION_THRESHOLD_SUCCESSFUL
-    """Share of the predicted improvement that has to be achieved for a trust-region
-    iteration to count as successful.
-
-    This is ``tr_radius.eta1`` in the Py-BOBYQA documentation, from which the default
-    value is taken.
-
-    """
-
-    trustregion_threshold_very_successful: float = TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
-    """Share of the predicted improvement that has to be achieved for a trust-region
-    iteration to count as very successful.
-
-    This is ``tr_radius.eta2`` in the Py-BOBYQA documentation, from which the default
-    value is taken.
+    An instance of :class:`PybobyqaRestartOptions` or a dictionary with the same
+    entries.
 
     """
 
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        res = nag_pybobyqa_internal(
-            criterion=cast(
-                Callable[[NDArray[np.float64]], NDArray[np.float64]],
-                problem.fun,
-            ),
-            x=x0,
-            lower_bounds=problem.bounds.lower,
-            upper_bounds=problem.bounds.upper,
-            clip_criterion_if_overflowing=self.clip_criterion_if_overflowing,
-            convergence_minimal_trustregion_radius_tolerance=self.convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
-            convergence_noise_corrected_criterion_tolerance=self.convergence_noise_corrected_criterion_tolerance,  # noqa: E501
-            convergence_slow_progress=self.convergence_slow_progress,
-            convergence_criterion_value=self.convergence_criterion_value,
-            initial_directions=self.initial_directions,
-            interpolation_rounding_error=self.interpolation_rounding_error,
-            noise_additive_level=self.noise_additive_level,
-            noise_multiplicative_level=self.noise_multiplicative_level,
-            noise_n_evals_per_point=self.noise_n_evals_per_point,
-            random_directions_orthogonal=self.random_directions_orthogonal,
-            seek_global_optimum=self.seek_global_optimum,
-            stopping_max_criterion_evaluations=self.stopping_max_criterion_evaluations,
-            threshold_for_safety_step=self.threshold_for_safety_step,
-            trustregion_expansion_factor_successful=self.trustregion_expansion_factor_successful,
-            trustregion_expansion_factor_very_successful=self.trustregion_expansion_factor_very_successful,  # noqa: E501
-            trustregion_initial_radius=self.trustregion_initial_radius,
-            trustregion_minimum_change_hession_for_underdetermined_interpolation=self.trustregion_minimum_change_hession_for_underdetermined_interpolation,  # noqa: E501
-            trustregion_n_interpolation_points=self.trustregion_n_interpolation_points,
-            trustregion_precondition_interpolation=self.trustregion_precondition_interpolation,
-            trustregion_reset_options=self.trustregion_reset_options,
-            trustregion_shrinking_factor_not_successful=self.trustregion_shrinking_factor_not_successful,
-            trustregion_shrinking_factor_lower_radius=self.trustregion_shrinking_factor_lower_radius,
-            trustregion_shrinking_factor_upper_radius=self.trustregion_shrinking_factor_upper_radius,
-            trustregion_threshold_successful=self.trustregion_threshold_successful,
-            trustregion_threshold_very_successful=self.trustregion_threshold_very_successful,
+        if not IS_PYBOBYQA_INSTALLED:
+            raise NotInstalledError(
+                "The 'nag_pybobyqa' algorithm requires the Py-BOBYQA package to be "
+                'installed. You can install it with `pip install "Py-BOBYQA>=1.5.0"`.'
+            )
+        import pybobyqa
+
+        raw_res = pybobyqa.solve(
+            problem.fun,
+            x0=x0,
+            bounds=(problem.bounds.lower, problem.bounds.upper),
+            user_params=_collect_upstream_options(self, PYBOBYQA_ADVANCED_OPTIONS),
+            scaling_within_bounds=False,
+            do_logging=False,
+            print_progress=False,
+            **_collect_solve_arguments(self, PYBOBYQA_SOLVE_ARGUMENTS),
         )
-        return res
+        return _process_nag_result(raw_res, x0=x0, solver="Py-BOBYQA")
 
 
-def nag_pybobyqa_internal(
-    criterion,
-    x,
-    lower_bounds,
-    upper_bounds,
-    clip_criterion_if_overflowing,
-    convergence_criterion_value,
-    convergence_minimal_trustregion_radius_tolerance,  # noqa: E501
-    convergence_noise_corrected_criterion_tolerance,  # noqa: E501
-    convergence_slow_progress,
-    initial_directions,
-    interpolation_rounding_error,
-    noise_additive_level,
-    noise_multiplicative_level,
-    noise_n_evals_per_point,
-    random_directions_orthogonal,
-    seek_global_optimum,
-    stopping_max_criterion_evaluations,
-    threshold_for_safety_step,
-    trustregion_expansion_factor_successful,
-    trustregion_expansion_factor_very_successful,  # noqa: E501
-    trustregion_initial_radius,
-    trustregion_minimum_change_hession_for_underdetermined_interpolation,
-    trustregion_n_interpolation_points,
-    trustregion_precondition_interpolation,
-    trustregion_reset_options,
-    trustregion_shrinking_factor_not_successful,  # noqa: E501
-    trustregion_shrinking_factor_lower_radius,
-    trustregion_shrinking_factor_upper_radius,
-    trustregion_threshold_successful,
-    trustregion_threshold_very_successful,
-):
-    r"""Minimize a function using the BOBYQA algorithm.
+# ======================================================================================
+# Helper functions
+# ======================================================================================
 
-    For details see :class:`NagPyBOBYQA`.
+
+def _collect_upstream_options(
+    algo: Algorithm, option_map: Mapping[str, str]
+) -> dict[str, Any]:
+    """Collect the options in option_map under their upstream names.
+
+    Options that are None are left out, such that the solver uses its own default.
+    This matters beyond the value: DFO-LS only chooses some defaults itself if the
+    option is not passed at all.
 
     """
-    if not IS_PYBOBYQA_INSTALLED:
-        raise NotInstalledError(
-            "The 'nag_pybobyqa' algorithm requires the Py-BOBYQA package to be "
-            "installed. You can install it with 'pip install Py-BOBYQA'. "
-            "For additional installation instructions visit: ",
-            r"https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/"
-            "install.html",
-        )
-    import pybobyqa
-
-    if convergence_criterion_value is None:
-        convergence_criterion_value = -np.inf
-
-    advanced_options, trustregion_reset_options = _create_nag_advanced_options(
-        x=x,
-        noise_multiplicative_level=noise_multiplicative_level,
-        noise_additive_level=noise_additive_level,
-        trustregion_initial_radius=trustregion_initial_radius,
-        noise_n_evals_per_point=noise_n_evals_per_point,
-        convergence_noise_corrected_criterion_tolerance=convergence_noise_corrected_criterion_tolerance,  # noqa: E501
-        trustregion_reset_options=trustregion_reset_options,
-        convergence_slow_progress=convergence_slow_progress,
-        interpolation_rounding_error=interpolation_rounding_error,
-        threshold_for_safety_step=threshold_for_safety_step,
-        clip_criterion_if_overflowing=clip_criterion_if_overflowing,
-        initial_directions=initial_directions,
-        random_directions_orthogonal=random_directions_orthogonal,
-        trustregion_precondition_interpolation=trustregion_precondition_interpolation,
-        trustregion_threshold_successful=trustregion_threshold_successful,
-        trustregion_threshold_very_successful=trustregion_threshold_very_successful,
-        trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
-        trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
-        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa: E501
-        trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
-        trustregion_shrinking_factor_upper_radius=trustregion_shrinking_factor_upper_radius,  # noqa: E501
-    )
-
-    pybobyqa_options = {
-        "model.abs_tol": convergence_criterion_value,
-        "interpolation.minimum_change_hessian": trustregion_minimum_change_hession_for_underdetermined_interpolation,  # noqa: E501
-        "restarts.max_unsuccessful_restarts_total": trustregion_reset_options[
-            "max_unsuccessful_resets"
-        ],
-        "restarts.rhobeg_scale_after_unsuccessful_restart": trustregion_reset_options[
-            "trust_region_scaling_at_unsuccessful_reset"
-        ],
-        "restarts.hard.use_old_fk": trustregion_reset_options[
-            "reuse_criterion_value_at_hard_reset"
-        ],
-        "restarts.auto_detect.min_chg_model_slope": trustregion_reset_options[
-            "auto_detect_min_jacobian_increase"
-        ],
-        "logging.save_diagnostic_info": True,
-        "logging.save_xk": True,
-    }
-
-    advanced_options.update(pybobyqa_options)
-
-    raw_res = pybobyqa.solve(
-        criterion,
-        x0=x,
-        bounds=(lower_bounds, upper_bounds),
-        maxfun=stopping_max_criterion_evaluations,
-        rhobeg=trustregion_initial_radius,
-        user_params=advanced_options,
-        scaling_within_bounds=False,
-        do_logging=False,
-        print_progress=False,
-        objfun_has_noise=noise_additive_level or noise_multiplicative_level,
-        nsamples=noise_n_evals_per_point,
-        npt=trustregion_n_interpolation_points,
-        rhoend=convergence_minimal_trustregion_radius_tolerance,
-        seek_global_minimum=seek_global_optimum,
-    )
-
-    res = _process_nag_result(raw_res, len(x))
-
-    out = InternalOptimizeResult(
-        x=res["solution_x"],
-        fun=res["solution_criterion"],
-        success=res["success"],
-        message=res["message"],
-        n_iterations=res["n_iterations"],
-    )
-
+    out = {}
+    for path, upstream_name in option_map.items():
+        value: Any = algo
+        for name in path.split("."):
+            value = getattr(value, name)
+        if value is not None:
+            out[upstream_name] = value
     return out
 
 
-def _process_nag_result(nag_result_obj, len_x):
-    """Convert the NAG result object to our result dictionary.
-
-    Args:
-        nag_result_obj: NAG result object
-        len_x (int): length of the supplied parameters, i.e. the dimensionality of the
-            problem.
-
-
-    Returns:
-        results (dict): See :ref:`internal_optimizer_output` for details.
-
-    """
-    if hasattr(nag_result_obj, "f"):
-        solution_fun = nag_result_obj.f
-    else:
-        solution_fun = nag_result_obj.obj
-
-    processed = {
-        "solution_criterion": solution_fun,
-        "n_fun_evals": nag_result_obj.nx,
-        "message": nag_result_obj.msg,
-        "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
-        "reached_convergence_criterion": None,
-        "diagnostic_info": nag_result_obj.diagnostic_info,
-    }
-    try:
-        n_iterations = int(nag_result_obj.diagnostic_info["iters_total"].iloc[-1])
-        processed["n_iterations"] = n_iterations
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception:
-        processed["n_iterations"] = None
-
-    if hasattr(nag_result_obj, "states"):
-        processed.update({"states": nag_result_obj.states})
-    if hasattr(nag_result_obj, "history_params"):
-        processed.update({"history_params": nag_result_obj.history_params})
-    if nag_result_obj.x is not None:
-        processed["solution_x"] = nag_result_obj.x
-    else:
-        processed["solution_x"] = np.array([np.nan] * len_x)
-    return processed
+def _collect_solve_arguments(
+    algo: Algorithm, option_map: Mapping[str, str]
+) -> dict[str, Any]:
+    """Collect the options that are arguments of the upstream solve function."""
+    out = _collect_upstream_options(algo, option_map)
+    n_evals = out.get("nsamples")
+    if n_evals is not None and not callable(n_evals):
+        # The solvers expect a function of the trust-region radius, the minimal
+        # radius, the number of iterations and the number of restarts.
+        out["nsamples"] = lambda delta, rho, iter, nrestarts: n_evals  # noqa: A006
+    return out
 
 
-def _create_nag_advanced_options(
-    x,
-    noise_multiplicative_level,
-    noise_additive_level,
-    trustregion_initial_radius,
-    noise_n_evals_per_point,
-    convergence_noise_corrected_criterion_tolerance,
-    trustregion_reset_options,
-    convergence_slow_progress,
-    interpolation_rounding_error,
-    threshold_for_safety_step,
-    clip_criterion_if_overflowing,
-    initial_directions,
-    random_directions_orthogonal,
-    trustregion_precondition_interpolation,
-    trustregion_threshold_successful,
-    trustregion_threshold_very_successful,
-    trustregion_shrinking_factor_not_successful,
-    trustregion_expansion_factor_successful,
-    trustregion_expansion_factor_very_successful,
-    trustregion_shrinking_factor_lower_radius,
-    trustregion_shrinking_factor_upper_radius,
-):
-    if noise_multiplicative_level is not None and noise_additive_level is not None:
-        raise ValueError("You cannot specify both multiplicative and additive noise.")
-    if trustregion_initial_radius is None:
-        trustregion_initial_radius = calculate_trustregion_initial_radius(x)
-    # -np.inf as a default leads to errors when building the documentation with sphinx.
-    noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
-    trustregion_reset_options = _build_options_dict(
-        user_input=trustregion_reset_options,
-        default_options=RESET_OPTIONS,
+def _process_nag_result(
+    raw_res: Any, x0: NDArray[np.float64], solver: str
+) -> InternalOptimizeResult:
+    """Convert the result object of DFO-LS or Py-BOBYQA to optimagic's result."""
+    if raw_res.flag == raw_res.EXIT_INPUT_ERROR:
+        msg = (
+            f"{solver} rejected the algorithm options or their combination with the "
+            f"bounds and start parameters: {raw_res.msg}"
+        )
+        raise InvalidAlgoOptionError(msg)
+
+    x = raw_res.x if raw_res.x is not None else np.full(len(x0), np.nan)
+    # DFO-LS reports the sum of squares as `obj`, Py-BOBYQA the function value as `f`.
+    fun = raw_res.f if hasattr(raw_res, "f") else raw_res.obj
+
+    return InternalOptimizeResult(
+        x=x,
+        fun=fun,
+        success=raw_res.flag == raw_res.EXIT_SUCCESS,
+        message=raw_res.msg,
+        status=int(raw_res.flag),
+        n_fun_evals=int(raw_res.nf),
+        info={"n_runs": int(raw_res.nruns), "n_evaluated_points": int(raw_res.nx)},
     )
-    if trustregion_reset_options["reset_type"] not in ["soft", "hard"]:
-        raise ValueError(
-            "reset_type in the trustregion_reset_options must be soft or hard."
-        )
-    if initial_directions not in ["coordinate", "random"]:
-        raise ValueError("initial_directions must be either 'coordinate' or 'random'.")
-    convergence_slow_progress = _build_options_dict(
-        user_input=convergence_slow_progress,
-        default_options=CONVERGENCE_SLOW_PROGRESS,
-    )
-
-    is_noisy = bool(noise_additive_level or noise_multiplicative_level)
-
-    advanced_options = {
-        "general.rounding_error_constant": interpolation_rounding_error,
-        "general.safety_step_thresh": threshold_for_safety_step,
-        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
-        "tr_radius.eta1": trustregion_threshold_successful,
-        "tr_radius.eta2": trustregion_threshold_very_successful,
-        "tr_radius.gamma_dec": trustregion_shrinking_factor_not_successful,
-        "tr_radius.gamma_inc": trustregion_expansion_factor_successful,
-        "tr_radius.gamma_inc_overline": trustregion_expansion_factor_very_successful,
-        "tr_radius.alpha1": trustregion_shrinking_factor_lower_radius,
-        "tr_radius.alpha2": trustregion_shrinking_factor_upper_radius,
-        "init.random_initial_directions": initial_directions == "random",
-        "init.random_directions_make_orthogonal": random_directions_orthogonal,
-        "slow.thresh_for_slow": convergence_slow_progress[
-            "threshold_to_characterize_as_slow"
-        ],
-        "slow.max_slow_iters": convergence_slow_progress[
-            "max_insufficient_improvements"
-        ],
-        "slow.history_for_slow": convergence_slow_progress["comparison_period"],
-        "noise.multiplicative_noise_level": noise_multiplicative_level,
-        "noise.additive_noise_level": noise_additive_level,
-        "noise.quit_on_noise_level": (
-            convergence_noise_corrected_criterion_tolerance > 0
-        )
-        and is_noisy,
-        "noise.scale_factor_for_quit": convergence_noise_corrected_criterion_tolerance,
-        "interpolation.precondition": trustregion_precondition_interpolation,
-        "restarts.use_restarts": trustregion_reset_options["use_resets"],
-        "restarts.max_unsuccessful_restarts": trustregion_reset_options[
-            "max_consecutive_unsuccessful_resets"
-        ],
-        "restarts.rhoend_scale": trustregion_reset_options[
-            "minimal_trustregion_radius_tolerance_scaling_at_reset"
-        ],
-        "restarts.use_soft_restarts": trustregion_reset_options["reset_type"] == "soft",
-        "restarts.soft.move_xk": trustregion_reset_options["move_center_at_soft_reset"],
-        "restarts.soft.max_fake_successful_steps": trustregion_reset_options[
-            "max_iterations_without_new_best_after_soft_reset"
-        ],
-        "restarts.auto_detect": trustregion_reset_options["auto_detect"],
-        "restarts.auto_detect.history": trustregion_reset_options[
-            "auto_detect_history"
-        ],
-        "restarts.auto_detect.min_correl": trustregion_reset_options[
-            "auto_detect_min_correlations"
-        ],
-        "restarts.soft.num_geom_steps": trustregion_reset_options[
-            "points_to_replace_at_soft_reset"
-        ],
-    }
-
-    return advanced_options, trustregion_reset_options
-
-
-def _change_evals_per_point_interface(func):
-    """Change the interface of the user supplied function to the one expected by NAG.
-
-    Args:
-        func (callable or None): function mapping from our names to
-            noise_n_evals_per_point.
-
-    Returns:
-        adjusted_noise_n_evals_per_point (callable): function mapping from the
-            argument names expected by pybobyqa and df-ols to noise_n_evals_per_point.
-
-    """
-    if func is not None:
-
-        def adjusted_noise_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
-            return func(
-                upper_trustregion_radius=delta,
-                lower_trustregion_radius=rho,
-                n_iterations=iter,
-                n_resets=nrestarts,
-            )
-
-        return adjusted_noise_n_evals_per_point
-
-
-def _build_options_dict(user_input, default_options):
-    """Create the full dictionary of trust region fast start options from user input.
-
-    Args:
-        user_input (dict or None): dictionary to update the default options with.
-            May only contain keys present in the default options.
-        default_options (dict): the default values.
-
-    Returns:
-        full_options (dict)
-
-    """
-    full_options = default_options.copy()
-    user_input = {} if user_input is None else user_input
-    invalid = [x for x in user_input if x not in full_options]
-    if len(invalid) > 0:
-        raise ValueError(
-            f"You specified illegal options {', '.join(invalid)}. Allowed are: , ".join(
-                full_options.keys()
-            )
-        )
-    full_options.update(user_input)
-    return full_options
-
-
-def _get_fast_start_method(user_value):
-    """Get fast start method arguments from user value."""
-    allowed_values = ["auto", "jacobian", "trustregion"]
-    if user_value not in allowed_values:
-        raise ValueError(
-            "The 'method' entry of trustregion_fast_start_options must be one of "
-            f"{allowed_values}. You provided {user_value}."
-        )
-    if user_value == "auto":
-        faststart_jac = None
-        faststart_step = None
-    else:
-        faststart_jac = user_value == "jacobian"
-        faststart_step = not faststart_jac
-
-    return faststart_jac, faststart_step
