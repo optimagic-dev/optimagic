@@ -119,6 +119,7 @@ FIDES_DEPRECATED_OPTIONS = (
 """Option names of the fides wrapper that are deprecated."""
 
 
+@mark.deprecated_options(FIDES_DEPRECATED_OPTIONS)
 @mark.minimizer(
     name="fides",
     solver_type=AggregationLevel.SCALAR,
@@ -133,7 +134,6 @@ FIDES_DEPRECATED_OPTIONS = (
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
-    deprecated_options=FIDES_DEPRECATED_OPTIONS,
 )
 @dataclass(frozen=True)
 class Fides(Algorithm):

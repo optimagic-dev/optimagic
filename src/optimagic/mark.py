@@ -78,7 +78,6 @@ def minimizer(
     supports_nonlinear_constraints: bool,
     disable_history: bool = False,
     experimental: bool = False,
-    deprecated_options: Sequence[DeprecatedOption] = (),
 ) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
     """Mark an algorithm as a optimagic minimizer and add AlgoInfo.
 
@@ -119,10 +118,6 @@ def minimizer(
             `nonlinear_constraints` as an argument.
         disable_history: Whether the algorithm should disable history collection.
         experimental: Whether the algorithm is experimental and should skip tests.
-        deprecated_options: Old option names that keep working for one deprecation
-            cycle. They are replaced by their new spelling with a ``FutureWarning``
-            wherever options are set: when the algorithm is created, in
-            ``with_option`` and in ``algo_options``.
 
     """
 
@@ -151,18 +146,52 @@ def minimizer(
             config=DEFAULT_PYDANTIC_CONFIG, make_error=make_error
         )(cast("type[Any]", cls))
         out.__algo_info__ = algo_info
-        out.__deprecated_options__ = tuple(deprecated_options)
-
-        if deprecated_options:
-            validated_init = out.__init__
-
-            @wraps(validated_init)
-            def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
-                kwargs = replace_deprecated_options(kwargs, deprecated_options, name)
-                validated_init(self, *args, **kwargs)
-
-            out.__init__ = __init__
-
         return cast("AlgorithmSubclass", out)
+
+    return decorator
+
+
+def deprecated_options(
+    deprecated: Sequence[DeprecatedOption],
+) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
+    """Keep old option names of an algorithm working for one deprecation cycle.
+
+    The old names are replaced by their new spelling with a ``FutureWarning`` wherever
+    options are set: when the algorithm is created, in ``with_option`` and in
+    ``algo_options``.
+
+    The decorator has to be placed above ``mark.minimizer``:
+
+    .. code-block:: python
+
+        @mark.deprecated_options(DEPRECATED_OPTIONS)
+        @mark.minimizer(...)
+        @dataclass(frozen=True)
+        class MyAlgorithm(Algorithm): ...
+
+    Args:
+        deprecated: The old option names with their replacements.
+
+    """
+
+    def decorator(cls: AlgorithmSubclass) -> AlgorithmSubclass:
+        out = cast("Any", cls)
+        if getattr(out, "__algo_info__", None) is None:
+            msg = (
+                "The `mark.deprecated_options` decorator has to be placed above the "
+                "`mark.minimizer` decorator."
+            )
+            raise TypeError(msg)
+
+        out.__deprecated_options__ = tuple(deprecated)
+        validated_init = out.__init__
+
+        @wraps(validated_init)
+        def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
+            kwargs = replace_deprecated_options(kwargs, out)
+            validated_init(self, *args, **kwargs)
+
+        out.__init__ = __init__
+        return cls
 
     return decorator

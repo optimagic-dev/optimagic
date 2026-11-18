@@ -16,15 +16,22 @@ from optimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
 from optimagic.exceptions import InvalidAlgoOptionError
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.nag_optimizers import (
+    DfolsGrowingOptions,
+    DfolsRegressionOptions,
     DfolsRestartOptions,
     NagDFOLS,
+    NagInitOptions,
+    NagNoiseOptions,
     NagPyBOBYQA,
+    NagSlowProgressOptions,
+    NagTrustregionOptions,
+    PybobyqaRestartOptions,
 )
 from optimagic.parameters.bounds import Bounds
 from tests.estimagic.test_bootstrap import aaae
 
-# Typed as Any because the tests pass option groups as dictionaries and use deprecated
-# options, which is valid at runtime but not for type checkers.
+# Typed as Any because the tests use deprecated options, which is valid at runtime
+# but not for type checkers.
 DFOLS: Any = NagDFOLS
 PYBOBYQA: Any = NagPyBOBYQA
 
@@ -59,11 +66,12 @@ def test_nag_dfols_with_option_groups_and_evaluation_count():
         restart_options=DfolsRestartOptions(
             use_restarts=True, max_unsuccessful_restarts=1
         ),
-        growing_options={"n_initial_directions": 1},
+        growing_options=DfolsGrowingOptions(n_initial_directions=1),
     )
     res: Any = minimize(fun=sos, params=np.arange(3.0) + 1, algorithm=algo)
 
     aaae(res.params, np.zeros(3))
+    assert res.n_iterations > 0
     assert res.n_fun_evals == len(res.history.fun)
     assert res.n_fun_evals == 2 * res.algorithm_output["n_evaluated_points"]
 
@@ -73,12 +81,15 @@ def test_nag_pybobyqa_with_option_groups_and_evaluation_count():
     algo = PYBOBYQA(
         n_evals_per_point=lambda radius, min_radius, n_iterations, n_restarts: 2,
         convergence_target_value=1e-10,
-        restart_options={"use_restarts": True, "max_unsuccessful_restarts": 1},
+        restart_options=PybobyqaRestartOptions(
+            use_restarts=True, max_unsuccessful_restarts=1
+        ),
     )
     res: Any = minimize(fun=lambda x: x @ x, params=np.arange(3.0) + 1, algorithm=algo)
 
     aaae(res.params, np.zeros(3), decimal=4)
     assert res.fun <= 1e-10
+    assert res.n_iterations > 0
     assert res.n_fun_evals == len(res.history.fun)
     assert res.n_fun_evals == 2 * res.algorithm_output["n_evaluated_points"]
 
@@ -104,19 +115,21 @@ def test_nag_dfols_deprecated_options():
     new = {
         "check_fun_for_overflow": False,
         "noisy": True,
-        "init_options": {"random_initial_directions": True},
-        "noise_options": {"additive_noise_level": 0.1, "quit_on_noise_level": False},
-        "regression_options": {"momentum_extra_steps": True},
-        "trustregion_options": {"shrinking_threshold": 0.2},
-        "slow_progress_options": {"history_for_slow": 6},
-        "restart_options": {
-            "use_soft_restarts": False,
-            "max_n_interpolation_points": 8,
-            "increase_n_interpolation_points": True,
-            "increase_n_interpolation_points_amount": 2,
-            "hard_increase_n_initial_directions_amount": 1,
-        },
-        "growing_options": {"n_initial_directions": 2},
+        "init_options": NagInitOptions(random_initial_directions=True),
+        "noise_options": NagNoiseOptions(
+            additive_noise_level=0.1, quit_on_noise_level=False
+        ),
+        "regression_options": DfolsRegressionOptions(momentum_extra_steps=True),
+        "trustregion_options": NagTrustregionOptions(shrinking_threshold=0.2),
+        "slow_progress_options": NagSlowProgressOptions(history_for_slow=6),
+        "restart_options": DfolsRestartOptions(
+            use_soft_restarts=False,
+            max_n_interpolation_points=8,
+            increase_n_interpolation_points=True,
+            increase_n_interpolation_points_amount=2,
+            hard_increase_n_initial_directions_amount=1,
+        ),
+        "growing_options": DfolsGrowingOptions(n_initial_directions=2),
     }
     with pytest.warns(FutureWarning, match="removed in optimagic 0.7.0"):
         algo = DFOLS(**old)
@@ -135,8 +148,10 @@ def test_nag_pybobyqa_deprecated_options():
     new = {
         "stopping_maxfun": 50,
         "noisy": True,
-        "noise_options": {"multiplicative_noise_level": 0.1},
-        "restart_options": {"use_restarts": True, "use_soft_restarts": True},
+        "noise_options": NagNoiseOptions(multiplicative_noise_level=0.1),
+        "restart_options": PybobyqaRestartOptions(
+            use_restarts=True, use_soft_restarts=True
+        ),
     }
     with pytest.warns(FutureWarning, match="removed in optimagic 0.7.0"):
         algo = PYBOBYQA(**old)
@@ -169,6 +184,15 @@ def test_nag_dfols_deprecated_dict_options_can_be_none():
     with pytest.warns(FutureWarning, match="has no effect anymore"):
         algo = DFOLS(convergence_slow_progress=None, trustregion_reset_options=None)
     assert algo == DFOLS()
+
+
+def test_nag_option_groups_are_rejected_as_dictionaries():
+    with pytest.raises(InvalidAlgoOptionError, match="instance of DfolsRestartOptions"):
+        DFOLS(restart_options={"use_restarts": True})
+    with pytest.raises(
+        InvalidAlgoOptionError, match="instance of PybobyqaRestartOptions"
+    ):
+        PYBOBYQA().with_option(restart_options={"use_restarts": True})
 
 
 @needs_dfols

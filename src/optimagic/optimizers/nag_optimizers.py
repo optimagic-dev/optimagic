@@ -156,7 +156,7 @@ DFOLS_UNSUPPORTED_SOLVE_ARGUMENTS: tuple[str, ...] = (
 """Arguments of ``dfols.solve`` that cannot be set through optimagic."""
 
 DFOLS_UNSUPPORTED_ADVANCED_OPTIONS: tuple[str, ...] = (
-    # handled by optimagic
+    # handled by optimagic; the wrapper sets the entries of _DIAGNOSTIC_OPTIONS
     "logging.n_to_print_whole_x_vector",
     "logging.save_diagnostic_info",
     "logging.save_poisedness",
@@ -215,7 +215,7 @@ PYBOBYQA_UNSUPPORTED_SOLVE_ARGUMENTS: tuple[str, ...] = (
 """Arguments of ``pybobyqa.solve`` that cannot be set through optimagic."""
 
 PYBOBYQA_UNSUPPORTED_ADVANCED_OPTIONS: tuple[str, ...] = (
-    # handled by optimagic
+    # handled by optimagic; the wrapper sets the entries of _DIAGNOSTIC_OPTIONS
     "logging.n_to_print_whole_x_vector",
     "logging.save_diagnostic_info",
     "logging.save_poisedness",
@@ -231,6 +231,16 @@ PYBOBYQA_UNSUPPORTED_ADVANCED_OPTIONS: tuple[str, ...] = (
     "projections.pgd_tol",
 )
 """Keys of the Py-BOBYQA ``user_params`` that cannot be set through optimagic."""
+
+_DIAGNOSTIC_OPTIONS: dict[str, bool] = {
+    # The diagnostic information has one row per iteration. It is the only way to
+    # get the number of iterations from the solvers.
+    "logging.save_diagnostic_info": True,
+    # Computing the poisedness of the interpolation points in every iteration is by
+    # far the most expensive part of the diagnostic information and is not needed.
+    "logging.save_poisedness": False,
+}
+"""Advanced options the wrappers set to count the iterations of the solvers."""
 
 
 # ======================================================================================
@@ -1479,6 +1489,7 @@ PYBOBYQA_DEPRECATED_OPTIONS: tuple[DeprecatedOption, ...] = (
 # ======================================================================================
 
 
+@mark.deprecated_options(DFOLS_DEPRECATED_OPTIONS)
 @mark.minimizer(
     name="nag_dfols",
     solver_type=AggregationLevel.LEAST_SQUARES,
@@ -1493,7 +1504,6 @@ PYBOBYQA_DEPRECATED_OPTIONS: tuple[DeprecatedOption, ...] = (
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
-    deprecated_options=DFOLS_DEPRECATED_OPTIONS,
 )
 @dataclass(frozen=True)
 class NagDFOLS(Algorithm):
@@ -1710,7 +1720,7 @@ class NagDFOLS(Algorithm):
     init_options: NagInitOptions = field(default_factory=NagInitOptions)
     """Options for the first set of points at which the function is evaluated.
 
-    An instance of :class:`NagInitOptions` or a dictionary with the same entries.
+    An instance of :class:`NagInitOptions`.
 
     """
 
@@ -1719,8 +1729,7 @@ class NagDFOLS(Algorithm):
     )
     """Options that control how the trust-region radius changes.
 
-    An instance of :class:`NagTrustregionOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`NagTrustregionOptions`.
 
     """
 
@@ -1729,15 +1738,14 @@ class NagDFOLS(Algorithm):
     )
     """Options for stopping (or restarting) because of slow progress.
 
-    An instance of :class:`NagSlowProgressOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`NagSlowProgressOptions`.
 
     """
 
     noise_options: NagNoiseOptions = field(default_factory=NagNoiseOptions)
     """Options that describe the noise in the function.
 
-    An instance of :class:`NagNoiseOptions` or a dictionary with the same entries.
+    An instance of :class:`NagNoiseOptions`.
 
     """
 
@@ -1746,8 +1754,7 @@ class NagDFOLS(Algorithm):
     )
     """Options for fitting the model of the residuals to the evaluated points.
 
-    An instance of :class:`DfolsInterpolationOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`DfolsInterpolationOptions`.
 
     """
 
@@ -1756,24 +1763,21 @@ class NagDFOLS(Algorithm):
     )
     """Options for using more interpolation points than strictly needed.
 
-    An instance of :class:`DfolsRegressionOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`DfolsRegressionOptions`.
 
     """
 
     restart_options: DfolsRestartOptions = field(default_factory=DfolsRestartOptions)
     """Options for restarting the optimization instead of stopping.
 
-    An instance of :class:`DfolsRestartOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`DfolsRestartOptions`.
 
     """
 
     growing_options: DfolsGrowingOptions = field(default_factory=DfolsGrowingOptions)
     """Options for starting with fewer function evaluations than usual.
 
-    An instance of :class:`DfolsGrowingOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`DfolsGrowingOptions`.
 
     """
 
@@ -1791,7 +1795,10 @@ class NagDFOLS(Algorithm):
             problem.fun,
             x0=x0,
             bounds=(problem.bounds.lower, problem.bounds.upper),
-            user_params=_collect_upstream_options(self, DFOLS_ADVANCED_OPTIONS),
+            user_params={
+                **_collect_upstream_options(self, DFOLS_ADVANCED_OPTIONS),
+                **_DIAGNOSTIC_OPTIONS,
+            },
             scaling_within_bounds=False,
             do_logging=False,
             print_progress=False,
@@ -1800,6 +1807,7 @@ class NagDFOLS(Algorithm):
         return _process_nag_result(raw_res, x0=x0, solver="DFO-LS")
 
 
+@mark.deprecated_options(PYBOBYQA_DEPRECATED_OPTIONS)
 @mark.minimizer(
     name="nag_pybobyqa",
     solver_type=AggregationLevel.SCALAR,
@@ -1814,7 +1822,6 @@ class NagDFOLS(Algorithm):
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
     disable_history=False,
-    deprecated_options=PYBOBYQA_DEPRECATED_OPTIONS,
 )
 @dataclass(frozen=True)
 class NagPyBOBYQA(Algorithm):
@@ -2021,7 +2028,7 @@ class NagPyBOBYQA(Algorithm):
     init_options: NagInitOptions = field(default_factory=NagInitOptions)
     """Options for the first set of points at which the function is evaluated.
 
-    An instance of :class:`NagInitOptions` or a dictionary with the same entries.
+    An instance of :class:`NagInitOptions`.
 
     """
 
@@ -2030,8 +2037,7 @@ class NagPyBOBYQA(Algorithm):
     )
     """Options that control how the trust-region radius changes.
 
-    An instance of :class:`NagTrustregionOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`NagTrustregionOptions`.
 
     """
 
@@ -2040,15 +2046,14 @@ class NagPyBOBYQA(Algorithm):
     )
     """Options for stopping (or restarting) because of slow progress.
 
-    An instance of :class:`NagSlowProgressOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`NagSlowProgressOptions`.
 
     """
 
     noise_options: NagNoiseOptions = field(default_factory=NagNoiseOptions)
     """Options that describe the noise in the function.
 
-    An instance of :class:`NagNoiseOptions` or a dictionary with the same entries.
+    An instance of :class:`NagNoiseOptions`.
 
     """
 
@@ -2057,8 +2062,7 @@ class NagPyBOBYQA(Algorithm):
     )
     """Options for fitting the quadratic model to the evaluated points.
 
-    An instance of :class:`PybobyqaInterpolationOptions` or a dictionary with the
-    same entries.
+    An instance of :class:`PybobyqaInterpolationOptions`.
 
     """
 
@@ -2067,8 +2071,7 @@ class NagPyBOBYQA(Algorithm):
     )
     """Options for restarting the optimization instead of stopping.
 
-    An instance of :class:`PybobyqaRestartOptions` or a dictionary with the same
-    entries.
+    An instance of :class:`PybobyqaRestartOptions`.
 
     """
 
@@ -2086,7 +2089,10 @@ class NagPyBOBYQA(Algorithm):
             problem.fun,
             x0=x0,
             bounds=(problem.bounds.lower, problem.bounds.upper),
-            user_params=_collect_upstream_options(self, PYBOBYQA_ADVANCED_OPTIONS),
+            user_params={
+                **_collect_upstream_options(self, PYBOBYQA_ADVANCED_OPTIONS),
+                **_DIAGNOSTIC_OPTIONS,
+            },
             scaling_within_bounds=False,
             do_logging=False,
             print_progress=False,
@@ -2155,5 +2161,20 @@ def _process_nag_result(
         message=raw_res.msg,
         status=int(raw_res.flag),
         n_fun_evals=int(raw_res.nf),
+        n_iterations=_count_iterations(raw_res),
         info={"n_runs": int(raw_res.nruns), "n_evaluated_points": int(raw_res.nx)},
     )
+
+
+def _count_iterations(raw_res: Any) -> int | None:
+    """Count the iterations of all runs of DFO-LS or Py-BOBYQA.
+
+    The solvers do not report the number of iterations. It is the number of rows of
+    their diagnostic information, which has one row per iteration over all runs. The
+    diagnostic information is missing if the solver stops before the first
+    iteration, e.g. because it rejects the options.
+
+    """
+    if raw_res.diagnostic_info is None:
+        return None
+    return len(raw_res.diagnostic_info)

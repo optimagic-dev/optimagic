@@ -47,6 +47,16 @@ optimagic. To see them in action look at
 ```
 
 ```{eval-rst}
+.. dropdown:: mark.deprecated_options
+
+    The `mark.deprecated_options` decorator keeps old names of algorithm options
+    working after they were renamed. See :ref:`wrapper-standards-deprecations` for
+    how to use it.
+
+    .. autofunction:: deprecated_options
+```
+
+```{eval-rst}
 .. currentmodule:: optimagic.optimization.internal_optimization_problem
 ```
 
