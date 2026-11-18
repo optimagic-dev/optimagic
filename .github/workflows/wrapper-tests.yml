@@ -1,0 +1,55 @@
+---
+# Detailed tests of optimizer wrappers. They are not part of the main test suite. They
+# run when wrappers change and once a month against the newest release of the wrapped
+# libraries, to detect upstream changes.
+permissions:
+  contents: read
+name: wrapper-tests
+concurrency:
+  group: wrapper-tests-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+on:
+  schedule:
+    - cron: 0 5 1 * *
+  workflow_dispatch: null
+  pull_request:
+    paths:
+      - src/optimagic/optimizers/**
+      - src/optimagic/optimization/algo_option_tools.py
+      - src/optimagic/optimization/algorithm.py
+      - src/optimagic/mark.py
+      - tests/optimagic/optimizers/**
+      - tests/conftest.py
+      - pyproject.toml
+      - pixi.lock
+      - .github/workflows/wrapper-tests.yml
+env:
+  # Libraries that have wrapper tests. Add a library when you add its wrapper tests.
+  WRAPPED_PACKAGES: fides dfo-ls py-bobyqa
+jobs:
+  run-wrapper-tests:
+    name: Run wrapper tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
+        with:
+          pixi-version: v0.71.2
+          cache: true
+          cache-write: false
+          frozen: true
+          environments: tests-linux-py312
+      - name: Update wrapped libraries to their newest release
+        if: github.event_name != 'pull_request'
+        shell: bash -el {0}
+        run: pixi update -e tests-linux-py312 $WRAPPED_PACKAGES
+      - name: Run wrapper tests
+        shell: bash -el {0}
+        run: pixi run -e tests-linux-py312 tests-wrappers
+      - name: Upload coverage report.
+        if: github.event_name == 'pull_request'
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
