@@ -4,16 +4,23 @@ The module wraps DFO-LS (``nag_dfols``) and Py-BOBYQA (``nag_pybobyqa``). Both s
 take a few arguments directly and a dictionary of advanced options with keys such as
 ``"restarts.use_restarts"``. The wrappers keep this structure: arguments and the
 miscellaneous ``general.*`` options are options of the algorithm, every other group of
-advanced options is one option group, e.g. ``restart_options``.
+advanced options is one option group, e.g. ``trustregion_options``.
+
+Two groups belong to a feature that the solvers switch on with a separate flag: the
+restart options (``restarts.use_restarts``) and the noise options (the argument
+``objfun_has_noise``). For these, flag and group are one option that accepts a
+boolean or the group: ``restarts`` and ``noisy``.
 
 The dictionaries below map optimagic options to the upstream names. They are the single
-source of truth for the wrappers and their tests.
+source of truth for the wrappers and their tests. An entry of an option group is
+written as ``"<option>.<entry>"``. For ``restarts`` and ``noisy`` there is one row for
+the option itself, which is the flag, and one row for each entry of the group.
 
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, is_dataclass
 from typing import Any, Callable, Mapping
 
 import numpy as np
@@ -68,23 +75,23 @@ _COMMON_ADVANCED_OPTIONS = {
     "slow_progress_options.history_for_slow": "slow.history_for_slow",
     "slow_progress_options.threshold_for_slow": "slow.thresh_for_slow",
     "slow_progress_options.max_slow_iterations": "slow.max_slow_iters",
-    "noise_options.quit_on_noise_level": "noise.quit_on_noise_level",
-    "noise_options.scale_factor_for_quit": "noise.scale_factor_for_quit",
-    "noise_options.multiplicative_noise_level": "noise.multiplicative_noise_level",
-    "noise_options.additive_noise_level": "noise.additive_noise_level",
+    "noisy.quit_on_noise_level": "noise.quit_on_noise_level",
+    "noisy.scale_factor_for_quit": "noise.scale_factor_for_quit",
+    "noisy.multiplicative_noise_level": "noise.multiplicative_noise_level",
+    "noisy.additive_noise_level": "noise.additive_noise_level",
     "interpolation_options.precondition": "interpolation.precondition",
-    "restart_options.use_restarts": "restarts.use_restarts",
-    "restart_options.max_unsuccessful_restarts": "restarts.max_unsuccessful_restarts",
-    "restart_options.convergence_min_radius_scale": "restarts.rhoend_scale",
-    "restart_options.use_soft_restarts": "restarts.use_soft_restarts",
-    "restart_options.soft_n_geometry_steps": "restarts.soft.num_geom_steps",
-    "restart_options.soft_move_iterate": "restarts.soft.move_xk",
-    "restart_options.soft_max_fake_successful_steps": (
+    "restarts": "restarts.use_restarts",
+    "restarts.max_unsuccessful_restarts": "restarts.max_unsuccessful_restarts",
+    "restarts.convergence_min_radius_scale": "restarts.rhoend_scale",
+    "restarts.use_soft_restarts": "restarts.use_soft_restarts",
+    "restarts.soft_n_geometry_steps": "restarts.soft.num_geom_steps",
+    "restarts.soft_move_iterate": "restarts.soft.move_xk",
+    "restarts.soft_max_fake_successful_steps": (
         "restarts.soft.max_fake_successful_steps"
     ),
-    "restart_options.auto_detect": "restarts.auto_detect",
-    "restart_options.auto_detect_history": "restarts.auto_detect.history",
-    "restart_options.auto_detect_min_correlation": "restarts.auto_detect.min_correl",
+    "restarts.auto_detect": "restarts.auto_detect",
+    "restarts.auto_detect_history": "restarts.auto_detect.history",
+    "restarts.auto_detect_min_correlation": "restarts.auto_detect.min_correl",
 }
 
 DFOLS_SOLVE_ARGUMENTS: Mapping[str, str] = dict(_COMMON_SOLVE_ARGUMENTS)
@@ -100,19 +107,17 @@ DFOLS_ADVANCED_OPTIONS: Mapping[str, str] = {
         "regression.increase_num_extra_steps_with_restart"
     ),
     "regression_options.momentum_extra_steps": "regression.momentum_extra_steps",
-    "restart_options.hard_use_old_fun_value": "restarts.hard.use_old_rk",
-    "restart_options.auto_detect_min_model_change_slope": (
+    "restarts.hard_use_old_fun_value": "restarts.hard.use_old_rk",
+    "restarts.auto_detect_min_model_change_slope": (
         "restarts.auto_detect.min_chgJ_slope"
     ),
-    "restart_options.increase_n_interpolation_points": "restarts.increase_npt",
-    "restart_options.increase_n_interpolation_points_amount": (
-        "restarts.increase_npt_amt"
-    ),
-    "restart_options.hard_increase_n_initial_directions_amount": (
+    "restarts.increase_n_interpolation_points": "restarts.increase_npt",
+    "restarts.increase_n_interpolation_points_amount": ("restarts.increase_npt_amt"),
+    "restarts.hard_increase_n_initial_directions_amount": (
         "restarts.hard.increase_ndirs_initial_amt"
     ),
-    "restart_options.max_n_interpolation_points": "restarts.max_npt",
-    "restart_options.throw_error_on_nans": "restarts.throw_error_on_nans",
+    "restarts.max_n_interpolation_points": "restarts.max_npt",
+    "restarts.throw_error_on_nans": "restarts.throw_error_on_nans",
     "growing_options.n_initial_directions": "growing.ndirs_initial",
     "growing_options.n_new_directions_each_iteration": (
         "growing.num_new_dirns_each_iter"
@@ -190,14 +195,14 @@ PYBOBYQA_ADVANCED_OPTIONS: Mapping[str, str] = {
     "interpolation_options.minimum_change_hessian": (
         "interpolation.minimum_change_hessian"
     ),
-    "restart_options.hard_use_old_fun_value": "restarts.hard.use_old_fk",
-    "restart_options.auto_detect_min_model_change_slope": (
+    "restarts.hard_use_old_fun_value": "restarts.hard.use_old_fk",
+    "restarts.auto_detect_min_model_change_slope": (
         "restarts.auto_detect.min_chg_model_slope"
     ),
-    "restart_options.max_unsuccessful_restarts_total": (
+    "restarts.max_unsuccessful_restarts_total": (
         "restarts.max_unsuccessful_restarts_total"
     ),
-    "restart_options.initial_radius_scale_after_unsuccessful_restart": (
+    "restarts.initial_radius_scale_after_unsuccessful_restart": (
         "restarts.rhobeg_scale_after_unsuccessful_restart"
     ),
 }
@@ -327,7 +332,7 @@ class NagTrustregionOptions:
     faster.
 
     This is ``tr_radius.gamma_dec`` of the solver. With ``None`` the solver uses its
-    default, which is 0.5, or 0.98 if ``noisy`` is ``True``.
+    default, which is 0.5, or 0.98 for noisy functions (see ``noisy``).
 
     """
 
@@ -360,7 +365,7 @@ class NagTrustregionOptions:
     function evaluations but is more robust for noisy functions.
 
     This is ``tr_radius.alpha1`` of the solver. With ``None`` the solver uses its
-    default, which is 0.1, or 0.9 if ``noisy`` is ``True``.
+    default, which is 0.1, or 0.9 for noisy functions (see ``noisy``).
 
     """
 
@@ -372,7 +377,7 @@ class NagTrustregionOptions:
     after the minimal radius was reduced.
 
     This is ``tr_radius.alpha2`` of the solver. With ``None`` the solver uses its
-    default, which is 0.5, or 0.95 if ``noisy`` is ``True``.
+    default, which is 0.5, or 0.95 for noisy functions (see ``noisy``).
 
     """
 
@@ -431,13 +436,14 @@ class NagSlowProgressOptions:
 class NagNoiseOptions:
     """Options that describe the noise in the function.
 
-    They are only used if ``noisy`` is ``True``. If you know how large the noise is,
-    the solver can stop (or restart) as soon as the differences between the function
-    values it compares are no larger than the noise.
+    Pass an instance as ``noisy`` if you know how large the noise is. This declares
+    the function as noisy, and the solver can stop (or restart) as soon as the
+    differences between the function values it compares are no larger than the
+    noise. If you do not know how large the noise is, ``noisy=True`` is enough.
 
     """
 
-    quit_on_noise_level: bool | None = None
+    quit_on_noise_level: bool = True
     """Whether to stop (or restart) when all compared function values are within the
     noise level.
 
@@ -445,9 +451,8 @@ class NagNoiseOptions:
     has an effect if you set ``additive_noise_level`` or
     ``multiplicative_noise_level``.
 
-    This is ``noise.quit_on_noise_level`` of the solver. With ``None`` the solver
-    uses its default, which is ``True`` if ``noisy`` is ``True`` and ``False``
-    otherwise.
+    This is ``noise.quit_on_noise_level`` of the solver. The default is the one the
+    solver uses for noisy functions.
 
     """
 
@@ -572,9 +577,9 @@ class DfolsRegressionOptions:
     increase_n_extra_steps_with_restart: NonNegativeInt = 0
     """Amount by which ``n_extra_steps`` grows with each restart.
 
-    Useful together with ``increase_n_interpolation_points`` of the
-    ``restart_options``, such that a growing set of points is still renewed fast
-    enough.
+    Only relevant if restarts are used (see ``restarts``). Useful together with
+    ``increase_n_interpolation_points`` of :class:`DfolsRestartOptions`, such that a
+    growing set of points is still renewed fast enough.
 
     This is ``regression.increase_num_extra_steps_with_restart`` of DFO-LS, from
     which the default is taken.
@@ -599,24 +604,13 @@ class DfolsRegressionOptions:
 class DfolsRestartOptions:
     """Options for restarting DFO-LS instead of stopping.
 
+    Pass an instance as ``restarts`` to use restarts with your own settings. For
+    restarts with the default settings, ``restarts=True`` is enough.
+
     Restarts are the main tool of DFO-LS for noisy functions. A restart is triggered
     when the minimal radius reaches ``convergence_min_trustregion_radius``, when all
     compared function values are within the noise level, when progress is slow, or
     when the solver detects that it is stuck.
-
-    """
-
-    use_restarts: bool | None = None
-    """Whether the optimization restarts instead of stopping.
-
-    A restart enlarges the trust region again and continues from the best point
-    found so far. This helps for noisy functions, where the solver can get stuck
-    because of the noise. With restarts, the optimization runs until
-    ``stopping_maxfun`` is reached or until several restarts in a row did not improve
-    the result.
-
-    This is ``restarts.use_restarts`` of DFO-LS. With ``None`` DFO-LS uses its
-    default, which is ``True`` if ``noisy`` is ``True`` and ``False`` otherwise.
 
     """
 
@@ -702,8 +696,7 @@ class DfolsRestartOptions:
 
     The solver then restarts before the minimal radius is reached, if the
     trust-region radius only shrank recently and the model keeps changing more and
-    more from iteration to iteration. This is typical for noise. It only has an
-    effect if restarts are used.
+    more from iteration to iteration. This is typical for noise.
 
     This is ``restarts.auto_detect`` of DFO-LS, from which the default is taken.
 
@@ -804,26 +797,14 @@ class DfolsRestartOptions:
 class PybobyqaRestartOptions:
     """Options for restarting Py-BOBYQA instead of stopping.
 
+    Pass an instance as ``restarts`` to use restarts with your own settings. For
+    restarts with the default settings, ``restarts=True`` is enough.
+
     Restarts are the main tool of Py-BOBYQA for noisy functions and for escaping
     local optima. A restart is triggered when the minimal radius reaches
     ``convergence_min_trustregion_radius``, when all compared function values are
     within the noise level, when progress is slow, or when the solver detects that it
     is stuck.
-
-    """
-
-    use_restarts: bool | None = None
-    """Whether the optimization restarts instead of stopping.
-
-    A restart enlarges the trust region again and continues from the best point
-    found so far. This helps for noisy functions, where the solver can get stuck
-    because of the noise, and for escaping local optima. With restarts, the
-    optimization runs until ``stopping_maxfun`` is reached or until several restarts
-    in a row did not improve the result.
-
-    This is ``restarts.use_restarts`` of Py-BOBYQA. With ``None`` Py-BOBYQA uses its
-    default, which is ``True`` if ``noisy`` or ``seek_global_optimum`` is ``True`` and
-    ``False`` otherwise.
 
     """
 
@@ -910,8 +891,7 @@ class PybobyqaRestartOptions:
 
     The solver then restarts before the minimal radius is reached, if the
     trust-region radius only shrank recently and the model keeps changing more and
-    more from iteration to iteration. This is typical for noise. It only has an
-    effect if restarts are used.
+    more from iteration to iteration. This is typical for noise.
 
     This is ``restarts.auto_detect`` of Py-BOBYQA, from which the default is taken.
 
@@ -1062,8 +1042,8 @@ class DfolsGrowingOptions:
     Values close to 1 keep the radius large while the model is still incomplete.
 
     This is ``growing.gamma_dec`` of DFO-LS. With ``None`` DFO-LS uses its default,
-    which is 0.5, or 0.98 if ``noisy`` is ``True``. It does not follow a value you
-    set for ``shrinking_factor`` of the ``trustregion_options``.
+    which is 0.5, or 0.98 for noisy functions (see ``noisy``). It does not follow a
+    value you set for ``shrinking_factor`` of the ``trustregion_options``.
 
     """
 
@@ -1184,36 +1164,35 @@ _OLD_SLOW_PROGRESS_KEYS = {
 }
 
 _OLD_RESET_KEYS = {
-    "use_resets": "restart_options.use_restarts",
     "minimal_trustregion_radius_tolerance_scaling_at_reset": (
-        "restart_options.convergence_min_radius_scale"
+        "restarts.convergence_min_radius_scale"
     ),
-    "move_center_at_soft_reset": "restart_options.soft_move_iterate",
-    "reuse_criterion_value_at_hard_reset": "restart_options.hard_use_old_fun_value",
+    "move_center_at_soft_reset": "restarts.soft_move_iterate",
+    "reuse_criterion_value_at_hard_reset": "restarts.hard_use_old_fun_value",
     "max_iterations_without_new_best_after_soft_reset": (
-        "restart_options.soft_max_fake_successful_steps"
+        "restarts.soft_max_fake_successful_steps"
     ),
-    "auto_detect": "restart_options.auto_detect",
-    "auto_detect_history": "restart_options.auto_detect_history",
+    "auto_detect": "restarts.auto_detect",
+    "auto_detect_history": "restarts.auto_detect_history",
     "auto_detect_min_jacobian_increase": (
-        "restart_options.auto_detect_min_model_change_slope"
+        "restarts.auto_detect_min_model_change_slope"
     ),
-    "auto_detect_min_correlations": "restart_options.auto_detect_min_correlation",
-    "points_to_replace_at_soft_reset": "restart_options.soft_n_geometry_steps",
-    "max_consecutive_unsuccessful_resets": "restart_options.max_unsuccessful_restarts",
+    "auto_detect_min_correlations": "restarts.auto_detect_min_correlation",
+    "points_to_replace_at_soft_reset": "restarts.soft_n_geometry_steps",
+    "max_consecutive_unsuccessful_resets": "restarts.max_unsuccessful_restarts",
 }
 
 _OLD_PYBOBYQA_RESET_KEYS = {
     **_OLD_RESET_KEYS,
-    "max_unsuccessful_resets": "restart_options.max_unsuccessful_restarts_total",
+    "max_unsuccessful_resets": "restarts.max_unsuccessful_restarts_total",
     "trust_region_scaling_at_unsuccessful_reset": (
-        "restart_options.initial_radius_scale_after_unsuccessful_restart"
+        "restarts.initial_radius_scale_after_unsuccessful_restart"
     ),
 }
 
 _OLD_DFOLS_RESET_KEYS = {
     **_OLD_RESET_KEYS,
-    "max_interpolation_points": "restart_options.max_n_interpolation_points",
+    "max_interpolation_points": "restarts.max_n_interpolation_points",
     "n_additional_extra_points_to_replace_per_reset": (
         "regression_options.increase_n_extra_steps_with_restart"
     ),
@@ -1269,7 +1248,9 @@ def _rename_old_keys(
     return {key_map[key]: val for key, val in value.items() if key in key_map}
 
 
-def _translate_slow_progress(value: Mapping[str, Any] | None) -> dict[str, Any]:
+def _translate_slow_progress(
+    value: Mapping[str, Any] | None, options: Mapping[str, Any]
+) -> dict[str, Any]:
     return _rename_old_keys(
         value, _OLD_SLOW_PROGRESS_KEYS, option="convergence_slow_progress"
     )
@@ -1284,38 +1265,88 @@ def _translate_reset_type(value: Mapping[str, Any]) -> dict[str, Any]:
             "`trustregion_reset_options` must be 'soft' or 'hard'."
         )
         raise InvalidAlgoOptionError(msg)
-    return {"restart_options.use_soft_restarts": value["reset_type"] == "soft"}
+    return {"restarts.use_soft_restarts": value["reset_type"] == "soft"}
+
+
+def _declares_noise(options: Mapping[str, Any]) -> bool:
+    """Whether the options of one call declare the function as noisy.
+
+    In the old wrappers, setting a noise level was the only way to do so.
+
+    """
+    return bool(
+        options.get("noise_additive_level")
+        or options.get("noise_multiplicative_level")
+        or options.get("noisy")
+    )
+
+
+def _apply_use_resets(
+    value: Mapping[str, Any] | None,
+    entries: dict[str, Any],
+    restarts_by_default: bool,
+) -> dict[str, Any]:
+    """Translate the old entry ``use_resets`` and decide which entries apply.
+
+    The old default of ``use_resets`` was None, which left the decision to the solver.
+    The other entries of the old dictionary only had an effect if restarts were used.
+    The new ``restarts`` option cannot hold entries without switching restarts on, so
+    the entries are only translated if restarts were used.
+
+    Args:
+        value: The deprecated ``trustregion_reset_options``.
+        entries: The translation of all entries except ``use_resets``.
+        restarts_by_default: Whether the solver restarts if ``use_resets`` is None.
+            This can only be read from the options that are passed together with
+            the deprecated dictionary, not from an algorithm they are applied to.
+
+    """
+    use_resets = (value or {}).get("use_resets")
+    if use_resets is None:
+        return entries if restarts_by_default else {}
+    if not use_resets:
+        return {"restarts": False}
+    if not any(target.startswith("restarts.") for target in entries):
+        entries["restarts"] = True
+    return entries
 
 
 def _translate_pybobyqa_reset_options(
-    value: Mapping[str, Any] | None,
+    value: Mapping[str, Any] | None, options: Mapping[str, Any]
 ) -> dict[str, Any]:
     out = _rename_old_keys(
         value,
         _OLD_PYBOBYQA_RESET_KEYS,
         option="trustregion_reset_options",
-        special_keys=("reset_type",),
+        special_keys=("use_resets", "reset_type"),
     )
-    return out | _translate_reset_type(value or {})
+    out |= _translate_reset_type(value or {})
+    restarts_by_default = _declares_noise(options) or bool(
+        options.get("seek_global_optimum")
+    )
+    return _apply_use_resets(value, out, restarts_by_default)
 
 
-def _translate_dfols_reset_options(value: Mapping[str, Any] | None) -> dict[str, Any]:
+def _translate_dfols_reset_options(
+    value: Mapping[str, Any] | None, options: Mapping[str, Any]
+) -> dict[str, Any]:
     soft_key = "n_extra_interpolation_points_per_soft_reset"
     hard_key = "n_extra_interpolation_points_per_hard_reset"
     out = _rename_old_keys(
         value,
         _OLD_DFOLS_RESET_KEYS,
         option="trustregion_reset_options",
-        special_keys=("reset_type", soft_key, hard_key),
+        special_keys=("use_resets", "reset_type", soft_key, hard_key),
     )
+    original = value
     value = value or {}
     out |= _translate_reset_type(value)
 
     n_soft = value.get(soft_key, 0)
     if soft_key in value:
-        out["restart_options.increase_n_interpolation_points"] = n_soft > 0
+        out["restarts.increase_n_interpolation_points"] = n_soft > 0
         if n_soft > 0:
-            out["restart_options.increase_n_interpolation_points_amount"] = n_soft
+            out["restarts.increase_n_interpolation_points_amount"] = n_soft
     if hard_key in value:
         # The old entry was the number of points added per hard restart. DFO-LS wants
         # the additional growth of the initial directions on top of the points that
@@ -1326,13 +1357,15 @@ def _translate_dfols_reset_options(value: Mapping[str, Any] | None) -> dict[str,
                 f"`trustregion_reset_options` must not be smaller than `{soft_key}`."
             )
             raise InvalidAlgoOptionError(msg)
-        out["restart_options.hard_increase_n_initial_directions_amount"] = (
+        out["restarts.hard_increase_n_initial_directions_amount"] = (
             value[hard_key] - n_soft
         )
-    return out
+    return _apply_use_resets(original, out, _declares_noise(options))
 
 
-def _translate_fast_start_options(value: Mapping[str, Any] | None) -> dict[str, Any]:
+def _translate_fast_start_options(
+    value: Mapping[str, Any] | None, options: Mapping[str, Any]
+) -> dict[str, Any]:
     out = _rename_old_keys(
         value,
         _OLD_FAST_START_KEYS,
@@ -1353,7 +1386,9 @@ def _translate_fast_start_options(value: Mapping[str, Any] | None) -> dict[str, 
     return out
 
 
-def _translate_initial_directions(value: str) -> dict[str, Any]:
+def _translate_initial_directions(
+    value: str, options: Mapping[str, Any]
+) -> dict[str, Any]:
     if value not in ("coordinate", "random"):
         msg = (
             "The deprecated option `initial_directions` must be 'coordinate' or "
@@ -1363,7 +1398,9 @@ def _translate_initial_directions(value: str) -> dict[str, Any]:
     return {"init_options.random_initial_directions": value == "random"}
 
 
-def _translate_method_to_replace_extra_points(value: str | None) -> dict[str, Any]:
+def _translate_method_to_replace_extra_points(
+    value: str | None, options: Mapping[str, Any]
+) -> dict[str, Any]:
     if value not in ("geometry_improving", "momentum", None):
         msg = (
             "The deprecated option `trustregion_method_to_replace_extra_points` must "
@@ -1373,30 +1410,39 @@ def _translate_method_to_replace_extra_points(value: str | None) -> dict[str, An
     return {"regression_options.momentum_extra_steps": value == "momentum"}
 
 
-def _translate_noise_tolerance(value: float) -> dict[str, Any]:
+def _translate_noise_tolerance(
+    value: float, options: Mapping[str, Any]
+) -> dict[str, Any]:
+    # The tolerance only had an effect together with a noise level. If `noisy` is
+    # passed as well, the entry is returned such that mixing old and new raises.
+    has_noise_level = bool(
+        options.get("noise_additive_level") or options.get("noise_multiplicative_level")
+    )
+    if not has_noise_level and "noisy" not in options:
+        return {}
     # A tolerance of zero used to switch the criterion off.
     if value == 0:
-        return {"noise_options.quit_on_noise_level": False}
-    return {"noise_options.scale_factor_for_quit": value}
+        return {"noisy.quit_on_noise_level": False}
+    return {"noisy.scale_factor_for_quit": value}
 
 
-def _translate_additive_noise_level(value: float | None) -> dict[str, Any]:
+def _translate_additive_noise_level(
+    value: float | None, options: Mapping[str, Any]
+) -> dict[str, Any]:
     # Setting a noise level used to be the only way to declare the function as noisy.
-    out: dict[str, Any] = {"noise_options.additive_noise_level": value}
-    if value:
-        out["noisy"] = True
-    return out
+    # A level of None or zero left the function without noise and had no effect.
+    return {"noisy.additive_noise_level": value} if value else {}
 
 
-def _translate_multiplicative_noise_level(value: float | None) -> dict[str, Any]:
-    out: dict[str, Any] = {"noise_options.multiplicative_noise_level": value}
-    if value:
-        out["noisy"] = True
-    return out
+def _translate_multiplicative_noise_level(
+    value: float | None, options: Mapping[str, Any]
+) -> dict[str, Any]:
+    return {"noisy.multiplicative_noise_level": value} if value else {}
 
 
 def _deprecated(
-    name: str, replacement: str | Callable[[Any], dict[str, Any]]
+    name: str,
+    replacement: str | Callable[[Any, Mapping[str, Any]], dict[str, Any]],
 ) -> DeprecatedOption:
     return DeprecatedOption(name, replacement, removed_in=_REMOVED_IN)
 
@@ -1472,7 +1518,7 @@ PYBOBYQA_DEPRECATED_OPTIONS: tuple[DeprecatedOption, ...] = (
     *_COMMON_DEPRECATED_OPTIONS,
     # Py-BOBYQA only catches an OverflowError raised by the function. optimagic
     # handles errors of the function itself, so the option never had an effect.
-    _deprecated("clip_criterion_if_overflowing", lambda value: {}),
+    _deprecated("clip_criterion_if_overflowing", lambda value, options: {}),
     _deprecated("stopping_max_criterion_evaluations", "stopping_maxfun"),
     _deprecated("convergence_criterion_value", "convergence_target_value"),
     _deprecated(
@@ -1530,8 +1576,8 @@ class NagDFOLS(Algorithm):
 
     - The function is noisy, i.e. repeated evaluations at the same parameters give
       different values, for example because it contains a simulation. Derivatives
-      are then unreliable. Set ``noisy=True``; see also ``n_evals_per_point``,
-      ``noise_options`` and ``restart_options``.
+      are then unreliable. Set ``noisy=True``; see also ``n_evals_per_point``
+      and ``restarts``.
     - The function is expensive and derivatives are only available via finite
       differences. DFO-LS typically needs few function evaluations. If even one
       evaluation per parameter is too much before the first step, see
@@ -1550,10 +1596,20 @@ class NagDFOLS(Algorithm):
     are longer than this value. The optimization also ends successfully when the sum
     of squares is practically zero (``convergence_target_value``,
     ``convergence_ftol_scaled``), or, for noisy functions, when all compared function
-    values are within the noise level (``noise_options``). It ends without success if
+    values are within the noise level (``noisy``). It ends without success if
     progress is very slow for many iterations (``slow_progress_options``) or if
-    ``stopping_maxfun`` is reached. If restarts are used (``restart_options``, the
-    default for noisy functions), the solver restarts instead of stopping.
+    ``stopping_maxfun`` is reached. If restarts are used (``restarts``, the default
+    for noisy functions), the solver restarts instead of stopping.
+
+    **What the result contains**
+
+    In addition to the usual entries, the result contains ``jac``, the Jacobian of
+    the residuals at the solution. It is an estimate from the model that DFO-LS
+    fitted to the evaluated points, not an exact derivative, and it refers to the
+    internal parameters, i.e. after scaling and constraints were applied.
+    ``algorithm_output`` contains the number of runs (``n_runs``, more than one if
+    there were restarts) and the number of points at which the function was
+    evaluated (``n_evaluated_points``).
 
     **Options of DFO-LS that are not available**
 
@@ -1649,16 +1705,21 @@ class NagDFOLS(Algorithm):
 
     """
 
-    noisy: bool = False
-    """Whether the function is noisy.
+    noisy: bool | NagNoiseOptions = False
+    """Whether the function is noisy and, optionally, how large the noise is.
 
     A function is noisy if repeated evaluations at the same parameters give
     different values. With ``True``, DFO-LS becomes more careful: it restarts instead
-    of stopping, shrinks the trust region more slowly and can stop when all compared
-    function values are within the noise level. These are the defaults of the
-    options that say so in their description; you can still set each of them.
+    of stopping and shrinks the trust region more slowly. These are the defaults of
+    the options that say so in their description; you can still set each of them.
 
-    This is ``objfun_has_noise`` of DFO-LS, from which the default is taken.
+    If you know how large the noise is, pass an instance of
+    :class:`NagNoiseOptions` instead of ``True``. This also declares the function as
+    noisy. DFO-LS can then stop (or restart) as soon as all function values it
+    compares are within the noise level.
+
+    ``True`` and an instance both set ``objfun_has_noise`` of DFO-LS, from which the
+    default is taken. The entries of the instance are the ``noise.*`` options.
 
     """
 
@@ -1742,13 +1803,6 @@ class NagDFOLS(Algorithm):
 
     """
 
-    noise_options: NagNoiseOptions = field(default_factory=NagNoiseOptions)
-    """Options that describe the noise in the function.
-
-    An instance of :class:`NagNoiseOptions`.
-
-    """
-
     interpolation_options: DfolsInterpolationOptions = field(
         default_factory=DfolsInterpolationOptions
     )
@@ -1767,10 +1821,23 @@ class NagDFOLS(Algorithm):
 
     """
 
-    restart_options: DfolsRestartOptions = field(default_factory=DfolsRestartOptions)
-    """Options for restarting the optimization instead of stopping.
+    restarts: bool | DfolsRestartOptions | None = None
+    """Whether the optimization restarts instead of stopping.
 
-    An instance of :class:`DfolsRestartOptions`.
+    A restart enlarges the trust region again and continues from the best point
+    found so far. This helps for noisy functions, where the solver can get stuck
+    because of the noise. With restarts, the optimization runs until
+    ``stopping_maxfun`` is reached or until several restarts in a row did not improve
+    the result.
+
+    - ``None``: DFO-LS decides. It restarts if the function is noisy (see ``noisy``)
+      and does not restart otherwise.
+    - ``False``: No restarts.
+    - ``True``: Restarts with the default settings.
+    - An instance of :class:`DfolsRestartOptions`: Restarts with your settings.
+
+    This is ``restarts.use_restarts`` of DFO-LS. The entries of the instance are the
+    other ``restarts.*`` options.
 
     """
 
@@ -1844,8 +1911,8 @@ class NagPyBOBYQA(Algorithm):
 
     - The function is noisy, i.e. repeated evaluations at the same parameters give
       different values, for example because it contains a simulation. Derivatives
-      are then unreliable. Set ``noisy=True``; see also ``n_evals_per_point``,
-      ``noise_options`` and ``restart_options``.
+      are then unreliable. Set ``noisy=True``; see also ``n_evals_per_point``
+      and ``restarts``.
     - The function is expensive and derivatives are only available via finite
       differences.
     - The function has several local optima and you want to try to escape them
@@ -1864,11 +1931,23 @@ class NagPyBOBYQA(Algorithm):
     optimization converged when the solver cannot improve the result by steps that
     are longer than this value. The optimization also ends successfully when the
     function value reaches ``convergence_target_value``, or, for noisy functions,
-    when all compared function values are within the noise level
-    (``noise_options``). It ends without success if progress is very slow for many
-    iterations (``slow_progress_options``) or if ``stopping_maxfun`` is reached. If
-    restarts are used (``restart_options``, the default for noisy functions and with
+    when all compared function values are within the noise level (``noisy``). It
+    ends without success if progress is very slow for many iterations
+    (``slow_progress_options``) or if ``stopping_maxfun`` is reached. If restarts are
+    used (``restarts``, the default for noisy functions and with
     ``seek_global_optimum``), the solver restarts instead of stopping.
+
+    **What the result contains**
+
+    In addition to the usual entries, the result contains ``jac``, the gradient at
+    the solution. It is an estimate from the quadratic model that Py-BOBYQA fitted
+    to the evaluated points, not an exact derivative. It refers to the function that
+    is minimized (in ``maximize`` the negative of your function) and to the internal
+    parameters, i.e. after scaling and constraints were applied. The Hessian of the
+    model is not reported, because it is not a reliable estimate at the end of an
+    optimization. ``algorithm_output`` contains the number of runs (``n_runs``, more
+    than one if there were restarts) and the number of points at which the function
+    was evaluated (``n_evaluated_points``).
 
     **Options of Py-BOBYQA that are not available**
 
@@ -1949,21 +2028,26 @@ class NagPyBOBYQA(Algorithm):
     ``(len(x) + 1) * (len(x) + 2) / 2``.
 
     This is ``npt`` of Py-BOBYQA. With ``None`` Py-BOBYQA uses its default, which is
-    ``2 * len(x) + 1``, or the maximum if ``noisy`` is ``True``.
+    ``2 * len(x) + 1``, or the maximum for noisy functions (see ``noisy``).
 
     """
 
-    noisy: bool = False
-    """Whether the function is noisy.
+    noisy: bool | NagNoiseOptions = False
+    """Whether the function is noisy and, optionally, how large the noise is.
 
     A function is noisy if repeated evaluations at the same parameters give
     different values. With ``True``, Py-BOBYQA becomes more careful: it uses more
-    interpolation points, restarts instead of stopping, shrinks the trust region
-    more slowly and can stop when all compared function values are within the noise
-    level. These are the defaults of the options that say so in their description;
-    you can still set each of them.
+    interpolation points, restarts instead of stopping and shrinks the trust region
+    more slowly. These are the defaults of the options that say so in their
+    description; you can still set each of them.
 
-    This is ``objfun_has_noise`` of Py-BOBYQA, from which the default is taken.
+    If you know how large the noise is, pass an instance of
+    :class:`NagNoiseOptions` instead of ``True``. This also declares the function as
+    noisy. Py-BOBYQA can then stop (or restart) as soon as all function values it
+    compares are within the noise level.
+
+    ``True`` and an instance both set ``objfun_has_noise`` of Py-BOBYQA, from which
+    the default is taken. The entries of the instance are the ``noise.*`` options.
 
     """
 
@@ -1991,7 +2075,7 @@ class NagPyBOBYQA(Algorithm):
     With ``True``, Py-BOBYQA restarts from the best point found so far each time a
     run converged, with a larger trust region after every restart that did not
     improve the result. It stops when too many restarts did not improve the result
-    (see ``restart_options``). This is a heuristic without a guarantee to find the
+    (see ``restarts``). This is a heuristic without a guarantee to find the
     global optimum, and it costs many more function evaluations. It requires lower
     and upper bounds.
 
@@ -2050,13 +2134,6 @@ class NagPyBOBYQA(Algorithm):
 
     """
 
-    noise_options: NagNoiseOptions = field(default_factory=NagNoiseOptions)
-    """Options that describe the noise in the function.
-
-    An instance of :class:`NagNoiseOptions`.
-
-    """
-
     interpolation_options: PybobyqaInterpolationOptions = field(
         default_factory=PybobyqaInterpolationOptions
     )
@@ -2066,12 +2143,24 @@ class NagPyBOBYQA(Algorithm):
 
     """
 
-    restart_options: PybobyqaRestartOptions = field(
-        default_factory=PybobyqaRestartOptions
-    )
-    """Options for restarting the optimization instead of stopping.
+    restarts: bool | PybobyqaRestartOptions | None = None
+    """Whether the optimization restarts instead of stopping.
 
-    An instance of :class:`PybobyqaRestartOptions`.
+    A restart enlarges the trust region again and continues from the best point
+    found so far. This helps for noisy functions, where the solver can get stuck
+    because of the noise, and for escaping local optima. With restarts, the
+    optimization runs until ``stopping_maxfun`` is reached or until several restarts
+    in a row did not improve the result.
+
+    - ``None``: Py-BOBYQA decides. It restarts if the function is noisy (see
+      ``noisy``) or if ``seek_global_optimum`` is ``True`` and does not restart
+      otherwise.
+    - ``False``: No restarts.
+    - ``True``: Restarts with the default settings.
+    - An instance of :class:`PybobyqaRestartOptions`: Restarts with your settings.
+
+    This is ``restarts.use_restarts`` of Py-BOBYQA. The entries of the instance are
+    the other ``restarts.*`` options.
 
     """
 
@@ -2115,12 +2204,21 @@ def _collect_upstream_options(
     This matters beyond the value: DFO-LS only chooses some defaults itself if the
     option is not passed at all.
 
+    ``restarts`` and ``noisy`` are a boolean or an option group. The option itself
+    is passed as flag, which is True for a group. The entries are only passed for a
+    group.
+
     """
     out = {}
     for path, upstream_name in option_map.items():
-        value: Any = algo
-        for name in path.split("."):
-            value = getattr(value, name)
+        option, _, entry = path.partition(".")
+        value: Any = getattr(algo, option)
+        if entry:
+            if value is None or isinstance(value, bool):
+                continue
+            value = getattr(value, entry)
+        elif is_dataclass(value):
+            value = True
         if value is not None:
             out[upstream_name] = value
     return out
@@ -2162,6 +2260,11 @@ def _process_nag_result(
         status=int(raw_res.flag),
         n_fun_evals=int(raw_res.nf),
         n_iterations=_count_iterations(raw_res),
+        # An estimate from the last model of the solver: the Jacobian of the residuals
+        # for DFO-LS and the gradient for Py-BOBYQA. It is None if the solver stopped
+        # before it built a model. The Hessian of the Py-BOBYQA model is not reported:
+        # at the end the points are too close to each other to estimate curvature.
+        jac=raw_res.jacobian if hasattr(raw_res, "jacobian") else raw_res.gradient,
         info={"n_runs": int(raw_res.nruns), "n_evaluated_points": int(raw_res.nx)},
     )
 

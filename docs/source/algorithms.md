@@ -972,9 +972,14 @@ install each of them separately:
 - `pip install "Py-BOBYQA>=1.5.0"`
 
 Both algorithms have a few options of their own and several option groups, for example
-`restart_options`. An option group is passed as an instance of the class that is
+`trustregion_options`. An option group is passed as an instance of the class that is
 documented below the algorithm. The classes are imported from
 `optimagic.optimizers.nag_optimizers`.
+
+Two options are a switch and an option group in one: `noisy` and `restarts`. `True`
+switches the feature on with default settings, for example `noisy=True` or
+`restarts=True`. An instance of the option group switches it on with your settings, for
+example `restarts=DfolsRestartOptions(max_unsuccessful_restarts=3)`.
 
 ```{eval-rst}
 .. dropdown:: nag_dfols
@@ -998,9 +1003,8 @@ documented below the algorithm. The classes are imported from
             params=np.array([1.0, 2.0, 3.0]),
             algorithm=om.algos.nag_dfols(
                 stopping_maxfun=10_000,
-                restart_options=DfolsRestartOptions(
-                    use_restarts=True, max_unsuccessful_restarts=3
-                ),
+                noisy=True,
+                restarts=DfolsRestartOptions(max_unsuccessful_restarts=3),
             ),
         )
 
@@ -1024,9 +1028,8 @@ documented below the algorithm. The classes are imported from
             algorithm="nag_dfols",
             algo_options={
                 "stopping_maxfun": 10_000,
-                "restart_options": DfolsRestartOptions(
-                    use_restarts=True, max_unsuccessful_restarts=3
-                ),
+                "noisy": True,
+                "restarts": DfolsRestartOptions(max_unsuccessful_restarts=3),
             },
         )
 
@@ -1117,8 +1120,8 @@ documented below the algorithm. The classes are imported from
 
     **Option groups:**
 
-    The groups ``init_options``, ``trustregion_options``, ``slow_progress_options``
-    and ``noise_options`` are the same as for ``nag_dfols``: see
+    The groups of ``init_options``, ``trustregion_options``,
+    ``slow_progress_options`` and ``noisy`` are the same as for ``nag_dfols``: see
     :class:`~optimagic.optimizers.nag_optimizers.NagInitOptions`,
     :class:`~optimagic.optimizers.nag_optimizers.NagTrustregionOptions`,
     :class:`~optimagic.optimizers.nag_optimizers.NagSlowProgressOptions` and

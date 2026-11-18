@@ -262,6 +262,28 @@ def test_recommended_hessian_updates_solve_rosenbrock(hessian_update):
     aaae(res.params, np.ones(4), decimal=4)
 
 
+def test_result_reports_everything_fides_provides():
+    res = minimize_rosenbrock()
+    n_evals = len(res.history.fun)
+
+    assert res.success
+    assert "gradient norm" in res.message
+    assert res.n_iterations > 0
+    assert res.n_fun_evals == n_evals
+    assert res.n_jac_evals == n_evals
+    assert res.jac.shape == (4,)
+    assert res.hess.shape == (4, 4)
+
+
+@pytest.mark.parametrize(
+    ("options", "status"),
+    [({}, 3), ({"stopping_maxiter": 2}, -1)],
+)
+def test_status_is_the_exit_flag_of_fides(options, status):
+    res = minimize_rosenbrock(**options)
+    assert res.status == status
+
+
 def test_bfgs_approximation_is_positive_definite_and_returned():
     res = minimize_rosenbrock(hessian_update="bfgs")
     assert res.hess.shape == (4, 4)

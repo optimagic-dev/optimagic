@@ -303,8 +303,10 @@ an issue if a feature could be supported with a reasonable extension of optimagi
 - Options the library takes directly are direct options of the algorithm.
 - If the library bundles options into a group, the group becomes one option called
   `<group>_options`. Examples are the option dictionary of DFO-LS with keys such as
-  `restarts.use_restarts`, which becomes `restart_options`, or a configuration object
+  `tr_radius.gamma_dec`, which becomes `trustregion_options`, or a configuration object
   that is passed to the optimizer.
+- If a group belongs to a feature that can be switched on and off, the switch and the
+  group become one option (see [below](wrapper-standards-switch)).
 - A group that is only a miscellaneous bucket is dissolved. DFO-LS has a group
   `general.*` with three unrelated options. A `general_options` argument would tell
   users nothing, so the three are direct options.
@@ -320,23 +322,23 @@ from optimagic.optimization.algo_option_tools import option_group
 
 @option_group
 @dataclass(frozen=True)
-class RestartOptions:
-    """Options that control restarts."""
+class TrustregionOptions:
+    """Options that control how the trust region changes its size."""
 
-    use_restarts: bool | None = None
-    """Whether the optimizer restarts when it stagnates. ..."""
+    shrinking_factor: ProbabilityFloat = 0.5
+    """Factor by which the radius shrinks after an unsuccessful step. ..."""
 
-    max_unsuccessful_restarts: PositiveInt = 10
+    expansion_factor: PositiveFloat = 2.0
     """..."""
 
 
 @mark.minimizer(...)
 @dataclass(frozen=True)
 class MyAlgorithm(Algorithm):
-    restart_options: RestartOptions = field(default_factory=RestartOptions)
-    """Options that control restarts.
+    trustregion_options: TrustregionOptions = field(default_factory=TrustregionOptions)
+    """Options that control how the trust region changes its size.
 
-    An instance of :class:`RestartOptions`.
+    An instance of :class:`TrustregionOptions`.
 
     """
 ```
@@ -345,13 +347,44 @@ Users pass an instance of the class. The entries are validated when the instance
 created:
 
 ```python
-om.algos.my_algorithm(restart_options=RestartOptions(use_restarts=True))
-om.minimize(..., algo_options={"restart_options": RestartOptions(use_restarts=True)})
+om.algos.my_algorithm(trustregion_options=TrustregionOptions(shrinking_factor=0.9))
+om.minimize(
+    ...,
+    algo_options={"trustregion_options": TrustregionOptions(shrinking_factor=0.9)},
+)
 ```
 
 A dictionary with the same entries is rejected. This keeps one way of setting a group
 that editors and type checkers understand. Write each group as its own class without
 base classes: inherited attributes lose their type in the rendered documentation.
+
+(wrapper-standards-switch)=
+
+**Features that can be switched on and off:** Some libraries have a flag that switches a
+feature on and options that configure it. DFO-LS has `restarts.use_restarts` and a dozen
+more `restarts.*` options, which do nothing while the flag is off. Do not expose the
+flag and the options separately, because options that are set without the flag would
+silently do nothing. Combine them in one option that takes a boolean or the group. The
+option is named after the feature and has no `_options` suffix, and the group has no
+entry for the flag:
+
+```python
+restarts: bool | RestartOptions = False
+"""Whether the optimizer restarts when it stagnates, and how. ..."""
+```
+
+```python
+om.algos.my_algorithm(restarts=True)  # on, with all defaults, nothing to import
+om.algos.my_algorithm(restarts=RestartOptions(max_restarts=5))  # on, configured
+om.algos.my_algorithm(restarts=False)  # off
+```
+
+Passing the group always switches the feature on. This is the same pattern as `scaling`
+and `multistart` in `minimize`. Declaring the function as noisy works the same way if
+the library has options that describe the noise: `noisy=True` or
+`noisy=NoiseOptions(additive_noise_level=0.1)`. If the library switches the feature on
+by itself in some situations, add `None` as the default and state the rule in the
+docstring.
 
 If the library is configured with its own objects, for example a Hessian approximation
 or an acquisition function, accept these objects without hiding them. In addition, offer
@@ -395,7 +428,7 @@ Options that occur in many algorithms have fixed names:
 | Step quality above which the trust region grows       | `trustregion_expansion_threshold`                              |
 | Factors for shrinking and growing the trust region    | `trustregion_shrinking_factor`, `trustregion_expansion_factor` |
 | Solver of the trust-region subproblem and its options | `trustregion_subsolver`, `trustregion_subsolver_options`       |
-| Whether the function is noisy                         | `noisy`                                                        |
+| Whether the function is noisy, and how                | `noisy`                                                        |
 | Evaluations that are averaged at each point           | `n_evals_per_point`                                            |
 | Number of cores and random seed                       | `n_cores`, `seed`                                              |
 
@@ -439,6 +472,23 @@ stay switched on as a safety net. Their defaults have to be strict enough that t
 not cost accuracy. Check this by running a benchmark set at the defaults and looking at
 which criterion ends the runs and how close they get to the best known value.
 
+(wrapper-standards-result)=
+
+### The result
+
+A wrapper reports as many fields of `InternalOptimizeResult` as it can: the parameters
+and the function value, `success`, `message` and `status`, the numbers of function
+evaluations, derivative evaluations and iterations, and the derivatives at the solution
+if the library provides them. Everything else the library reports goes into `info`.
+
+- If the library does not count something, count it in the wrapper where this is
+  possible, for example by counting the calls of the function.
+- If collecting a value costs time, collect it anyway unless the cost is large compared
+  to a cheap function evaluation, and switch off the expensive parts that are not
+  needed.
+- Say in the docstring of the class if a reported derivative is an approximation.
+- A value that an existing wrapper reported is still reported after a change.
+
 (wrapper-standards-deprecations)=
 
 ### Changing an existing wrapper
@@ -458,11 +508,11 @@ DEPRECATED_OPTIONS = (
     # a new name
     DeprecatedOption("stopping_max_seconds", "stopping_maxtime", "0.7.0"),
     # moved into a group
-    DeprecatedOption("n_restarts", "restart_options.max_restarts", "0.7.0"),
+    DeprecatedOption("n_restarts", "restarts.max_restarts", "0.7.0"),
     # a value that has to be converted, or an option that is split up
     DeprecatedOption(
         "reset_type",
-        lambda value: {"restart_options.use_soft_restarts": value == "soft"},
+        lambda value, options: {"restarts.use_soft_restarts": value == "soft"},
         "0.7.0",
     ),
 )
@@ -479,16 +529,18 @@ in `with_option` and in `algo_options`. They do not appear in the signature or i
 documentation. Combining an old name with the option or the group that replaces it
 raises an error.
 
+A function that converts a value is called with the old value and with all options that
+were passed in the same call. Use the second argument if the old option only had an
+effect together with another one. An old option that moves into an option of the form
+`bool | <group>` switches the feature on. To switch it off, let the function return the
+option itself, for example `{"restarts": False}`.
+
 **Changed defaults:** Give the option the default `None` for one release and resolve it
 with `resolve_changed_default` when the optimization starts. Users who did not set the
 option keep the old default and get a warning that announces the new one. Do not warn in
 situations in which the option has no effect.
 
 The version in the warnings is the minor release after the one that ships the change.
-
-**The result:** What the wrapper reports in the result is part of its interface. A value
-that was reported before, for example `n_iterations`, is still reported after the
-change, even if collecting it makes the optimizer slower on cheap functions.
 
 (wrapper-standards-tests)=
 
@@ -509,8 +561,9 @@ $ pixi run tests -m fides_wrappers    # one library
 $ pixi run tests -m wrappers          # all libraries
 ```
 
-They also run in the `wrapper-tests` workflow: on pull requests that touch wrappers and
-once a month against the newest releases of the wrapped libraries. The wrapper tests
+They are not part of the tests that run for every pull request, so run them locally when
+you change a wrapper. The `wrapper-tests` workflow runs them once a month against the
+newest releases of the wrapped libraries and can be started by hand. The wrapper tests
 consist of:
 
 - **Contract tests** that detect changes in the library. They compare the options the

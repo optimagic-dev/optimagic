@@ -446,7 +446,7 @@ pytest-xdist = ">=3.2"
 tests = { cmd = "pytest", description = "Run the full test suite" }
 tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
 tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src --cov=tests", description = "Run tests with XML coverage report for source and test code" }
-tests-wrappers = { cmd = "pytest -m wrappers --cov-report=xml --cov=src --cov=tests", description = "Run the wrapper tests of all wrapped optimizer libraries" }
+tests-wrappers = { cmd = "pytest -m wrappers", description = "Run the wrapper tests of all wrapped optimizer libraries" }
 
 # --- Feature: type-checking (ty + type stubs) --------------------------------------
 [tool.pixi.feature.type-checking.dependencies]

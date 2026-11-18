@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, TypeAlias
 
 import numpy as np
 from annotated_types import Ge, Gt, Lt
@@ -455,8 +455,17 @@ class Fides(Algorithm):
             # warn about.
             options["stepback_strategy"] = "reflect"
 
+        n_evals = 0
+
+        def fun_and_jac(x: NDArray[np.float64]) -> Any:
+            # fides does not count its evaluations. It always evaluates the function
+            # and the gradient together.
+            nonlocal n_evals
+            n_evals += 1
+            return problem.fun_and_jac(x)
+
         opt = Optimizer(
-            fun=cast(Callable[..., Any], problem.fun_and_jac),
+            fun=fun_and_jac,
             lb=lower,
             ub=upper,
             verbose=logging.ERROR,
@@ -474,6 +483,9 @@ class Fides(Algorithm):
             hess=hess,
             success=opt.converged,
             message=FIDES_EXIT_MESSAGES.get(opt.exitflag.name),
+            status=int(opt.exitflag.value),
+            n_fun_evals=n_evals,
+            n_jac_evals=n_evals,
             n_iterations=opt.iteration,
         )
 

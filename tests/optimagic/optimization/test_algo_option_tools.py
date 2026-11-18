@@ -25,20 +25,40 @@ class RestartOptions:
     max_restarts: PositiveInt = 10
 
 
-def _translate_old_restarts(value):
+def _translate_old_restarts(value, options):
     return {
         "restart_options.use_restarts": value["on"],
         "restart_options.max_restarts": value["n"],
     }
 
 
+@option_group
+@dataclass(frozen=True)
+class NoiseOptions:
+    noise_level: float | None = None
+    scale_factor: float = 1.0
+
+
+def _translate_old_noise_level(value, options):
+    # A noise level used to be the only way to declare the function as noisy.
+    return {"noisy.noise_level": value} if value else {"noisy": False}
+
+
+def _translate_old_noise_scale(value, options):
+    # The scale only ever had an effect together with a noise level.
+    return {"noisy.scale_factor": value} if options.get("old_noise_level") else {}
+
+
 DEPRECATED = (
     DeprecatedOption("old_maxiter", "stopping_maxiter", removed_in="9.9.0"),
     DeprecatedOption("n_restarts", "restart_options.max_restarts", removed_in="9.9.0"),
     DeprecatedOption("restarts", _translate_old_restarts, removed_in="9.9.0"),
-    DeprecatedOption("obsolete", lambda value: {}, removed_in="9.9.0"),
-    DeprecatedOption("fast", lambda value: {"speed": 2}, removed_in="9.9.0"),
-    DeprecatedOption("faster", lambda value: {"speed": 3}, removed_in="9.9.0"),
+    DeprecatedOption("obsolete", lambda value, options: {}, removed_in="9.9.0"),
+    DeprecatedOption("fast", lambda value, options: {"speed": 2}, removed_in="9.9.0"),
+    DeprecatedOption("faster", lambda value, options: {"speed": 3}, removed_in="9.9.0"),
+    DeprecatedOption("old_noise_level", _translate_old_noise_level, removed_in="9.9.0"),
+    DeprecatedOption("old_noise_scale", _translate_old_noise_scale, removed_in="9.9.0"),
+    DeprecatedOption("not_noisy", lambda value, options: {"noisy": False}, "9.9.0"),
 )
 
 
@@ -62,6 +82,7 @@ class Dummy(Algorithm):
     stopping_maxiter: PositiveInt = 100
     speed: int = 1
     restart_options: RestartOptions = field(default_factory=RestartOptions)
+    noisy: bool | NoiseOptions = False
 
     def _solve_internal_problem(self, problem, x0):
         return InternalOptimizeResult(x=x0, fun=problem.fun(x0))
@@ -189,7 +210,7 @@ def test_converter_can_set_several_options():
 
 
 def test_option_without_replacement():
-    with pytest.warns(FutureWarning, match="has no effect anymore"):
+    with pytest.warns(FutureWarning, match="The value you passed has no effect"):
         algo = make_dummy(obsolete=1)
     assert algo == Dummy()
 
@@ -231,10 +252,79 @@ def test_agreeing_deprecated_options_are_accepted():
 
 
 @pytest.mark.filterwarnings("ignore::FutureWarning")
-def test_converted_option_accepts_the_same_explicit_value_of_its_side_effect():
-    assert make_dummy(fast=True, speed=2).speed == 2
+def test_converted_option_cannot_be_combined_with_its_target():
     with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
-        make_dummy(fast=True, speed=5)
+        make_dummy(fast=True, speed=2)
+
+
+# ======================================================================================
+# deprecated options that move into an option that is a boolean or an option group
+# ======================================================================================
+
+
+@pytest.mark.parametrize("noisy", [True, False, NoiseOptions(scale_factor=2.0)])
+def test_boolean_or_option_group_is_accepted(noisy):
+    assert Dummy(noisy=noisy).noisy == noisy
+
+
+def test_dictionary_is_rejected_for_boolean_or_option_group():
+    with pytest.raises(InvalidAlgoOptionError, match="noisy"):
+        make_dummy(noisy={"scale_factor": 2.0})
+
+
+def test_entry_of_deprecated_option_switches_the_feature_on():
+    new_spelling = r"noisy=NoiseOptions\(noise_level=0.1\)"
+    with pytest.warns(FutureWarning, match=new_spelling):
+        algo = make_dummy(old_noise_level=0.1)
+    assert algo.noisy == NoiseOptions(noise_level=0.1)
+
+
+@pytest.mark.parametrize("noisy", [True, False])
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_entry_of_deprecated_option_replaces_boolean_of_configured_algorithm(noisy):
+    algo = Dummy(noisy=noisy).with_option(old_noise_level=0.1)
+    assert algo.noisy == NoiseOptions(noise_level=0.1)
+
+
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_entry_of_deprecated_option_keeps_entries_of_configured_algorithm():
+    algo = Dummy(noisy=NoiseOptions(scale_factor=2.0)).with_option(old_noise_level=0.1)
+    assert algo.noisy == NoiseOptions(noise_level=0.1, scale_factor=2.0)
+
+
+def test_deprecated_option_can_switch_the_feature_off():
+    with pytest.warns(FutureWarning, match="Use `noisy=False` instead"):
+        algo = make_dummy(old_noise_level=None)
+    assert algo.noisy is False
+
+
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_converter_can_depend_on_other_options():
+    alone = make_dummy(old_noise_scale=3.0)
+    together = make_dummy(old_noise_scale=3.0, old_noise_level=0.1)
+
+    assert alone.noisy is False
+    assert together.noisy == NoiseOptions(noise_level=0.1, scale_factor=3.0)
+
+
+@pytest.mark.parametrize("noisy", [True, NoiseOptions()])
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_deprecated_entry_cannot_be_combined_with_boolean_or_option_group(noisy):
+    with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
+        make_dummy(old_noise_level=0.1, noisy=noisy)
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"old_noise_level": 0.1, "not_noisy": True},
+        {"not_noisy": True, "old_noise_level": 0.1},
+    ],
+)
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_switching_off_contradicts_setting_an_entry(options):
+    with pytest.raises(InvalidAlgoOptionError, match="contradicts"):
+        make_dummy(**options)
 
 
 def test_unknown_option_still_raises():
