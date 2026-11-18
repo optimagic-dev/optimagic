@@ -609,6 +609,7 @@ class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
@@ -1397,6 +1398,7 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
@@ -1570,6 +1572,7 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
@@ -2061,6 +2064,7 @@ class BoundedLocalScalarAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
@@ -2672,6 +2676,7 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
     pygad: Type[Pygad] = Pygad
@@ -3190,6 +3195,7 @@ class BoundedLocalAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
@@ -3457,6 +3463,7 @@ class BoundedScalarAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
@@ -4104,6 +4111,7 @@ class BoundedAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
