@@ -1,5 +1,5 @@
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -42,6 +42,7 @@ DEPRECATED = (
 )
 
 
+@mark.deprecated_options(DEPRECATED)
 @mark.minimizer(
     name="dummy",
     solver_type=AggregationLevel.SCALAR,
@@ -55,13 +56,12 @@ DEPRECATED = (
     supports_infinite_bounds=False,
     supports_linear_constraints=False,
     supports_nonlinear_constraints=False,
-    deprecated_options=DEPRECATED,
 )
 @dataclass(frozen=True)
 class Dummy(Algorithm):
     stopping_maxiter: PositiveInt = 100
     speed: int = 1
-    restart_options: RestartOptions = RestartOptions()
+    restart_options: RestartOptions = field(default_factory=RestartOptions)
 
     def _solve_internal_problem(self, problem, x0):
         return InternalOptimizeResult(x=x0, fun=problem.fun(x0))
@@ -70,6 +70,11 @@ class Dummy(Algorithm):
 def make_dummy(**options: Any) -> Dummy:
     """Create a Dummy from options that static type checkers cannot verify."""
     return Dummy(**options)
+
+
+def make_group(**entries: Any) -> RestartOptions:
+    """Create RestartOptions from entries that static type checkers cannot verify."""
+    return RestartOptions(**entries)
 
 
 # ======================================================================================
@@ -82,9 +87,15 @@ def test_option_group_is_validated_on_creation():
         RestartOptions(max_restarts=-1)
 
 
-def test_algorithm_accepts_option_group_as_dict():
-    algo = make_dummy(restart_options={"use_restarts": True})
-    assert algo.restart_options == RestartOptions(use_restarts=True)
+def test_option_group_converts_values_like_algorithms_do():
+    group = make_group(max_restarts=3.0)
+    assert group.max_restarts == 3
+    assert isinstance(group.max_restarts, int)
+
+
+def test_option_group_rejects_unknown_entries():
+    with pytest.raises(InvalidAlgoOptionError, match="unknown"):
+        make_group(unknown=1)
 
 
 def test_algorithm_accepts_option_group_as_instance():
@@ -92,10 +103,32 @@ def test_algorithm_accepts_option_group_as_instance():
     assert make_dummy(restart_options=group).restart_options == group
 
 
-@pytest.mark.parametrize("group", [{"max_restarts": -1}, {"unknown": 1}])
-def test_invalid_option_group_dict_raises(group):
-    with pytest.raises(InvalidAlgoOptionError, match="dummy"):
+@pytest.mark.parametrize("group", [{"use_restarts": True}, {}, None, 1])
+def test_algorithm_rejects_everything_but_instances_of_the_option_group(group):
+    with pytest.raises(InvalidAlgoOptionError, match="instance of RestartOptions"):
         make_dummy(restart_options=group)
+    with pytest.raises(InvalidAlgoOptionError, match="instance of RestartOptions"):
+        Dummy().with_option(restart_options=group)
+
+
+def test_option_group_is_rejected_as_dict_in_algo_options():
+    with pytest.raises(InvalidAlgoOptionError, match="instance of RestartOptions"):
+        om.minimize(
+            lambda x: x @ x,
+            np.arange(3.0),
+            algorithm=Dummy,
+            algo_options={"restart_options": {"use_restarts": True}},
+        )
+
+
+def test_deprecated_options_decorator_has_to_be_placed_above_minimizer():
+    @dataclass(frozen=True)
+    class Unmarked(Algorithm):
+        def _solve_internal_problem(self, problem, x0):
+            return InternalOptimizeResult(x=x0, fun=problem.fun(x0))
+
+    with pytest.raises(TypeError, match="above the `mark.minimizer` decorator"):
+        mark.deprecated_options(DEPRECATED)(Unmarked)
 
 
 # ======================================================================================
@@ -133,26 +166,24 @@ def test_renamed_option_in_algo_options():
 
 
 def test_option_moved_into_group():
-    with pytest.warns(FutureWarning, match=r"restart_options=\{'max_restarts': 3\}"):
+    with pytest.warns(
+        FutureWarning, match=r"restart_options=RestartOptions\(max_restarts=3\)"
+    ):
         algo = make_dummy(n_restarts=3)
     assert algo.restart_options == RestartOptions(max_restarts=3)
 
 
 def test_option_moved_into_group_keeps_other_entries_of_configured_algorithm():
-    algo = make_dummy(restart_options={"use_restarts": True})
+    algo = Dummy(restart_options=RestartOptions(use_restarts=True))
     with pytest.warns(FutureWarning):
         algo = algo.with_option(n_restarts=3)
     assert algo.restart_options == RestartOptions(use_restarts=True, max_restarts=3)
 
 
-def test_option_moved_into_group_is_merged_with_new_group_dict():
-    with pytest.warns(FutureWarning):
-        algo = make_dummy(n_restarts=3, restart_options={"use_restarts": True})
-    assert algo.restart_options == RestartOptions(use_restarts=True, max_restarts=3)
-
-
 def test_converter_can_set_several_options():
-    with pytest.warns(FutureWarning, match="'use_restarts': True, 'max_restarts': 4"):
+    with pytest.warns(
+        FutureWarning, match=r"RestartOptions\(use_restarts=True, max_restarts=4\)"
+    ):
         algo = make_dummy(restarts={"on": True, "n": 4})
     assert algo.restart_options == RestartOptions(use_restarts=True, max_restarts=4)
 
@@ -166,21 +197,23 @@ def test_option_without_replacement():
 def test_new_spelling_does_not_warn():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        make_dummy(stopping_maxiter=5).with_option(restart_options={"max_restarts": 2})
+        algo = Dummy(stopping_maxiter=5)
+        algo.with_option(restart_options=RestartOptions(max_restarts=2))
 
 
 @pytest.mark.parametrize(
     "options",
     [
         {"old_maxiter": 5, "stopping_maxiter": 6},
-        {"n_restarts": 3, "restart_options": {"max_restarts": 4}},
-        {"n_restarts": 3, "restart_options": RestartOptions()},
+        {"n_restarts": 3, "restart_options": RestartOptions(use_restarts=True)},
     ],
 )
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_old_and_new_spelling_together_raise(options):
     with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
         make_dummy(**options)
+    with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
+        Dummy().with_option(**options)
 
 
 @pytest.mark.filterwarnings("ignore::FutureWarning")
@@ -214,7 +247,7 @@ def test_unknown_option_still_raises():
 def test_replace_deprecated_options_does_not_change_its_input():
     options = {"old_maxiter": 5}
     with pytest.warns(FutureWarning):
-        out = replace_deprecated_options(options, DEPRECATED, "dummy")
+        out = replace_deprecated_options(options, Dummy)
     assert options == {"old_maxiter": 5}
     assert out == {"stopping_maxiter": 5}
 

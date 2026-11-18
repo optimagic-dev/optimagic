@@ -12,10 +12,11 @@ The module contains what wrappers need beyond plain dataclass fields:
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass, replace
-from typing import Any, Callable, Mapping, Sequence, TypeVar
+from dataclasses import MISSING, dataclass, replace
+from typing import Any, Callable, Mapping, TypeVar
 
 import pydantic
+from pydantic_core import core_schema
 
 from optimagic.exceptions import InvalidAlgoOptionError
 from optimagic.typing import DEFAULT_PYDANTIC_CONFIG, validated_dataclass
@@ -26,9 +27,9 @@ OptionGroupT = TypeVar("OptionGroupT")
 def option_group(cls: type[OptionGroupT]) -> type[OptionGroupT]:
     """Add validation to a frozen dataclass that bundles related algorithm options.
 
-    An algorithm field that is annotated with the decorated class accepts an instance
-    of the class or a dictionary with the same entries. Invalid entries raise an
-    ``InvalidAlgoOptionError`` when the group or the algorithm is created.
+    Invalid entries raise an ``InvalidAlgoOptionError`` when the group is created. An
+    algorithm field that is annotated with the decorated class only accepts instances
+    of the class. Dictionaries are rejected.
 
     Args:
         cls: A frozen dataclass with one attribute per option of the group.
@@ -42,9 +43,17 @@ def option_group(cls: type[OptionGroupT]) -> type[OptionGroupT]:
         msg = f"The following entries of {cls.__name__} are invalid:\n\n{e}"
         return InvalidAlgoOptionError(msg)
 
-    return validated_dataclass(config=DEFAULT_PYDANTIC_CONFIG, make_error=make_error)(
+    out = validated_dataclass(config=DEFAULT_PYDANTIC_CONFIG, make_error=make_error)(
         cls
     )
+
+    def get_schema(source: Any, handler: Any) -> core_schema.CoreSchema:
+        # Without this, pydantic would also accept a dictionary with the entries of
+        # the group wherever the group is used as a field of an algorithm.
+        return core_schema.is_instance_schema(out)
+
+    setattr(out, "__get_pydantic_core_schema__", get_schema)  # noqa: B010
+    return out
 
 
 @dataclass(frozen=True)
@@ -68,12 +77,7 @@ class DeprecatedOption:
     """The optimagic version in which the deprecated name stops working."""
 
 
-def replace_deprecated_options(
-    options: Mapping[str, Any],
-    deprecated: Sequence[DeprecatedOption],
-    algo_name: str,
-    current: Any = None,
-) -> dict[str, Any]:
+def replace_deprecated_options(options: Mapping[str, Any], algo: Any) -> dict[str, Any]:
     """Replace deprecated algorithm options by their new spelling.
 
     Every deprecated option that is found emits a ``FutureWarning`` that shows the new
@@ -81,26 +85,26 @@ def replace_deprecated_options(
 
     Args:
         options: The options as passed by the user.
-        deprecated: The deprecated options of the algorithm.
-        algo_name: The name of the algorithm. Used in warnings and error messages.
-        current: The configured algorithm the options are applied to, if there is
-            one. Entries of option groups that are not replaced keep the values they
-            have in ``current`` instead of falling back to their defaults.
+        algo: The algorithm class if the options are used to create an algorithm, or
+            the configured algorithm if the options are applied to it. With a
+            configured algorithm, entries of option groups that are not replaced keep
+            their current values instead of falling back to their defaults.
 
     Returns:
         The options with all deprecated names replaced.
 
     Raises:
-        InvalidAlgoOptionError: If a deprecated option is combined with its new
-            spelling or if two deprecated options translate to different values of
-            the same new option.
+        InvalidAlgoOptionError: If a deprecated option is combined with the option or
+            option group that replaces it, or if two deprecated options translate to
+            different values of the same new option.
 
     """
     out = dict(options)
-    present = [dep for dep in deprecated if dep.name in out]
+    present = [dep for dep in algo.__deprecated_options__ if dep.name in out]
     if not present:
         return out
 
+    algo_name = algo.name
     group_updates: dict[str, dict[str, Any]] = {}
 
     for dep in present:
@@ -110,9 +114,7 @@ def replace_deprecated_options(
         else:
             new = dep.replacement(value)
 
-        warnings.warn(
-            _deprecation_message(dep, new, algo_name), FutureWarning, stacklevel=3
-        )
+        warnings.warn(_deprecation_message(dep, new, algo), FutureWarning, stacklevel=3)
 
         for target, new_value in new.items():
             group, _, entry = target.partition(".")
@@ -129,9 +131,7 @@ def replace_deprecated_options(
                     raise _conflicting_values_error(dep.name, target, algo_name)
                 out[target] = new_value
             else:
-                if group in options and (
-                    not isinstance(options[group], Mapping) or entry in options[group]
-                ):
+                if group in options:
                     raise _mixed_spelling_error(dep.name, group, algo_name)
                 updates = group_updates.setdefault(group, {})
                 if entry in updates and not _is_same(updates[entry], new_value):
@@ -139,14 +139,19 @@ def replace_deprecated_options(
                 updates[entry] = new_value
 
     for group, updates in group_updates.items():
-        if group in options:
-            out[group] = {**options[group], **updates}
-        elif current is not None:
-            out[group] = replace(getattr(current, group), **updates)
-        else:
-            out[group] = updates
+        out[group] = replace(_get_option_group(algo, group), **updates)
 
     return out
+
+
+def _get_option_group(algo: Any, group: str) -> Any:
+    """Get the value of an option group of an algorithm or the default of a class."""
+    if not isinstance(algo, type):
+        return getattr(algo, group)
+    field = algo.__dataclass_fields__[group]
+    if field.default_factory is not MISSING:
+        return field.default_factory()
+    return field.default
 
 
 def resolve_changed_default(
@@ -189,24 +194,30 @@ def resolve_changed_default(
 
 
 def _deprecation_message(
-    dep: DeprecatedOption, new: Mapping[str, Any], algo_name: str
+    dep: DeprecatedOption, new: Mapping[str, Any], algo: Any
 ) -> str:
     msg = (
-        f"The option `{dep.name}` of the algorithm {algo_name} is deprecated and will "
+        f"The option `{dep.name}` of the algorithm {algo.name} is deprecated and will "
         f"be removed in optimagic {dep.removed_in}. "
     )
     if not new:
         return msg + "The value you passed has no effect anymore."
 
-    nested: dict[str, Any] = {}
+    flat: dict[str, Any] = {}
+    groups: dict[str, dict[str, Any]] = {}
     for target, value in new.items():
         group, _, entry = target.partition(".")
         if entry:
-            nested.setdefault(group, {})[entry] = value
+            groups.setdefault(group, {})[entry] = value
         else:
-            nested[target] = value
-    spelling = ", ".join(f"{name}={value!r}" for name, value in nested.items())
-    return msg + f"Use `{spelling}` instead."
+            flat[target] = value
+
+    parts = [f"{name}={value!r}" for name, value in flat.items()]
+    for group, entries in groups.items():
+        group_cls = type(_get_option_group(algo, group)).__name__
+        args = ", ".join(f"{name}={value!r}" for name, value in entries.items())
+        parts.append(f"{group}={group_cls}({args})")
+    return msg + f"Use `{', '.join(parts)}` instead."
 
 
 def _mixed_spelling_error(old: str, new: str, algo_name: str) -> InvalidAlgoOptionError:

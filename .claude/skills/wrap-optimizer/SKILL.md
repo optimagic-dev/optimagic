@@ -40,7 +40,8 @@ leaves a doubt, run the library directly on a small problem and look.
 passed, passed under a wrong key, typed so that they cannot be used, results read
 from the wrong field. Check whether `replace_and_warn_about_deprecated_algo_options`
 in `src/optimagic/deprecations.py` renames an option of this wrapper before it
-arrives.
+arrives. Note every value the wrapper reports in the result (success, message,
+counts of evaluations and iterations): the new wrapper has to report them too.
 
 Done when every argument of the library's entry point, every key of its option
 dictionaries and every attribute of its configuration objects has a row, and for each
@@ -92,7 +93,8 @@ defaults for the minor release after the one that ships the change (see `CHANGES
 and the latest git tag for the current version).
 
 Done when every row of the approved table is in the code under its approved name and
-default, every defect from the audit is fixed, and
+default, every defect from the audit is fixed, the result reports every value it
+reported before, and
 `pixi run tests tests/optimagic/optimization/test_many_algorithms.py -k <algorithm>`
 passes.
 

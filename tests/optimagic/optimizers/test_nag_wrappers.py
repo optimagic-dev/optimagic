@@ -16,7 +16,8 @@ Run them with ``pytest -m nag_wrappers``.
 import inspect
 import itertools
 import warnings
-from dataclasses import fields, is_dataclass
+from dataclasses import fields, is_dataclass, replace
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -36,8 +37,8 @@ from pybobyqa.params import ParameterList as PybobyqaParameterList  # noqa: E402
 
 pytestmark = pytest.mark.nag_wrappers
 
-# Typed as Any because the tests pass option groups as dictionaries and use
-# deprecated options, which is valid at runtime but not for type checkers.
+# Typed as Any because the tests use deprecated options and build options from
+# tables, which type checkers cannot verify.
 ALGORITHMS: dict[str, Any] = {"nag_dfols": NagDFOLS, "nag_pybobyqa": NagPyBOBYQA}
 UPSTREAM = {"nag_dfols": dfols, "nag_pybobyqa": pybobyqa}
 
@@ -127,7 +128,35 @@ def _as_fun(residuals, algo_name, noise_scale=0.0, seed=0):
     return _scalar
 
 
-def _nest(options):
+def _group(algo_name, option, **entries):
+    """Create an option group of an algorithm, e.g. its ``restart_options``.
+
+    The classes of some groups differ between the algorithms. Therefore, the class is
+    taken from the default value of the option.
+
+    """
+    group_cls = type(getattr(ALGORITHMS[algo_name](), option))
+    return group_cls(**entries)
+
+
+def _with_groups(algo_name, options):
+    """Replace dictionaries with the entries of option groups by the groups.
+
+    The tables in this module spell option groups as dictionaries of their entries,
+    because the class of a group depends on the algorithm. Algorithms only accept
+    instances of the group classes.
+
+    """
+    defaults = ALGORITHMS[algo_name]()
+    return {
+        name: _group(algo_name, name, **value)
+        if is_dataclass(getattr(defaults, name, None))
+        else value
+        for name, value in options.items()
+    }
+
+
+def _nest(algo_name, options):
     """Convert {"group.entry": value} to keyword arguments of the algorithm."""
     out = {}
     for path, value in options.items():
@@ -136,7 +165,7 @@ def _nest(options):
             out.setdefault(group, {})[entry] = value
         else:
             out[path] = value
-    return out
+    return _with_groups(algo_name, out)
 
 
 def _get(obj, path):
@@ -189,6 +218,21 @@ def solve_calls(monkeypatch):
 
         monkeypatch.setattr(module, "solve", spy)
     return calls
+
+
+@pytest.fixture()
+def raw_results(monkeypatch):
+    """Record the result objects that the upstream solvers return."""
+    results = {}
+    for name, module in UPSTREAM.items():
+        original = module.solve
+
+        def spy(*args, _original=original, _name=name, **kwargs):
+            results[_name] = _original(*args, **kwargs)
+            return results[_name]
+
+        monkeypatch.setattr(module, "solve", spy)
+    return results
 
 
 # ======================================================================================
@@ -308,8 +352,18 @@ def test_unsupported_arguments_have_the_values_the_wrapper_relies_on(algo_name):
     assert signature.parameters["scaling_within_bounds"].default is False
     assert signature.parameters["projections"].default in (None, [])
     for params in _upstream_parameter_lists(algo_name):
-        assert params["logging.save_diagnostic_info"] is False
         assert params["init.run_in_parallel"] is False
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_diagnostic_options_set_by_the_wrapper_exist_upstream(algo_name):
+    # The wrapper sets them to count iterations, so users cannot set them.
+    assert set(nag._DIAGNOSTIC_OPTIONS) <= set(UNSUPPORTED_ADVANCED_OPTIONS[algo_name])
+    for params in _upstream_parameter_lists(algo_name):
+        assert set(nag._DIAGNOSTIC_OPTIONS) <= set(params)
+        # Not saving the diagnostic information is the default of the solvers. The
+        # result then has no diagnostic information at all.
+        assert params["logging.save_diagnostic_info"] is False
 
 
 # ======================================================================================
@@ -433,7 +487,7 @@ def test_option_is_forwarded_to_solver(algo_name, path, value, solve_calls):
         om.minimize(
             fun,
             START,
-            algorithm=ALGORITHMS[algo_name](**_nest(options)),
+            algorithm=ALGORITHMS[algo_name](**_nest(algo_name, options)),
             bounds=om.Bounds(lower=np.full(3, -10.0), upper=np.full(3, 10.0)),
         )
 
@@ -467,7 +521,22 @@ def test_wrapper_switches_off_upstream_logging_and_scaling(algo_name, solve_call
     assert call["do_logging"] is False
     assert call["print_progress"] is False
     assert call["scaling_within_bounds"] is False
-    assert not any(key.startswith("logging.") for key in call["user_params"])
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_wrapper_only_requests_the_diagnostics_it_needs(algo_name, solve_calls):
+    _minimize(algo_name)
+    user_params = solve_calls[algo_name]["user_params"]
+    logging_options = {
+        key: value for key, value in user_params.items() if key.startswith("logging.")
+    }
+
+    # One row per iteration is needed to count iterations. The poisedness is expensive
+    # to compute and not needed.
+    assert logging_options == {
+        "logging.save_diagnostic_info": True,
+        "logging.save_poisedness": False,
+    }
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -475,8 +544,12 @@ def test_integers_are_converted_for_options_that_need_floats(algo_name, solve_ca
     # The solvers reject integers where they expect floats.
     res = _minimize(
         algo_name,
-        trustregion_options={"expansion_factor": 3},
-        restart_options={"convergence_min_radius_scale": 1},
+        trustregion_options=_group(
+            algo_name, "trustregion_options", expansion_factor=3
+        ),
+        restart_options=_group(
+            algo_name, "restart_options", convergence_min_radius_scale=1
+        ),
     )
     user_params = solve_calls[algo_name]["user_params"]
 
@@ -499,10 +572,44 @@ def test_result_at_defaults(algo_name):
     assert res.success
     assert "rho has reached rhoend" in res.message
     assert res.n_fun_evals == len(res.history.fun)
+    assert isinstance(res.n_iterations, int)
+    assert res.n_iterations > 0
     assert res.algorithm_output == {
         "n_runs": 1,
         "n_evaluated_points": res.n_fun_evals,
     }
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_n_iterations_is_the_total_over_all_runs(algo_name, raw_results):
+    res = _minimize(
+        algo_name,
+        restart_options=_group(
+            algo_name, "restart_options", use_restarts=True, max_unsuccessful_restarts=2
+        ),
+    )
+    info = raw_results[algo_name].diagnostic_info
+    rows_per_run = info.groupby("nruns").size()
+    last_iteration_per_run = info.groupby("nruns")["iter_this_run"].max()
+
+    assert res.algorithm_output["n_runs"] == len(rows_per_run) == 3
+    # The solvers number the iterations of each run from zero.
+    assert (rows_per_run == last_iteration_per_run + 1).all()
+    assert res.n_iterations == rows_per_run.sum()
+    assert res.n_iterations > rows_per_run.max()
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+@pytest.mark.filterwarnings("ignore:maxfun <= npt:RuntimeWarning")
+def test_n_iterations_is_zero_if_solver_stops_before_the_first_iteration(algo_name):
+    res = _minimize(algo_name, stopping_maxfun=2)
+
+    assert not res.success
+    assert res.n_iterations == 0
+
+
+def test_n_iterations_is_none_without_diagnostic_information():
+    assert nag._count_iterations(SimpleNamespace(diagnostic_info=None)) is None
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -515,28 +622,50 @@ def test_contradicting_growing_options_raise():
     with pytest.raises(InvalidAlgoOptionError, match="Safety step while growing"):
         _minimize(
             "nag_dfols",
-            growing_options={
-                "safety_reduce_radius": True,
-                "safety_full_geometry_step": True,
-            },
+            growing_options=nag.DfolsGrowingOptions(
+                safety_reduce_radius=True, safety_full_geometry_step=True
+            ),
         )
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_invalid_entry_of_option_group_raises(algo_name):
-    with pytest.raises(InvalidAlgoOptionError):
-        ALGORITHMS[algo_name](restart_options={"use_resets": True})
-    with pytest.raises(InvalidAlgoOptionError):
-        ALGORITHMS[algo_name](trustregion_options={"shrinking_threshold": 1.5})
+    with pytest.raises(InvalidAlgoOptionError, match="RestartOptions"):
+        _group(algo_name, "restart_options", use_resets=True)
+    with pytest.raises(InvalidAlgoOptionError, match="NagTrustregionOptions"):
+        nag.NagTrustregionOptions(shrinking_threshold=1.5)
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
-def test_option_group_can_be_passed_as_instance(algo_name):
-    group = nag.NagTrustregionOptions(expansion_factor=3.0)
-    as_instance = ALGORITHMS[algo_name](trustregion_options=group)
-    as_dict = ALGORITHMS[algo_name](trustregion_options={"expansion_factor": 3.0})
+def test_option_group_as_dictionary_is_rejected(algo_name):
+    entries = {"expansion_factor": 3.0}
+    match = "instance of NagTrustregionOptions"
 
-    assert as_instance == as_dict
+    with pytest.raises(InvalidAlgoOptionError, match=match):
+        ALGORITHMS[algo_name](trustregion_options=entries)
+    with pytest.raises(InvalidAlgoOptionError, match=match):
+        ALGORITHMS[algo_name]().with_option(trustregion_options=entries)
+    with pytest.raises(InvalidAlgoOptionError, match=match):
+        om.minimize(
+            _as_fun(_residuals, algo_name),
+            START,
+            algorithm=algo_name,
+            algo_options={"trustregion_options": entries},
+        )
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+def test_option_group_instance_works_in_algo_options(algo_name, solve_calls):
+    om.minimize(
+        _as_fun(_residuals, algo_name),
+        START,
+        algorithm=algo_name,
+        algo_options={
+            "trustregion_options": nag.NagTrustregionOptions(expansion_factor=3.0)
+        },
+    )
+
+    assert solve_calls[algo_name]["user_params"]["tr_radius.gamma_inc"] == 3.0
 
 
 # ======================================================================================
@@ -602,12 +731,16 @@ def test_slow_progress_stops_optimization(algo_name):
     default = _minimize(algo_name, **kwargs)
     impatient = _minimize(
         algo_name,
-        slow_progress_options={"threshold_for_slow": 10.0, "max_slow_iterations": 3},
+        slow_progress_options=nag.NagSlowProgressOptions(
+            threshold_for_slow=10.0, max_slow_iterations=3
+        ),
         **kwargs,
     )
     patient = _minimize(
         algo_name,
-        slow_progress_options={"threshold_for_slow": 10.0, "max_slow_iterations": 8},
+        slow_progress_options=nag.NagSlowProgressOptions(
+            threshold_for_slow=10.0, max_slow_iterations=8
+        ),
         **kwargs,
     )
 
@@ -649,14 +782,15 @@ def test_n_interpolation_points(algo_name, n_default):
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_random_initial_directions(algo_name):
     np.random.seed(0)
-    orthogonal = _minimize(algo_name, init_options={"random_initial_directions": True})
+    orthogonal = _minimize(
+        algo_name, init_options=nag.NagInitOptions(random_initial_directions=True)
+    )
     np.random.seed(0)
     not_orthogonal = _minimize(
         algo_name,
-        init_options={
-            "random_initial_directions": True,
-            "random_directions_make_orthogonal": False,
-        },
+        init_options=nag.NagInitOptions(
+            random_initial_directions=True, random_directions_make_orthogonal=False
+        ),
     )
 
     assert _n_leading_axis_points(orthogonal, START, radius=0.1) == 0
@@ -669,7 +803,9 @@ def test_random_initial_directions(algo_name):
 
 
 def test_growing_n_initial_directions():
-    res = _minimize("nag_dfols", growing_options={"n_initial_directions": 1})
+    res = _minimize(
+        "nag_dfols", growing_options=nag.DfolsGrowingOptions(n_initial_directions=1)
+    )
 
     assert _n_leading_axis_points(res, START, radius=0.1) == 1
     assert res.success
@@ -690,7 +826,9 @@ def test_interpolation_throw_error_on_nans():
             "nag_dfols",
             _residuals_with_nans,
             ROSENBROCK_START,
-            interpolation_options={"throw_error_on_nans": True},
+            interpolation_options=nag.DfolsInterpolationOptions(
+                throw_error_on_nans=True
+            ),
         )
 
 
@@ -753,13 +891,23 @@ def test_quit_on_noise_level(algo_name, level):
         "noise_scale": 0.01,
         "noisy": True,
         "stopping_maxfun": 300,
-        "restart_options": {"use_restarts": False},
+        "restart_options": _group(algo_name, "restart_options", use_restarts=False),
     }
+
+    def _noise_options(**entries):
+        return _group(algo_name, "noise_options", **entries)
+
     unknown_level = _minimize(algo_name, **kwargs)
-    large_level = _minimize(algo_name, noise_options={level: 5.0}, **kwargs)
-    tiny_level = _minimize(algo_name, noise_options={level: 1e-12}, **kwargs)
+    large_level = _minimize(
+        algo_name, noise_options=_noise_options(**{level: 5.0}), **kwargs
+    )
+    tiny_level = _minimize(
+        algo_name, noise_options=_noise_options(**{level: 1e-12}), **kwargs
+    )
     switched_off = _minimize(
-        algo_name, noise_options={level: 5.0, "quit_on_noise_level": False}, **kwargs
+        algo_name,
+        noise_options=_noise_options(**{level: 5.0}, quit_on_noise_level=False),
+        **kwargs,
     )
 
     assert large_level.success
@@ -776,10 +924,9 @@ def test_only_one_noise_level_can_be_set(algo_name):
         _minimize(
             algo_name,
             noisy=True,
-            noise_options={
-                "additive_noise_level": 0.1,
-                "multiplicative_noise_level": 0.1,
-            },
+            noise_options=nag.NagNoiseOptions(
+                additive_noise_level=0.1, multiplicative_noise_level=0.1
+            ),
         )
 
 
@@ -793,7 +940,9 @@ def test_use_restarts(algo_name):
     without = _minimize(algo_name)
     with_restarts = _minimize(
         algo_name,
-        restart_options={"use_restarts": True, "max_unsuccessful_restarts": 2},
+        restart_options=_group(
+            algo_name, "restart_options", use_restarts=True, max_unsuccessful_restarts=2
+        ),
     )
 
     assert without.algorithm_output["n_runs"] == 1
@@ -819,11 +968,13 @@ def test_use_soft_restarts(algo_name):
         results[soft] = _minimize(
             algo_name,
             trustregion_initial_radius=radius,
-            restart_options={
-                "use_restarts": True,
-                "use_soft_restarts": soft,
-                "max_unsuccessful_restarts": 2,
-            },
+            restart_options=_group(
+                algo_name,
+                "restart_options",
+                use_restarts=True,
+                use_soft_restarts=soft,
+                max_unsuccessful_restarts=2,
+            ),
         )
 
     # A hard restart builds a new set of points along the axes around the best
@@ -941,7 +1092,9 @@ _OLD_MINIMUM_CHANGE_HESSIAN = (
     "trustregion_minimum_change_hession_for_underdetermined_interpolation"
 )
 
-# Each case is a tuple of old keyword arguments and their new spelling.
+# Each case is a tuple of old keyword arguments and their new spelling. In the new
+# spelling, option groups are given as dictionaries of their entries and converted
+# to the group classes of the algorithm with `_with_groups`.
 _COMMON_DEPRECATION_CASES = [
     (
         {"convergence_minimal_trustregion_radius_tolerance": 1e-5},
@@ -1160,7 +1313,7 @@ def test_deprecated_option_in_constructor(algo_name, old, new):
     with pytest.warns(FutureWarning) as record:
         algo = algo_cls(**old)
 
-    assert algo == algo_cls(**new)
+    assert algo == algo_cls(**_with_groups(algo_name, new))
     messages = [str(warning.message) for warning in record]
     for name in old:
         assert any(f"`{name}` of the algorithm {algo_name}" in m for m in messages)
@@ -1171,30 +1324,54 @@ def test_deprecated_option_in_constructor(algo_name, old, new):
 def test_deprecated_option_in_with_option(algo_name, old, new):
     # Start from a configured algorithm to check that other entries are kept.
     start = ALGORITHMS[algo_name](
-        stopping_maxfun=77, restart_options={"auto_detect_history": 25}
+        stopping_maxfun=77,
+        restart_options=_group(algo_name, "restart_options", auto_detect_history=25),
     )
     with pytest.warns(FutureWarning):
         algo = start.with_option(**old)
 
-    expected = start.with_option(
-        **{
-            name: value
-            for name, value in new.items()
-            if not isinstance(value, dict) or name != "restart_options"
-        }
-    )
-    if "restart_options" in new:
-        expected = expected.with_option(
-            restart_options={"auto_detect_history": 25, **new["restart_options"]}
-        )
-    assert algo == expected
+    expected_options = {
+        name: replace(getattr(start, name), **value)
+        if is_dataclass(getattr(start, name))
+        else value
+        for name, value in new.items()
+    }
+    assert algo == start.with_option(**expected_options)
+    if "auto_detect_history" not in new.get("restart_options", {}):
+        assert algo.restart_options.auto_detect_history == 25
 
 
 @pytest.mark.parametrize(("algo_name", "old", "new"), DEPRECATION_PARAMETRIZATION)
 @pytest.mark.filterwarnings("ignore::FutureWarning")
 def test_deprecated_option_together_with_new_spelling_raises(algo_name, old, new):
     with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
-        ALGORITHMS[algo_name](**old, **new)
+        ALGORITHMS[algo_name](**old, **_with_groups(algo_name, new))
+
+
+@pytest.mark.parametrize("algo_name", ALGORITHMS)
+@pytest.mark.filterwarnings("ignore::FutureWarning")
+def test_deprecated_option_together_with_its_group_raises(algo_name):
+    # The group is an instance that has a value for every entry. It is impossible to
+    # tell which entries were set on purpose, so this also holds for other entries.
+    group = nag.NagTrustregionOptions(expansion_factor=3.0)
+    with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
+        ALGORITHMS[algo_name](
+            trustregion_threshold_successful=0.2, trustregion_options=group
+        )
+    with pytest.raises(InvalidAlgoOptionError, match="cannot be combined"):
+        ALGORITHMS[algo_name]().with_option(
+            trustregion_threshold_successful=0.2, trustregion_options=group
+        )
+
+
+@pytest.mark.parametrize(
+    ("algo_name", "group_cls"),
+    [("nag_dfols", "DfolsRestartOptions"), ("nag_pybobyqa", "PybobyqaRestartOptions")],
+)
+def test_deprecation_warning_shows_the_option_group_class(algo_name, group_cls):
+    match = rf"Use `restart_options={group_cls}\(use_soft_restarts=True\)` instead"
+    with pytest.warns(FutureWarning, match=match):
+        ALGORITHMS[algo_name](trustregion_reset_options={"reset_type": "soft"})
 
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
@@ -1271,7 +1448,7 @@ def test_deprecated_noise_level_can_be_combined_with_noisy(algo_name):
     with pytest.warns(FutureWarning):
         algo = ALGORITHMS[algo_name](noise_additive_level=0.1, noisy=True)
     assert algo == ALGORITHMS[algo_name](
-        noisy=True, noise_options={"additive_noise_level": 0.1}
+        noisy=True, noise_options=nag.NagNoiseOptions(additive_noise_level=0.1)
     )
     with (
         pytest.warns(FutureWarning),
@@ -1288,5 +1465,5 @@ def test_new_options_do_not_warn(algo_name):
             algo_name,
             noisy=True,
             stopping_maxfun=30,
-            restart_options={"use_restarts": False},
+            restart_options=_group(algo_name, "restart_options", use_restarts=False),
         )

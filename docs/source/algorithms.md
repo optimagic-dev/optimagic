@@ -972,8 +972,9 @@ install each of them separately:
 - `pip install "Py-BOBYQA>=1.5.0"`
 
 Both algorithms have a few options of their own and several option groups, for example
-`restart_options`. An option group can be passed as a dictionary or as an instance of
-the class that is documented below the algorithm.
+`restart_options`. An option group is passed as an instance of the class that is
+documented below the algorithm. The classes are imported from
+`optimagic.optimizers.nag_optimizers`.
 
 ```{eval-rst}
 .. dropdown:: nag_dfols
@@ -984,6 +985,7 @@ the class that is documented below the algorithm.
 
         import numpy as np
         import optimagic as om
+        from optimagic.optimizers.nag_optimizers import DfolsRestartOptions
 
 
         @om.mark.least_squares
@@ -996,7 +998,9 @@ the class that is documented below the algorithm.
             params=np.array([1.0, 2.0, 3.0]),
             algorithm=om.algos.nag_dfols(
                 stopping_maxfun=10_000,
-                restart_options={"use_restarts": True, "max_unsuccessful_restarts": 3},
+                restart_options=DfolsRestartOptions(
+                    use_restarts=True, max_unsuccessful_restarts=3
+                ),
             ),
         )
 
@@ -1006,6 +1010,7 @@ the class that is documented below the algorithm.
 
         import numpy as np
         import optimagic as om
+        from optimagic.optimizers.nag_optimizers import DfolsRestartOptions
 
 
         @om.mark.least_squares
@@ -1019,10 +1024,9 @@ the class that is documented below the algorithm.
             algorithm="nag_dfols",
             algo_options={
                 "stopping_maxfun": 10_000,
-                "restart_options": {
-                    "use_restarts": True,
-                    "max_unsuccessful_restarts": 3,
-                },
+                "restart_options": DfolsRestartOptions(
+                    use_restarts=True, max_unsuccessful_restarts=3
+                ),
             },
         )
 
@@ -1076,13 +1080,14 @@ the class that is documented below the algorithm.
 
         import numpy as np
         import optimagic as om
+        from optimagic.optimizers.nag_optimizers import NagTrustregionOptions
 
         om.minimize(
             fun=lambda x: x @ x,
             params=np.array([1.0, 2.0, 3.0]),
             algorithm=om.algos.nag_pybobyqa(
                 convergence_min_trustregion_radius=1e-6,
-                trustregion_options={"expansion_factor": 3.0},
+                trustregion_options=NagTrustregionOptions(expansion_factor=3.0),
             ),
         )
 
@@ -1092,6 +1097,7 @@ the class that is documented below the algorithm.
 
         import numpy as np
         import optimagic as om
+        from optimagic.optimizers.nag_optimizers import NagTrustregionOptions
 
         om.minimize(
             fun=lambda x: x @ x,
@@ -1099,7 +1105,7 @@ the class that is documented below the algorithm.
             algorithm="nag_pybobyqa",
             algo_options={
                 "convergence_min_trustregion_radius": 1e-6,
-                "trustregion_options": {"expansion_factor": 3.0},
+                "trustregion_options": NagTrustregionOptions(expansion_factor=3.0),
             },
         )
 

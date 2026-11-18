@@ -49,13 +49,12 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
 - {gh}`746` Fixes several bugs in `nag_dfols` and `nag_pybobyqa`: `n_evals_per_point`
   (formerly `noise_n_evals_per_point`) could not be used, `n_fun_evals` counted points
   instead of evaluations or was missing, `stopping_maxfun` was ignored by
-  `nag_pybobyqa` and some options were never passed to the solvers. The solvers no
-  longer compute diagnostics in every iteration, which makes them about twice as fast
-  on cheap functions; in turn `n_iterations` is no longer reported. Options the
+  `nag_pybobyqa` and some options were never passed to the solvers. Options the
   solvers reject now raise an `InvalidAlgoOptionError` ({ghuser}`janosg`).
-- {gh}`746` Adds tools for the options of algorithm wrappers: `mark.minimizer` takes
-  `deprecated_options` to keep old option names working with a `FutureWarning`, and
-  related options can be bundled in validated option groups. Adds detailed wrapper
+- {gh}`746` Adds tools for the options of algorithm wrappers: the
+  `mark.deprecated_options` decorator keeps old option names working with a
+  `FutureWarning`, and related options can be bundled in validated option groups,
+  which are passed as instances of their class. Adds detailed wrapper
   tests that are selected with markers such as `-m fides_wrappers` and run monthly
   against the newest releases of the wrapped libraries. The guides on adding and
   documenting optimizers describe the new standards for wrappers, and a

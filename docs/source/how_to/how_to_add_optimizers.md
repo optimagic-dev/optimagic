@@ -336,23 +336,22 @@ class MyAlgorithm(Algorithm):
     restart_options: RestartOptions = field(default_factory=RestartOptions)
     """Options that control restarts.
 
-    An instance of :class:`RestartOptions` or a dictionary with the same entries.
+    An instance of :class:`RestartOptions`.
 
     """
 ```
 
-Users can then pass an instance or a dictionary. Both are validated when the algorithm
-is created:
+Users pass an instance of the class. The entries are validated when the instance is
+created:
 
 ```python
-om.minimize(..., algo_options={"restart_options": {"use_restarts": True}})
 om.algos.my_algorithm(restart_options=RestartOptions(use_restarts=True))
-om.algos.my_algorithm(restart_options={"use_restarts": True})
+om.minimize(..., algo_options={"restart_options": RestartOptions(use_restarts=True)})
 ```
 
-Static type checkers only know the annotated class, so they flag the dictionary in the
-last line although it works. Write each group as its own class without base classes:
-inherited attributes lose their type in the rendered documentation.
+A dictionary with the same entries is rejected. This keeps one way of setting a group
+that editors and type checkers understand. Write each group as its own class without
+base classes: inherited attributes lose their type in the rendered documentation.
 
 If the library is configured with its own objects, for example a Hessian approximation
 or an acquisition function, accept these objects without hiding them. In addition, offer
@@ -450,7 +449,7 @@ version the old behavior is removed. Changes are made in place; we do not add a 
 wrapper for the same algorithm under a new name.
 
 **Renamed, moved or converted options** are declared next to the algorithm and passed to
-`mark.minimizer`:
+the `mark.deprecated_options` decorator, which is placed above `mark.minimizer`:
 
 ```python
 from optimagic.optimization.algo_option_tools import DeprecatedOption
@@ -469,14 +468,16 @@ DEPRECATED_OPTIONS = (
 )
 
 
-@mark.minimizer(..., deprecated_options=DEPRECATED_OPTIONS)
+@mark.deprecated_options(DEPRECATED_OPTIONS)
+@mark.minimizer(...)
 @dataclass(frozen=True)
 class MyAlgorithm(Algorithm): ...
 ```
 
 The old names then work wherever options can be set, i.e. when the algorithm is created,
 in `with_option` and in `algo_options`. They do not appear in the signature or in the
-documentation. Combining an old name with its new spelling raises an error.
+documentation. Combining an old name with the option or the group that replaces it
+raises an error.
 
 **Changed defaults:** Give the option the default `None` for one release and resolve it
 with `resolve_changed_default` when the optimization starts. Users who did not set the
@@ -484,6 +485,10 @@ option keep the old default and get a warning that announces the new one. Do not
 situations in which the option has no effect.
 
 The version in the warnings is the minor release after the one that ships the change.
+
+**The result:** What the wrapper reports in the result is part of its interface. A value
+that was reported before, for example `n_iterations`, is still reported after the
+change, even if collecting it makes the optimizer slower on cheap functions.
 
 (wrapper-standards-tests)=
 

@@ -144,7 +144,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
     """Information about the algorithm; set by the `mark.minimizer` decorator."""
 
     __deprecated_options__: ClassVar[tuple[DeprecatedOption, ...]] = ()
-    """Old option names that still work; set by the `mark.minimizer` decorator."""
+    """Old option names that still work; set by `mark.deprecated_options`."""
 
     @abstractmethod
     def _solve_internal_problem(
@@ -154,9 +154,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
 
     def with_option(self, **kwargs: Any) -> Self:
         """Create a modified copy with the given options."""
-        kwargs = replace_deprecated_options(
-            kwargs, self.__deprecated_options__, self.name, current=self
-        )
+        kwargs = replace_deprecated_options(kwargs, self)
         valid_keys = set(self.__dataclass_fields__) - {"__algo_info__"}
         invalid = set(kwargs) - valid_keys
         if invalid:
@@ -221,9 +219,7 @@ class Algorithm(ABC, metaclass=AlgorithmMeta):
 
     def with_option_if_applicable(self, **kwargs: Any) -> Self:
         """Call with_option only with applicable keyword arguments."""
-        kwargs = replace_deprecated_options(
-            kwargs, self.__deprecated_options__, self.name, current=self
-        )
+        kwargs = replace_deprecated_options(kwargs, self)
         valid_keys = set(self.__dataclass_fields__) - {"__algo_info__"}
         invalid = set(kwargs) - valid_keys
         if invalid:
