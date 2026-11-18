@@ -1550,7 +1550,7 @@ def _int_if_not_none(value: SupportsInt | None) -> int | None:
 def _get_scipy_constraints(constraints):
     """Transform internal nonlinear constraints to scipy readable format.
 
-    This format is currently only used by scipy_trust_constr.
+    This format is used by scipy_trust_constr and scipy_differential_evolution.
 
     """
     scipy_constraints = [_internal_to_scipy_constraint(c) for c in constraints]
@@ -1558,10 +1558,16 @@ def _get_scipy_constraints(constraints):
 
 
 def _internal_to_scipy_constraint(c):
+    # Equality constraints are relaxed to |g(x)| <= tol; exact equality is never met
+    # by the population of stochastic algorithms such as differential evolution.
+    if c["type"] == "eq":
+        lower, upper = -c["tol"], c["tol"]
+    else:
+        lower, upper = 0.0, np.inf
     new_constr = NonlinearConstraint(
         fun=c["fun"],
-        lb=np.zeros(c["n_constr"]),
-        ub=np.tile(np.inf, c["n_constr"]),
+        lb=np.full(c["n_constr"], lower),
+        ub=np.full(c["n_constr"], upper),
         jac=c["jac"],
     )
     return new_constr
@@ -1889,15 +1895,11 @@ class ScipyDifferentialEvolution(Algorithm):
     comes at the cost of requiring more criterion evaluations than gradient-based
     methods. It is a good choice for global optimization of non-smooth or noisy
     problems with a moderate number of parameters. Finite bounds are required for
-    all parameters. Nonlinear inequality constraints are supported.
+    all parameters. Nonlinear equality and inequality constraints are supported;
+    equality constraints are enforced up to the constraint's ``tol``.
 
     The start values are not used by the algorithm, but they are still necessary
     for optimagic to infer the number and format of the parameters.
-
-    .. warning::
-        optimagic currently passes all nonlinear constraints to SciPy as inequality
-        constraints. An equality constraint ``g(x) = value`` is therefore only
-        enforced as ``g(x) >= value``.
 
     .. note::
         Due to optimagic's general parameter format, the SciPy arguments
@@ -2071,7 +2073,7 @@ class ScipyDifferentialEvolution(Algorithm):
     is_global=True,
     needs_jac=True,
     needs_hess=False,
-    needs_bounds=False,
+    needs_bounds=True,
     supports_parallelism=False,
     supports_bounds=True,
     supports_infinite_bounds=True,
@@ -2095,9 +2097,9 @@ class ScipySHGO(Algorithm):
     guarantees of convergence to the global minimum in finite time for Lipschitz
     smooth functions.
 
-    .. warning::
-        SciPy requires bounds for all parameters; without bounds, the optimization
-        fails. SciPy replaces infinite bounds by -1e50 and 1e50.
+    .. note::
+        Bounds are required for all parameters. SciPy replaces infinite bounds by
+        -1e50 and 1e50.
 
     .. note::
         If nonlinear constraints are used, only the local algorithms "COBYLA",
@@ -2260,11 +2262,6 @@ class ScipySHGO(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
-        if self.local_algorithm == "COBYLA":
-            nonlinear_constraints = equality_as_inequality_constraints(
-                problem.nonlinear_constraints
-            )
-
         nonlinear_constraints = vector_as_list_of_scalar_constraints(
             problem.nonlinear_constraints
         )
