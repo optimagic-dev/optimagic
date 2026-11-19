@@ -4,8 +4,6 @@ from typing import Any
 import numpy as np
 
 from optimagic import mark
-from optimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
-from optimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from optimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
@@ -133,9 +131,15 @@ def get_benchmark_problems(
 
 
 def _get_raw_problems(name):
+    # The problem sets are imported here to keep `import optimagic` fast. Importing
+    # the Cartis-Roberts problems imports numba, which takes about 0.2 seconds.
+    from optimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
+
     if name == "more_wild":
         raw_problems = MORE_WILD_PROBLEMS
     elif name == "cartis_roberts":
+        from optimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
+
         raw_problems = CARTIS_ROBERTS_PROBLEMS
     elif name == "example":
         subset = {
@@ -190,6 +194,8 @@ def _get_raw_problems(name):
             "cube_5",
             "chebyquad_10",
         }
+        from optimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
+
         raw_problems = {}
         for k, v in MORE_WILD_PROBLEMS.items():
             if k in subset_mw:

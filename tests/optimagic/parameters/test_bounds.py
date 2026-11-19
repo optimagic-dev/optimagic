@@ -39,6 +39,17 @@ def test_pre_process_bounds_none_case():
     assert pre_process_bounds(None) is None
 
 
+def test_pre_process_bounds_scipy_bounds():
+    from scipy.optimize import Bounds as ScipyBounds
+
+    got = pre_process_bounds(ScipyBounds(lb=np.array([0, 1]), ub=np.array([2, 3])))
+    assert isinstance(got, Bounds)
+    assert_array_equal(got.lower, np.array([0, 1]))
+    assert_array_equal(got.upper, np.array([2, 3]))
+    assert got.soft_lower is None
+    assert got.soft_upper is None
+
+
 def test_pre_process_bounds_sequence():
     got = pre_process_bounds([(0, 1), (None, 1)])
     expected = Bounds(lower=[0, -np.inf], upper=[1, 1])

@@ -1,7 +1,8 @@
 import numpy as np
-from scipy import stats
-from scipy.linalg import pinv
-from scipy.ndimage import convolve1d
+
+# The 0.975 quantile of the t-distribution with one degree of freedom, i.e.
+# scipy.stats.t(df=1).ppf(0.975). Hardcoded because importing scipy.stats is slow.
+T_QUANTILE = 12.706204736174694
 
 
 def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
@@ -70,6 +71,9 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
         order,
     )
 
+    # imported here to keep `import optimagic` fast
+    from scipy.ndimage import convolve1d
+
     new_sequence = convolve1d(
         input=sequence, weights=richardson_coef[::-1], axis=0, origin=num_terms // 2
     )
@@ -136,6 +140,9 @@ def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
         rows @ (exponentiation_step * cols + order)
     )
 
+    # imported here to keep `import optimagic` fast
+    from scipy.linalg import pinv
+
     coef = pinv(coef_mat)[0]
     return coef
 
@@ -161,11 +168,10 @@ def _estimate_error(new_seq, old_seq, richardson_coef):
 
     """
     eps = np.finfo(float).eps
-    t_quantile = stats.t(df=1).ppf(0.975)  # 12.7062047361747 in numdifftools
     new_seq_len = new_seq.shape[0]
 
     unnormalized_covariance = np.sum(richardson_coef**2)
-    fact = np.maximum(t_quantile * np.sqrt(unnormalized_covariance), eps * 10.0)
+    fact = np.maximum(T_QUANTILE * np.sqrt(unnormalized_covariance), eps * 10.0)
 
     if new_seq_len <= 1:
         delta = np.diff(old_seq, axis=0)
