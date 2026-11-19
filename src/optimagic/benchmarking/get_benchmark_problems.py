@@ -11,8 +11,8 @@ import numpy as np
 from numpy.typing import NDArray
 
 from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkFunction,
     BenchmarkProblem,
-    LeastSquaresBenchmarkFunction,
 )
 from optimagic.benchmarking.noise import (
     AdditiveBenchmarkNoise,
@@ -25,6 +25,7 @@ from optimagic.benchmarking.scaling import (
     LinspaceBenchmarkScaler,
     pre_process_scaling,
 )
+from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng
 
 BenchmarkSetName = Literal["more_wild", "cartis_roberts", "example", "estimagic"]
@@ -128,15 +129,15 @@ def get_benchmark_problems(
 
 
 @dataclass(frozen=True)
-class LeastSquaresFunctionWithSteps(LeastSquaresBenchmarkFunction):
-    """Least-squares function that is evaluated at rounded parameters.
+class BenchmarkFunctionWithSteps(BenchmarkFunction):
+    """Benchmark function that is evaluated at rounded parameters.
 
     Rounding makes the function piecewise constant. This is a problem for optimizers
     that use numerical derivatives with small step sizes.
 
     """
 
-    function: LeastSquaresBenchmarkFunction
+    function: BenchmarkFunction
     """The function that is evaluated at the rounded parameters."""
 
     decimals: int = 3
@@ -144,8 +145,12 @@ class LeastSquaresFunctionWithSteps(LeastSquaresBenchmarkFunction):
 
     differentiable = False
 
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+    def fun(self, x: NDArray[np.float64]) -> float | NDArray[np.float64]:
         return self.function.fun(x.round(self.decimals))
+
+    @property
+    def problem_type(self) -> AggregationLevel:
+        return self.function.problem_type
 
     def supports_n_params(self, n_params: int) -> bool:
         return self.function.supports_n_params(n_params)
@@ -222,9 +227,8 @@ def _get_problem_set(name: str) -> dict[str, BenchmarkProblem]:
             if k in subset_mw:
                 problems[k] = v
             if k in subset_add_steps:
-                assert isinstance(v.function, LeastSquaresBenchmarkFunction)
                 problems[f"{k}_with_steps"] = replace(
-                    v, function=LeastSquaresFunctionWithSteps(v.function)
+                    v, function=BenchmarkFunctionWithSteps(v.function)
                 )
 
         for k, v in CARTIS_ROBERTS_PROBLEMS.items():

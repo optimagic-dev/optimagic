@@ -8,7 +8,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 from optimagic import minimize
 from optimagic.benchmarking.benchmark_problem import BenchmarkProblem
 from optimagic.benchmarking.get_benchmark_problems import (
-    LeastSquaresFunctionWithSteps,
+    BenchmarkFunctionWithSteps,
     get_benchmark_problems,
 )
 from optimagic.benchmarking.more_wild import Rosenbrock
@@ -18,6 +18,7 @@ from optimagic.benchmarking.noise import (
     MultiplicativeBenchmarkNoise,
 )
 from optimagic.benchmarking.scaling import LinspaceBenchmarkScaler
+from optimagic.typing import AggregationLevel
 
 NAMES = ["more_wild", "cartis_roberts", "example", "estimagic"]
 
@@ -82,6 +83,29 @@ def test_problems_can_be_filtered_and_merged_like_dicts():
 
     merged = small | {"arglale": cartis_roberts["arglale"]}
     assert len(merged) == 6
+
+
+def test_problems_can_be_selected_by_properties():
+    problems = get_benchmark_problems("example")
+
+    # counterparts of the algorithm filters GradientBased, Global, Bounded,
+    # NonlinearConstrained and LeastSquares
+    differentiable = {k for k, p in problems.items() if p.function.differentiable}
+    assert "rosenbrock_good_start" in differentiable
+    assert "helical_valley_good_start" not in differentiable
+
+    multimodal = {k for k, p in problems.items() if p.function.multimodal}
+    assert multimodal == {"freudenstein_roth_good_start"}
+
+    convex = {k for k, p in problems.items() if p.function.convex}
+    assert convex == {"powell_singular_good_start"}
+
+    assert not any(p.has_bounds for p in problems.values())
+    assert not any(p.has_nonlinear_constraints for p in problems.values())
+    assert not any(p.function.has_jac for p in problems.values())
+    assert {p.function.problem_type for p in problems.values()} == {
+        AggregationLevel.LEAST_SQUARES
+    }
 
 
 def test_shipped_problem_sets_are_not_modified():
@@ -186,7 +210,7 @@ def test_without_seed_problems_have_no_seed():
 
 
 def test_function_with_steps():
-    function = LeastSquaresFunctionWithSteps(Rosenbrock())
+    function = BenchmarkFunctionWithSteps(Rosenbrock())
     x = np.array([0.0001, 0.0002])
     aaae(function.fun(x), Rosenbrock().fun(np.zeros(2)))
     assert not np.allclose(Rosenbrock().fun(x), Rosenbrock().fun(np.zeros(2)))
@@ -205,7 +229,7 @@ def test_estimagic_set_contains_problems_with_steps():
         "chebyquad_10_with_steps",
     }
     problem = problems["rosenbrock_good_start_with_steps"]
-    assert problem.function == LeastSquaresFunctionWithSteps(Rosenbrock())
+    assert problem.function == BenchmarkFunctionWithSteps(Rosenbrock())
     assert problem.solution is not None
     assert problem.solution.fun == 0
 

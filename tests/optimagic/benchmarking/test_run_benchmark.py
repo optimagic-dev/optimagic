@@ -8,9 +8,8 @@ from numpy.testing import assert_array_almost_equal as aaae
 import optimagic as om
 from optimagic import get_benchmark_problems
 from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkFunction,
     BenchmarkProblem,
-    LeastSquaresBenchmarkFunction,
-    ScalarBenchmarkFunction,
     aggregate_function_value,
 )
 from optimagic.benchmarking.benchmark_result import BenchmarkResult
@@ -134,7 +133,7 @@ def test_all_optimizers_see_the_same_noise():
 
 
 def test_run_benchmark_passes_bounds():
-    class LogSum(ScalarBenchmarkFunction):
+    class LogSum(BenchmarkFunction):
         def fun(self, x):
             return float(x @ x - np.log(x).sum())
 
@@ -151,32 +150,84 @@ def test_run_benchmark_passes_bounds():
     aaae(res.optimize_result.params, np.sqrt([0.5, 0.5]), decimal=4)
 
 
-def test_run_benchmark_uses_closed_form_derivatives():
-    n_jac_calls = []
+def test_run_benchmark_uses_the_derivative_for_the_solver_type():
+    requested = []
+    called = []
 
-    class Residuals(LeastSquaresBenchmarkFunction):
+    class Residuals(BenchmarkFunction):
+        @om.mark.least_squares
         def fun(self, x):
             return x - 1
 
-        def jac(self, x):
-            n_jac_calls.append(1)
-            return np.eye(len(x))
+        def jac(self, solver_type):
+            requested.append(solver_type)
+
+            def residual_jac(x):
+                called.append("least_squares")
+                return np.eye(len(x))
+
+            def gradient(x):
+                called.append("scalar")
+                return 2 * (x - 1)
+
+            if solver_type == AggregationLevel.LEAST_SQUARES:
+                return residual_jac
+            if solver_type == AggregationLevel.SCALAR:
+                return gradient
+            return None
 
     problem = BenchmarkProblem(function=Residuals(), start_params=np.zeros(3))
+
     result = run_benchmark(
         {"residuals": problem},
-        {"lbfgsb": om.algos.scipy_lbfgsb, "ls_lm": om.algos.scipy_ls_lm},
+        {"lbfgsb": om.algos.scipy_lbfgsb},
         error_handling="raise",
         batch_evaluator="threading",
     )
+    assert requested == [AggregationLevel.SCALAR]
+    assert set(called) == {"scalar"}
 
-    assert len(n_jac_calls) > 0
+    requested.clear()
+    called.clear()
+    result |= run_benchmark(
+        {"residuals": problem},
+        {"ls_lm": om.algos.scipy_ls_lm},
+        error_handling="raise",
+        batch_evaluator="threading",
+    )
+    assert requested == [AggregationLevel.LEAST_SQUARES]
+    assert set(called) == {"least_squares"}
+
     for res in result.values():
         # derivative evaluations are not part of the histories
         assert not np.isnan(res.fun_history).any()
         assert len(res.fun_history) == len(res.params_history)
         assert res.optimize_result is not None
         aaae(res.optimize_result.params, np.ones(3), decimal=5)
+
+
+def test_run_benchmark_passes_constraints():
+    class ConstrainedSphere(BenchmarkFunction):
+        def fun(self, x):
+            return float(x @ x)
+
+        def constraints(self, n_params):  # noqa: ARG002
+            return [om.NonlinearConstraint(func=lambda x: x.sum(), value=1.0)]
+
+    problem = BenchmarkProblem(
+        function=ConstrainedSphere(), start_params=np.array([1.0, 0.0])
+    )
+    assert problem.has_nonlinear_constraints
+
+    result = run_benchmark(
+        {"sphere": problem},
+        {"slsqp": om.algos.scipy_slsqp},
+        error_handling="raise",
+        batch_evaluator="threading",
+    )
+    res = result[("sphere", "slsqp")]
+    assert res.optimize_result is not None
+    aaae(res.optimize_result.params, np.array([0.5, 0.5]), decimal=4)
 
 
 def test_process_one_result_without_history_raises():

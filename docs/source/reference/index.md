@@ -199,12 +199,6 @@
     .. autoclass:: BenchmarkFunction
         :members:
 
-    .. autoclass:: ScalarBenchmarkFunction
-
-    .. autoclass:: LeastSquaresBenchmarkFunction
-
-    .. autoclass:: LikelihoodBenchmarkFunction
-
     .. autoclass:: CallableBenchmarkFunction
 
 ```

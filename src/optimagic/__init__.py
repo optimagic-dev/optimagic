@@ -7,9 +7,6 @@ from optimagic.benchmarking.benchmark_problem import (
     BenchmarkProblem,
     BenchmarkSolution,
     CallableBenchmarkFunction,
-    LeastSquaresBenchmarkFunction,
-    LikelihoodBenchmarkFunction,
-    ScalarBenchmarkFunction,
 )
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
@@ -86,9 +83,6 @@ __all__ = [
     "run_benchmark",
     "get_benchmark_problems",
     "BenchmarkFunction",
-    "ScalarBenchmarkFunction",
-    "LeastSquaresBenchmarkFunction",
-    "LikelihoodBenchmarkFunction",
     "CallableBenchmarkFunction",
     "BenchmarkProblem",
     "BenchmarkSolution",

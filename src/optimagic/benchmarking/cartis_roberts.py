@@ -29,7 +29,6 @@ from optimagic.benchmarking.benchmark_problem import (
 )
 from optimagic.config import IS_NUMBA_INSTALLED
 from optimagic.parameters.bounds import Bounds
-from optimagic.typing import AggregationLevel
 
 if IS_NUMBA_INSTALLED:
     from numba import njit
@@ -4929,9 +4928,8 @@ def _problem(
         solution_params = np.array(solution_x, dtype=np.float64)
 
     return BenchmarkProblem(
-        function=CallableBenchmarkFunction(
-            func=fun, problem_type=AggregationLevel.LEAST_SQUARES
-        ),
+        # Mark the function here because marks get lost when a function is partialled.
+        function=CallableBenchmarkFunction(func=mark.least_squares(fun)),
         start_params=np.array(start_x, dtype=np.float64),
         solution=BenchmarkSolution(
             fun=float(solution_fun), params=solution_params, exact=solution_fun == 0

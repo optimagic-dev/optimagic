@@ -31,7 +31,6 @@ from optimagic.benchmarking.benchmark_problem import (
     BenchmarkFunction,
     BenchmarkProblem,
     BenchmarkSolution,
-    LeastSquaresBenchmarkFunction,
 )
 
 
@@ -801,7 +800,7 @@ heart_eight_y_vec = np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48
 
 
 @dataclass(frozen=True)
-class LinearFullRank(LeastSquaresBenchmarkFunction):
+class LinearFullRank(BenchmarkFunction):
     """Linear function with full rank."""
 
     dim_out: int
@@ -809,7 +808,9 @@ class LinearFullRank(LeastSquaresBenchmarkFunction):
 
     differentiable = True
     convex = True
+    multimodal = False
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return linear_full_rank(x, dim_out=self.dim_out)
 
@@ -818,7 +819,7 @@ class LinearFullRank(LeastSquaresBenchmarkFunction):
 
 
 @dataclass(frozen=True)
-class LinearRankOne(LeastSquaresBenchmarkFunction):
+class LinearRankOne(BenchmarkFunction):
     """Linear function with rank one."""
 
     dim_out: int
@@ -826,7 +827,9 @@ class LinearRankOne(LeastSquaresBenchmarkFunction):
 
     differentiable = True
     convex = True
+    multimodal = False
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return linear_rank_one(x, dim_out=self.dim_out)
 
@@ -835,7 +838,7 @@ class LinearRankOne(LeastSquaresBenchmarkFunction):
 
 
 @dataclass(frozen=True)
-class LinearRankOneZeroColumnsRows(LeastSquaresBenchmarkFunction):
+class LinearRankOneZeroColumnsRows(BenchmarkFunction):
     """Linear function with rank one and zero columns and rows."""
 
     dim_out: int
@@ -843,7 +846,9 @@ class LinearRankOneZeroColumnsRows(LeastSquaresBenchmarkFunction):
 
     differentiable = True
     convex = True
+    multimodal = False
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return linear_rank_one_zero_columns_rows(x, dim_out=self.dim_out)
 
@@ -852,20 +857,22 @@ class LinearRankOneZeroColumnsRows(LeastSquaresBenchmarkFunction):
 
 
 @dataclass(frozen=True)
-class Rosenbrock(LeastSquaresBenchmarkFunction):
+class Rosenbrock(BenchmarkFunction):
     """Rosenbrock function with two parameters."""
 
     differentiable = True
     convex = False
+    multimodal = False
     min_n_params = 2
     max_n_params = 2
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return rosenbrock(x)
 
 
 @dataclass(frozen=True)
-class HelicalValley(LeastSquaresBenchmarkFunction):
+class HelicalValley(BenchmarkFunction):
     """Helical valley function."""
 
     # the first residual jumps where x[0] changes its sign and x[1] is negative
@@ -873,86 +880,97 @@ class HelicalValley(LeastSquaresBenchmarkFunction):
     min_n_params = 3
     max_n_params = 3
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return helical_valley(x)
 
 
 @dataclass(frozen=True)
-class PowellSingular(LeastSquaresBenchmarkFunction):
+class PowellSingular(BenchmarkFunction):
     """Powell singular function."""
 
     differentiable = True
     convex = True
+    multimodal = False
     min_n_params = 4
     max_n_params = 4
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return powell_singular(x)
 
 
 @dataclass(frozen=True)
-class FreudensteinRoth(LeastSquaresBenchmarkFunction):
+class FreudensteinRoth(BenchmarkFunction):
     """Freudenstein and Roth function."""
 
     differentiable = True
     convex = False
+    # has a local minimum with a function value of about 48.98 and a global minimum
+    # with a function value of zero
+    multimodal = True
     min_n_params = 2
     max_n_params = 2
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return freudenstein_roth(x)
 
 
 @dataclass(frozen=True)
-class Bard(LeastSquaresBenchmarkFunction):
+class Bard(BenchmarkFunction):
     """Bard function."""
 
     differentiable = True
     min_n_params = 3
     max_n_params = 3
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return bard(x, y=y_vec)
 
 
 @dataclass(frozen=True)
-class KowalikOsborne(LeastSquaresBenchmarkFunction):
+class KowalikOsborne(BenchmarkFunction):
     """Kowalik and Osborne function."""
 
     differentiable = True
     min_n_params = 4
     max_n_params = 4
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return kowalik_osborne(x, y1=v_vec, y2=y2_vec)
 
 
 @dataclass(frozen=True)
-class Meyer(LeastSquaresBenchmarkFunction):
+class Meyer(BenchmarkFunction):
     """Meyer function."""
 
     differentiable = True
     min_n_params = 3
     max_n_params = 3
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return meyer(x, y=y3_vec)
 
 
 @dataclass(frozen=True)
-class Watson(LeastSquaresBenchmarkFunction):
+class Watson(BenchmarkFunction):
     """Watson function."""
 
     differentiable = True
     min_n_params = 2
     max_n_params = 31
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return watson(x)
 
 
 @dataclass(frozen=True)
-class Box3D(LeastSquaresBenchmarkFunction):
+class Box3D(BenchmarkFunction):
     """Box three-dimensional function."""
 
     dim_out: int
@@ -962,12 +980,13 @@ class Box3D(LeastSquaresBenchmarkFunction):
     min_n_params = 3
     max_n_params = 3
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return box_3d(x, dim_out=self.dim_out)
 
 
 @dataclass(frozen=True)
-class JennrichSampson(LeastSquaresBenchmarkFunction):
+class JennrichSampson(BenchmarkFunction):
     """Jennrich and Sampson function."""
 
     dim_out: int
@@ -977,12 +996,13 @@ class JennrichSampson(LeastSquaresBenchmarkFunction):
     min_n_params = 2
     max_n_params = 2
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return jennrich_sampson(x, dim_out=self.dim_out)
 
 
 @dataclass(frozen=True)
-class BrownDennis(LeastSquaresBenchmarkFunction):
+class BrownDennis(BenchmarkFunction):
     """Brown and Dennis function."""
 
     dim_out: int
@@ -992,12 +1012,13 @@ class BrownDennis(LeastSquaresBenchmarkFunction):
     min_n_params = 4
     max_n_params = 4
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return brown_dennis(x, dim_out=self.dim_out)
 
 
 @dataclass(frozen=True)
-class Chebyquad(LeastSquaresBenchmarkFunction):
+class Chebyquad(BenchmarkFunction):
     """Chebyquad function."""
 
     dim_out: int
@@ -1005,6 +1026,7 @@ class Chebyquad(LeastSquaresBenchmarkFunction):
 
     differentiable = True
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return chebyquad(x, dim_out=self.dim_out)
 
@@ -1013,79 +1035,86 @@ class Chebyquad(LeastSquaresBenchmarkFunction):
 
 
 @dataclass(frozen=True)
-class BrownAlmostLinear(LeastSquaresBenchmarkFunction):
+class BrownAlmostLinear(BenchmarkFunction):
     """Brown almost-linear function."""
 
     differentiable = True
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return brown_almost_linear(x)
 
 
 @dataclass(frozen=True)
-class OsborneOne(LeastSquaresBenchmarkFunction):
+class OsborneOne(BenchmarkFunction):
     """Osborne 1 function."""
 
     differentiable = True
     min_n_params = 5
     max_n_params = 5
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return osborne_one(x, y=y4_vec)
 
 
 @dataclass(frozen=True)
-class OsborneTwo(LeastSquaresBenchmarkFunction):
+class OsborneTwo(BenchmarkFunction):
     """Osborne 2 function."""
 
     differentiable = True
     min_n_params = 11
     max_n_params = 11
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return osborne_two(x, y=y5_vec)
 
 
 @dataclass(frozen=True)
-class Bdqrtic(LeastSquaresBenchmarkFunction):
+class Bdqrtic(BenchmarkFunction):
     """Banded quartic function (BDQRTIC)."""
 
     differentiable = True
     min_n_params = 5
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return bdqrtic(x)
 
 
 @dataclass(frozen=True)
-class Cube(LeastSquaresBenchmarkFunction):
+class Cube(BenchmarkFunction):
     """Cube function."""
 
     differentiable = True
     min_n_params = 2
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return cube(x)
 
 
 @dataclass(frozen=True)
-class Mancino(LeastSquaresBenchmarkFunction):
+class Mancino(BenchmarkFunction):
     """Mancino function."""
 
     differentiable = True
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return mancino(x)
 
 
 @dataclass(frozen=True)
-class HeartEight(LeastSquaresBenchmarkFunction):
+class HeartEight(BenchmarkFunction):
     """Heart function with eight parameters."""
 
     differentiable = True
     min_n_params = 8
     max_n_params = 8
 
+    @mark.least_squares
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return heart_eight(x, y=heart_eight_y_vec)
 

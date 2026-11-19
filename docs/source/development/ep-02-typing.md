@@ -1494,7 +1494,8 @@ The implementation in version `0.6.0` follows this section with a few changes:
   benchmark function with start parameters and optionally bounds, a known solution,
   noise and scaling. The same function can be used in several problems, e.g. with good
   and bad start parameters. Functions are defined by subclassing, i.e. `fun` is a method
-  and not an attribute.
+  and not an attribute. As for `minimize`, the problem type is set with the `mark`
+  decorators.
 - The solution of a `BenchmarkProblem` is optional and states whether it is exact or
   only the best known value. Without an exact solution, plots and reports use the best
   function value any of the compared optimizers found.

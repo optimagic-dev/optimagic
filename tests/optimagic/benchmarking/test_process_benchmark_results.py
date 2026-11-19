@@ -4,9 +4,9 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 import optimagic as om
 from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkFunction,
     BenchmarkProblem,
     BenchmarkSolution,
-    ScalarBenchmarkFunction,
 )
 from optimagic.benchmarking.benchmark_result import BenchmarkResult
 from optimagic.benchmarking.process_benchmark_results import (
@@ -15,7 +15,7 @@ from optimagic.benchmarking.process_benchmark_results import (
 )
 
 
-class ShiftedSphere(ScalarBenchmarkFunction):
+class ShiftedSphere(BenchmarkFunction):
     """Sphere with minimum 1 at [1, 1, ...]."""
 
     def fun(self, x):

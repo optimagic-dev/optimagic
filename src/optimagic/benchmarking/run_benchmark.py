@@ -242,6 +242,8 @@ def _get_optimization_arguments_and_keys(
 
     for problem_name, problem in problems.items():
         for option_name, options in minimize_options.items():
+            algorithm = cast(Algorithm, options["algorithm"])
+            constraints = list(problem.constraints or ())
             kwargs = {
                 **options,
                 # Each optimization gets a new function such that all optimizers see
@@ -250,7 +252,10 @@ def _get_optimization_arguments_and_keys(
                 # The start parameters of a problem are read-only.
                 "params": problem.start_params.copy(),
                 "bounds": problem.bounds,
-                "jac": problem.jac,
+                "constraints": constraints if constraints else None,
+                # The derivative depends on the type of the optimizer, e.g. scalar
+                # optimizers need a gradient and least-squares optimizers a jacobian.
+                "jac": problem.jac(algorithm.algo_info.solver_type),
             }
             kwargs_list.append(kwargs)
             names.append((problem_name, option_name))

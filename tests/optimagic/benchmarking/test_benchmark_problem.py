@@ -6,12 +6,10 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 import optimagic as om
 from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkFunction,
     BenchmarkProblem,
     BenchmarkSolution,
     CallableBenchmarkFunction,
-    LeastSquaresBenchmarkFunction,
-    LikelihoodBenchmarkFunction,
-    ScalarBenchmarkFunction,
     aggregate_function_value,
 )
 from optimagic.benchmarking.noise import AdditiveBenchmarkNoise
@@ -19,48 +17,77 @@ from optimagic.benchmarking.scaling import LinspaceBenchmarkScaler
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 
+SCALAR = AggregationLevel.SCALAR
+LEAST_SQUARES = AggregationLevel.LEAST_SQUARES
+LIKELIHOOD = AggregationLevel.LIKELIHOOD
+
 # ======================================================================================
 # Benchmark functions used in the tests
 # ======================================================================================
 
 
-class Sphere(ScalarBenchmarkFunction):
+class Sphere(BenchmarkFunction):
     differentiable = True
     convex = True
+    multimodal = False
 
     def fun(self, x):
         return float(x @ x)
 
-    def jac(self, x):
-        return 2 * x
+    def jac(self, solver_type):
+        if solver_type != SCALAR:
+            return None
+
+        def gradient(x):
+            return 2 * x
+
+        return gradient
 
 
 @dataclass(frozen=True)
-class ShiftedResiduals(LeastSquaresBenchmarkFunction):
+class ShiftedResiduals(BenchmarkFunction):
     shift: float = 1.0
 
     min_n_params = 2
     max_n_params = 4
 
+    @om.mark.least_squares
     def fun(self, x):
         return np.append(x - self.shift, x[0] * x[1])
 
-    def jac(self, x):
-        last_row = np.zeros(len(x))
-        last_row[0] = x[1]
-        last_row[1] = x[0]
-        return np.vstack([np.eye(len(x)), last_row])
+    def jac(self, solver_type):
+        def residual_jac(x):
+            last_row = np.zeros(len(x))
+            last_row[0] = x[1]
+            last_row[1] = x[0]
+            return np.vstack([np.eye(len(x)), last_row])
+
+        def gradient(x):
+            return 2 * residual_jac(x).T @ self.fun(x)
+
+        if solver_type == LEAST_SQUARES:
+            return residual_jac
+        if solver_type == SCALAR:
+            return gradient
+        return None
 
 
-class Contributions(LikelihoodBenchmarkFunction):
+class Contributions(BenchmarkFunction):
+    @om.mark.likelihood
     def fun(self, x):
         return np.array([x[0] ** 2, x[1] ** 2 + x[0], 3.0])
 
-    def jac(self, x):
-        return np.array([[2 * x[0], 0.0], [1.0, 2 * x[1]], [0.0, 0.0]])
+    def jac(self, solver_type):
+        if solver_type != LIKELIHOOD:
+            return None
+
+        def contribution_jac(x):
+            return np.array([[2 * x[0], 0.0], [1.0, 2 * x[1]], [0.0, 0.0]])
+
+        return contribution_jac
 
 
-class EvenSphere(ScalarBenchmarkFunction):
+class EvenSphere(BenchmarkFunction):
     def fun(self, x):
         return float(x @ x)
 
@@ -68,7 +95,7 @@ class EvenSphere(ScalarBenchmarkFunction):
         return n_params % 2 == 0
 
 
-class LogSum(ScalarBenchmarkFunction):
+class LogSum(BenchmarkFunction):
     def fun(self, x):
         return float(np.log(x).sum() + x @ x)
 
@@ -76,7 +103,19 @@ class LogSum(ScalarBenchmarkFunction):
         return om.Bounds(lower=np.zeros(n_params))
 
 
-FUNCTIONS_WITH_JAC = [Sphere(), ShiftedResiduals(), Contributions()]
+def _sum_is_one(x):
+    return x.sum()
+
+
+class ConstrainedSphere(BenchmarkFunction):
+    def fun(self, x):
+        return float(x @ x)
+
+    def constraints(self, n_params):  # noqa: ARG002
+        return [om.NonlinearConstraint(func=_sum_is_one, value=1.0)]
+
+
+ALL_FUNCTIONS = [Sphere(), ShiftedResiduals(), Contributions()]
 
 
 # ======================================================================================
@@ -84,34 +123,62 @@ FUNCTIONS_WITH_JAC = [Sphere(), ShiftedResiduals(), Contributions()]
 # ======================================================================================
 
 
-def test_problem_type_is_set_by_base_classes():
-    assert Sphere().problem_type == AggregationLevel.SCALAR
-    assert ShiftedResiduals().problem_type == AggregationLevel.LEAST_SQUARES
-    assert Contributions().problem_type == AggregationLevel.LIKELIHOOD
+def test_problem_type_is_read_from_mark_of_fun():
+    assert Sphere().problem_type == SCALAR
+    assert ShiftedResiduals().problem_type == LEAST_SQUARES
+    assert Contributions().problem_type == LIKELIHOOD
 
 
 def test_default_properties_are_unknown():
     function = Contributions()
     assert function.differentiable is None
     assert function.convex is None
+    assert function.multimodal is None
     assert function.min_n_params == 1
     assert function.max_n_params is None
     assert function.bounds(3) is None
+    assert function.constraints(3) == []
 
 
 def test_properties_can_be_set_in_subclasses():
     assert Sphere().differentiable is True
     assert Sphere().convex is True
+    assert Sphere().multimodal is False
+
+
+def test_jac_is_none_by_default():
+    function = EvenSphere()
+    assert not function.has_jac
+    for solver_type in AggregationLevel:
+        assert function.jac(solver_type) is None
 
 
 def test_has_jac():
     assert Sphere().has_jac
-    assert not EvenSphere().has_jac
+    assert ShiftedResiduals().has_jac
+    assert Contributions().has_jac
 
 
-def test_jac_raises_if_not_available():
-    with pytest.raises(NotImplementedError, match="EvenSphere does not have"):
-        EvenSphere().jac(np.ones(2))
+@pytest.mark.parametrize(
+    "function, solver_type, expected",
+    [
+        (Sphere(), SCALAR, True),
+        (Sphere(), LEAST_SQUARES, False),
+        (Sphere(), LIKELIHOOD, False),
+        (ShiftedResiduals(), SCALAR, True),
+        (ShiftedResiduals(), LEAST_SQUARES, True),
+        (ShiftedResiduals(), LIKELIHOOD, False),
+        (Contributions(), SCALAR, False),
+        (Contributions(), LIKELIHOOD, True),
+    ],
+)
+def test_jac_returns_a_function_or_none_for_each_solver_type(
+    function, solver_type, expected
+):
+    derivative = function.jac(solver_type)
+    assert (derivative is not None) == expected
+    if expected:
+        assert callable(derivative)
 
 
 def test_supports_n_params_without_limits():
@@ -136,9 +203,10 @@ def test_supports_n_params_can_be_overridden():
 @pytest.mark.parametrize(
     "value, problem_type, expected",
     [
-        (3.0, AggregationLevel.SCALAR, 3.0),
-        (np.array([1.0, 2.0]), AggregationLevel.LEAST_SQUARES, 5.0),
-        (np.array([1.0, 2.0]), AggregationLevel.LIKELIHOOD, 3.0),
+        (3.0, SCALAR, 3.0),
+        (np.array([3.0]), SCALAR, 3.0),
+        (np.array([1.0, 2.0]), LEAST_SQUARES, 5.0),
+        (np.array([1.0, 2.0]), LIKELIHOOD, 3.0),
     ],
 )
 def test_aggregate_function_value(value, problem_type, expected):
@@ -147,44 +215,73 @@ def test_aggregate_function_value(value, problem_type, expected):
     assert got == expected
 
 
+def test_function_that_returns_residuals_without_mark_raises():
+    class ForgottenMark(BenchmarkFunction):
+        def fun(self, x):
+            return x - 1
+
+    problem = BenchmarkProblem(function=ForgottenMark(), start_params=np.zeros(3))
+    with pytest.raises(ValueError, match=r"mark `fun` with `om.mark.least_squares`"):
+        problem.start_fun  # noqa: B018
+
+
 # ======================================================================================
 # CallableBenchmarkFunction
 # ======================================================================================
 
 
 def test_callable_benchmark_function():
+    @om.mark.least_squares
+    def residuals(x):
+        return x - 1
+
+    @om.mark.least_squares
+    def residual_jac(x):
+        return np.eye(len(x))
+
+    def gradient(x):
+        return 2 * (x - 1)
+
     function = CallableBenchmarkFunction(
-        func=lambda x: x - 1,
-        problem_type=AggregationLevel.LEAST_SQUARES,
-        jac_func=lambda x: np.eye(len(x)),
+        func=residuals,
+        jac_funcs=[residual_jac, gradient],
         differentiable=True,
+        multimodal=False,
         min_n_params=2,
         max_n_params=3,
     )
+    assert function.problem_type == LEAST_SQUARES
     aaae(function.fun(np.array([1.0, 3.0])), np.array([0.0, 2.0]))
-    aaae(function.jac(np.array([1.0, 3.0])), np.eye(2))
     assert function.has_jac
+    assert function.jac(LEAST_SQUARES) is residual_jac
+    # functions without a mark are for scalar optimizers
+    assert function.jac(SCALAR) is gradient
+    assert function.jac(LIKELIHOOD) is None
     assert function.differentiable is True
     assert function.convex is None
+    assert function.multimodal is False
     assert function.supports_n_params(3)
     assert not function.supports_n_params(4)
 
 
-def test_callable_benchmark_function_without_jac():
-    function = CallableBenchmarkFunction(
-        func=lambda x: float(x @ x), problem_type=AggregationLevel.SCALAR
-    )
+def test_callable_benchmark_function_without_mark_is_scalar():
+    function = CallableBenchmarkFunction(func=lambda x: float(x @ x))
+    assert function.problem_type == SCALAR
     assert not function.has_jac
-    with pytest.raises(NotImplementedError):
-        function.jac(np.ones(2))
+    assert function.jac(SCALAR) is None
 
 
-def test_callable_benchmark_function_with_invalid_problem_type_raises():
-    with pytest.raises(TypeError, match="problem_type must be an AggregationLevel"):
+def test_callable_benchmark_function_with_two_jacs_for_one_solver_type_raises():
+    with pytest.raises(ValueError, match="more than one derivative"):
         CallableBenchmarkFunction(
-            func=lambda x: x,
-            problem_type="least_squares",  # ty: ignore[invalid-argument-type]
+            func=lambda x: float(x @ x),
+            jac_funcs=[lambda x: 2 * x, om.mark.scalar(lambda x: 2 * x)],
         )
+
+
+def test_callable_benchmark_function_with_invalid_func_raises():
+    with pytest.raises(TypeError, match="func must be callable"):
+        CallableBenchmarkFunction(func=1)  # ty: ignore[invalid-argument-type]
 
 
 # ======================================================================================
@@ -197,6 +294,7 @@ def test_benchmark_problem_defaults():
     assert problem.n_params == 3
     assert problem.solution is None
     assert problem.bounds is None
+    assert problem.constraints == ()
     assert problem.noise is None
     assert problem.scaler is None
     assert problem.seed is None
@@ -270,6 +368,11 @@ def test_solution_with_wrong_number_of_params_raises():
         )
 
 
+# ======================================================================================
+# BenchmarkProblem: bounds and constraints
+# ======================================================================================
+
+
 def test_bounds_default_to_bounds_of_function():
     problem = BenchmarkProblem(function=LogSum(), start_params=np.ones(3))
     assert isinstance(problem.bounds, om.Bounds)
@@ -312,19 +415,84 @@ def test_bounds_with_wrong_type_raise():
         )
 
 
+def test_has_bounds():
+    unbounded = BenchmarkProblem(function=Sphere(), start_params=np.ones(3))
+    assert not unbounded.has_bounds
+
+    infinite = BenchmarkProblem(
+        function=Sphere(),
+        start_params=np.ones(3),
+        bounds=om.Bounds(lower=np.full(3, -np.inf)),
+    )
+    assert not infinite.has_bounds
+
+    from_function = BenchmarkProblem(function=LogSum(), start_params=np.ones(3))
+    assert from_function.has_bounds
+
+    one_bound = BenchmarkProblem(
+        function=Sphere(),
+        start_params=np.ones(3),
+        bounds=om.Bounds(upper=np.array([np.inf, 5.0, np.inf])),
+    )
+    assert one_bound.has_bounds
+
+
+def test_constraints_default_to_constraints_of_function():
+    problem = BenchmarkProblem(function=ConstrainedSphere(), start_params=np.ones(3))
+    assert isinstance(problem.constraints, tuple)
+    assert len(problem.constraints) == 1
+    assert isinstance(problem.constraints[0], om.NonlinearConstraint)
+    assert problem.has_nonlinear_constraints
+
+
+def test_constraints_can_be_set_on_the_problem():
+    constraint = om.LinearConstraint(weights=np.ones(3), value=1.0)
+    problem = BenchmarkProblem(
+        function=Sphere(), start_params=np.ones(3), constraints=[constraint]
+    )
+    assert problem.constraints == (constraint,)
+    assert not problem.has_nonlinear_constraints
+
+
+def test_problem_without_constraints_has_no_nonlinear_constraints():
+    problem = BenchmarkProblem(function=Sphere(), start_params=np.ones(3))
+    assert not problem.has_nonlinear_constraints
+
+
+def test_invalid_constraints_raise():
+    with pytest.raises(TypeError, match="constraints must be optimagic constraints"):
+        BenchmarkProblem(
+            function=Sphere(),
+            start_params=np.ones(3),
+            constraints=[{"type": "fixed"}],  # ty: ignore[invalid-argument-type]
+        )
+
+
+def test_scaling_a_problem_with_constraints_raises():
+    problem = BenchmarkProblem(function=ConstrainedSphere(), start_params=np.ones(3))
+    with pytest.raises(NotImplementedError, match="constraints is not supported"):
+        problem.with_scaling(LinspaceBenchmarkScaler())
+
+
+def test_noise_keeps_constraints():
+    problem = BenchmarkProblem(function=ConstrainedSphere(), start_params=np.ones(3))
+    noisy = problem.with_noise(AdditiveBenchmarkNoise())
+    assert noisy.constraints == problem.constraints
+
+
 # ======================================================================================
 # BenchmarkProblem: functions
 # ======================================================================================
 
 
-@pytest.mark.parametrize("function", FUNCTIONS_WITH_JAC)
+@pytest.mark.parametrize("function", ALL_FUNCTIONS)
 def test_fun_is_marked_with_problem_type(function):
     problem = BenchmarkProblem(function=function, start_params=np.ones(2))
     assert infer_aggregation_level(problem.fun) == function.problem_type
     assert infer_aggregation_level(problem.noise_free_fun) == function.problem_type
 
 
-@pytest.mark.parametrize("function", FUNCTIONS_WITH_JAC)
+@pytest.mark.parametrize("function", ALL_FUNCTIONS)
 def test_fun_without_noise_and_scaling_is_the_benchmark_function(function):
     x = np.array([0.5, -2.0])
     problem = BenchmarkProblem(function=function, start_params=np.ones(2))
@@ -484,74 +652,88 @@ def test_with_scaling_with_invalid_type_raises():
 # BenchmarkProblem: derivatives
 # ======================================================================================
 
-EXPECTED_DERIVATIVE_LEVELS = {
-    AggregationLevel.SCALAR: [AggregationLevel.SCALAR],
-    AggregationLevel.LEAST_SQUARES: [
-        AggregationLevel.SCALAR,
-        AggregationLevel.LIKELIHOOD,
-        AggregationLevel.LEAST_SQUARES,
-    ],
-    AggregationLevel.LIKELIHOOD: [AggregationLevel.SCALAR, AggregationLevel.LIKELIHOOD],
-}
 
-
-def _evaluate_at_level(function, x, level):
-    """Evaluate a benchmark function as an optimizer of the given level sees it."""
+def _evaluate_for_solver_type(function, x, solver_type):
+    """Evaluate a benchmark function as an optimizer of solver_type sees it."""
     raw = function.fun(x)
-    if level == function.problem_type:
+    if solver_type == function.problem_type:
         return raw
-    if level == AggregationLevel.SCALAR:
-        return aggregate_function_value(raw, function.problem_type)
-    # least-squares function seen by a likelihood optimizer
-    return raw**2
+    return aggregate_function_value(raw, function.problem_type)
 
 
-@pytest.mark.parametrize("function", FUNCTIONS_WITH_JAC)
-def test_jac_matches_numerical_derivatives(function):
+@pytest.mark.parametrize(
+    "function, solver_type",
+    [
+        (Sphere(), SCALAR),
+        (ShiftedResiduals(), SCALAR),
+        (ShiftedResiduals(), LEAST_SQUARES),
+        (Contributions(), LIKELIHOOD),
+    ],
+)
+def test_jac_of_problem_matches_numerical_derivative(function, solver_type):
     x = np.array([0.7, -1.3])
     problem = BenchmarkProblem(function=function, start_params=np.ones(2))
 
-    derivatives = problem.jac
-    assert derivatives is not None
-    levels = [infer_aggregation_level(derivative) for derivative in derivatives]
-    assert levels == EXPECTED_DERIVATIVE_LEVELS[function.problem_type]
+    derivative = problem.jac(solver_type)
+    assert derivative is not None
+    assert infer_aggregation_level(derivative) == solver_type
 
-    for derivative, level in zip(derivatives, levels, strict=True):
-        expected = om.first_derivative(
-            lambda x, level=level: _evaluate_at_level(function, x, level), x
-        ).derivative
-        aaae(derivative(x), expected, decimal=5)
+    expected = om.first_derivative(
+        lambda x: _evaluate_for_solver_type(function, x, solver_type), x
+    ).derivative
+    aaae(derivative(x), expected, decimal=5)
 
 
-def test_jac_is_none_without_closed_form_derivative():
-    problem = BenchmarkProblem(function=EvenSphere(), start_params=np.ones(2))
-    assert problem.jac is None
-
-
-def test_jac_is_none_with_noise_or_scaling():
+def test_jac_of_problem_is_none_without_derivative_for_solver_type():
     problem = BenchmarkProblem(function=Sphere(), start_params=np.ones(2))
-    assert problem.with_noise(AdditiveBenchmarkNoise()).jac is None
-    assert problem.with_scaling(LinspaceBenchmarkScaler()).jac is None
+    assert problem.jac(LEAST_SQUARES) is None
+
+    problem = BenchmarkProblem(function=EvenSphere(), start_params=np.ones(2))
+    assert problem.jac(SCALAR) is None
 
 
-@pytest.mark.parametrize("algorithm", ["scipy_lbfgsb", "scipy_ls_lm"])
-def test_problem_can_be_passed_to_minimize(algorithm):
+def test_jac_of_problem_is_none_with_noise_or_scaling():
+    problem = BenchmarkProblem(function=Sphere(), start_params=np.ones(2))
+    assert problem.jac(SCALAR) is not None
+    assert problem.with_noise(AdditiveBenchmarkNoise()).jac(SCALAR) is None
+    assert problem.with_scaling(LinspaceBenchmarkScaler()).jac(SCALAR) is None
+
+
+def test_marking_the_jac_of_a_problem_does_not_modify_the_function():
+    def gradient(x):
+        return 2 * x
+
+    function = CallableBenchmarkFunction(
+        func=lambda x: float(x @ x), jac_funcs=[gradient]
+    )
+    problem = BenchmarkProblem(function=function, start_params=np.ones(2))
+    derivative = problem.jac(SCALAR)
+    assert derivative is not None
+    assert derivative is not gradient
+    assert not hasattr(gradient, "_problem_type")
+    aaae(derivative(np.ones(2)), 2 * np.ones(2))
+
+
+@pytest.mark.parametrize(
+    "algorithm, solver_type",
+    [("scipy_lbfgsb", SCALAR), ("scipy_ls_lm", LEAST_SQUARES)],
+)
+def test_problem_can_be_passed_to_minimize(algorithm, solver_type):
     problem = BenchmarkProblem(
         function=ShiftedResiduals(shift=2.0), start_params=np.array([3.0, 0.0])
     )
-    derivatives = problem.jac
-    assert derivatives is not None
     res = om.minimize(
         fun=problem.fun,
         params=problem.start_params,
         algorithm=algorithm,
-        jac=derivatives,
+        jac=problem.jac(solver_type),
         bounds=problem.bounds,
     )
     assert res.fun < problem.start_fun
     expected_fun = aggregate_function_value(
-        problem.function.fun(res.params), AggregationLevel.LEAST_SQUARES
+        problem.function.fun(res.params), LEAST_SQUARES
     )
     assert np.allclose(res.fun, expected_fun)
-    # the first entry of jac is the gradient of the sum of squared residuals
-    aaae(derivatives[0](res.params), np.zeros(2), decimal=4)
+    gradient = problem.jac(SCALAR)
+    assert gradient is not None
+    aaae(gradient(res.params), np.zeros(2), decimal=4)

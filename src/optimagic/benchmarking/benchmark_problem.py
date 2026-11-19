@@ -7,16 +7,16 @@ There are two levels:
   differentiability. It does not have start parameters. Example: the Rosenbrock
   function.
 - A ``BenchmarkProblem`` is one concrete test case: a ``BenchmarkFunction`` with start
-  parameters and optionally bounds, a known solution, noise and scaling. Example: the
-  Rosenbrock function with the start parameters ``[-1.2, 1]``. Several benchmark
-  problems can share the same benchmark function.
+  parameters and optionally bounds, constraints, a known solution, noise and scaling.
+  Example: the Rosenbrock function with the start parameters ``[-1.2, 1]``. Several
+  benchmark problems can share the same benchmark function.
 
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from functools import cached_property
 from typing import Any, TypeVar, cast
@@ -28,7 +28,9 @@ from typing_extensions import Self
 from optimagic import mark
 from optimagic.benchmarking.noise import BenchmarkNoise
 from optimagic.benchmarking.scaling import BenchmarkScaler
+from optimagic.constraints import Constraint, NonlinearConstraint
 from optimagic.parameters.bounds import Bounds
+from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 
 ObjectiveFunction = Callable[[NDArray[np.float64]], float | NDArray[np.float64]]
@@ -44,20 +46,19 @@ FuncT = TypeVar("FuncT")
 class BenchmarkFunction(ABC):
     """Base class for the functions that benchmark problems are built from.
 
-    To define a new function, subclass one of ``ScalarBenchmarkFunction``,
-    ``LeastSquaresBenchmarkFunction`` or ``LikelihoodBenchmarkFunction`` and implement
-    ``fun``. Parameters of a family of functions (e.g. the number of residuals) are
-    attributes of the subclass. Use ``CallableBenchmarkFunction`` to wrap an existing
-    Python function instead.
+    To define a new function, create a subclass and implement ``fun``. As for
+    ``minimize``, ``fun`` has to be marked with ``om.mark.least_squares`` or
+    ``om.mark.likelihood`` if it returns least-squares residuals or likelihood
+    contributions. Without a mark it is a scalar function.
+
+    Parameters of a family of functions (e.g. the number of residuals) are attributes
+    of the subclass. Use ``CallableBenchmarkFunction`` to wrap an existing Python
+    function instead of writing a class.
 
     A benchmark function is not tied to one number of parameters. The number of
     parameters is fixed by the start parameters of a ``BenchmarkProblem``.
 
     """
-
-    problem_type: AggregationLevel
-    """Whether ``fun`` returns a scalar, least-squares residuals or likelihood
-    contributions. Set by the base classes for the three problem types."""
 
     differentiable: bool | None = None
     """Whether the function is differentiable at every point where it is defined. None
@@ -67,6 +68,10 @@ class BenchmarkFunction(ABC):
     """Whether the function is convex. For least-squares and likelihood functions this
     refers to the sum of squared residuals or the sum of the contributions. None if this
     is not known."""
+
+    multimodal: bool | None = None
+    """Whether the function has local minima that are not global minima. Such functions
+    are test cases for global optimizers. None if this is not known."""
 
     min_n_params: int = 1
     """The smallest number of parameters the function supports."""
@@ -85,35 +90,58 @@ class BenchmarkFunction(ABC):
         Returns:
             A float for scalar functions; the residuals of shape (n_residuals,) for
             least-squares functions; the contributions of shape (n_contributions,) for
-            likelihood functions.
+            likelihood functions. Since benchmark problems are minimization problems,
+            the contributions are usually negative log-likelihood contributions.
 
         """
 
-    def jac(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Evaluate the first derivative of ``fun``.
+    @property
+    def problem_type(self) -> AggregationLevel:
+        """Whether ``fun`` returns a scalar, residuals or likelihood contributions.
 
-        Subclasses override this method if a closed form derivative is available.
+        The problem type is read from the mark of ``fun``.
+
+        """
+        return infer_aggregation_level(self.fun)
+
+    def jac(self, solver_type: AggregationLevel) -> DerivativeFunction | None:  # noqa: ARG002
+        """Get the closed form first derivative for one type of optimizer.
+
+        Optimizers of different types need different derivatives of the same function.
+        For a least-squares function, a least-squares optimizer needs the jacobian of
+        the residuals, whereas a scalar optimizer needs the gradient of the sum of
+        squared residuals.
+
+        Subclasses override this method, define the derivative function for the
+        requested solver type inside of it and return it. Return None for solver types
+        without a closed form derivative; optimizers of that type then use numerical
+        derivatives.
 
         Args:
-            x: The parameters, shape (n_params,).
+            solver_type: The type of optimizer the derivative is for.
 
         Returns:
-            The gradient of shape (n_params,) for scalar functions; the jacobian of
-            shape (n_residuals, n_params) or (n_contributions, n_params) for
-            least-squares and likelihood functions.
+            None or a function that maps parameters of shape (n_params,) to the
+            derivative: the gradient of shape (n_params,) for scalar optimizers; the
+            jacobian of the residuals of shape (n_residuals, n_params) for least-squares
+            optimizers; the jacobian of the contributions of shape (n_contributions,
+            n_params) for likelihood optimizers.
 
         """
-        raise NotImplementedError(
-            f"{type(self).__name__} does not have a closed form derivative."
-        )
+        return None
 
     @property
     def has_jac(self) -> bool:
-        """Whether a closed form derivative is available."""
-        return type(self).jac is not BenchmarkFunction.jac
+        """Whether a closed form derivative is available for any type of optimizer."""
+        return any(
+            self.jac(solver_type) is not None for solver_type in AggregationLevel
+        )
 
     def supports_n_params(self, n_params: int) -> bool:
         """Check if the function can be evaluated with n_params parameters.
+
+        A ``BenchmarkProblem`` can only be created if its function supports the number
+        of start parameters.
 
         The default implementation checks ``min_n_params`` and ``max_n_params``.
         Override it for rules that cannot be expressed by those two numbers, e.g. if
@@ -145,92 +173,39 @@ class BenchmarkFunction(ABC):
         """
         return None
 
+    def constraints(self, n_params: int) -> list[Constraint]:  # noqa: ARG002
+        """Get the constraints that are part of the function.
 
-class ScalarBenchmarkFunction(BenchmarkFunction):
-    """Base class for benchmark functions that return a scalar."""
-
-    problem_type = AggregationLevel.SCALAR
-
-    @abstractmethod
-    def fun(self, x: NDArray[np.float64]) -> float:
-        """Evaluate the function.
+        Subclasses override this method for constrained functions.
 
         Args:
-            x: The parameters, shape (n_params,).
+            n_params: The number of parameters.
 
         Returns:
-            The function value.
+            List of optimagic constraints. Empty if the function is unconstrained.
 
         """
-
-
-class LeastSquaresBenchmarkFunction(BenchmarkFunction):
-    """Base class for benchmark functions that return least-squares residuals.
-
-    The function that is minimized is the sum of the squared residuals.
-
-    """
-
-    problem_type = AggregationLevel.LEAST_SQUARES
-
-    @abstractmethod
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Evaluate the residuals.
-
-        Args:
-            x: The parameters, shape (n_params,).
-
-        Returns:
-            The residuals, shape (n_residuals,).
-
-        """
-
-
-class LikelihoodBenchmarkFunction(BenchmarkFunction):
-    """Base class for benchmark functions that return likelihood contributions.
-
-    The function that is minimized is the sum of the contributions. Since benchmark
-    problems are minimization problems, the contributions are usually negative
-    log-likelihood contributions.
-
-    """
-
-    problem_type = AggregationLevel.LIKELIHOOD
-
-    @abstractmethod
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        """Evaluate the contributions.
-
-        Args:
-            x: The parameters, shape (n_params,).
-
-        Returns:
-            The contributions, shape (n_contributions,).
-
-        """
+        return []
 
 
 @dataclass(frozen=True)
 class CallableBenchmarkFunction(BenchmarkFunction):
-    """Benchmark function that wraps an existing Python function.
+    """Benchmark function that wraps existing Python functions.
 
     This is the quickest way to turn your own objective function into a benchmark
-    function. In contrast to ``minimize``, the problem type is not inferred from the
-    ``mark`` decorators but has to be passed explicitly.
+    function. The functions are marked in the same way as for ``minimize``.
 
     """
 
     func: ObjectiveFunction
-    """The function that is wrapped. Takes parameters of shape (n_params,) and returns
-    what ``fun`` of a benchmark function with the same ``problem_type`` returns."""
+    """The function that is wrapped. Takes parameters of shape (n_params,). It has to be
+    marked with ``om.mark.least_squares`` or ``om.mark.likelihood`` if it returns
+    least-squares residuals or likelihood contributions."""
 
-    problem_type: AggregationLevel
-    """Whether ``func`` returns a scalar, least-squares residuals or likelihood
-    contributions."""
-
-    jac_func: DerivativeFunction | None = None
-    """The first derivative of ``func`` or None if there is no closed form
-    derivative."""
+    jac_funcs: Sequence[DerivativeFunction] = ()
+    """Closed form first derivatives of ``func``. Each function is marked with the type
+    of optimizer it is for (``om.mark.scalar``, ``om.mark.least_squares`` or
+    ``om.mark.likelihood``); functions without a mark are for scalar optimizers."""
 
     differentiable: bool | None = None
     """Whether the function is differentiable at every point where it is defined. None
@@ -238,6 +213,10 @@ class CallableBenchmarkFunction(BenchmarkFunction):
 
     convex: bool | None = None
     """Whether the function is convex. None if this is not known."""
+
+    multimodal: bool | None = None
+    """Whether the function has local minima that are not global minima. None if this is
+    not known."""
 
     min_n_params: int = 1
     """The smallest number of parameters the function supports."""
@@ -247,23 +226,27 @@ class CallableBenchmarkFunction(BenchmarkFunction):
     limit."""
 
     def __post_init__(self) -> None:
-        if not isinstance(self.problem_type, AggregationLevel):
-            raise TypeError(
-                "problem_type must be an AggregationLevel, not "
-                f"{type(self.problem_type)}."
+        if not callable(self.func):
+            raise TypeError(f"func must be callable, not {type(self.func)}.")
+        solver_types = [infer_aggregation_level(func) for func in self.jac_funcs]
+        if len(set(solver_types)) < len(solver_types):
+            raise ValueError(
+                "jac_funcs contains more than one derivative for the same type of "
+                "optimizer."
             )
 
     def fun(self, x: NDArray[np.float64]) -> float | NDArray[np.float64]:
         return self.func(x)
 
-    def jac(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        if self.jac_func is None:
-            return super().jac(x)
-        return self.jac_func(x)
-
     @property
-    def has_jac(self) -> bool:
-        return self.jac_func is not None
+    def problem_type(self) -> AggregationLevel:
+        return infer_aggregation_level(self.func)
+
+    def jac(self, solver_type: AggregationLevel) -> DerivativeFunction | None:
+        for func in self.jac_funcs:
+            if infer_aggregation_level(func) == solver_type:
+                return func
+        return None
 
 
 def aggregate_function_value(
@@ -279,9 +262,19 @@ def aggregate_function_value(
         The value itself for scalar functions; the sum of squared residuals for
         least-squares functions; the sum of the contributions for likelihood functions.
 
+    Raises:
+        ValueError: If a scalar function returned an array with more than one entry.
+
     """
     if problem_type == AggregationLevel.SCALAR:
-        return float(value)
+        if np.size(value) != 1:
+            raise ValueError(
+                "A scalar benchmark function returned an array with "
+                f"{np.size(value)} entries. If the function returns least-squares "
+                "residuals or likelihood contributions, mark `fun` with "
+                "`om.mark.least_squares` or `om.mark.likelihood`."
+            )
+        return float(np.asarray(value, dtype=np.float64).reshape(-1)[0])
     arr = np.asarray(value, dtype=np.float64)
     if problem_type == AggregationLevel.LEAST_SQUARES:
         return float(arr @ arr)
@@ -344,6 +337,10 @@ class BenchmarkProblem:
     If None, the bounds outside of which the function cannot be evaluated are used (see
     ``BenchmarkFunction.bounds``)."""
 
+    constraints: Sequence[Constraint] | None = None
+    """The constraints that are passed to the optimizer. If None, the constraints of
+    the function are used (see ``BenchmarkFunction.constraints``). Stored as tuple."""
+
     noise: BenchmarkNoise | None = None
     """The noise that is added to each function evaluation or None for no noise."""
 
@@ -401,10 +398,38 @@ class BenchmarkProblem:
                 bounds=self.bounds, function_bounds=function_bounds, n_params=n_params
             )
 
+        if self.constraints is None:
+            constraints = tuple(self.function.constraints(n_params))
+        else:
+            constraints = tuple(self.constraints)
+        for constraint in constraints:
+            if not isinstance(constraint, Constraint):
+                raise TypeError(
+                    "constraints must be optimagic constraints, not "
+                    f"{type(constraint)}."
+                )
+        if constraints and self.scaler is not None:
+            raise NotImplementedError(
+                "Scaling of benchmark problems with constraints is not supported yet."
+            )
+        object.__setattr__(self, "constraints", constraints)
+
     @property
     def n_params(self) -> int:
         """The number of parameters of the problem."""
         return len(self.start_params)
+
+    @property
+    def has_bounds(self) -> bool:
+        """Whether at least one parameter has a finite lower or upper bound."""
+        lower, upper = _get_bound_arrays(self.bounds, self.n_params)
+        return bool(np.isfinite(lower).any() or np.isfinite(upper).any())
+
+    @property
+    def has_nonlinear_constraints(self) -> bool:
+        """Whether the problem has nonlinear constraints."""
+        constraints = self.constraints or ()
+        return any(isinstance(c, NonlinearConstraint) for c in constraints)
 
     @property
     def fun(self) -> ObjectiveFunction:
@@ -429,27 +454,25 @@ class BenchmarkProblem:
         )
         return _mark_problem_type(func, self.function.problem_type)
 
-    @property
-    def jac(self) -> list[DerivativeFunction] | None:
-        """Closed form derivatives of ``fun`` that can be passed to ``minimize``.
+    def jac(self, solver_type: AggregationLevel) -> DerivativeFunction | None:
+        """Get the closed form derivative of ``fun`` for one type of optimizer.
 
-        The list contains one function for each type of optimizer that can use the
-        derivative, e.g. the gradient of the sum of squared residuals for scalar
-        optimizers and the jacobian of the residuals for least-squares optimizers.
+        Args:
+            solver_type: The type of optimizer the derivative is for.
 
-        None if the benchmark function has no closed form derivative or if the problem
-        is noisy or scaled. Optimizers then fall back to numerical derivatives.
+        Returns:
+            A function that is marked with the solver type and can be passed to
+            ``minimize`` as ``jac``. None if the benchmark function has no closed form
+            derivative for this type of optimizer or if the problem is noisy or scaled.
+            Optimizers then use numerical derivatives.
 
         """
-        if not self.function.has_jac or self.noise is not None:
+        if self.noise is not None or self.scaler is not None:
             return None
-        if self.scaler is not None:
+        derivative = self.function.jac(solver_type)
+        if derivative is None:
             return None
-        levels = _DERIVATIVE_LEVELS[self.function.problem_type]
-        return [
-            _mark_problem_type(_ProblemDerivative(self.function, level), level)
-            for level in levels
-        ]
+        return _mark_problem_type(_ProblemDerivative(derivative), solver_type)
 
     @cached_property
     def start_fun(self) -> float:
@@ -497,6 +520,7 @@ class BenchmarkProblem:
 
         Raises:
             ValueError: If the problem is already scaled.
+            NotImplementedError: If the problem has constraints.
 
         """
         if not isinstance(scaler, BenchmarkScaler):
@@ -551,47 +575,19 @@ class _ProblemFunction:
         return value + self._noise.draw_noise(value, params=x, rng=self._rng)
 
 
-_DERIVATIVE_LEVELS = {
-    AggregationLevel.SCALAR: [AggregationLevel.SCALAR],
-    AggregationLevel.LEAST_SQUARES: [
-        AggregationLevel.SCALAR,
-        AggregationLevel.LIKELIHOOD,
-        AggregationLevel.LEAST_SQUARES,
-    ],
-    AggregationLevel.LIKELIHOOD: [
-        AggregationLevel.SCALAR,
-        AggregationLevel.LIKELIHOOD,
-    ],
-}
-"""The types of optimizers for which a derivative can be calculated from the derivative
-of a benchmark function with a given problem type."""
-
-
 class _ProblemDerivative:
-    """Derivative of a benchmark function for one type of optimizer.
+    """Derivative of a benchmark problem for one type of optimizer.
 
-    This is a class and not a closure such that it can be pickled.
+    The wrapper makes sure that marking the derivative with the solver type does not
+    modify the function that was returned by ``BenchmarkFunction.jac``.
 
     """
 
-    def __init__(self, function: BenchmarkFunction, level: AggregationLevel) -> None:
-        self._function = function
-        self._level = level
+    def __init__(self, derivative: DerivativeFunction) -> None:
+        self._derivative = derivative
 
     def __call__(self, params: NDArray[np.float64]) -> NDArray[np.float64]:
-        jac = self._function.jac(params)
-        problem_type = self._function.problem_type
-        if problem_type == self._level:
-            return jac
-        if problem_type == AggregationLevel.LIKELIHOOD:
-            # gradient of the sum of the contributions
-            return jac.sum(axis=0)
-        residuals = np.asarray(self._function.fun(params), dtype=np.float64)
-        if self._level == AggregationLevel.SCALAR:
-            # gradient of the sum of squared residuals
-            return 2 * jac.T @ residuals
-        # jacobian of the squared residuals
-        return 2 * residuals.reshape(-1, 1) * jac
+        return self._derivative(params)
 
 
 def _mark_problem_type(func: FuncT, problem_type: AggregationLevel) -> FuncT:
