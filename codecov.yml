@@ -2,6 +2,8 @@
 codecov:
   notify:
     require_ci_to_pass: true
+    # The main tests and the wrapper tests each upload a report.
+    after_n_builds: 2
 coverage:
   precision: 2
   round: down

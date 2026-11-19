@@ -1,7 +1,8 @@
 ---
-# Detailed tests of optimizer wrappers. They are not part of the tests that run for
-# every pull request. They run once a month against the newest release of the wrapped
-# libraries, to detect upstream changes, and can be started by hand.
+# Detailed tests of optimizer wrappers against the newest release of the wrapped
+# libraries, to detect upstream changes. They run once a month and can be started by
+# hand. For every pull request, the main workflow runs the same tests with the library
+# versions in the lock file.
 permissions:
   contents: read
 name: wrapper-tests
@@ -26,10 +27,10 @@ jobs:
           cache: true
           cache-write: false
           frozen: true
-          environments: tests-linux-py312
+          environments: tests-linux-py314
       - name: Update wrapped libraries to their newest release
         shell: bash -el {0}
-        run: pixi update -e tests-linux-py312 $WRAPPED_PACKAGES
+        run: pixi update -e tests-linux-py314 $WRAPPED_PACKAGES
       - name: Run wrapper tests
         shell: bash -el {0}
-        run: pixi run -e tests-linux-py312 tests-wrappers
+        run: pixi run -e tests-linux-py314 tests-wrappers

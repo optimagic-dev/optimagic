@@ -42,6 +42,29 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+  # The other jobs skip the wrapper tests. This job runs only them and uploads their
+  # coverage, so that codecov sees the coverage of the wrappers.
+  run-wrapper-tests:
+    name: Run wrapper tests on ubuntu-latest py314
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
+        with:
+          pixi-version: v0.71.2
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-linux-py314
+      - name: Run pytest
+        shell: bash -el {0}
+        run: pixi run -e tests-linux-py314 tests-with-cov -m wrappers
+      - name: Upload coverage report.
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   run-tests-win-and-mac:
     name: Run tests on ${{ matrix.os }} py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}

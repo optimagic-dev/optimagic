@@ -561,10 +561,10 @@ $ pixi run tests -m fides_wrappers    # one library
 $ pixi run tests -m wrappers          # all libraries
 ```
 
-They are not part of the tests that run for every pull request, so run them locally when
-you change a wrapper. The `wrapper-tests` workflow runs them once a month against the
-newest releases of the wrapped libraries and can be started by hand. The wrapper tests
-consist of:
+For every pull request, a separate job runs all wrapper tests on Linux with the newest
+supported Python version. In addition, the `wrapper-tests` workflow runs them once a
+month against the newest releases of the wrapped libraries and can be started by hand.
+The wrapper tests consist of:
 
 - **Contract tests** that detect changes in the library. They compare the options the
   library offers (found by introspection) with tables in the wrapper module: one that
