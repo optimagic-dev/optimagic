@@ -1,174 +1,133 @@
+(how-to-document-optimizers)=
+
 # How to document optimizers
 
-This guide shows you how to document algorithms in optimagic using our new documentation
-system. We'll walk through the process step-by-step using the `ScipyLBFGSB` optimizer as
-a complete example.
+This guide shows how to document an algorithm in optimagic. Use it when you add a new
+algorithm or improve the documentation of an existing one. If you add a new optimizer,
+start with [how to add optimizers](how_to_add_optimizers.md).
 
-## When to Use This Guide
+The goal of the documentation is that users understand what an option does and how to
+choose its value, without reading the paper. It should not be academic or low-level.
 
-Use this guide when you need to:
+## Where the documentation lives
 
-- Document a new algorithm you've added to optimagic
-- Migrate existing algorithm documentation from the old split system (docstrings +
-  `algorithms.md`) to the new system
-- Update or improve existing algorithm documentation
+All documentation of an algorithm is in the code:
 
-If you're adding a completely new optimizer to optimagic, start with the "How to Add
-Optimizers guide" first, then use this guide to document your algorithm properly.
+1. The **docstring of the algorithm class** explains what the algorithm does and when to
+   use it.
+1. The **docstring of each option** explains the effect of the option. Option groups are
+   documented in the same way: one docstring for the class and one per attribute.
+1. An **entry in `algorithms.md`** shows how to select the algorithm and renders the
+   docstrings.
 
-## Why the New Documentation System?
+## The docstring of the algorithm class
 
-Previously, algorithm documentation was scattered across multiple places:
+The class docstring gives users what they need to decide whether to use the algorithm:
 
-- Basic descriptions in the algorithm class docstrings
-- Detailed parameter descriptions in `algorithms.md`
-- Usage examples separate from the algorithm definitions
+- The first line says what the algorithm does.
+- For which problems it is a good choice, and for which it is not. Compare it to related
+  algorithms.
+- How it works, in a few intuitive sentences.
+- Where the implementation comes from, how to install it and which papers to cite.
+- Which features of the library are not supported and why.
+- A link to the tutorial, if there is one.
 
-This made it hard to maintain consistency and keep documentation up-to-date. The new
-system centralizes nearly all documentation in the algorithm code itself, making it:
-
-- Easier to maintain (documentation lives next to code)
-- More consistent (unified format across all algorithms)
-- Auto-generated (parameter lists appear automatically in docs)
-- Type-safe (documentation matches actual parameter types)
-
-## The Documentation System Components
-
-Our documentation system has three main parts:
-
-1. **Algorithm Class Documentation**: A comprehensive docstring in the algorithm
-   dataclass that explains what the algorithm does, how it works, and when to use it
-1. **Parameter Documentation**: Detailed docstrings for each parameter with mathematical
-   formulations when needed
-1. **Usage Integration**: A section in `algorithms.md` that show how to use the
-   algorithm
-
-Let's walk through documenting an algorithm from start to finish.
-
-## Example: Documenting ScipyLBFGSB
-
-We'll use the `ScipyLBFGSB` optimizer to show you exactly how to document an algorithm.
-This is a real example from the optimagic codebase, so you can follow along and see the
-results.
-
-### Step 1: Understand Your Algorithm
-
-Before writing documentation, make sure you understand:
-
-- What the algorithm does mathematically
-- What problems it's designed to solve
-- How its parameters affect behavior
-- Any performance characteristics or limitations
-
-For L-BFGS-B, this means understanding it's a quasi-Newton method for bound-constrained
-optimization that approximates the Hessian using gradient history.
-
-```{eval-rst}
-
-.. note::
-    If you are simply migrating an existing algorithm, you can mostly rely on the
-    existing documentation in the algorithm class docstring and `algorithms.md`.
-
-```
-
-### Step 2: Write the Algorithm Class Documentation
-
-The algorithm class docstring is the most important part. It should give users
-everything they need to decide whether to use this algorithm.
-
-Here's how we document `ScipyLBFGSB`:
+Here is an excerpt from the docstring of `Fides`:
 
 ```python
-# src/optimagic/optimizers/scipy_optimizers.py
-class ScipyLBFGSB(Algorithm):
-    """Minimize a scalar differentiable function using the L-BFGS-B algorithm.
+class Fides(Algorithm):
+    """Minimize a scalar function using the Fides trust-region optimizer.
 
-    The optimizer is taken from scipy, which uses the code written by the original
-    authors of the algorithm (L-BFGS-B v3.0). This code includes the corrections and
-    improvements that were introduced in a follow up paper. Since SciPy 1.15, SciPy
-    uses a C translation of the original Fortran code; older versions call the
-    Fortran code directly.
+    Fides is a gradient-based local optimizer for smooth scalar functions with or
+    without bounds. It is a good choice if evaluating the function and its gradient
+    is expensive, because it spends more effort than line-search methods such as
+    L-BFGS-B on choosing each step and typically needs fewer evaluations in return.
+    The price is a matrix factorization per iteration, so it is less suited for
+    problems with thousands of parameters.
 
-    lbfgsb is a limited memory version of the original bfgs algorithm, that deals with
-    lower and upper bounds via an active set approach.
+    ...
 
-    The lbfgsb algorithm is well suited for differentiable scalar optimization problems
-    with up to several hundred parameters.
+    The following features of fides are not supported yet:
 
-    It is a quasi-newton line search algorithm. At each trial point it evaluates the
-    criterion function and its gradient to find a search direction. It then approximates
-    the hessian using the stored history of gradients and uses the hessian to calculate
-    a candidate step size. Then it uses a gradient based line search algorithm to
-    determine the actual step length. Since the algorithm always evaluates the gradient
-    and criterion function jointly, the user should provide a ``fun_and_jac`` function
-    that exploits the synergies in the calculation of criterion and gradient.
-
-    The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
-    to scale the parameters.
+    - Exact Hessians and the hybrid Hessian approximations that need them
+      (``HybridFixed``, ``HybridFraction``), because optimagic does not pass
+      user-provided Hessians to optimizers.
+    - ...
 
     """
 ```
 
-**What makes this docstring effective:**
+(option-docstring-template)=
 
-- **Clear first line**: States exactly what the algorithm does
-- **Implementation details**: Explains which implementation scipy uses
-- **Algorithm classification**: Identifies it as a quasi-Newton method
-- **Problem suitability**: Explains what problems it's good for
-- **How it works**: Brief explanation of the algorithm's approach
-- **Performance characteristics**: Mentions scale invariance
-- **Usage advice**: Suggests using `fun_and_jac` for efficiency
+## The docstring of an option
 
-### Step 3: Document Individual Parameters
+Every option docstring has three parts:
 
-Each parameter needs clear documentation explaining what it controls and how it affects
-the algorithm's behavior.
+1. **One plain sentence that says what the option controls.**
+1. **The effect of the values and when to change them.** For a number: what happens with
+   larger and with smaller values. For a choice: what each choice does. Say in which
+   situation a user should deviate from the default.
+1. **A closing line with the name of the option in the library and the source of the
+   default.** If the default differs from the default of the library, say why.
 
 ```python
-# Basic parameter documentation
-stopping_maxiter: PositiveInt = STOPPING_MAXITER
-"""Maximum number of iterations."""
+trustregion_initial_radius: PositiveFloat = 1.0
+"""Radius of the trust region in the first iteration.
 
-# Parameter with mathematical formulation
-convergence_ftol_rel: NonNegativeFloat = CONVERGENCE_FTOL_REL
-r"""Converge if the relative change in the objective function is less than this
-value.
+The radius limits the length of the first step, measured in the units of the
+parameters. Decrease it if the first steps lead into regions where the function
+is not defined or behaves very differently than at the start parameters.
+Increase it if the start parameters are far from the optimum and the first
+steps are too cautious. After the first iterations the radius adapts itself.
 
-More formally, this is expressed as
-
-.. math::
-
-    \frac{f^k - f^{k+1}}{\max\{|f^k|, |f^{k+1}|, 1\}} \leq
-    \textsf{convergence\_ftol\_rel}.
-
-"""
-
-# Parameter with external library context
-limited_memory_storage_length: PositiveInt = LIMITED_MEMORY_STORAGE_LENGTH
-"""The maximum number of variable metric corrections used to define the limited
-memory matrix. This is the 'maxcor' parameter in the SciPy documentation.
-
-The default value is taken from SciPy's L-BFGS-B implementation. Larger values use
-more memory but may converge faster for some problems.
+This is the ``delta_init`` option of fides and has the same default.
 
 """
 ```
 
-**Key principles for parameter documentation:**
+Rules for the wording:
 
-- **Start with a clear description** of what the parameter controls
-- **Add mathematical formulations** when they clarify the exact meaning (use `r"""` for
-  raw strings with LaTeX)
-- **Include external library context** when relevant (e.g., "Default value is taken from
-  SciPy")
-- **Explain performance implications** when they matter
-- **Use proper type annotations** that match the parameter's constraints
+- Describe effects, not formulas. Use a formula only where it is the definition of the
+  option, which is mostly the case for convergence criteria.
+- Use the symbols of the paper only in the closing line. Write "the radius of the trust
+  region", not "delta".
+- Explain technical terms in half a sentence when you first use them, for example "the
+  quality of a step, i.e. the actual improvement of the function divided by the
+  improvement the model predicted".
+- Only describe effects you have verified in the code of the library or in an
+  experiment. Documentation of libraries is sometimes out of date.
+- For convergence criteria, say whether the criterion measures closeness to an optimum
+  or only progress.
+- If the default is `None` because the library chooses a value that depends on the
+  problem, state the rule the library uses.
+
+An option with a formula and a default that differs from the library looks like this:
+
+```python
+convergence_gtol_rel: NonNegativeFloat = CONVERGENCE_GTOL_REL
+r"""Stop when the norm of the gradient is at most this value times the absolute
+function value.
+
+This makes the gradient criterion independent of the scale of the function,
+i.e. fides stops when :math:`\|g_k\| \leq \text{gtol\_rel} \cdot |f_k|`. It has
+no effect if the function value at the optimum is zero.
+
+This is the ``grtol`` option of fides. The default of 1e-8 is harmonized across
+optimagic; fides defaults to 0, which switches the criterion off.
+
+"""
+```
+
+## Type hints
+
+Option values are validated against the type hints, so the type hints are part of the
+documentation. Use the types from `optimagic.typing` that describe valid values, such as
+`PositiveInt` or `NonNegativeFloat`, and `Literal` for choices.
 
 ```{eval-rst}
 
 .. warning::
-    If your optimizer module uses type hints (e.g., ``PositiveInt``,
-    ``NonNegativeInt``), include the following at the top of your optimizer module:
+    Include the following at the top of your optimizer module:
 
     .. code-block:: python
 
@@ -178,25 +137,22 @@ more memory but may converge faster for some problems.
     documentation (e.g., as ``Annotated[int, Gt(gt=0)]``).
 
 .. warning::
-    Option values are validated against the field annotations with pydantic, which
-    resolves the annotations at runtime. Every name used in a field annotation must
-    therefore be importable at runtime -- a name that is only imported inside an
-    ``if TYPE_CHECKING:`` block will raise an error when the algorithm is
-    instantiated. If an optional dependency provides a type you want to use in an
-    annotation, add a runtime fallback next to the ``TYPE_CHECKING`` import, as is
-    done for ``HessianApproximation`` in ``optimagic/optimizers/fides.py``.
+    Option values are validated with pydantic, which resolves the annotations at
+    runtime. Every name used in a field annotation must therefore be importable at
+    runtime -- a name that is only imported inside an ``if TYPE_CHECKING:`` block
+    will raise an error when the algorithm is instantiated. If an optional
+    dependency provides a type you want to use in an annotation, add a runtime
+    fallback next to the ``TYPE_CHECKING`` import, as is done for
+    ``HessianApproximation`` in ``optimagic/optimizers/fides.py``.
 
     Since annotations are enforced, they must also be honest: document and annotate
     the values the optimizer actually accepts, rather than a narrower set.
 
 ```
 
-### Step 4: Integrate into `algorithms.md`
+## The entry in `algorithms.md`
 
-The final step is integrating your documented algorithm into the main documentation.
-This creates a dropdown section that shows users how to use the algorithm.
-
-Add the following to `docs/source/algorithms.md` in an `eval-rst` block:
+Add a dropdown to `docs/source/algorithms.md` in an `eval-rst` block:
 
 ```text
 .. dropdown:: scipy_lbfgsb
@@ -235,65 +191,28 @@ Add the following to `docs/source/algorithms.md` in an `eval-rst` block:
         :inherited-members: Algorithm, object
 ```
 
-**What this section provides:**
+- Each code block is self-contained and runs as is. Pass `params` as a NumPy array so
+  that `x @ x` works, do not use `...` placeholders, add finite `bounds` if the
+  algorithm needs them, and mark least-squares or likelihood functions with
+  `om.mark.least_squares` or `om.mark.likelihood`.
+- Set an option that is specific to the algorithm in the examples.
+- The `:inherited-members: Algorithm, object` option is required: `mark.minimizer`
+  re-creates the algorithm class as a pydantic dataclass that inherits from your class,
+  so without it autodoc treats your documented fields as inherited and does not show
+  them.
+- If the algorithm has option groups, add an `autoclass` directive with `:members:` and
+  `:inherited-members: object` for each group class below the algorithm. See the entry
+  of `nag_dfols` for an example.
 
-- **The dropdown button and title**: Makes it easy to find the algorithm
-- **Concrete usage examples** showing both the object and string interfaces
-- **Algorithm-specific parameter** in the usage example
-- **Copy-pasteable code**: Each code block is self-contained and runs as is. Pass
-  `params` as a NumPy array so that `x @ x` works, don't use `...` placeholders, add
-  finite `bounds` if the algorithm needs them, and mark least-squares or likelihood
-  functions with `om.mark.least_squares` or `om.mark.likelihood`
-- **Auto-generated documentation** via the `autoclass` directive that pulls in your
-  docstrings. The `:inherited-members: Algorithm, object` option is required:
-  `mark.minimizer` re-creates the algorithm class as a pydantic dataclass that inherits
-  from your class, so without it autodoc treats your documented fields as inherited and
-  does not show them
+## Check the result
 
-## Working with Existing Documentation
+Build the documentation with `pixi run -e docs build-docs` and read the rendered page of
+your algorithm. The build fails on warnings, for example on broken references.
 
-If you're migrating an algorithm that already has documentation:
+Common problems are:
 
-### Finding Existing Content
-
-Look for existing documentation in:
-
-- **Algorithm class docstrings**: Usually basic descriptions
-- **`docs/source/algorithms.md`**: Detailed parameter descriptions and examples
-- **Research papers**: For mathematical formulations and background
-- **External library docs**: For default values and parameter meanings
-
-### Migration Strategy
-
-1. **Start with the algorithm class**: Move the best description from `algorithms.md` to
-   the class docstring
-1. **Update and expand**: Add missing information about performance, usage, etc.
-1. **Move parameter docs**: Transfer parameter descriptions from `algorithms.md` to
-   individual parameter docstrings
-1. **Verify accuracy**: Check that all information is current and correct
-1. **Create new integration**: Replace the old `algorithms.md` section with the new
-   dropdown format
-
-## Common Pitfalls to Avoid
-
-- **Don't copy-paste generic descriptions**: Each algorithm needs specific, detailed
-  documentation
-- **Don't skip mathematical formulations**: When convergence criteria or parameters have
-  precise mathematical definitions, include them
-- **Don't ignore external library context**: Always mention where default values come
-  from
-- **Don't use vague parameter descriptions**: "Controls the algorithm behavior" is not
-  helpful
-- **Don't forget performance implications**: Users need to understand trade-offs between
-  parameters
-
-## Getting Help
-
-If you're stuck or need clarification:
-
-- Look at existing well-documented algorithms like `ScipyLBFGSB`
-- Check the {ref}`style_guide` for coding conventions
-- Ask questions in GitHub issues or discussions
-
-The goal is to make optimagic's algorithm documentation the best resource for
-understanding and using optimization algorithms effectively.
+- Descriptions that only repeat the name of the option, such as "Controls the shrinking
+  of the radius".
+- Descriptions that are copied from the paper and can only be understood with the paper.
+- Missing information on where a default comes from.
+- Missing advice on when to change an option.

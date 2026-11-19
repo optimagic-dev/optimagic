@@ -7,6 +7,29 @@ import statsmodels.api as sm
 from optimagic.config import IS_MATPLOTLIB_INSTALLED
 
 
+def pytest_collection_modifyitems(config, items):
+    """Run wrapper tests only if they are selected with ``-m``.
+
+    Wrapper tests carry a library-level marker that ends on ``_wrappers``, e.g.
+    ``fides_wrappers``. They test options of wrapped optimizers in detail, which is
+    only needed when a wrapper or the wrapped library changes. ``-m fides_wrappers``
+    selects the tests of one library, ``-m wrappers`` selects all of them.
+
+    """
+    wrapper_tests = [
+        item
+        for item in items
+        if any(marker.name.endswith("_wrappers") for marker in item.iter_markers())
+    ]
+    for item in wrapper_tests:
+        item.add_marker("wrappers")
+
+    if "wrappers" not in config.getoption("markexpr", ""):
+        config.hook.pytest_deselected(items=wrapper_tests)
+        deselected = {id(item) for item in wrapper_tests}
+        items[:] = [item for item in items if id(item) not in deselected]
+
+
 @pytest.fixture(autouse=True)
 def fresh_directory(tmp_path):  # noqa: PT004
     """Each test is executed in a fresh directory."""

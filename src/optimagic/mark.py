@@ -1,9 +1,13 @@
 from functools import wraps
-from typing import Any, Callable, ParamSpec, Protocol, TypeVar, cast
+from typing import Any, Callable, ParamSpec, Protocol, Sequence, TypeVar, cast
 
 import pydantic
 
 from optimagic.exceptions import InvalidAlgoOptionError
+from optimagic.optimization.algo_option_tools import (
+    DeprecatedOption,
+    replace_deprecated_options,
+)
 from optimagic.optimization.algorithm import AlgoInfo
 from optimagic.typing import (
     DEFAULT_PYDANTIC_CONFIG,
@@ -143,5 +147,51 @@ def minimizer(
         )(cast("type[Any]", cls))
         out.__algo_info__ = algo_info
         return cast("AlgorithmSubclass", out)
+
+    return decorator
+
+
+def deprecated_options(
+    deprecated: Sequence[DeprecatedOption],
+) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
+    """Keep old option names of an algorithm working for one deprecation cycle.
+
+    The old names are replaced by their new spelling with a ``FutureWarning`` wherever
+    options are set: when the algorithm is created, in ``with_option`` and in
+    ``algo_options``.
+
+    The decorator has to be placed above ``mark.minimizer``:
+
+    .. code-block:: python
+
+        @mark.deprecated_options(DEPRECATED_OPTIONS)
+        @mark.minimizer(...)
+        @dataclass(frozen=True)
+        class MyAlgorithm(Algorithm): ...
+
+    Args:
+        deprecated: The old option names with their replacements.
+
+    """
+
+    def decorator(cls: AlgorithmSubclass) -> AlgorithmSubclass:
+        out = cast("Any", cls)
+        if getattr(out, "__algo_info__", None) is None:
+            msg = (
+                "The `mark.deprecated_options` decorator has to be placed above the "
+                "`mark.minimizer` decorator."
+            )
+            raise TypeError(msg)
+
+        out.__deprecated_options__ = tuple(deprecated)
+        validated_init = out.__init__
+
+        @wraps(validated_init)
+        def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
+            kwargs = replace_deprecated_options(kwargs, out)
+            validated_init(self, *args, **kwargs)
+
+        out.__init__ = __init__
+        return cls
 
     return decorator

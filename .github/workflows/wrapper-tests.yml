@@ -1,0 +1,36 @@
+---
+# Detailed tests of optimizer wrappers against the newest release of the wrapped
+# libraries, to detect upstream changes. They run once a month and can be started by
+# hand. For every pull request, the main workflow runs the same tests with the library
+# versions in the lock file.
+permissions:
+  contents: read
+name: wrapper-tests
+on:
+  schedule:
+    - cron: 0 5 1 * *
+  workflow_dispatch: null
+env:
+  # Libraries that have wrapper tests. Add a library when you add its wrapper tests.
+  WRAPPED_PACKAGES: fides dfo-ls py-bobyqa
+jobs:
+  run-wrapper-tests:
+    name: Run wrapper tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
+        with:
+          pixi-version: v0.71.2
+          cache: true
+          cache-write: false
+          frozen: true
+          environments: tests-linux-py314
+      - name: Update wrapped libraries to their newest release
+        shell: bash -el {0}
+        run: pixi update -e tests-linux-py314 $WRAPPED_PACKAGES
+      - name: Run wrapper tests
+        shell: bash -el {0}
+        run: pixi run -e tests-linux-py314 tests-wrappers
