@@ -1,7 +1,10 @@
 import pytest
 
-from optimagic import get_benchmark_problems
-from optimagic.benchmarking.process_benchmark_results import process_benchmark_results
+from optimagic import algos, get_benchmark_problems
+from optimagic.benchmarking.process_benchmark_results import (
+    get_reference_solutions,
+    process_benchmark_results,
+)
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.visualization.convergence_plot import (
     _check_only_allowed_subset_provided,
@@ -13,14 +16,7 @@ from optimagic.visualization.convergence_plot import (
 @pytest.fixture()
 def benchmark_results():
     problems = get_benchmark_problems("example")
-    stop_after_10 = {
-        "stopping_max_criterion_evaluations": 10,
-        "stopping_max_iterations": 10,
-    }
-    optimizers = {
-        "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": stop_after_10},
-        "nm": {"algorithm": "scipy_neldermead", "algo_options": stop_after_10},
-    }
+    optimizers = {"lbfgsb": algos.scipy_lbfgsb, "nm": algos.scipy_neldermead}
     results = run_benchmark(
         problems,
         optimizers,
@@ -75,13 +71,13 @@ def test_convergence_plot_options(options, grid, benchmark_results, close_mpl_fi
 def test_convergence_plot_stopping_criterion_none(benchmark_results):
     problems, results = benchmark_results
 
-    with pytest.raises(UnboundLocalError):
-        convergence_plot(
-            problems=problems,
-            results=results,
-            problem_subset=["bard_good_start"],
-            stopping_criterion=None,  # ty:ignore[invalid-argument-type]
-        )
+    # Without a stopping criterion, the lines are not cut where an optimizer converged.
+    convergence_plot(
+        problems=problems,
+        results=results,
+        problem_subset=["bard_good_start"],
+        stopping_criterion=None,  # ty:ignore[invalid-argument-type]
+    )
 
 
 def test_check_only_allowed_subset_provided_none():
@@ -109,7 +105,7 @@ def test_extract_convergence_plot_lines(benchmark_results):
 
     lines_list, titles = _extract_convergence_plot_lines(
         df=df,
-        problems=problems,
+        references=get_reference_solutions(problems, results),
         runtime_measure="n_evaluations",
         outcome="criterion_normalized",
         palette=["red", "green", "blue"],

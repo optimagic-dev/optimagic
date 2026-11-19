@@ -183,6 +183,66 @@
 ```
 
 ```{eval-rst}
+.. dropdown:: Benchmark problems
+
+    .. autoclass:: BenchmarkProblem
+        :members:
+
+    .. autoclass:: BenchmarkSolution
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: Benchmark functions
+
+    .. autoclass:: BenchmarkFunction
+        :members:
+
+    .. autoclass:: ScalarBenchmarkFunction
+
+    .. autoclass:: LeastSquaresBenchmarkFunction
+
+    .. autoclass:: LikelihoodBenchmarkFunction
+
+    .. autoclass:: CallableBenchmarkFunction
+
+```
+
+```{eval-rst}
+.. dropdown:: Noise and scaling of benchmark problems
+
+    .. autoclass:: BenchmarkNoise
+        :members:
+
+    .. autoclass:: AdditiveBenchmarkNoise
+
+    .. autoclass:: MultiplicativeBenchmarkNoise
+
+    .. autoclass:: BenchmarkScaler
+        :members:
+
+    .. autoclass:: LinspaceBenchmarkScaler
+
+```
+
+```{eval-rst}
+.. dropdown:: BenchmarkResult
+
+    .. autoclass:: BenchmarkResult
+        :members:
+
+```
+
+```{eval-rst}
+.. dropdown:: OptimizeOptions
+
+    .. autoclass:: OptimizeOptions
+        :members:
+
+```
+
+```{eval-rst}
 .. dropdown:: profile_plot
 
     .. autofunction:: profile_plot

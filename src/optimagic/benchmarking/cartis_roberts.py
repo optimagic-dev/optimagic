@@ -15,14 +15,21 @@ Implementation is based on
 
 """
 
+from collections.abc import Callable
 from functools import partial
-from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from optimagic import mark
+from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkProblem,
+    BenchmarkSolution,
+    CallableBenchmarkFunction,
+)
 from optimagic.config import IS_NUMBA_INSTALLED
 from optimagic.parameters.bounds import Bounds
+from optimagic.typing import AggregationLevel
 
 if IS_NUMBA_INSTALLED:
     from numba import njit
@@ -4893,490 +4900,458 @@ solution_x_methane = [
 ]
 
 
-CARTIS_ROBERTS_PROBLEMS = {
-    "arglale": {
-        # arglale is the same as linear_full_rank with specific settings
-        "fun": partial(linear_full_rank, dim_out=400),
-        "start_x": [1] * 100,
-        "solution_x": [-0.99999952] * 100,
-        "start_criterion": 700,
-        "solution_criterion": 300,
-    },
-    "arglble": {
-        # arglble is the same as linear_rank_one with specific settings
-        "fun": partial(linear_rank_one, dim_out=400),
-        "start_x": [1] * 100,
-        "solution_x": solution_x_arglble,
-        "start_criterion": 5.460944e14,
-        "solution_criterion": 99.62547,
-    },
-    "argtrig": {
-        "fun": argtrig,
-        "start_x": [1 / 100] * 100,
-        "solution_x": [0] * 100,
-        "start_criterion": 32.99641,
-        "solution_criterion": 0,
-    },
-    "artif": {
-        "fun": artif,
-        "start_x": [1] * 100,
-        "solution_x": None,
-        "start_criterion": 36.59115,
-        "solution_criterion": 0,
-    },
-    "arwhdne": {
-        "fun": arwhdne,
-        "start_x": [1] * 100,
-        "solution_x": [0.706011] * 99 + [0],
-        "start_criterion": 495,
-        "solution_criterion": 27.66203,
-    },
-    "bdvalues": {
-        "fun": bdvalues,
-        "start_x": get_start_points_bdvalues(100, 1000),
-        "solution_x": solution_x_bdvalues,
-        "start_criterion": 1.943417e7,
-        "solution_criterion": 0,
-    },
-    "bratu_2d": {
-        "fun": partial(bratu_2d, alpha=4),
-        "start_x": [0] * 64,
-        "solution_x": solution_x_bratu_2d,
-        "start_criterion": 0.1560738,
-        "solution_criterion": 0,
-    },
-    "bratu_2d_t": {
-        "fun": partial(bratu_2d, alpha=6.80812),
-        "start_x": [0] * 64,
-        "solution_x": solution_x_bratu_2d_t,
-        "start_criterion": 0.4521311,
-        "solution_criterion": 1.8534736e-05,
-    },
-    "bratu_3d": {
-        "fun": partial(bratu_3d, alpha=6.80812),
-        "start_x": [0] * 27,
-        "solution_x": solution_x_bratu_3d,
-        "start_criterion": 4.888529,
-        "solution_criterion": 0,
-    },
-    "brownale": {
-        "fun": brown_almost_linear,
-        "start_x": [0.5] * 100,
-        "solution_x": [1] * 100,
-        "start_criterion": 2.524757e5,
-        "solution_criterion": 0,
-    },
-    "broydn_3d": {
-        "fun": broydn_3d,
-        "start_x": [-1] * 100,
-        "solution_x": solution_x_broydn_3d,
-        "start_criterion": 111,
-        "solution_criterion": 0,
-    },
-    "cbratu_2d": {
-        "fun": cbratu_2d,
-        "start_x": [0] * (2 * 5 * 5),
-        "solution_x": solution_x_cbratu_2d,
-        "start_criterion": 0.4822531,
-        "solution_criterion": 0,
-    },
-    "broydn_bd": {
-        "fun": broydn_bd,
-        "start_x": [1] * 100,
-        "solution_x": solution_x_broydn_bd,
-        "start_criterion": 2404,
-        "solution_criterion": 0,
-    },
-    "chandheq": {
-        "fun": chandheq,
-        "start_x": (np.arange(1, 101) / 100).tolist(),
-        "solution_x": None,
-        "start_criterion": 6.923365,
-        "solution_criterion": 0,
-    },
-    "chemrcta": {
-        "fun": chemrcta,
-        "start_x": [1] * 100,
-        "solution_x": None,
-        "start_criterion": 3.0935,
-        "solution_criterion": 0,
-        "bounds": Bounds(lower=np.concatenate([np.zeros(50), 1e-6 * np.ones(50)])),
-    },
-    "chemrctb": {
-        "fun": chemrctb,
-        "start_x": [1] * 100,
-        "solution_x": solution_x_chemrctb,
-        "start_criterion": 1.446513,
-        "solution_criterion": 1.404424e-3,
-        "bounds": Bounds(lower=1e-6 * np.ones(100)),
-    },
-    "chnrsbne": {
-        "fun": chnrsbne,
-        "start_x": [-1] * 50,
-        "solution_x": [1] * 50,
-        "start_criterion": 7635.84,
-        "solution_criterion": 0,
-    },
-    "drcavty1": {
-        "fun": partial(drcavty, r=500),
-        "start_x": [0] * 100,
-        "solution_x": None,
-        "start_criterion": 0.4513889,
-        "solution_criterion": 0,
-    },
-    "drcavty2": {
-        "fun": partial(drcavty, r=1000),
-        "start_x": [0] * 100,
-        "solution_x": solution_x_drcavty2,
-        "start_criterion": 0.4513889,
-        "solution_criterion": 3.988378e-4,
-    },
-    "drcavty3": {
-        "fun": partial(drcavty, r=4500),
-        "start_x": [0] * 100,
-        "solution_x": solution_x_drcavty3,
-        "start_criterion": 0.4513889,
-        "solution_criterion": 0,
-    },
-    "eigena": {
-        "fun": partial(eigen, param=np.diag(np.arange(1, 11))),
-        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
-        "solution_x": [*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
-        "start_criterion": 285,
-        "solution_criterion": 0,
-        "bounds": Bounds(lower=np.zeros(110)),
-    },
-    "eigenb": {
-        "fun": partial(
-            eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)
+def _problem(
+    fun: Callable[[NDArray[np.float64]], NDArray[np.float64]],
+    start_x: list[float],
+    solution_x: list[float] | None,
+    solution_fun: float,
+    bounds: Bounds | None = None,
+) -> BenchmarkProblem:
+    """Create a benchmark problem from the information in the problem table.
+
+    Args:
+        fun: Function that maps parameters of shape (n_params,) to least-squares
+            residuals of shape (n_residuals,).
+        start_x: The start parameters.
+        solution_x: The parameters at the solution or None if they are not unique.
+        solution_fun: The sum of squared residuals at the solution.
+        bounds: The bounds of the original problem. They are stored in the info of the
+            problem but, as in all previous versions, not passed to the optimizers.
+
+    Returns:
+        The benchmark problem. The solution is marked as exact if solution_fun is zero
+        because a sum of squares cannot be smaller. All other solutions are the best
+        known values.
+
+    """
+    solution_params = None
+    if solution_x is not None:
+        solution_params = np.array(solution_x, dtype=np.float64)
+
+    return BenchmarkProblem(
+        function=CallableBenchmarkFunction(
+            func=fun, problem_type=AggregationLevel.LEAST_SQUARES
         ),
-        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
-        "solution_x": solution_x_eigenb,
-        "start_criterion": 19,
-        "solution_criterion": 1.55654284,
+        start_params=np.array(start_x, dtype=np.float64),
+        solution=BenchmarkSolution(
+            fun=float(solution_fun), params=solution_params, exact=solution_fun == 0
+        ),
+        info={} if bounds is None else {"bounds": bounds},
+    )
+
+
+CARTIS_ROBERTS_PROBLEMS: dict[str, BenchmarkProblem] = {
+    "arglale": _problem(
+        # arglale is the same as linear_full_rank with specific settings
+        fun=partial(linear_full_rank, dim_out=400),
+        start_x=[1] * 100,
+        solution_x=[-0.99999952] * 100,
+        solution_fun=300,
+    ),
+    "arglble": _problem(
+        # arglble is the same as linear_rank_one with specific settings
+        fun=partial(linear_rank_one, dim_out=400),
+        start_x=[1] * 100,
+        solution_x=solution_x_arglble,
+        solution_fun=99.62547,
+    ),
+    "argtrig": _problem(
+        fun=argtrig,
+        start_x=[1 / 100] * 100,
+        solution_x=[0] * 100,
+        solution_fun=0,
+    ),
+    "artif": _problem(
+        fun=artif,
+        start_x=[1] * 100,
+        solution_x=None,
+        solution_fun=0,
+    ),
+    "arwhdne": _problem(
+        fun=arwhdne,
+        start_x=[1] * 100,
+        solution_x=[0.706011] * 99 + [0],
+        solution_fun=27.66203,
+    ),
+    "bdvalues": _problem(
+        fun=bdvalues,
+        start_x=get_start_points_bdvalues(100, 1000),
+        solution_x=solution_x_bdvalues,
+        solution_fun=0,
+    ),
+    "bratu_2d": _problem(
+        fun=partial(bratu_2d, alpha=4),
+        start_x=[0] * 64,
+        solution_x=solution_x_bratu_2d,
+        solution_fun=0,
+    ),
+    "bratu_2d_t": _problem(
+        fun=partial(bratu_2d, alpha=6.80812),
+        start_x=[0] * 64,
+        solution_x=solution_x_bratu_2d_t,
+        solution_fun=1.8534736e-05,
+    ),
+    "bratu_3d": _problem(
+        fun=partial(bratu_3d, alpha=6.80812),
+        start_x=[0] * 27,
+        solution_x=solution_x_bratu_3d,
+        solution_fun=0,
+    ),
+    "brownale": _problem(
+        fun=brown_almost_linear,
+        start_x=[0.5] * 100,
+        solution_x=[1] * 100,
+        solution_fun=0,
+    ),
+    "broydn_3d": _problem(
+        fun=broydn_3d,
+        start_x=[-1] * 100,
+        solution_x=solution_x_broydn_3d,
+        solution_fun=0,
+    ),
+    "cbratu_2d": _problem(
+        fun=cbratu_2d,
+        start_x=[0] * (2 * 5 * 5),
+        solution_x=solution_x_cbratu_2d,
+        solution_fun=0,
+    ),
+    "broydn_bd": _problem(
+        fun=broydn_bd,
+        start_x=[1] * 100,
+        solution_x=solution_x_broydn_bd,
+        solution_fun=0,
+    ),
+    "chandheq": _problem(
+        fun=chandheq,
+        start_x=(np.arange(1, 101) / 100).tolist(),
+        solution_x=None,
+        solution_fun=0,
+    ),
+    "chemrcta": _problem(
+        fun=chemrcta,
+        start_x=[1] * 100,
+        solution_x=None,
+        solution_fun=0,
+        bounds=Bounds(lower=np.concatenate([np.zeros(50), 1e-6 * np.ones(50)])),
+    ),
+    "chemrctb": _problem(
+        fun=chemrctb,
+        start_x=[1] * 100,
+        solution_x=solution_x_chemrctb,
+        solution_fun=1.404424e-3,
+        bounds=Bounds(lower=1e-6 * np.ones(100)),
+    ),
+    "chnrsbne": _problem(
+        fun=chnrsbne,
+        start_x=[-1] * 50,
+        solution_x=[1] * 50,
+        solution_fun=0,
+    ),
+    "drcavty1": _problem(
+        fun=partial(drcavty, r=500),
+        start_x=[0] * 100,
+        solution_x=None,
+        solution_fun=0,
+    ),
+    "drcavty2": _problem(
+        fun=partial(drcavty, r=1000),
+        start_x=[0] * 100,
+        solution_x=solution_x_drcavty2,
+        solution_fun=3.988378e-4,
+    ),
+    "drcavty3": _problem(
+        fun=partial(drcavty, r=4500),
+        start_x=[0] * 100,
+        solution_x=solution_x_drcavty3,
+        solution_fun=0,
+    ),
+    "eigena": _problem(
+        fun=partial(eigen, param=np.diag(np.arange(1, 11))),
+        start_x=[1] * 10 + np.eye(10).flatten().tolist(),
+        solution_x=[*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
+        solution_fun=0,
+        bounds=Bounds(lower=np.zeros(110)),
+    ),
+    "eigenb": _problem(
+        fun=partial(eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)),
+        start_x=[1] * 10 + np.eye(10).flatten().tolist(),
+        solution_x=solution_x_eigenb,
+        solution_fun=1.55654284,
         # we suspect a typo in Cartis and Roberts (2019);
         # according to table 3 in their paper, the minimum is at 0.
-    },
-    "flosp2hh": {
-        "fun": partial(
+    ),
+    "flosp2hh": _problem(
+        fun=partial(
             flosp2,
             a=np.array([1, 0, -1], dtype=np.int64),
             b=np.array([1, 0, -1], dtype=np.int64),
             ra=1e7,
         ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2hl": {
-        "fun": partial(
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=1 / 3,
+    ),
+    "flosp2hl": _problem(
+        fun=partial(
             flosp2,
             a=np.array([1, 0, -1], dtype=np.float64),
             b=np.array([1, 0, -1], dtype=np.float64),
             ra=1e3,
         ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2hm": {
-        "fun": partial(
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=1 / 3,
+    ),
+    "flosp2hm": _problem(
+        fun=partial(
             flosp2,
             a=np.array([1, 0, -1], dtype=np.float64),
             b=np.array([1, 0, -1], dtype=np.float64),
             ra=1e5,
         ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2th": {
-        "fun": partial(
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=1 / 3,
+    ),
+    "flosp2th": _problem(
+        fun=partial(
             flosp2,
             a=np.array([0, 1, 0], dtype=np.float64),
             b=np.array([0, 1, 1], dtype=np.float64),
             ra=1e7,
         ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
-        "solution_criterion": 0,
-    },
-    "flosp2tl": {
-        "fun": partial(
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=0,
+    ),
+    "flosp2tl": _problem(
+        fun=partial(
             flosp2,
             a=np.array([0, 1, 0], dtype=np.float64),
             b=np.array([0, 1, 1], dtype=np.float64),
             ra=1e3,
         ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
-        "solution_criterion": 0,
-    },
-    "flosp2tm": {
-        "fun": partial(
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=0,
+    ),
+    "flosp2tm": _problem(
+        fun=partial(
             flosp2,
             a=np.array([0, 1, 0], dtype=np.float64),
             b=np.array([0, 1, 1], dtype=np.float64),
             ra=1e5,
         ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
-        "solution_criterion": 0,
-    },
-    "freurone": {
-        "fun": freurone,
-        "start_x": [0.5, -2] + [0] * 98,
-        "solution_x": solution_x_freurone,
-        "start_criterion": 9.95565e4,
-        "solution_criterion": 1.196458e4,
-    },
-    "hatfldg": {
-        "fun": hatfldg,
-        "start_x": [1] * 25,
-        "solution_x": [0] * 11 + [-1, 1] + [0] * 12,
-        "start_criterion": 27,
-        "solution_criterion": 0,
-    },
-    "hydcar20": {
-        "fun": partial(hydcar, n=20, m=3, k=9),
-        "start_x": get_start_points_hydcar20(),
-        "solution_x": solution_x_hydcar20,
-        "start_criterion": 1341.663,
-        "solution_criterion": 0,
-    },
-    "hydcar6": {
-        "fun": partial(hydcar, n=6, m=3, k=2),
-        "start_x": get_start_points_hydcar6(),
-        "solution_x": solution_x_hydcar6,
-        "start_criterion": 704.1073,
-        "solution_criterion": 0,
-    },
-    "integreq": {
-        "fun": integreq,
-        "start_x": (np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1)).tolist(),
-        "solution_x": solution_x_integreq,
-        "start_criterion": 0.5730503,
-        "solution_criterion": 0,
-    },
-    "luksan11": {
-        "fun": luksan11,
-        "start_x": [-0.8] * 100,
-        "solution_x": [1] * 100,
-        "start_criterion": 626.0640,
-        "solution_criterion": 0,
-    },
-    "luksan12": {
-        "fun": luksan12,
-        "start_x": [-1] * 98,
-        "solution_x": None,
-        "start_criterion": 3.2160e4,
-        "solution_criterion": None,
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=0,
+    ),
+    "freurone": _problem(
+        fun=freurone,
+        start_x=[0.5, -2] + [0] * 98,
+        solution_x=solution_x_freurone,
+        solution_fun=1.196458e4,
+    ),
+    "hatfldg": _problem(
+        fun=hatfldg,
+        start_x=[1] * 25,
+        solution_x=[0] * 11 + [-1, 1] + [0] * 12,
+        solution_fun=0,
+    ),
+    "hydcar20": _problem(
+        fun=partial(hydcar, n=20, m=3, k=9),
+        start_x=get_start_points_hydcar20(),
+        solution_x=solution_x_hydcar20,
+        solution_fun=0,
+    ),
+    "hydcar6": _problem(
+        fun=partial(hydcar, n=6, m=3, k=2),
+        start_x=get_start_points_hydcar6(),
+        solution_x=solution_x_hydcar6,
+        solution_fun=0,
+    ),
+    "integreq": _problem(
+        fun=integreq,
+        start_x=(np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1)).tolist(),
+        solution_x=solution_x_integreq,
+        solution_fun=0,
+    ),
+    "luksan11": _problem(
+        fun=luksan11,
+        start_x=[-0.8] * 100,
+        solution_x=[1] * 100,
+        solution_fun=0,
+    ),
+    "luksan12": _problem(
+        fun=luksan12,
+        start_x=[-1] * 98,
+        solution_x=None,
         # we found a lower minimum than Cartis and Roberts (2019) at 1651.837;
         # according to table 3 in their paper, the minimum is at 4292.197.
-        # We suspect, however, that the true optimum is even lower.
-        # That is why we disable this test function for the time being.
-    },
-    "luksan13": {
-        "fun": luksan13,
-        "start_x": [-1] * 98,
-        "solution_x": solution_x_luksan13,
-        "start_criterion": 6.4352e4,
-        "solution_criterion": 24949.67040503685711883,
+        # We suspect, however, that the true optimum is even lower. The value is
+        # therefore only the best known value and gets replaced if an optimizer
+        # finds a lower one during a benchmark.
+        solution_fun=1651.837,
+    ),
+    "luksan13": _problem(
+        fun=luksan13,
+        start_x=[-1] * 98,
+        solution_x=solution_x_luksan13,
+        solution_fun=24949.67040503685711883,
         # we found a lower minimum than Cartis and Roberts (2019);
         # according to table 3 in their paper, the minimum is at 25188.86
-    },
-    "luksan14": {
-        "fun": luksan14,
-        "start_x": [-1] * 98,
-        "solution_x": solution_x_luksan14,
-        "start_criterion": 2.6880e4,
-        "solution_criterion": 123.9235,
-    },
-    "luksan15": {
-        "fun": luksan15,
-        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
-        "solution_x": solution_x_luksan15,
-        "start_criterion": 2.701585e4,
-        "solution_criterion": 3.569697,
-    },
-    "luksan16": {
-        "fun": luksan16,
-        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
-        "solution_x": solution_x_luksan16,
-        "start_criterion": 1.306848e4,
-        "solution_criterion": 3.569697,
-    },
-    "luksan17": {
-        "fun": luksan17,
-        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 1.687370e6,
-        "solution_criterion": 0.4931613,
-    },
-    "luksan21": {
-        "fun": luksan21,
-        "start_x": [ih * (ih - 1) for ih in np.arange(1, 101) * (1 / 101)],
-        "solution_x": solution_x_luksan21,
-        "start_criterion": 99.98751,
-        "solution_criterion": 0,
-    },
-    "luksan22": {
-        "fun": luksan22,
-        "start_x": [-1.2 if i % 2 == 0 else 1 for i in range(100)],
-        "solution_x": solution_x_luksan22,
-        "start_criterion": 2.487686e4,
-        "solution_criterion": 872.9230,
-    },
-    "methanb8": {
-        "fun": methane,
-        "start_x": get_start_points_methanb8(),
-        "solution_x": solution_x_methane,
-        "start_criterion": 1.043105,
-        "solution_criterion": 0,
-    },
-    "methanl8": {
-        "fun": methane,
-        "start_x": get_start_points_methanl8(),
-        "solution_x": solution_x_methane,
-        "start_criterion": 4345.100,
-        "solution_criterion": 0,
-    },
-    "morebvne": {
-        "fun": morebvne,
-        "start_x": [t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
-        "solution_x": solution_x_morebvne,
-        "start_criterion": 3.633100e-4,
-        "solution_criterion": 0,
-    },
-    "msqrta": {
-        "fun": msqrta,
-        "start_x": get_start_points_msqrta(10),
-        "solution_x": solution_x_msqrta,
-        "start_criterion": 212.7162,
-        "solution_criterion": 0,
-    },
-    "msqrtb": {
-        "fun": msqrta,
-        "start_x": get_start_points_msqrta(10, flag=2),
-        "solution_x": solution_x_msqrtb,
-        "start_criterion": 205.0753,
-        "solution_criterion": 0,
-    },
-    "oscigrne": {
-        "fun": oscigrne,
-        "start_x": [-2] + [1] * 99,
-        "solution_x": solution_x_oscigrne,
-        "start_criterion": 6.120720e8,
-        "solution_criterion": 0,
-    },
-    "penalty_1": {
-        "fun": penalty_1,
-        "start_x": list(range(1, 101)),
-        "solution_x": None,
-        "start_criterion": 1.144806e11,
-        "solution_criterion": 9.025000e-9,
-    },
-    "penalty_2": {
-        "fun": penalty_2,
-        "start_x": [0.5] * 100,
-        "solution_x": solution_x_penalty2,
-        "start_criterion": 1.591383e6,
-        "solution_criterion": 0.9809377,
-    },
-    "powellse": {
-        "fun": powell_singular,
-        "start_x": [3.0, -1.0, 0.0, 1] * 25,
-        "solution_x": [0] * 100,
-        "start_criterion": 41875,
-        "solution_criterion": 0,
-    },
-    "qr3d": {
-        "fun": partial(qr3d, m=5),
-        "start_x": get_start_points_qr3d(5),
-        "solution_x": solution_x_qr3d,
-        "start_criterion": 1.2,
-        "solution_criterion": 0,
-        "bounds": Bounds(
+    ),
+    "luksan14": _problem(
+        fun=luksan14,
+        start_x=[-1] * 98,
+        solution_x=solution_x_luksan14,
+        solution_fun=123.9235,
+    ),
+    "luksan15": _problem(
+        fun=luksan15,
+        start_x=[-0.8, 1.2, -1.2, 0.8] * 25,
+        solution_x=solution_x_luksan15,
+        solution_fun=3.569697,
+    ),
+    "luksan16": _problem(
+        fun=luksan16,
+        start_x=[-0.8, 1.2, -1.2, 0.8] * 25,
+        solution_x=solution_x_luksan16,
+        solution_fun=3.569697,
+    ),
+    "luksan17": _problem(
+        fun=luksan17,
+        start_x=[-0.8, 1.2, -1.2, 0.8] * 25,
+        solution_x=None,  # multiple argmins
+        solution_fun=0.4931613,
+    ),
+    "luksan21": _problem(
+        fun=luksan21,
+        start_x=[ih * (ih - 1) for ih in np.arange(1, 101) * (1 / 101)],
+        solution_x=solution_x_luksan21,
+        solution_fun=0,
+    ),
+    "luksan22": _problem(
+        fun=luksan22,
+        start_x=[-1.2 if i % 2 == 0 else 1 for i in range(100)],
+        solution_x=solution_x_luksan22,
+        solution_fun=872.9230,
+    ),
+    "methanb8": _problem(
+        fun=methane,
+        start_x=get_start_points_methanb8(),
+        solution_x=solution_x_methane,
+        solution_fun=0,
+    ),
+    "methanl8": _problem(
+        fun=methane,
+        start_x=get_start_points_methanl8(),
+        solution_x=solution_x_methane,
+        solution_fun=0,
+    ),
+    "morebvne": _problem(
+        fun=morebvne,
+        start_x=[t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
+        solution_x=solution_x_morebvne,
+        solution_fun=0,
+    ),
+    "msqrta": _problem(
+        fun=msqrta,
+        start_x=get_start_points_msqrta(10),
+        solution_x=solution_x_msqrta,
+        solution_fun=0,
+    ),
+    "msqrtb": _problem(
+        fun=msqrta,
+        start_x=get_start_points_msqrta(10, flag=2),
+        solution_x=solution_x_msqrtb,
+        solution_fun=0,
+    ),
+    "oscigrne": _problem(
+        fun=oscigrne,
+        start_x=[-2] + [1] * 99,
+        solution_x=solution_x_oscigrne,
+        solution_fun=0,
+    ),
+    "penalty_1": _problem(
+        fun=penalty_1,
+        start_x=list(range(1, 101)),
+        solution_x=None,
+        solution_fun=9.025000e-9,
+    ),
+    "penalty_2": _problem(
+        fun=penalty_2,
+        start_x=[0.5] * 100,
+        solution_x=solution_x_penalty2,
+        solution_fun=0.9809377,
+    ),
+    "powellse": _problem(
+        fun=powell_singular,
+        start_x=[3.0, -1.0, 0.0, 1] * 25,
+        solution_x=[0] * 100,
+        solution_fun=0,
+    ),
+    "qr3d": _problem(
+        fun=partial(qr3d, m=5),
+        start_x=get_start_points_qr3d(5),
+        solution_x=solution_x_qr3d,
+        solution_fun=0,
+        bounds=Bounds(
             lower=[-np.inf] * 25
             + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
         ),
-    },
-    "qr3dbd": {
-        "fun": partial(qr3dbd, m=5),
-        "start_x": get_start_points_qr3dbd(5),
-        "solution_x": solution_x_qr3dbd,
-        "start_criterion": 1.2,
-        "solution_criterion": 0,
-        "bounds": Bounds(
+    ),
+    "qr3dbd": _problem(
+        fun=partial(qr3dbd, m=5),
+        start_x=get_start_points_qr3dbd(5),
+        solution_x=solution_x_qr3dbd,
+        solution_fun=0,
+        bounds=Bounds(
             lower=[-np.inf] * 25
             + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
         ),
-    },
-    "spmsqrt": {
-        "fun": spmsqrt,
-        "start_x": get_start_points_spmsqrt(34),
-        "solution_x": solution_x_spmsqrt,
-        "start_criterion": 74.33542,
-        "solution_criterion": 0,
-    },
-    "semicn2u": {
-        "fun": semicon2,
-        "start_x": [0] * 100,
-        "solution_x": solution_x_semicon2,
-        "start_criterion": 2.025037e4,
-        "solution_criterion": 0,
-    },
-    "semicon2": {
-        "fun": semicon2,
-        "start_x": [0] * 100,
-        "solution_x": solution_x_semicon2,
-        "start_criterion": 2.025037e4,
-        "solution_criterion": 0,
-        "bounds": Bounds(lower=-5 * np.ones(100), upper=0.2 * 700 * np.ones(100)),
-    },
-    "vardimne": {
-        "fun": vardimne,
-        "start_x": [1 - i / 100 for i in range(1, 101)],
-        "solution_x": [1] * 100,
-        "start_criterion": 1.310584e14,
-        "solution_criterion": 0,
-    },
-    "watsonne": {
-        "fun": watson,
-        "start_x": [0] * 31,
-        "solution_x": solution_x_watson,
-        "start_criterion": 30,
-        "solution_criterion": 0,
-    },
-    "yatpsq_1": {
-        "fun": partial(yatpsq_1, dim_in=10),
-        "start_x": [6] * 100 + [0] * 20,
-        "solution_x": solution_x_yatpsq_1,
-        "start_criterion": 2.073643e6,
-        "solution_criterion": 0,
-    },
-    "yatpsq_2": {
-        "fun": partial(yatpsq_2, dim_in=10),
-        "start_x": [10] * 100 + [0] * 20,
-        "solution_x": solution_x_yatpsq_2,
-        "start_criterion": 1.831687e5,
-        "solution_criterion": 0,
-    },
+    ),
+    "spmsqrt": _problem(
+        fun=spmsqrt,
+        start_x=get_start_points_spmsqrt(34),
+        solution_x=solution_x_spmsqrt,
+        solution_fun=0,
+    ),
+    "semicn2u": _problem(
+        fun=semicon2,
+        start_x=[0] * 100,
+        solution_x=solution_x_semicon2,
+        solution_fun=0,
+    ),
+    "semicon2": _problem(
+        fun=semicon2,
+        start_x=[0] * 100,
+        solution_x=solution_x_semicon2,
+        solution_fun=0,
+        bounds=Bounds(lower=-5 * np.ones(100), upper=0.2 * 700 * np.ones(100)),
+    ),
+    "vardimne": _problem(
+        fun=vardimne,
+        start_x=[1 - i / 100 for i in range(1, 101)],
+        solution_x=[1] * 100,
+        solution_fun=0,
+    ),
+    "watsonne": _problem(
+        fun=watson,
+        start_x=[0] * 31,
+        solution_x=solution_x_watson,
+        solution_fun=0,
+    ),
+    "yatpsq_1": _problem(
+        fun=partial(yatpsq_1, dim_in=10),
+        start_x=[6] * 100 + [0] * 20,
+        solution_x=solution_x_yatpsq_1,
+        solution_fun=0,
+    ),
+    "yatpsq_2": _problem(
+        fun=partial(yatpsq_2, dim_in=10),
+        start_x=[10] * 100 + [0] * 20,
+        solution_x=solution_x_yatpsq_2,
+        solution_fun=0,
+    ),
 }
-
-
-def get_raw_problems_cartis_roberts() -> dict[str, dict[str, Any]]:
-    """Get the specifications of the Cartis-Roberts benchmark problems.
-
-    Returns:
-        A dictionary that maps the name of each problem to its specification, which
-        contains the criterion function, the start values and the solution.
-
-    """
-    return CARTIS_ROBERTS_PROBLEMS

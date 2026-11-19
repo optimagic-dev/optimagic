@@ -1,6 +1,6 @@
 import pytest
 
-from optimagic import get_benchmark_problems
+from optimagic import algos, get_benchmark_problems
 from optimagic.benchmarking.run_benchmark import run_benchmark
 from optimagic.visualization.deviation_plot import (
     deviation_plot,
@@ -20,14 +20,7 @@ profile_options = [
 @pytest.mark.parametrize("options", profile_options)
 def test_convergence_plot_options(options):
     problems = get_benchmark_problems("example")
-    stop_after_10 = {
-        "stopping_max_criterion_evaluations": 10,
-        "stopping_max_iterations": 10,
-    }
-    optimizers = {
-        "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": stop_after_10},
-        "nm": {"algorithm": "scipy_neldermead", "algo_options": stop_after_10},
-    }
+    optimizers = {"lbfgsb": algos.scipy_lbfgsb, "nm": algos.scipy_neldermead}
     results = run_benchmark(
         problems,
         optimizers,

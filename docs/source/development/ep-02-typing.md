@@ -1485,6 +1485,26 @@ All of these will be very simple wrappers around `first_derivative` and
 
 ## Benchmarking
 
+```{note}
+The implementation in version `0.6.0` follows this section with a few changes:
+
+- A benchmark problem is split into two classes. A `BenchmarkFunction` is the core of a
+  problem (the objective function, optionally its derivative, the numbers of parameters
+  it supports and properties like differentiability). A `BenchmarkProblem` combines a
+  benchmark function with start parameters and optionally bounds, a known solution,
+  noise and scaling. The same function can be used in several problems, e.g. with good
+  and bad start parameters. Functions are defined by subclassing, i.e. `fun` is a method
+  and not an attribute.
+- The solution of a `BenchmarkProblem` is optional and states whether it is exact or
+  only the best known value. Without an exact solution, plots and reports use the best
+  function value any of the compared optimizers found.
+- `draw_noise` has no `size` argument because the size follows from `fval`.
+- The result of the optimization is stored as `optimize_result` instead of `solution`
+  in `BenchmarkResult`, because `solution` is the known solution of a
+  `BenchmarkProblem`.
+- The deprecated arguments are removed in version `0.7.0`.
+```
+
 ### `get_benchmark_problems`
 
 #### Current situation

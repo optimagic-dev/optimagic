@@ -28,13 +28,9 @@ def deviation_plot(
     best  value.
 
     Args:
-        problems (dict): optimagic benchmarking problems dictionary. Keys are the
-            problem names. Values contain information on the problem, including the
-            solution value.
-        results (dict): optimagic benchmarking results dictionary. Keys are
-            tuples of the form (problem, algorithm), values are dictionaries of the
-            collected information on the benchmark run, including 'criterion_history'
-            and 'time_history'.
+        problems (dict): Dictionary that maps names to benchmark problems.
+        results (dict): Dictionary with benchmark results. Keys are tuples of the
+            form (problem, algorithm).
         runtime_measure (str): One of "n_evaluations", "n_batches".
         distance_measure (str): One of "criterion", "parameter_distance".
         monotone (bool): If True the best found criterion value so far is plotted.
