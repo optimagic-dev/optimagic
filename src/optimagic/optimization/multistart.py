@@ -17,7 +17,6 @@ from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.stats import qmc, triang
 
 from optimagic.logging.logger import LogStore
 from optimagic.logging.types import StepStatus
@@ -244,6 +243,9 @@ def _draw_exploration_sample(
             values.
 
     """
+    # imported here to keep `import optimagic` fast
+    from scipy.stats import qmc, triang
+
     if lower is None or upper is None:
         raise ValueError("lower and upper bounds must be provided for multistart.")
 

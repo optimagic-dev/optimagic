@@ -77,6 +77,15 @@ Your contribution should fulfill the criteria provided below.
   modules. Of course it is also not a solution to copy paste the function! If you would
   like to import a function that starts with an underscore, rename it.
 
+- Keep `import optimagic` fast : Packages that are slow to import and only needed for
+  some features are imported inside the functions that use them and not at the top of a
+  module. Examples are `scipy`, `sqlalchemy`, `plotly.express`, `joblib`, `numba` and
+  the optimizer libraries. Everything that `minimize` and `maximize` always need is
+  imported at the top, so that the first optimization is not slowed down instead.
+  `tests/optimagic/test_import.py` fails if `import optimagic` imports one of the slow
+  packages. Run `python -X importtime -c "import optimagic"` to see how long each module
+  takes to import.
+
 - All functions have a [Google style](https://tinyurl.com/mxams9k) docstring : The
   docstring describes all arguments and outputs. For arrays, please document how many
   dimensions and what shape they have. Look around in the code to find examples if you

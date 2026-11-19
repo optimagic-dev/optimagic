@@ -15,23 +15,6 @@ from optimagic.optimization.algorithm import Algorithm, InternalOptimizeResult
 from optimagic.optimization.internal_optimization_problem import (
     InternalOptimizationProblem,
 )
-from optimagic.optimizers._pounders.pounders_auxiliary import (
-    add_accepted_point_to_residual_model,
-    add_geomtery_points_to_make_main_model_fully_linear,
-    create_initial_residual_model,
-    create_main_from_residual_model,
-    evaluate_residual_model,
-    find_affine_points,
-    fit_residual_model,
-    get_feature_matrices_residual_model,
-    get_last_model_indices_and_check_for_repeated_model,
-    solve_subproblem,
-    update_main_model_with_new_accepted_x,
-    update_residual_model,
-    update_residual_model_with_new_accepted_x,
-    update_trustregion_radius,
-)
-from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
 from optimagic.typing import (
     AggregationLevel,
     NonNegativeFloat,
@@ -461,6 +444,26 @@ def internal_solve_pounders(
             before reaching maxiter.
 
     """
+    # The helpers import scipy.linalg and scipy.optimize, which are slow to import.
+    # They are imported here to keep `import optimagic` fast.
+    from optimagic.optimizers._pounders.pounders_auxiliary import (
+        add_accepted_point_to_residual_model,
+        add_geomtery_points_to_make_main_model_fully_linear,
+        create_initial_residual_model,
+        create_main_from_residual_model,
+        evaluate_residual_model,
+        find_affine_points,
+        fit_residual_model,
+        get_feature_matrices_residual_model,
+        get_last_model_indices_and_check_for_repeated_model,
+        solve_subproblem,
+        update_main_model_with_new_accepted_x,
+        update_residual_model,
+        update_residual_model_with_new_accepted_x,
+        update_trustregion_radius,
+    )
+    from optimagic.optimizers._pounders.pounders_history import LeastSquaresHistory
+
     history = LeastSquaresHistory()
 
     n = len(x0)

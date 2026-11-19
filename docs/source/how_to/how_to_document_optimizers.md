@@ -245,10 +245,9 @@ Add the following to `docs/source/algorithms.md` in an `eval-rst` block:
   finite `bounds` if the algorithm needs them, and mark least-squares or likelihood
   functions with `om.mark.least_squares` or `om.mark.likelihood`
 - **Auto-generated documentation** via the `autoclass` directive that pulls in your
-  docstrings. The `:inherited-members: Algorithm, object` option is required:
-  `mark.minimizer` re-creates the algorithm class as a pydantic dataclass that inherits
-  from your class, so without it autodoc treats your documented fields as inherited and
-  does not show them
+  docstrings. The `:inherited-members: Algorithm, object` option also shows fields that
+  your class inherits from a base class of its own, without listing the members of
+  `Algorithm`
 
 ## Working with Existing Documentation
 
