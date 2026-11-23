@@ -32937,7 +32937,7 @@ packages:
   - optree>=0.19
   - pandas>=2.1
   - plotly>=5.14
-  - pydantic>=2.6
+  - pydantic>=2.10
   - scipy>=1.11
   - sqlalchemy>=2.0
   - typing-extensions>=4.5

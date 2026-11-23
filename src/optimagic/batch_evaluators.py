@@ -5,15 +5,6 @@ can be used used as batch evaluator in optimagic.
 
 """
 
-from joblib import Parallel, delayed
-
-try:
-    from pathos.pools import ProcessPool
-
-    pathos_is_available = True
-except ImportError:
-    pathos_is_available = False
-
 import threading
 from typing import Any, Callable, Literal, TypeVar, cast
 
@@ -61,11 +52,14 @@ def pathos_mp_batch_evaluator(
         list: The function evaluations.
 
     """
-    if not pathos_is_available:
+    # imported here to keep `import optimagic` fast
+    try:
+        from pathos.pools import ProcessPool
+    except ImportError as e:
         raise NotImplementedError(
             "To use the pathos_mp_batch_evaluator, install pathos with "
             "conda install -c conda-forge pathos."
-        )
+        ) from e
 
     _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol)
     n_cores = int(n_cores)
@@ -144,6 +138,9 @@ def joblib_batch_evaluator(
     if n_cores == 1:
         res = [internal_func(arg) for arg in arguments]
     else:
+        # imported here to keep `import optimagic` fast
+        from joblib import Parallel, delayed
+
         res = Parallel(n_jobs=n_cores)(delayed(internal_func)(arg) for arg in arguments)
 
     return res

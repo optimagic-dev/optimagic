@@ -6,7 +6,6 @@ import cloudpickle
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from scipy.linalg import ldl, qr
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
@@ -235,6 +234,9 @@ def _internal_robust_cholesky(matrix, threshold):
         *threshold*.
 
     """
+    # imported here to keep `import optimagic` fast
+    from scipy.linalg import ldl, qr
+
     lu, d, _ = ldl(matrix)
 
     diags = np.diagonal(d).copy()
