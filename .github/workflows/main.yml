@@ -20,9 +20,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '312'
           - '313'
           - '314'
+          - '315'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -38,7 +38,7 @@ jobs:
         shell: bash -el {0}
         run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
       - name: Upload coverage report.
-        if: matrix.python-version == '312'
+        if: matrix.python-version == '313'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -52,9 +52,7 @@ jobs:
           - macos-latest
           - windows-latest
         python-version:
-          - '312'
-          - '313'
-          - '314'
+          - '315'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -86,6 +84,23 @@ jobs:
       - name: Run pytest
         shell: bash -el {0}
         run: pixi run -e tests-old-plotly tests-fast
+  run-tests-with-old-pandas:
+    name: Run tests on ubuntu-latest with pandas < 3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
+        with:
+          pixi-version: v0.71.2
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-old-pandas
+      - name: Run pytest
+        shell: bash -el {0}
+        run: pixi run -e tests-old-pandas tests-fast
   run-tests-nevergrad:
     name: Run nevergrad tests py${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -93,9 +108,9 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '312'
           - '313'
           - '314'
+          - '315'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -125,11 +140,11 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: tests-linux-py314
+          environments: tests-linux-py315
       - name: Run doctest
         shell: bash -el {0}
         run: >-
-          pixi run -e tests-linux-py314
+          pixi run -e tests-linux-py315
           python -m doctest -v docs/source/how_to/how_to_constraints.md
   run-ty:
     name: Run ty

@@ -351,7 +351,8 @@ def _render_latex(
         ci_in_body = False
 
     if ci_in_body:
-        body.loc[("",)] = pd_df_map(body.loc[("",)], "{{{}}}".format).values
+        is_ci_row = body.index.get_level_values(0) == ""
+        body.loc[is_ci_row] = pd_df_map(body.loc[is_ci_row], "{{{}}}".format).values
     if body.columns.nlevels > 1:
         column_groups = body.columns.get_level_values(0)
     else:
@@ -1098,17 +1099,17 @@ def _combine_series(value_sr, inference_sr):
     """
     value_df = value_sr.to_frame(name="")
     original_cols = value_df.columns
-    value_df.reset_index(drop=False, inplace=True)
+    value_df = value_df.reset_index(drop=False)
     index_names = [item for item in value_df.columns if item not in original_cols]
     # set the index to even numbers, starting at 0
     value_df.index = value_df.index * 2
     inference_df = inference_sr.to_frame(name="")
-    inference_df.reset_index(drop=False, inplace=True)
+    inference_df = inference_df.reset_index(drop=False)
     # set the index to odd numbers, starting at 1
     inference_df.index = (inference_df.index * 2) + 1
     inference_df[index_names[-1]] = ""
     df = pd.concat([value_df, inference_df]).sort_index()
-    df.set_index(index_names, inplace=True, drop=True)
+    df = df.set_index(index_names, drop=True)
     return df[""]
 
 
@@ -1232,7 +1233,7 @@ def _process_frame_indices(
         if isinstance(custom_index_names, list):
             df.index.names = custom_index_names
         elif isinstance(custom_index_names, dict):
-            df.rename_axis(index=custom_index_names, inplace=True)
+            df = df.rename_axis(index=custom_index_names)
         else:
             raise TypeError(
                 f"""Invalid custom_index_names can be of type either list or dict,

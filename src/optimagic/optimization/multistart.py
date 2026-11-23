@@ -445,7 +445,7 @@ def update_convergence_state(
     # array as solution_criterion.
     for res in valid_results:
         if np.isscalar(res.fun):
-            fun = float(res.fun)  # ty:ignore[invalid-argument-type]
+            fun = float(res.fun)
         elif solver_type == AggregationLevel.LIKELIHOOD:
             fun = float(np.sum(res.fun))
         elif solver_type == AggregationLevel.LEAST_SQUARES:

@@ -238,7 +238,7 @@ class MultistartInfo:
 
 
 def _format_convergence_report(report, algorithm):
-    report = pd.DataFrame.from_dict(report)
+    report = pd.DataFrame(report)
     columns = ["one_step", "five_steps"]
 
     table = pd_df_map(report[columns], _format_float).astype(str)

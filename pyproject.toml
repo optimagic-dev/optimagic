@@ -4,7 +4,7 @@
 [project]
 name = "optimagic"
 description = "Tools to solve difficult numerical optimization problems."
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "cloudpickle>=2.2",
     "joblib>=1.1",
@@ -41,9 +41,9 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering",
 ]
 authors = [
@@ -96,7 +96,7 @@ allow-direct-references = true
 # Ruff configuration
 # ======================================================================================
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 fix = true
 
 [tool.ruff.lint]
@@ -389,11 +389,11 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 # --- Base dependencies (all environments) -------------------------------------------
 [tool.pixi.dependencies]
-python = ">=3.12,<3.15"
+python = ">=3.13,<3.16"
 # Prefer conda-forge builds for compiled scientific packages
 numpy = ">=2.0.0"
 scipy = ">=1.11"
-pandas = ">=2.1,<3"
+pandas = ">=2.1"
 jupyterlab = ">=4.0"
 cyipopt = ">=1.4.0"
 pygmo = ">=2.19.0"
@@ -410,8 +410,12 @@ tranquilo = ">=0.1.1"
 iminuit = ">=2.25"
 cma = ">=3.3"
 pygad = ">=3.2"
-pytorch-cpu = ">=2.2"
 ruff = ">=0.15.5,<0.16"
+# Dependencies of PyPI-only packages (fides, bayesian-optimization, kaleido) that have
+# no PyPI wheels for the newest Python version yet; conda-forge builds avoid sdist builds.
+h5py = "*"
+orjson = "*"
+scikit-learn = "*"
 
 [tool.pixi.pypi-dependencies]
 optimagic = { path = ".", editable = true }
@@ -424,13 +428,18 @@ kaleido = ">=0.2.1"
 gradient-free-optimizers = ">=1.6.0"
 pyswarms = ">=1.3"
 
+# gradient-free-optimizers (up to at least 1.13.0) declares pandas<3, but our tests of it
+# pass with pandas 3. Remove the override once a release without the cap is available.
+[tool.pixi.pypi-options.dependency-overrides]
+pandas = ">=2.1"
+
 # --- Python version features --------------------------------------------------------
-[tool.pixi.feature.py312.dependencies]
-python = "~=3.12.0"
 [tool.pixi.feature.py313.dependencies]
 python = "~=3.13.0"
 [tool.pixi.feature.py314.dependencies]
 python = "~=3.14.0"
+[tool.pixi.feature.py315.dependencies]
+python = "~=3.15.0"
 
 # --- Feature: tests (test infrastructure) --------------------------------------------
 [tool.pixi.feature.tests.dependencies]
@@ -463,6 +472,13 @@ ty-fix = { cmd = "ty check --fix", description = "Run ty type checker and apply 
 platforms = ["linux-64"]
 [tool.pixi.feature.linux.dependencies]
 jax = ">=0.4.8"
+
+# petsc4py is separate because on Python 3.15 it cannot be installed together with
+# cyipopt and pygmo: their conda-forge builds need the int64 variant of libscotch,
+# while petsc >= 3.26 (the only petsc with Python 3.15 support) needs the int32 one.
+[tool.pixi.feature.petsc]
+platforms = ["linux-64"]
+[tool.pixi.feature.petsc.dependencies]
 petsc4py = ">=3.18"
 
 # --- Feature: docs -------------------------------------------------------------------
@@ -493,29 +509,31 @@ plotly = "<6"
 [tool.pixi.feature.old-plotly.pypi-dependencies]
 kaleido = "<0.3"
 
+[tool.pixi.feature.old-pandas.dependencies]
+pandas = "<3"
+
 [tool.pixi.feature.nevergrad.pypi-dependencies]
 bayesian-optimization = "==1.4.0"
 nevergrad = "*"
 
 # --- Environments --------------------------------------------------------------------
 [tool.pixi.environments]
-# Default dev environment (Python 3.14, everything)
-default = { features = ["tests", "py314"], solve-group = "py314" }
-# Linux CI (with JAX + PETSc)
-tests-linux-py312 = { features = ["tests", "linux", "py312"], solve-group = "linux-py312" }
-tests-linux-py313 = { features = ["tests", "linux", "py313"], solve-group = "linux-py313" }
-tests-linux-py314 = { features = ["tests", "linux", "py314"], solve-group = "linux-py314" }
+# Default dev environment (latest Python, everything)
+default = { features = ["tests", "py315"], solve-group = "py315" }
+# Linux CI (with JAX + PETSc; no PETSc on Python 3.15, see feature.petsc)
+tests-linux-py313 = { features = ["tests", "linux", "petsc", "py313"], solve-group = "linux-py313" }
+tests-linux-py314 = { features = ["tests", "linux", "petsc", "py314"], solve-group = "linux-py314" }
+tests-linux-py315 = { features = ["tests", "linux", "py315"], solve-group = "linux-py315" }
 # macOS/Windows CI
-tests-py312 = { features = ["tests", "py312"], solve-group = "py312" }
-tests-py313 = { features = ["tests", "py313"], solve-group = "py313" }
-tests-py314 = { features = ["tests", "py314"], solve-group = "py314" }
-# Backward-compat CI (Python 3.12, lowest supported)
-tests-old-plotly = { features = ["tests", "old-plotly", "py312"] }
+tests-py315 = { features = ["tests", "py315"], solve-group = "py315" }
+# Backward-compat CI (Python 3.13, lowest supported)
+tests-old-plotly = { features = ["tests", "old-plotly", "py313"] }
+tests-old-pandas = { features = ["tests", "old-pandas", "py313"] }
 # Nevergrad CI (bayesian-optimization==1.4.0)
-tests-nevergrad-py312 = { features = ["tests", "nevergrad", "py312"] }
 tests-nevergrad-py313 = { features = ["tests", "nevergrad", "py313"] }
 tests-nevergrad-py314 = { features = ["tests", "nevergrad", "py314"] }
+tests-nevergrad-py315 = { features = ["tests", "nevergrad", "py315"] }
 # Type checking
-type-checking = { features = ["type-checking", "py314"], solve-group = "py314" }
+type-checking = { features = ["type-checking", "py315"], solve-group = "py315" }
 # Docs
-docs = { features = ["docs", "py314"], solve-group = "py314" }
+docs = { features = ["docs", "py315"], solve-group = "py315" }
