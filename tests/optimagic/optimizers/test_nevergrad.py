@@ -1,6 +1,6 @@
 """Test helper functions for nevergrad optimizers."""
 
-from typing import get_args
+from typing import get_args, get_type_hints
 
 import numpy as np
 import pytest
@@ -73,39 +73,46 @@ def sos(x):
 ###
 
 
-# test if all optimizers listed in Literal type hint are valid attributes
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
-def test_meta_optimizers_are_valid():
-    opt = algorithms.NevergradMeta
-    optimizers = get_args(opt.__annotations__["optimizer"])
-    for optimizer in optimizers:
-        try:
-            getattr(ng.optimizers, optimizer)
-        except AttributeError:
-            pytest.fail(f"Optimizer '{optimizer}' not found in Nevergrad")
+def _get_optimizer_names(algorithm):
+    """Return the values of the Literal type hint of the option ``optimizer``.
+
+    The annotations of the nevergrad module are strings, so they have to be evaluated
+    with ``get_type_hints``. ``get_args`` of the raw string would return ``()``.
+
+    """
+    return get_args(get_type_hints(algorithm)["optimizer"])
 
 
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
-def test_ngopt_optimizers_are_valid():
-    opt = algorithms.NevergradNGOpt
-    optimizers = get_args(opt.__annotations__["optimizer"])
-    for optimizer in optimizers:
-        try:
-            getattr(ng.optimizers, optimizer)
-        except AttributeError:
-            pytest.fail(f"Optimizer '{optimizer}' not found in Nevergrad")
+NEVERGRAD_META = _get_optimizer_names(algorithms.NevergradMeta)
+NEVERGRAD_NGOPT = _get_optimizer_names(algorithms.NevergradNGOpt)
 
 
-# list of available optimizers in nevergrad_meta
-NEVERGRAD_META = get_args(algorithms.NevergradMeta.__annotations__["optimizer"])
-# list of available optimizers in nevergrad_ngopt
-NEVERGRAD_NGOPT = get_args(algorithms.NevergradNGOpt.__annotations__["optimizer"])
+@pytest.mark.parametrize("optimizer", NEVERGRAD_META + NEVERGRAD_NGOPT)
+def test_optimizers_in_literal_type_hints_exist_in_nevergrad(optimizer):
+    assert hasattr(ng.optimizers, optimizer)
 
 
 # test stochastic_global_algorithm_on_sum_of_squares
+IMPRECISE_META_OPTIMIZERS = {"NoisyBandit"}
+
+
 @pytest.mark.slow
-@pytest.mark.parametrize("algorithm", NEVERGRAD_META)
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
+@pytest.mark.parametrize(
+    "algorithm",
+    [
+        pytest.param(
+            name,
+            marks=pytest.mark.xfail(
+                raises=AssertionError,
+                strict=True,
+                reason="Does not reach the required precision on this problem.",
+            ),
+        )
+        if name in IMPRECISE_META_OPTIMIZERS
+        else name
+        for name in NEVERGRAD_META
+    ],
+)
 def test_meta_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algorithm):
     res = minimize(
         fun=sos,
@@ -122,7 +129,6 @@ def test_meta_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algo
 
 @pytest.mark.slow
 @pytest.mark.parametrize("algorithm", NEVERGRAD_NGOPT)
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
 def test_ngopt_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algorithm):
     res = minimize(
         fun=sos,

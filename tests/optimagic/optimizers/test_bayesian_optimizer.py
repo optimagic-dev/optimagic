@@ -6,13 +6,7 @@ import pytest
 from optimagic.config import IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2
 from optimagic.optimization.internal_optimization_problem import InternalBounds
 
-pytestmark = [
-    pytest.mark.bayesopt,
-    pytest.mark.skipif(
-        not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2,
-        reason="bayes_opt is not installed in a recent enough version >= 2.0.0.",
-    ),
-]
+pytestmark = pytest.mark.bayesopt
 
 if IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2:
     from bayes_opt import acquisition

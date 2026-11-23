@@ -6,7 +6,6 @@ import numpy as np
 import pytest
 
 from optimagic.algorithms import ALL_ALGORITHMS
-from optimagic.config import IS_PYGMO_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.pygmo_optimizers import (
     _convert_str_to_int,
@@ -43,7 +42,6 @@ def test_convert_str_to_int():
 PYGMO_ALGORITHMS = sorted(name for name in ALL_ALGORITHMS if name.startswith("pygmo_"))
 
 
-@pytest.mark.skipif(not IS_PYGMO_INSTALLED, reason="pygmo is not installed.")
 @pytest.mark.parametrize("algorithm", PYGMO_ALGORITHMS)
 def test_seed_makes_runs_reproducible(algorithm):
     algo = ALL_ALGORITHMS[algorithm]().with_option(seed=0)

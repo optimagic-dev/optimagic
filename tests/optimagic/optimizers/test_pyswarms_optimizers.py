@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from optimagic.config import IS_PYSWARMS_INSTALLED
 from optimagic.optimization.internal_optimization_problem import InternalBounds
 from optimagic.optimizers.pyswarms_optimizers import (
     PyramidTopology,
@@ -129,7 +128,6 @@ def test_create_initial_positions_no_bounds():
     assert np.all(init_pos <= 1.0)
 
 
-@pytest.mark.skipif(not IS_PYSWARMS_INSTALLED, reason="PySwarms not installed")
 @pytest.mark.parametrize(
     ("topology_string", "expected_class_name", "expected_options"),
     [
@@ -150,7 +148,6 @@ def test_resolve_topology_config_by_string(
     assert options == expected_options
 
 
-@pytest.mark.skipif(not IS_PYSWARMS_INSTALLED, reason="PySwarms not installed")
 @pytest.mark.parametrize(
     ("config_instance", "expected_class_name", "expected_options"),
     [
@@ -179,14 +176,12 @@ def test_resolve_topology_config_by_instance(
         assert topology.static == config_instance.static
 
 
-@pytest.mark.skipif(not IS_PYSWARMS_INSTALLED, reason="PySwarms not installed")
 def test_resolve_topology_config_invalid_string():
     """Test topology resolution with invalid string."""
     with pytest.raises(ValueError, match="Unknown topology string: 'invalid'"):
         _resolve_topology_config("invalid")  # ty:ignore[invalid-argument-type]
 
 
-@pytest.mark.skipif(not IS_PYSWARMS_INSTALLED, reason="PySwarms not installed")
 def test_resolve_topology_config_invalid_type():
     """Test topology resolution with invalid type."""
     with pytest.raises(TypeError, match="Unsupported topology configuration type"):

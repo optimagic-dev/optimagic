@@ -3,7 +3,6 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from optimagic import mark
-from optimagic.config import IS_NEVERGRAD_INSTALLED
 from optimagic.optimization.optimize import minimize
 
 
@@ -13,10 +12,6 @@ def sos(x):
 
 
 @pytest.mark.nevergrad
-@pytest.mark.skipif(
-    not IS_NEVERGRAD_INSTALLED,
-    reason="nevergrad not installed",
-)
 def test_no_bounds_with_nevergrad():
     res = minimize(
         fun=sos,

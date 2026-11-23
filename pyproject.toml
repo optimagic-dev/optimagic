@@ -8,10 +8,10 @@ requires-python = ">=3.13"
 dependencies = [
     "cloudpickle>=2.2",
     "joblib>=1.1",
-    "numpy>=1.26",
-    "pandas>=2.1",
-    "plotly>=5.14",
-    "scipy>=1.11",
+    "numpy>=2.2",
+    "pandas>=2.3",
+    "plotly>=6.0",
+    "scipy>=1.15",
     "sqlalchemy>=2.0",
     "annotated-types>=0.4",
     "pydantic>=2.10",
@@ -303,8 +303,9 @@ markers = [
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
     "jax: Tests that require jax to be installed and are skipped on non-Linux systems.",
     # Optimizer libraries. tests/conftest.py adds the marker to all tests that are
-    # parametrized with an algorithm of the library. Each library has a pixi environment
-    # tests-<marker> and a CI job that runs `pytest -m <marker>` in it.
+    # parametrized with an algorithm of the library and skips the tests of libraries
+    # that are not installed. Each library has a pixi environment tests-<marker> and a
+    # CI job that runs `pytest --library <marker>` in it.
     "bayesopt: Tests of optimizers from bayesian-optimization.",
     "fides: Tests of optimizers from fides.",
     "gfo: Tests of optimizers from gradient-free-optimizers.",
@@ -407,9 +408,9 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 [tool.pixi.dependencies]
 python = ">=3.13,<3.16"
 # Prefer conda-forge builds for compiled scientific packages
-numpy = ">=2.0.0"
-scipy = ">=1.11"
-pandas = ">=2.1"
+numpy = ">=2.2"
+scipy = ">=1.15"
+pandas = ">=2.3"
 jupyterlab = ">=4.0"
 statsmodels = ">=0.14"
 matplotlib = ">=3.8"
@@ -443,9 +444,11 @@ pytest-cov = ">=4.0"
 pytest-xdist = ">=3.2"
 
 [tool.pixi.feature.tests.tasks]
-tests = { cmd = "pytest", description = "Run the full test suite" }
-tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
-tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src --cov=tests", description = "Run tests with XML coverage report for source and test code" }
+# The tasks run the tests in parallel on all CPU cores. Add `-n 0` to run them in one
+# process, e.g. for debugging with --pdb.
+tests = { cmd = "pytest -n auto", description = "Run the full test suite" }
+tests-fast = { cmd = "pytest -n auto -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
+tests-with-cov = { cmd = "pytest -n auto --cov-report=xml --cov=src --cov=tests", description = "Run tests with XML coverage report for source and test code" }
 
 # --- Feature: type-checking (ty + type stubs) --------------------------------------
 [tool.pixi.feature.type-checking.dependencies]
@@ -489,7 +492,7 @@ gradient-free-optimizers = ">=1.6.0"
 # gradient-free-optimizers (up to at least 1.13.0) declares pandas<3, but our tests of it
 # pass with pandas 3. Remove the override once a release without the cap is available.
 [tool.pixi.feature.gfo.pypi-options.dependency-overrides]
-pandas = ">=2.1"
+pandas = ">=2.3"
 
 [tool.pixi.feature.iminuit.dependencies]
 iminuit = ">=2.25"
@@ -501,8 +504,22 @@ cyipopt = ">=1.4.0"
 dfo-ls = ">=1.5.3"
 py-bobyqa = ">=1.3"
 
+# nevergrad_bo needs bayes-optim, which needs torch and scikit-learn. The conda-forge
+# CPU build of torch keeps the PyPI resolver from installing the much larger CUDA build.
+[tool.pixi.feature.nevergrad.dependencies]
+pytorch-cpu = "*"
+scikit-learn = "*"
+# nevergrad 1.0.12 calls float() on an array with one element, which numpy >= 2.4
+# rejects. Optimizers that use nevergrad's metamodel, e.g. NgIoh4 or Wiz, then crash and
+# leave a thread behind that keeps Python from exiting. This is fixed in nevergrad's
+# main branch (facebookresearch/nevergrad#1707); remove the cap once a nevergrad
+# release contains the fix.
+numpy = "<2.4"
 [tool.pixi.feature.nevergrad.pypi-dependencies]
 nevergrad = "*"
+bayes-optim = "*"
+# bayes-optim imports the module pyDOE, which pyDOE renamed to pydoe in version 1.0.
+pydoe = "<0.4"
 
 [tool.pixi.feature.nlopt.dependencies]
 nlopt = ">=2.7"
@@ -551,12 +568,7 @@ intersphinx-registry = "*"
 build-docs = { cmd = "make html", cwd = "docs", description = "Build the HTML documentation" }
 
 # --- Compat features (version overrides for backward-compat CI) ---------------------
-[tool.pixi.feature.old-plotly.dependencies]
-plotly = "<6"
-
-[tool.pixi.feature.old-plotly.pypi-dependencies]
-kaleido = "<0.3"
-
+# Following SPEC 0, pandas 2.3 is supported until June 2027, two years after its release.
 [tool.pixi.feature.old-pandas.dependencies]
 pandas = "<3"
 
@@ -579,13 +591,14 @@ docs = { features = [
 ], solve-group = "py314" }
 # Main test environments: no optimizer libraries besides scipy. Linux adds JAX.
 # Linux CI runs all supported Python versions. Every job that runs with only one Python
-# version uses the second newest (3.14), because the newest often has problems.
-tests-linux-py313 = { features = ["tests", "linux", "py313"], solve-group = "linux-py313" }
-tests-linux-py314 = { features = ["tests", "linux", "py314"], solve-group = "linux-py314" }
-tests-linux-py315 = { features = ["tests", "linux", "py315"], solve-group = "linux-py315" }
-tests-py314 = { features = ["tests", "py314"], solve-group = "py314" }
+# version uses the second newest (3.14), because the newest often has problems. The main
+# test environments are solved on their own, so that the optimizer libraries do not
+# restrict the versions of optimagic's own dependencies.
+tests-linux-py313 = { features = ["tests", "linux", "py313"] }
+tests-linux-py314 = { features = ["tests", "linux", "py314"] }
+tests-linux-py315 = { features = ["tests", "linux", "py315"] }
+tests-py314 = { features = ["tests", "py314"] }
 # Backward-compat CI
-tests-old-plotly = { features = ["tests", "old-plotly", "py314"] }
 tests-old-pandas = { features = ["tests", "old-pandas", "py314"] }
 # One environment per optimizer library (only run on Linux in CI)
 tests-bayesopt = { features = ["tests", "py314", "bayesopt"] }

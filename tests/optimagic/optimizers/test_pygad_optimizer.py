@@ -2,8 +2,10 @@
 
 import warnings
 
+import numpy as np
 import pytest
 
+import optimagic as om
 from optimagic.optimizers.pygad_optimizer import (
     AdaptiveMutation,
     InversionMutation,
@@ -284,3 +286,22 @@ def test_mutation_type_class_variables():
     assert InversionMutation.mutation_type == "inversion"
     assert ScrambleMutation.mutation_type == "scramble"
     assert AdaptiveMutation.mutation_type == "adaptive"
+
+
+@pytest.mark.parametrize(
+    "num_generations, stopping_maxiter, expected",
+    [(50, 2, 2), (2, 50, 2), (None, 3, 3)],
+)
+def test_pygad_runs_the_smaller_number_of_generations(
+    num_generations, stopping_maxiter, expected
+):
+    res = om.minimize(
+        fun=lambda x: x @ x,
+        params=np.array([1.0, 2.0]),
+        algorithm=om.algos.pygad(
+            num_generations=num_generations, stopping_maxiter=stopping_maxiter, seed=0
+        ),
+        bounds=om.Bounds(lower=np.full(2, -5.0), upper=np.full(2, 5.0)),
+    )
+    assert res.message is not None
+    assert f"Generations completed: {expected}" in res.message

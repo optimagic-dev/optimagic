@@ -47,8 +47,10 @@ jobs:
           path: coverage.xml
           retention-days: 7
   # Each optimizer library is tested in its own environment, so libraries never have
-  # to be installable together. `-m <library>` selects the tests of the library,
-  # including tests that loop over all installed algorithms (see tests/conftest.py).
+  # to be installable together. `--library <library>` selects the tests of the
+  # library, including tests that loop over all installed algorithms. It fails if an
+  # algorithm of the library is not available or if a selected test is skipped (see
+  # tests/conftest.py).
   run-optimizer-library-tests:
     name: Run ${{ matrix.library }} tests
     runs-on: ubuntu-latest
@@ -84,7 +86,7 @@ jobs:
         shell: bash -el {0}
         run: >-
           pixi run -e tests-${{ matrix.library }} tests-with-cov
-          -m "${{ matrix.library }} or ${{ matrix.library }}_wrappers"
+          --library ${{ matrix.library }}
       - name: Save coverage report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
@@ -137,23 +139,6 @@ jobs:
       - name: Run pytest
         shell: bash -el {0}
         run: pixi run -e tests-py${{ matrix.python-version }} tests-fast
-  run-tests-with-old-plotly:
-    name: Run tests on ubuntu-latest with plotly < 6
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
-        with:
-          pixi-version: v0.71.2
-          cache: true
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          frozen: true
-          environments: tests-old-plotly
-      - name: Run pytest
-        shell: bash -el {0}
-        run: pixi run -e tests-old-plotly tests-fast
   run-tests-with-old-pandas:
     name: Run tests on ubuntu-latest with pandas < 3
     runs-on: ubuntu-latest

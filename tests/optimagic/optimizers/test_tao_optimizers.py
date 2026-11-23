@@ -7,14 +7,10 @@ import pandas as pd
 import pytest
 
 from optimagic import mark
-from optimagic.config import IS_PETSC4PY_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.utilities import get_rng
 
-pytestmark = [
-    pytest.mark.tao,
-    pytest.mark.skipif(not IS_PETSC4PY_INSTALLED, reason="petsc4py is not installed."),
-]
+pytestmark = pytest.mark.tao
 
 NUM_AGENTS = 2_000
 

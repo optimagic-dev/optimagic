@@ -10,6 +10,14 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
+- {gh}`749` Supports pandas 3 and Python 3.15 and drops Python 3.12. Following
+  [SPEC 0](https://scientific-python.org/specs/spec-0000/), the minimum supported
+  versions are now Python 3.13, numpy 2.2, scipy 1.15, pandas 2.3 and plotly 6.0. Fixes
+  `traceback_report(return_type="dataframe")` and the LaTeX output of
+  `estimation_table` with confidence intervals under pandas 3. `pygad` no longer
+  ignores `stopping_maxiter`: it runs the smaller of `num_generations` and
+  `stopping_maxiter` generations. `nevergrad_bo` is now available if bayes-optim is
+  installed; before, optimagic did not detect bayes-optim ({ghuser}`janosg`).
 - {gh}`747` Reduces the time it takes to import optimagic from about 2 seconds to about
   0.6 seconds. Dependencies that are only needed for some features (scipy, numba,
   sqlalchemy, plotly.express and joblib) are imported when they are used, the

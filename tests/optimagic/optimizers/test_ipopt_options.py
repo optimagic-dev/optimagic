@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.ipopt import Ipopt
 from optimagic.parameters.bounds import Bounds
@@ -209,7 +208,6 @@ def derivative(x):
     return 2 * x
 
 
-@pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="cyipopt not installed.")
 @pytest.mark.parametrize("algo_options", test_cases)
 def test_ipopt_algo_options(algo_options):
     algorithm = Ipopt(**algo_options)
