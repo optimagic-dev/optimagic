@@ -13,6 +13,8 @@ on:
     branches:
       - '*'
 jobs:
+  # Job names are required status checks on main. Jobs that run with one Python
+  # version leave it out of their name, so that a version update does not change them.
   run-tests-linux:
     name: Run tests on ubuntu-latest py${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -48,7 +50,7 @@ jobs:
   # to be installable together. `-m <library>` selects the tests of the library,
   # including tests that loop over all installed algorithms (see tests/conftest.py).
   run-optimizer-library-tests:
-    name: Run ${{ matrix.library }} tests on ubuntu-latest py314
+    name: Run ${{ matrix.library }} tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -111,7 +113,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: coverage-reports
   run-tests-win-and-mac:
-    name: Run tests on ${{ matrix.os }} py${{ matrix.python-version }}
+    name: Run tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
