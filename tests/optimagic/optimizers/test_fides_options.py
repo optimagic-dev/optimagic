@@ -8,6 +8,8 @@ from optimagic.config import IS_FIDES_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
+pytestmark = pytest.mark.fides
+
 if IS_FIDES_INSTALLED:
     from fides.hessian_approximation import FX, SR1, Broyden
 

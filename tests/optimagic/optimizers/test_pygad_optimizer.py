@@ -16,6 +16,8 @@ from optimagic.optimizers.pygad_optimizer import (
     _get_default_mutation_params,
 )
 
+pytestmark = pytest.mark.pygad
+
 
 @pytest.mark.parametrize(
     "batch_size, n_cores, expected",

@@ -37,11 +37,79 @@ jobs:
       - name: Run pytest
         shell: bash -el {0}
         run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
-      - name: Upload coverage report.
+      - name: Save coverage report
         if: matrix.python-version == '313'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: coverage-main
+          path: coverage.xml
+          retention-days: 7
+  # Each optimizer library is tested in its own environment, so libraries never have
+  # to be installable together. `-m <library>` selects the tests of the library,
+  # including tests that loop over all installed algorithms (see tests/conftest.py).
+  run-optimizer-library-tests:
+    name: Run ${{ matrix.library }} tests on ubuntu-latest py314
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        library:
+          - bayesopt
+          - fides
+          - gfo
+          - iminuit
+          - ipopt
+          - nag
+          - nevergrad
+          - nlopt
+          - pygad
+          - pygmo
+          - pyswarms
+          - tao
+          - tranquilo
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
+        with:
+          pixi-version: v0.71.2
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-${{ matrix.library }}
+      - name: Run pytest
+        shell: bash -el {0}
+        run: >-
+          pixi run -e tests-${{ matrix.library }} tests-with-cov
+          -m "${{ matrix.library }} or ${{ matrix.library }}_wrappers"
+      - name: Save coverage report
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: coverage-${{ matrix.library }}
+          path: coverage.xml
+          retention-days: 7
+  upload-coverage:
+    name: Upload combined coverage report
+    needs:
+      - run-tests-linux
+      - run-optimizer-library-tests
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # yamllint disable-line rule:line-length
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          pattern: coverage-*
+          path: coverage-reports
+      - name: Upload coverage reports in one upload
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          directory: coverage-reports
   run-tests-win-and-mac:
     name: Run tests on ${{ matrix.os }} py${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
@@ -52,7 +120,7 @@ jobs:
           - macos-latest
           - windows-latest
         python-version:
-          - '315'
+          - '314'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -101,32 +169,6 @@ jobs:
       - name: Run pytest
         shell: bash -el {0}
         run: pixi run -e tests-old-pandas tests-fast
-  run-tests-nevergrad:
-    name: Run nevergrad tests py${{ matrix.python-version }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version:
-          - '313'
-          - '314'
-          - '315'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
-        with:
-          pixi-version: v0.71.2
-          cache: true
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          frozen: true
-          environments: tests-nevergrad-py${{ matrix.python-version }}
-      - name: Run pytest
-        shell: bash -el {0}
-        run: >-
-          pixi run -e tests-nevergrad-py${{ matrix.python-version }}
-          pytest tests/optimagic/optimizers/test_nevergrad.py
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
@@ -140,11 +182,11 @@ jobs:
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: tests-linux-py315
+          environments: tests-linux-py314
       - name: Run doctest
         shell: bash -el {0}
         run: >-
-          pixi run -e tests-linux-py315
+          pixi run -e tests-linux-py314
           python -m doctest -v docs/source/how_to/how_to_constraints.md
   run-ty:
     name: Run ty

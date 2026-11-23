@@ -11,6 +11,8 @@ from optimagic.config import IS_NEVERGRAD_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
+pytestmark = pytest.mark.nevergrad
+
 if IS_NEVERGRAD_INSTALLED:
     import nevergrad as ng
 

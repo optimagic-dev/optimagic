@@ -9,6 +9,8 @@ from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.ipopt import Ipopt
 from optimagic.parameters.bounds import Bounds
 
+pytestmark = pytest.mark.ipopt
+
 test_cases = [
     {},
     {"convergence_ftol_rel": 1e-7},

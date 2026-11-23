@@ -130,6 +130,17 @@ Include relevant slow tests before opening a PR. For broader checks, use
 `pixi run tests-fast`; it excludes slow and JAX tests on every platform. For changes to
 shared code used across multiple modules, run the full suite with `pixi run tests`.
 
+Each optimizer library has its own test environment, named after the library's pytest
+marker. For example, the nlopt tests run with:
+
+```console
+$ pixi run -e tests-nlopt tests -m nlopt
+```
+
+The marker also selects the nlopt algorithms in tests that loop over all installed
+algorithms. The default environment contains all optimizer libraries that can be
+installed together, so `pixi run tests` covers most of them at once.
+
 For changes affecting typing, run:
 
 ```console

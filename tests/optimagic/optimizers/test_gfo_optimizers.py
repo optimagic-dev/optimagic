@@ -15,6 +15,8 @@ from optimagic.optimizers.gfo_optimizers import (
 )
 from optimagic.parameters.bounds import Bounds
 
+pytestmark = pytest.mark.gfo
+
 problem = SphereExampleInternalOptimizationProblemWithConverter()
 
 

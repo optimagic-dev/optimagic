@@ -11,6 +11,8 @@ from optimagic.optimizers.iminuit_migrad import (
     _convert_bounds_to_minuit_limits,
 )
 
+pytestmark = pytest.mark.iminuit
+
 
 def sphere(x):
     return (x**2).sum()

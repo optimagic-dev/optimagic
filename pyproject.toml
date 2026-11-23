@@ -302,6 +302,22 @@ markers = [
     "wip: Tests that are work-in-progress.",
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
     "jax: Tests that require jax to be installed and are skipped on non-Linux systems.",
+    # Optimizer libraries. tests/conftest.py adds the marker to all tests that are
+    # parametrized with an algorithm of the library. Each library has a pixi environment
+    # tests-<marker> and a CI job that runs `pytest -m <marker>` in it.
+    "bayesopt: Tests of optimizers from bayesian-optimization.",
+    "fides: Tests of optimizers from fides.",
+    "gfo: Tests of optimizers from gradient-free-optimizers.",
+    "iminuit: Tests of optimizers from iminuit.",
+    "ipopt: Tests of optimizers from cyipopt.",
+    "nag: Tests of optimizers from DFO-LS and Py-BOBYQA.",
+    "nevergrad: Tests of optimizers from nevergrad.",
+    "nlopt: Tests of optimizers from nlopt.",
+    "pygad: Tests of optimizers from pygad.",
+    "pygmo: Tests of optimizers from pygmo.",
+    "pyswarms: Tests of optimizers from pyswarms.",
+    "tao: Tests of optimizers from petsc4py (TAO).",
+    "tranquilo: Tests of optimizers from tranquilo.",
 ]
 norecursedirs = ["docs", ".tools"]
 
@@ -395,9 +411,6 @@ numpy = ">=2.0.0"
 scipy = ">=1.11"
 pandas = ">=2.1"
 jupyterlab = ">=4.0"
-cyipopt = ">=1.4.0"
-pygmo = ">=2.19.0"
-nlopt = ">=2.7"
 statsmodels = ">=0.14"
 matplotlib = ">=3.8"
 bokeh = ">=3.2"
@@ -406,32 +419,14 @@ seaborn = ">=0.13"
 pyyaml = ">=6.0.1"
 pydantic = ">=2.6"
 jinja2 = ">=3.1"
-tranquilo = ">=0.1.1"
-iminuit = ">=2.25"
-cma = ">=3.3"
-pygad = ">=3.2"
 ruff = ">=0.15.5,<0.16"
-# Dependencies of PyPI-only packages (fides, bayesian-optimization, kaleido) that have
-# no PyPI wheels for the newest Python version yet; conda-forge builds avoid sdist builds.
-h5py = "*"
+# Needed by kaleido. PyPI has no wheels for the newest Python version yet.
 orjson = "*"
-scikit-learn = "*"
 
 [tool.pixi.pypi-dependencies]
 optimagic = { path = ".", editable = true }
 pdbp = "*"
-bayesian-optimization = ">=1.4"
-dfo-ls = ">=1.5.3"
-py-bobyqa = ">=1.3"
-fides = "==0.7.4"
 kaleido = ">=0.2.1"
-gradient-free-optimizers = ">=1.6.0"
-pyswarms = ">=1.3"
-
-# gradient-free-optimizers (up to at least 1.13.0) declares pandas<3, but our tests of it
-# pass with pandas 3. Remove the override once a release without the cap is available.
-[tool.pixi.pypi-options.dependency-overrides]
-pandas = ">=2.1"
 
 # --- Python version features --------------------------------------------------------
 [tool.pixi.feature.py313.dependencies]
@@ -473,13 +468,66 @@ platforms = ["linux-64"]
 [tool.pixi.feature.linux.dependencies]
 jax = ">=0.4.8"
 
-# petsc4py is separate because on Python 3.15 it cannot be installed together with
-# cyipopt and pygmo: their conda-forge builds need the int64 variant of libscotch,
-# while petsc >= 3.26 (the only petsc with Python 3.15 support) needs the int32 one.
-[tool.pixi.feature.petsc]
+# --- Features: optimizer libraries -------------------------------------------------
+# One feature per optimizer library. Each library is tested in its own environment
+# (tests-<feature>), so libraries never have to be installable together. The feature
+# names equal the pytest markers of the libraries.
+[tool.pixi.feature.bayesopt.dependencies]
+# PyPI has no scikit-learn wheels for the newest Python version yet.
+scikit-learn = "*"
+[tool.pixi.feature.bayesopt.pypi-dependencies]
+bayesian-optimization = ">=1.4"
+
+[tool.pixi.feature.fides.dependencies]
+# PyPI has no h5py wheels for the newest Python version yet.
+h5py = "*"
+[tool.pixi.feature.fides.pypi-dependencies]
+fides = "==0.7.4"
+
+[tool.pixi.feature.gfo.pypi-dependencies]
+gradient-free-optimizers = ">=1.6.0"
+# gradient-free-optimizers (up to at least 1.13.0) declares pandas<3, but our tests of it
+# pass with pandas 3. Remove the override once a release without the cap is available.
+[tool.pixi.feature.gfo.pypi-options.dependency-overrides]
+pandas = ">=2.1"
+
+[tool.pixi.feature.iminuit.dependencies]
+iminuit = ">=2.25"
+
+[tool.pixi.feature.ipopt.dependencies]
+cyipopt = ">=1.4.0"
+
+[tool.pixi.feature.nag.pypi-dependencies]
+dfo-ls = ">=1.5.3"
+py-bobyqa = ">=1.3"
+
+[tool.pixi.feature.nevergrad.pypi-dependencies]
+nevergrad = "*"
+
+[tool.pixi.feature.nlopt.dependencies]
+nlopt = ">=2.7"
+
+[tool.pixi.feature.pygad.dependencies]
+pygad = ">=3.2"
+
+[tool.pixi.feature.pygmo.dependencies]
+pygmo = ">=2.19.0"
+
+[tool.pixi.feature.pyswarms.pypi-dependencies]
+pyswarms = ">=1.3"
+
+# petsc4py is only available on Linux, so tao is not part of the environments that
+# combine optimizer libraries (default, docs, type-checking). Moreover, on Python 3.15 it
+# cannot be installed together with cyipopt and pygmo: their conda-forge builds need the
+# int64 variant of libscotch, while petsc >= 3.26 (the only petsc with Python 3.15
+# support) needs the int32 one.
+[tool.pixi.feature.tao]
 platforms = ["linux-64"]
-[tool.pixi.feature.petsc.dependencies]
+[tool.pixi.feature.tao.dependencies]
 petsc4py = ">=3.18"
+
+[tool.pixi.feature.tranquilo.dependencies]
+tranquilo = ">=0.1.1"
 
 # --- Feature: docs -------------------------------------------------------------------
 [tool.pixi.feature.docs.dependencies]
@@ -512,28 +560,44 @@ kaleido = "<0.3"
 [tool.pixi.feature.old-pandas.dependencies]
 pandas = "<3"
 
-[tool.pixi.feature.nevergrad.pypi-dependencies]
-bayesian-optimization = "==1.4.0"
-nevergrad = "*"
-
 # --- Environments --------------------------------------------------------------------
 [tool.pixi.environments]
-# Default dev environment (latest Python, everything)
-default = { features = ["tests", "py315"], solve-group = "py315" }
-# Linux CI (with JAX + PETSc; no PETSc on Python 3.15, see feature.petsc)
-tests-linux-py313 = { features = ["tests", "linux", "petsc", "py313"], solve-group = "linux-py313" }
-tests-linux-py314 = { features = ["tests", "linux", "petsc", "py314"], solve-group = "linux-py314" }
+# Development, type checking and docs: Python 3.14 with all optimizer libraries that
+# can be installed together. nevergrad is left out because it pins an old version of
+# bayesian-optimization; tao because it is Linux-only (see feature.tao).
+default = { features = [
+    "tests", "py314", "bayesopt", "fides", "gfo", "iminuit", "ipopt", "nag", "nlopt",
+    "pygad", "pygmo", "pyswarms", "tranquilo",
+], solve-group = "py314" }
+type-checking = { features = [
+    "type-checking", "py314", "bayesopt", "fides", "gfo", "iminuit", "ipopt", "nag",
+    "nlopt", "pygad", "pygmo", "pyswarms", "tranquilo",
+], solve-group = "py314" }
+docs = { features = [
+    "docs", "py314", "bayesopt", "fides", "gfo", "iminuit", "ipopt", "nag", "nlopt",
+    "pygad", "pygmo", "pyswarms", "tranquilo",
+], solve-group = "py314" }
+# Main test environments: no optimizer libraries besides scipy. Linux adds JAX.
+# Linux CI runs all supported Python versions. Every job that runs with only one Python
+# version uses the second newest (3.14), because the newest often has problems.
+tests-linux-py313 = { features = ["tests", "linux", "py313"], solve-group = "linux-py313" }
+tests-linux-py314 = { features = ["tests", "linux", "py314"], solve-group = "linux-py314" }
 tests-linux-py315 = { features = ["tests", "linux", "py315"], solve-group = "linux-py315" }
-# macOS/Windows CI
-tests-py315 = { features = ["tests", "py315"], solve-group = "py315" }
-# Backward-compat CI (Python 3.13, lowest supported)
-tests-old-plotly = { features = ["tests", "old-plotly", "py313"] }
-tests-old-pandas = { features = ["tests", "old-pandas", "py313"] }
-# Nevergrad CI (bayesian-optimization==1.4.0)
-tests-nevergrad-py313 = { features = ["tests", "nevergrad", "py313"] }
-tests-nevergrad-py314 = { features = ["tests", "nevergrad", "py314"] }
-tests-nevergrad-py315 = { features = ["tests", "nevergrad", "py315"] }
-# Type checking
-type-checking = { features = ["type-checking", "py315"], solve-group = "py315" }
-# Docs
-docs = { features = ["docs", "py315"], solve-group = "py315" }
+tests-py314 = { features = ["tests", "py314"], solve-group = "py314" }
+# Backward-compat CI
+tests-old-plotly = { features = ["tests", "old-plotly", "py314"] }
+tests-old-pandas = { features = ["tests", "old-pandas", "py314"] }
+# One environment per optimizer library (only run on Linux in CI)
+tests-bayesopt = { features = ["tests", "py314", "bayesopt"] }
+tests-fides = { features = ["tests", "py314", "fides"] }
+tests-gfo = { features = ["tests", "py314", "gfo"] }
+tests-iminuit = { features = ["tests", "py314", "iminuit"] }
+tests-ipopt = { features = ["tests", "py314", "ipopt"] }
+tests-nag = { features = ["tests", "py314", "nag"] }
+tests-nevergrad = { features = ["tests", "py314", "nevergrad"] }
+tests-nlopt = { features = ["tests", "py314", "nlopt"] }
+tests-pygad = { features = ["tests", "py314", "pygad"] }
+tests-pygmo = { features = ["tests", "py314", "pygmo"] }
+tests-pyswarms = { features = ["tests", "py314", "pyswarms"] }
+tests-tao = { features = ["tests", "py314", "tao"] }
+tests-tranquilo = { features = ["tests", "py314", "tranquilo"] }

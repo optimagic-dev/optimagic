@@ -12,6 +12,8 @@ from optimagic.optimizers.nag_optimizers import (
 from optimagic.parameters.bounds import Bounds
 from tests.estimagic.test_bootstrap import aaae
 
+pytestmark = pytest.mark.nag
+
 
 def test_change_evals_per_point_interface_none():
     res = _change_evals_per_point_interface(None)

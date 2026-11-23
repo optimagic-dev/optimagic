@@ -14,6 +14,8 @@ from optimagic.optimizers.pygmo_optimizers import (
 )
 from optimagic.parameters.bounds import Bounds
 
+pytestmark = pytest.mark.pygmo
+
 test_cases = [
     # popsize, x, lower_bound, expected
     (55.3, None, None, 55),

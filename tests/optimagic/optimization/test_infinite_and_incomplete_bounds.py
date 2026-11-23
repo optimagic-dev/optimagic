@@ -12,6 +12,7 @@ def sos(x):
     return x
 
 
+@pytest.mark.nevergrad
 @pytest.mark.skipif(
     not IS_NEVERGRAD_INSTALLED,
     reason="nevergrad not installed",

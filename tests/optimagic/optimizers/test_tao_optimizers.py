@@ -6,16 +6,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from optimagic import mark
 from optimagic.config import IS_PETSC4PY_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.utilities import get_rng
 
-if not IS_PETSC4PY_INSTALLED:
-    pytestmark = pytest.mark.skip(reason="petsc4py is not installed.")
-
+pytestmark = [
+    pytest.mark.tao,
+    pytest.mark.skipif(not IS_PETSC4PY_INSTALLED, reason="petsc4py is not installed."),
+]
 
 NUM_AGENTS = 2_000
-from optimagic import mark
 
 
 def get_random_params(

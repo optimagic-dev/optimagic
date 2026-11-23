@@ -6,6 +6,14 @@ import pytest
 from optimagic.config import IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2
 from optimagic.optimization.internal_optimization_problem import InternalBounds
 
+pytestmark = [
+    pytest.mark.bayesopt,
+    pytest.mark.skipif(
+        not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2,
+        reason="bayes_opt is not installed in a recent enough version >= 2.0.0.",
+    ),
+]
+
 if IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2:
     from bayes_opt import acquisition
 
@@ -49,10 +57,6 @@ def test_process_bounds_infinite():
         _process_bounds(bounds)
 
 
-@pytest.mark.skipif(
-    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2,
-    reason="bayes_opt is not installed in a recent enough version >= 2.0.0.",
-)
 def test_process_acquisition_function_none():
     """Test processing None acquisition function."""
     result = _process_acquisition_function(
@@ -66,22 +70,20 @@ def test_process_acquisition_function_none():
     assert result is None
 
 
-@pytest.mark.skipif(
-    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2, reason="bayes_opt not installed"
-)
 @pytest.mark.parametrize(
-    "acq_name, expected_class",
+    "acq_name, expected_class_name",
     [
-        ("ucb", acquisition.UpperConfidenceBound),
-        ("upper_confidence_bound", acquisition.UpperConfidenceBound),
-        ("ei", acquisition.ExpectedImprovement),
-        ("expected_improvement", acquisition.ExpectedImprovement),
-        ("poi", acquisition.ProbabilityOfImprovement),
-        ("probability_of_improvement", acquisition.ProbabilityOfImprovement),
+        ("ucb", "UpperConfidenceBound"),
+        ("upper_confidence_bound", "UpperConfidenceBound"),
+        ("ei", "ExpectedImprovement"),
+        ("expected_improvement", "ExpectedImprovement"),
+        ("poi", "ProbabilityOfImprovement"),
+        ("probability_of_improvement", "ProbabilityOfImprovement"),
     ],
 )
-def test_process_acquisition_function_string(acq_name, expected_class):
+def test_process_acquisition_function_string(acq_name, expected_class_name):
     """Test processing string acquisition function."""
+    expected_class = getattr(acquisition, expected_class_name)
     result = _process_acquisition_function(
         acquisition_function=acq_name,
         kappa=2.576,
@@ -93,9 +95,6 @@ def test_process_acquisition_function_string(acq_name, expected_class):
     assert isinstance(result, expected_class)
 
 
-@pytest.mark.skipif(
-    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2, reason="bayes_opt not installed"
-)
 def test_process_acquisition_function_invalid_string():
     """Test processing invalid string acquisition function."""
     with pytest.raises(ValueError, match="Invalid acquisition_function string"):
@@ -109,9 +108,6 @@ def test_process_acquisition_function_invalid_string():
         )
 
 
-@pytest.mark.skipif(
-    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2, reason="bayes_opt not installed"
-)
 def test_process_acquisition_function_instance():
     """Test processing acquisition function instance."""
     acq_instance = acquisition.UpperConfidenceBound()
@@ -126,9 +122,6 @@ def test_process_acquisition_function_instance():
     assert result is acq_instance
 
 
-@pytest.mark.skipif(
-    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2, reason="bayes_opt not installed"
-)
 def test_process_acquisition_function_class():
     """Test processing acquisition function class."""
     result = _process_acquisition_function(
@@ -142,9 +135,6 @@ def test_process_acquisition_function_class():
     assert isinstance(result, acquisition.UpperConfidenceBound)
 
 
-@pytest.mark.skipif(
-    not IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2, reason="bayes_opt not installed"
-)
 def test_process_acquisition_function_invalid_type():
     """Test processing invalid acquisition function type."""
     with pytest.raises(TypeError, match="acquisition_function must be None, a string"):

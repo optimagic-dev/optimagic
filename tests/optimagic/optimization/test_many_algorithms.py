@@ -37,6 +37,12 @@ PRECISION_LOOKUP = {
     "iminuit_migrad": 2,
 }
 
+# Algorithms whose default budget is too small to reach the required precision.
+OPTIONS_LOOKUP = {
+    "nevergrad_de": {"stopping_maxfun": 20_000},
+    "nevergrad_meta": {"stopping_maxfun": 20_000},
+}
+
 
 @pytest.fixture
 def algo(algorithm):
@@ -52,6 +58,8 @@ def _get_options(algo):
     "Fix seed if algorithm is stochastic"
     if hasattr(algo, "seed"):
         options.update({"seed": 12345})
+
+    options.update(OPTIONS_LOOKUP.get(algo.name, {}))
     return options
 
 

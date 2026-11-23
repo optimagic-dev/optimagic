@@ -18,6 +18,8 @@ from optimagic.optimizers.pyswarms_optimizers import (
     _resolve_topology_config,
 )
 
+pytestmark = pytest.mark.pyswarms
+
 RNG = np.random.default_rng(12345)
 
 
