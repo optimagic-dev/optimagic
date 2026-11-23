@@ -14,8 +14,8 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
   0.6 seconds. Dependencies that are only needed for some features (scipy, numba,
   sqlalchemy, plotly.express and joblib) are imported when they are used, the
   validators of algorithm options are built when an algorithm is instantiated for the
-  first time and the classes behind `om.algos` are no longer dataclasses
-  ({ghuser}`janosg`).
+  first time and the classes behind `om.algos` are no longer dataclasses. The minimum
+  supported version of pydantic is now 2.10 ({ghuser}`janosg`).
 - {gh}`739` Fixes `tao_pounders` ignoring `convergence_gtol_abs`,
   `convergence_gtol_rel` and `convergence_gtol_scaled`. Reaching `stopping_maxiter` is
   now reported as unsuccessful with the message "maxits reached" instead of as

@@ -47,6 +47,26 @@ class DummyAlgorithm(Algorithm):
         return InternalOptimizeResult(x=x0, fun=0.0, success=True)
 
 
+@mark.minimizer(
+    name="dummy_stringified_subclass_algorithm",
+    solver_type=AggregationLevel.SCALAR,
+    is_available=True,
+    is_global=False,
+    needs_jac=False,
+    needs_hess=False,
+    needs_bounds=False,
+    supports_parallelism=False,
+    supports_bounds=False,
+    supports_infinite_bounds=False,
+    supports_linear_constraints=False,
+    supports_nonlinear_constraints=False,
+    disable_history=False,
+)
+@dataclass(frozen=True)
+class DummySubclassAlgorithm(DummyAlgorithm):
+    n_restarts: PositiveInt = 1
+
+
 def test_field_types_are_annotation_strings():
     # Guard: if this fails, the module no longer covers the code path for
     # stringified annotations and the mirrored test setup must be adapted.
@@ -92,3 +112,17 @@ def test_conversion_works_in_with_option():
 def test_validation_works_in_with_option():
     with pytest.raises(InvalidAlgoOptionError):
         DummyAlgorithm().with_option(stopping_maxiter=-1)
+
+
+def test_subclass_converts_inherited_and_new_options():
+    algo = DummySubclassAlgorithm(stopping_maxiter=500.0, n_restarts="2")  # ty:ignore[invalid-argument-type]
+    assert isinstance(algo.stopping_maxiter, int)
+    assert algo.stopping_maxiter == 500
+    assert isinstance(algo.n_restarts, int)
+    assert algo.n_restarts == 2
+
+
+@pytest.mark.parametrize("option", ["stopping_maxiter", "n_restarts"])
+def test_subclass_validates_inherited_and_new_options(option):
+    with pytest.raises(InvalidAlgoOptionError):
+        DummySubclassAlgorithm(**{option: -1})
