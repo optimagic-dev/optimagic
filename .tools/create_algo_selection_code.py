@@ -14,7 +14,7 @@ from optimagic.typing import AggregationLevel
 def main() -> None:
     """Create the source code for algorithms.py.
 
-    The main part of the generated code are nested dataclasses that enable filtered
+    The main part of the generated code are nested classes that enable filtered
     autocomplete for algorithm selection. Creating them entails the following steps:
 
     - Discover all modules that contain optimizer classes
@@ -22,10 +22,14 @@ def main() -> None:
     - Create a mapping from a tuple of categories (e.g. Global, Bounded, ...) to the
       optimizer classes that belong to them. To find out which optimizers need to be
       included we use the attributes stored in optimizer_class.__algo_info__.
-    - Create the dataclasses that enable autocomplete for algorithm selection
+    - Create the classes that enable autocomplete for algorithm selection
 
     In addition we need to create the code for import statements, a AlgoSelection base
-    class and some code to instantiate the dataclasses.
+    class and some code to instantiate the classes.
+
+    The generated classes are plain classes and not dataclasses, because creating more
+    than 100 dataclasses with about 2000 fields in total takes about 70 milliseconds
+    every time optimagic is imported.
 
     """
     # create some basic inputs
@@ -42,15 +46,15 @@ def main() -> None:
     # create the code for the ABC AlgoSelection class
     parent_class_snippet = _get_base_class_code()
 
-    # create the code for the dataclasses
-    dataclass_snippets = []
+    # create the code for the selection classes
+    class_snippets = []
     for active_categories in selection_info:
-        new_snippet = create_dataclass_code(
+        new_snippet = create_selection_class_code(
             active_categories=active_categories,
             all_categories=all_categories,
             selection_info=selection_info,
         )
-        dataclass_snippets.append(new_snippet)
+        class_snippets.append(new_snippet)
 
     # create the code for the instantiation
     instantiation_snippet = _get_instantiation_code()
@@ -62,7 +66,7 @@ def main() -> None:
         + "\n\n"
         + parent_class_snippet
         + "\n"
-        + "\n\n".join(dataclass_snippets)
+        + "\n\n".join(class_snippets)
         + "\n\n"
         + instantiation_snippet
     )
@@ -248,16 +252,16 @@ def _apply_filters(
 
 
 # ======================================================================================
-# Functions to create code for the dataclasses
+# Functions to create code for the selection classes
 # ======================================================================================
 
 
-def create_dataclass_code(
+def create_selection_class_code(
     active_categories: tuple[str, ...],
     all_categories: list[str],
     selection_info: dict[tuple[str, ...], dict[str, Type[Algorithm]]],
 ) -> str:
-    """Create the source code for a dataclass representing a selection of algorithms.
+    """Create the source code for a class representing a selection of algorithms.
 
     Args:
         active_categories: A tuple of active category names.
@@ -266,7 +270,7 @@ def create_dataclass_code(
             of algorithm names and their corresponding classes.
 
     Returns:
-        A string containing the source code for the dataclass.
+        A string containing the source code for the class.
 
     """
     # get the children of the active categories
@@ -275,7 +279,7 @@ def create_dataclass_code(
     # get the name of the class to be generated
     class_name = _get_class_name(active_categories)
 
-    # get code for the dataclass fields
+    # get code for the class attributes that hold the algorithms
     field_template = "    {name}: Type[{class_name}] = {class_name}"
     field_strings = []
     for name, algo_class in selection_info[active_categories].items():
@@ -302,8 +306,7 @@ def create_dataclass_code(
     children_code = "\n".join(child_strings)
 
     # assemble the class
-    out = "@dataclass(frozen=True)\n"
-    out += f"class {class_name}(AlgoSelection):\n"
+    out = f"class {class_name}(AlgoSelection):\n"
     out += fields + "\n"
     if children:
         out += children_code
@@ -354,7 +357,7 @@ def _get_imports(modules: list[ModuleType]) -> str:
     """Create source code to import all algorithms."""
     snippets = [
         "from typing import Type",
-        "from dataclasses import dataclass",
+        "from dataclasses import FrozenInstanceError",
         "from optimagic.optimization.algorithm import Algorithm",
         "from typing import cast",
     ]
@@ -374,11 +377,30 @@ def _get_imports(modules: list[ModuleType]) -> str:
 def _get_base_class_code() -> str:
     """Get the source code for the AlgoSelection class."""
     out = textwrap.dedent("""
-        @dataclass(frozen=True)
         class AlgoSelection:
+            \"\"\"Base class for selections of algorithms.
+
+            The algorithms of a selection are its annotated class attributes.
+
+            \"\"\"
+
+            def __setattr__(self, name: str, value: object) -> None:
+                raise FrozenInstanceError(f"cannot assign to field {name!r}")
+
+            def __delattr__(self, name: str) -> None:
+                raise FrozenInstanceError(f"cannot delete field {name!r}")
+
+            def __eq__(self, other: object) -> bool:
+                return type(self) is type(other)
+
+            def __hash__(self) -> int:
+                return hash(type(self))
+
+            def __repr__(self) -> str:
+                return f"{type(self).__name__}({', '.join(self.AllNames)})"
 
             def _all(self) -> list[Type[Algorithm]]:
-                raw = [field.default for field in self.__dataclass_fields__.values()]
+                raw = [getattr(self, name) for name in type(self).__annotations__]
                 return cast(list[Type[Algorithm]], raw)
 
 

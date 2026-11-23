@@ -37,15 +37,10 @@ from __future__ import annotations
 
 import functools
 from dataclasses import dataclass
-from typing import Any, Callable, List, Literal, SupportsInt, Tuple
+from typing import TYPE_CHECKING, Any, Callable, List, Literal, SupportsInt, Tuple
 
 import numpy as np
-import scipy
-import scipy.optimize
 from numpy.typing import NDArray
-from scipy.optimize import Bounds as ScipyBounds
-from scipy.optimize import NonlinearConstraint
-from scipy.optimize import OptimizeResult as ScipyOptimizeResult
 
 from optimagic import mark
 from optimagic.batch_evaluators import process_batch_evaluator
@@ -84,6 +79,12 @@ from optimagic.typing import (
     PositiveInt,
 )
 from optimagic.utilities import calculate_trustregion_initial_radius
+
+# scipy.optimize takes about 0.3 seconds to import. To keep `import optimagic` fast, it
+# is only imported inside the functions that use it.
+if TYPE_CHECKING:
+    from scipy.optimize import Bounds as ScipyBounds
+    from scipy.optimize import OptimizeResult as ScipyOptimizeResult
 
 
 @mark.minimizer(
@@ -181,6 +182,8 @@ class ScipyLBFGSB(Algorithm):
             "maxiter": self.stopping_maxiter,
             "maxls": self.max_line_search_steps,
         }
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
             x0=x0,
@@ -253,6 +256,8 @@ class ScipySLSQP(Algorithm):
             "ftol": self.convergence_ftol_abs,
             "disp": self.display,
         }
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
             x0=x0,
@@ -359,6 +364,8 @@ class ScipyNelderMead(Algorithm):
             "adaptive": self.adaptive,
             "disp": self.display,
         }
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun,
             x0=x0,
@@ -464,6 +471,8 @@ class ScipyPowell(Algorithm):
             "maxiter": self.stopping_maxiter,
             "disp": self.display,
         }
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun,
             x0=x0,
@@ -594,6 +603,8 @@ class ScipyBFGS(Algorithm):
             "c1": self.armijo_condition,
             "c2": self.curvature_condition,
         }
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac, x0=x0, method="BFGS", jac=True, options=options
         )
@@ -677,6 +688,8 @@ class ScipyConjugateGradient(Algorithm):
             "norm": self.norm,
             "disp": self.display,
         }
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac, x0=x0, method="CG", jac=True, options=options
         )
@@ -764,6 +777,8 @@ class ScipyNewtonCG(Algorithm):
             "maxiter": self.stopping_maxiter,
             "disp": self.display,
         }
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
             x0=x0,
@@ -872,6 +887,8 @@ class ScipyCOBYLA(Algorithm):
         nonlinear_constraints = equality_as_inequality_constraints(
             problem.nonlinear_constraints
         )
+
+        import scipy.optimize
 
         raw_res = scipy.optimize.minimize(
             fun=problem.fun,
@@ -991,6 +1008,8 @@ class ScipyLSTRF(Algorithm):
 
         lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
         upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
+
+        import scipy.optimize
 
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
@@ -1114,6 +1133,8 @@ class ScipyLSDogbox(Algorithm):
         lower_bounds = -np.inf if problem.bounds.lower is None else problem.bounds.lower
         upper_bounds = np.inf if problem.bounds.upper is None else problem.bounds.upper
 
+        import scipy.optimize
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
@@ -1200,6 +1221,8 @@ class ScipyLSLM(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
+        import scipy.optimize
+
         raw_res = scipy.optimize.least_squares(
             fun=problem.fun,
             x0=x0,
@@ -1374,6 +1397,8 @@ class ScipyTruncatedNewton(Algorithm):
             "disp": self.display,
         }
 
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
             x0=x0,
@@ -1506,6 +1531,8 @@ class ScipyTrustConstr(Algorithm):
             problem.nonlinear_constraints
         )
 
+        import scipy.optimize
+
         raw_res = scipy.optimize.minimize(
             fun=problem.fun_and_jac,
             jac=True,
@@ -1564,6 +1591,8 @@ def _internal_to_scipy_constraint(c):
         lower, upper = -c["tol"], c["tol"]
     else:
         lower, upper = 0.0, np.inf
+    from scipy.optimize import NonlinearConstraint
+
     new_constr = NonlinearConstraint(
         fun=c["fun"],
         lb=np.full(c["n_constr"], lower),
@@ -1747,6 +1776,8 @@ class ScipyBasinhopping(Algorithm):
         }
         minimizer_kwargs = {**minimizer_kwargs, **local_algo_options}
 
+        import scipy.optimize
+
         res = scipy.optimize.basinhopping(
             func=problem.fun,
             x0=x0,
@@ -1846,6 +1877,8 @@ class ScipyBrute(Algorithm):
                 """Global algorithms like scipy_brute need finite bounds
                  for all parameters"""
             )
+        import scipy.optimize
+
         raw_res = scipy.optimize.brute(
             func=problem.fun,
             ranges=tuple(zip(problem.bounds.lower, problem.bounds.upper, strict=True)),
@@ -2045,6 +2078,8 @@ class ScipyDifferentialEvolution(Algorithm):
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
         workers = _get_workers(self.n_cores, self.batch_evaluator)
+        import scipy.optimize
+
         res = scipy.optimize.differential_evolution(
             func=problem.fun,
             bounds=_get_scipy_bounds(problem.bounds),
@@ -2296,6 +2331,8 @@ class ScipySHGO(Algorithm):
         else:
             options_used = options
 
+        import scipy.optimize
+
         res = scipy.optimize.shgo(
             func=problem.fun,
             bounds=_get_scipy_bounds(problem.bounds),
@@ -2466,6 +2503,8 @@ class ScipyDualAnnealing(Algorithm):
 
         minimizer_kwargs = {**default_minimizer_kwargs, **local_algo_options}
 
+        import scipy.optimize
+
         res = scipy.optimize.dual_annealing(
             func=problem.fun,
             bounds=_get_scipy_bounds(problem.bounds),
@@ -2603,6 +2642,8 @@ class ScipyDirect(Algorithm):
     def _solve_internal_problem(
         self, problem: InternalOptimizationProblem, x0: NDArray[np.float64]
     ) -> InternalOptimizeResult:
+        import scipy.optimize
+
         res = scipy.optimize.direct(
             func=problem.fun,
             bounds=_get_scipy_bounds(problem.bounds),
@@ -2632,6 +2673,8 @@ def _get_workers(n_cores, batch_evaluator):
 def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds | None:
     if bounds.lower is None and bounds.upper is None:
         return None
+
+    from scipy.optimize import Bounds as ScipyBounds
 
     lower = bounds.lower if bounds.lower is not None else -np.inf
     upper = bounds.upper if bounds.upper is not None else np.inf

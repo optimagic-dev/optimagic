@@ -1,5 +1,4 @@
 import pandas as pd
-import plotly.express as px
 
 from optimagic.benchmarking.process_benchmark_results import (
     process_benchmark_results,
@@ -76,6 +75,9 @@ def deviation_plot(
         .mean(numeric_only=True)[outcome]
         .reset_index()
     )
+    # imported here because importing plotly.express is slow
+    import plotly.express as px
+
     fig = px.line(average_deviations, x=runtime_measure, y=outcome, color="algorithm")
 
     y_labels = {

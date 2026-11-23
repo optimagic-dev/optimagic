@@ -3,13 +3,10 @@ from __future__ import annotations
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Generic, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar, cast
 
 import numpy as np
 import pandas as pd
-import sqlalchemy as sql
-import sqlalchemy.event
-from sqlalchemy.engine import Engine
 
 from optimagic.logging.base import (
     NonUpdatableKeyValueStore,
@@ -39,6 +36,11 @@ from optimagic.typing import (
     MultiStartIterationHistory,
     PyTree,
 )
+
+# sqlalchemy takes about 0.15 seconds to import. To keep `import optimagic` fast, it
+# is only imported inside the functions that use it.
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 
 class LogOptions:
@@ -417,6 +419,8 @@ class SQLiteLogOptions(SQLAlchemyConfig, LogOptions):
         return self._path
 
     def create_engine(self) -> Engine:
+        import sqlalchemy as sql
+
         engine = sql.create_engine(self.url)
         self._configure_engine(engine)
         return engine
@@ -435,6 +439,8 @@ class SQLiteLogOptions(SQLAlchemyConfig, LogOptions):
         it also uses unsafe optimizations.
 
         """
+        import sqlalchemy as sql
+        import sqlalchemy.event
 
         @sql.event.listens_for(engine, "connect")
         def do_connect(dbapi_connection: Any, connection_record: Any) -> None:  # noqa: ARG001
