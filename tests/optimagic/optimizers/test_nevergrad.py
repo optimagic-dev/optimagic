@@ -94,6 +94,10 @@ def test_optimizers_in_literal_type_hints_exist_in_nevergrad(optimizer):
 
 
 # test stochastic_global_algorithm_on_sum_of_squares
+
+# NoisyBandit is built for noisy functions. It spends most evaluations on re-evaluating
+# known points to average out noise, so with 1000 evaluations it evaluates only 28
+# distinct points. See https://github.com/optimagic-dev/optimagic/issues/750.
 IMPRECISE_META_OPTIMIZERS = {"NoisyBandit"}
 
 
@@ -106,7 +110,10 @@ IMPRECISE_META_OPTIMIZERS = {"NoisyBandit"}
             marks=pytest.mark.xfail(
                 raises=AssertionError,
                 strict=True,
-                reason="Does not reach the required precision on this problem.",
+                reason=(
+                    "Built for noisy functions; evaluates too few distinct points to "
+                    "reach the required precision."
+                ),
             ),
         )
         if name in IMPRECISE_META_OPTIMIZERS
