@@ -1223,7 +1223,7 @@ def test_seek_global_optimum_restarts_and_needs_bounds():
     algo_cls = ALGORITHMS["nag_pybobyqa"]
     kwargs: dict[str, Any] = {
         "fun": multimodal,
-        "params": np.array([2.2, 2.2]),
+        "params": np.array([4.0, 4.0]),
         "bounds": om.Bounds(lower=np.full(2, -5.0), upper=np.full(2, 5.0)),
     }
     local: Any = om.minimize(algorithm=algo_cls(), **kwargs)
@@ -1231,9 +1231,11 @@ def test_seek_global_optimum_restarts_and_needs_bounds():
         algorithm=algo_cls(seek_global_optimum=True, stopping_maxfun=400), **kwargs
     )
 
+    # From this start, the local search ends in a local minimum with a value of about
+    # 32.5. The global search escapes it and finds the global minimum at zero.
     assert local.algorithm_output["n_runs"] == 1
     assert searching.algorithm_output["n_runs"] > 1
-    assert searching.fun <= local.fun
+    assert searching.fun < local.fun - 1
 
     with pytest.raises(InvalidAlgoOptionError, match="must specify upper and lower"):
         om.minimize(
