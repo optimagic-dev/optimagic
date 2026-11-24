@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import MISSING, dataclass, is_dataclass, replace
-from typing import Any, Callable, Mapping, TypeVar, get_args
+from typing import Any, Callable, Mapping, TypeVar, cast, get_args, get_type_hints
 
 import pydantic
 from pydantic_core import core_schema
@@ -52,10 +52,19 @@ def option_group(cls: type[OptionGroupT]) -> type[OptionGroupT]:
         cls
     )
 
-    def get_schema(source: Any, handler: Any) -> core_schema.CoreSchema:
-        # Without this, pydantic would also accept a dictionary with the entries of
-        # the group wherever the group is used as a field of an algorithm.
-        return core_schema.is_instance_schema(out)
+    def get_schema(
+        source: Any, handler: pydantic.GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        # A strict dataclass schema only accepts instances of the group wherever the
+        # group is used as a field of an algorithm. Without it, pydantic would also
+        # accept a dictionary with the entries of the group. The validator of the
+        # group itself uses the same schema; it still converts the entries when the
+        # group is created, because pydantic validates the arguments of __init__
+        # independently of the strict flag.
+        schema = handler(source)
+        dataclass_schema = handler.resolve_ref_schema(schema)
+        cast("core_schema.DataclassSchema", dataclass_schema)["strict"] = True
+        return schema
 
     setattr(out, "__get_pydantic_core_schema__", get_schema)  # noqa: B010
     return out
@@ -174,7 +183,7 @@ def _get_option_group(algo: Any, group: str) -> Any:
     if is_dataclass(value):
         return value
 
-    annotation = algo_cls.__pydantic_fields__[group].annotation
+    annotation = get_type_hints(algo_cls)[group]
     candidates = [annotation, *get_args(annotation)]
     group_cls = next(c for c in candidates if isinstance(c, type) and is_dataclass(c))
     return group_cls()
