@@ -39,8 +39,10 @@ jobs:
       - name: Run pytest
         shell: bash -el {0}
         run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
+      # Save the coverage report even if a test fails. Otherwise codecov reports the
+      # code that only this job tests as uncovered, on top of the failing test.
       - name: Save coverage report
-        if: matrix.python-version == '313'
+        if: ${{ !cancelled() && matrix.python-version == '313' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: coverage-main
@@ -87,7 +89,10 @@ jobs:
         run: >-
           pixi run -e tests-${{ matrix.library }} tests-with-cov
           --library ${{ matrix.library }}
+      # Save the coverage report even if a test fails. Otherwise codecov reports the
+      # code that only this job tests as uncovered, on top of the failing test.
       - name: Save coverage report
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: coverage-${{ matrix.library }}
