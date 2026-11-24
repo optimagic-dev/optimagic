@@ -34,277 +34,6 @@ from optimagic.benchmarking.benchmark_problem import (
 )
 
 
-@mark.least_squares
-def linear_full_rank(x, dim_out):
-    temp = 2 * x.sum() / dim_out + 1
-    out = np.full(dim_out, -temp)
-    out[: len(x)] += x
-    return out
-
-
-@mark.least_squares
-def linear_rank_one(x, dim_out):
-    dim_in = len(x)
-    sm = np.arange(1, dim_in + 1) @ x
-    fvec = np.arange(1, dim_out + 1) * sm - 1.0
-    return fvec
-
-
-@mark.least_squares
-def linear_rank_one_zero_columns_rows(x, dim_out):
-    dim_in = len(x)
-    sm = (np.arange(2, dim_in) * x[1:-1]).sum()
-    fvec = np.arange(dim_out) * sm - 1.0
-    fvec[-1] = -1.0
-    return fvec
-
-
-@mark.least_squares
-def rosenbrock(x):
-    fvec = np.zeros(2)
-    fvec[0] = 10 * (x[1] - x[0] ** 2)
-    fvec[1] = 1.0 - x[0]
-    return fvec
-
-
-@mark.least_squares
-def helical_valley(x):
-    temp = 8 * np.arctan(1.0)
-    temp1 = np.sign(x[1]) * 0.25
-    if x[0] > 0:
-        temp1 = np.arctan(x[1] / x[0]) / temp
-    elif x[0] < 0:
-        temp1 = np.arctan(x[1] / x[0]) / temp + 0.5
-    temp2 = np.sqrt(x[0] ** 2 + x[1] ** 2)
-    fvec = np.zeros(3)
-    fvec[0] = 10 * (x[2] - 10 * temp1)
-    fvec[1] = 10 * (temp2 - 1.0)
-    fvec[2] = x[2]
-    return fvec
-
-
-@mark.least_squares
-def powell_singular(x):
-    fvec = np.zeros(4)
-    fvec[0] = x[0] + 10 * x[1]
-    fvec[1] = np.sqrt(5.0) * (x[2] - x[3])
-    fvec[2] = (x[1] - 2 * x[2]) ** 2
-    fvec[3] = np.sqrt(10.0) * (x[0] - x[3]) ** 2
-    return fvec
-
-
-@mark.least_squares
-def freudenstein_roth(x):
-    fvec = np.zeros(2)
-    fvec[0] = -13 + x[0] + ((5 - x[1]) * x[1] - 2) * x[1]
-    fvec[1] = -29 + x[0] + ((1.0 + x[1]) * x[1] - 14) * x[1]
-    return fvec
-
-
-@mark.least_squares
-def bard(x, y):
-    fvec = np.zeros(len(y))
-    for i in range(1, round(len(y) / 2) + 1):
-        temp = len(y) + 1 - i
-        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * i))
-    for i in range(round(len(y) / 2) + 1, len(y) + 1):
-        temp = len(y) + 1 - i
-        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * temp))
-    return fvec
-
-
-@mark.least_squares
-def kowalik_osborne(x, y1, y2):
-    temp1 = y1 * (y1 + x[1])
-    temp2 = y1 * (y1 + x[2]) + x[3]
-    fvec = y2 - x[0] * temp1 / temp2
-    return fvec
-
-
-@mark.least_squares
-def meyer(x, y):
-    temp = 5 * np.arange(1, len(y) + 1) + 45 + x[2]
-    temp1 = x[1] / temp
-    temp2 = np.exp(temp1)
-    fvec = x[0] * temp2 - y
-    return fvec
-
-
-@mark.least_squares
-def watson(x):
-    dim_in = len(x)
-    fvec = np.zeros(31)
-    for i in range(1, 30):
-        temp = i / 29
-        sum_1 = (np.arange(1, dim_in) * temp ** np.arange(dim_in - 1) * x[1:]).sum()
-        sum_2 = (temp ** np.arange(dim_in) * x).sum()
-        fvec[i - 1] = sum_1 - sum_2**2 - 1.0
-    fvec[29] = x[0]
-    fvec[30] = x[1] - x[0] ** 2 - 1.0
-    return fvec
-
-
-@mark.least_squares
-def box_3d(x, dim_out):
-    fvec = np.zeros(dim_out)
-    for i in range(1, dim_out + 1):
-        fvec[i - 1] = (
-            np.exp(-i / 10 * x[0])
-            - np.exp(-i / 10 * x[1])
-            + (np.exp(-i) - np.exp(-i / 10)) * x[2]
-        )
-    return fvec
-
-
-@mark.least_squares
-def jennrich_sampson(x, dim_out):
-    fvec = (
-        2 * (1.0 + np.arange(1, dim_out + 1))
-        - np.exp(np.arange(1, dim_out + 1) * x[0])
-        - np.exp(np.arange(1, dim_out + 1) * x[1])
-    )
-    return fvec
-
-
-@mark.least_squares
-def brown_dennis(x, dim_out):
-    fvec = np.zeros(dim_out)
-    for i in range(1, dim_out + 1):
-        temp = i / 5
-        temp_1 = x[0] + temp * x[1] - np.exp(temp)
-        temp_2 = x[2] + np.sin(temp) * x[3] - np.cos(temp)
-        fvec[i - 1] = temp_1**2 + temp_2**2
-    return fvec
-
-
-@mark.least_squares
-def chebyquad(x, dim_out):
-    fvec = np.zeros(dim_out)
-    dim_in = len(x)
-    for i in range(1, dim_in + 1):
-        temp_1 = 1.0
-        temp_2 = 2 * x[i - 1] - 1.0
-        temp_3 = 2 * temp_2
-        for j in range(dim_out):
-            fvec[j] = fvec[j] + temp_2
-            temp_4 = temp_3 * temp_2 - temp_1
-            temp_1 = temp_2
-            temp_2 = temp_4
-    for i in range(1, dim_out + 1):
-        fvec[i - 1] = fvec[i - 1] / dim_in
-        if i % 2 == 0:
-            fvec[i - 1] = fvec[i - 1] + 1 / (i**2 - 1.0)
-    return fvec
-
-
-@mark.least_squares
-def brown_almost_linear(x):
-    dim_in = len(x)
-    sm = -(dim_in + 1) + x.sum()
-    product = x.prod()
-    fvec = x + sm
-    fvec[dim_in - 1] = product - 1.0
-    return fvec
-
-
-@mark.least_squares
-def osborne_one(x, y):
-    temp = 10 * np.arange(len(y))
-    temp_1 = np.exp(-x[3] * temp)
-    temp_2 = np.exp(-x[4] * temp)
-    fvec = y - (x[0] + x[1] * temp_1 + x[2] * temp_2)
-    return fvec
-
-
-@mark.least_squares
-def osborne_two(x, y):
-    temp_array = np.zeros((4, len(y)))
-    temp = np.arange(len(y)) / 10
-    temp_array[0] = np.exp(-x[4] * temp)
-    temp_array[1] = np.exp(-x[5] * (temp - x[8]) ** 2)
-    temp_array[2] = np.exp(-x[6] * (temp - x[9]) ** 2)
-    temp_array[3] = np.exp(-x[7] * (temp - x[10]) ** 2)
-    fvec = y - (temp_array.T * x[:4]).T.sum(axis=0)
-    return fvec
-
-
-@mark.least_squares
-def bdqrtic(x):
-    # the length of array x should be more than 5.
-    dim_in = len(x)
-    fvec = np.zeros(2 * (dim_in - 4))
-    for i in range(dim_in - 4):
-        fvec[i] = -4 * x[i] + 3
-        fvec[dim_in - 4 + i] = (
-            x[i] ** 2
-            + 2 * x[i + 1] ** 2
-            + 3 * x[i + 2] ** 2
-            + 4 * x[i + 3] ** 2
-            + 5 * x[dim_in - 1] ** 2
-        )
-    return fvec
-
-
-@mark.least_squares
-def cube(x):
-    fvec = 10 * (x - np.roll(x, 1) ** 3)
-    fvec[0] = x[0] - 1.0
-    return fvec
-
-
-@mark.least_squares
-def mancino(x):
-    dim_in = len(x)
-    fvec = np.zeros(dim_in)
-    for i in range(dim_in):
-        sm = 0
-        for j in range(dim_in):
-            temp = np.sqrt(x[i] ** 2 + (i + 1) / (j + 1))
-            sm += temp * ((np.sin(np.log(temp))) ** 5 + (np.cos(np.log(temp))) ** 5)
-        fvec[i] = 1400 * x[i] + (i + 1 - 50) ** 3 + sm
-    return fvec
-
-
-@mark.least_squares
-def heart_eight(x, y):
-    dim_y = len(y)
-    fvec = np.zeros(dim_y)
-    fvec[0] = x[0] + x[1] - y[0]
-    fvec[1] = x[2] + x[3] - y[1]
-    fvec[2] = x[4] * x[0] + x[5] * x[1] - x[6] * x[2] - x[7] * x[3] - y[2]
-    fvec[3] = x[6] * x[0] + x[7] * x[1] + x[4] * x[2] + x[5] * x[3] - y[3]
-    fvec[4] = (
-        x[0] * (x[4] ** 2 - x[6] ** 2)
-        - 2 * x[2] * x[4] * x[6]
-        + x[1] * (x[5] ** 2 - x[7] ** 2)
-        - 2 * x[3] * x[5] * x[7]
-        - y[4]
-    )
-    fvec[5] = (
-        x[2] * (x[4] ** 2 - x[6] ** 2)
-        + 2 * x[0] * x[4] * x[6]
-        + x[3] * (x[5] ** 2 - x[7] ** 2)
-        + 2 * x[1] * x[5] * x[7]
-        - y[5]
-    )
-    fvec[6] = (
-        x[0] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
-        + x[2] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
-        + x[1] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
-        + x[3] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
-        - y[6]
-    )
-    fvec[7] = (
-        x[2] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
-        - x[0] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
-        + x[3] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
-        - x[1] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
-        - y[7]
-    )
-    return fvec
-
-
-@mark.least_squares
 def get_start_points_mancino(n, a=1):
     x = np.zeros(n)
     for i in range(1, n + 1):
@@ -812,10 +541,17 @@ class LinearFullRank(BenchmarkFunction):
     multimodal = False
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return linear_full_rank(x, dim_out=self.dim_out)
+        return _linear_full_rank(x, dim_out=self.dim_out)
 
     def supports_n_params(self, n_params: int) -> bool:
         return 1 <= n_params <= self.dim_out
+
+
+def _linear_full_rank(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    temp = 2 * x.sum() / dim_out + 1
+    out = np.full(dim_out, -temp)
+    out[: len(x)] += x
+    return out
 
 
 @mark.least_squares
@@ -831,10 +567,17 @@ class LinearRankOne(BenchmarkFunction):
     multimodal = False
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return linear_rank_one(x, dim_out=self.dim_out)
+        return _linear_rank_one(x, dim_out=self.dim_out)
 
     def supports_n_params(self, n_params: int) -> bool:
         return 1 <= n_params <= self.dim_out
+
+
+def _linear_rank_one(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    dim_in = len(x)
+    sm = np.arange(1, dim_in + 1) @ x
+    fvec = np.arange(1, dim_out + 1) * sm - 1.0
+    return fvec
 
 
 @mark.least_squares
@@ -850,10 +593,20 @@ class LinearRankOneZeroColumnsRows(BenchmarkFunction):
     multimodal = False
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return linear_rank_one_zero_columns_rows(x, dim_out=self.dim_out)
+        return _linear_rank_one_zero_columns_rows(x, dim_out=self.dim_out)
 
     def supports_n_params(self, n_params: int) -> bool:
         return 1 <= n_params <= self.dim_out
+
+
+def _linear_rank_one_zero_columns_rows(
+    x: NDArray[np.float64], dim_out: int
+) -> NDArray[np.float64]:
+    dim_in = len(x)
+    sm = (np.arange(2, dim_in) * x[1:-1]).sum()
+    fvec = np.arange(dim_out) * sm - 1.0
+    fvec[-1] = -1.0
+    return fvec
 
 
 @mark.least_squares
@@ -868,7 +621,14 @@ class Rosenbrock(BenchmarkFunction):
     max_n_params = 2
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return rosenbrock(x)
+        return _rosenbrock(x)
+
+
+def _rosenbrock(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(2)
+    fvec[0] = 10 * (x[1] - x[0] ** 2)
+    fvec[1] = 1.0 - x[0]
+    return fvec
 
 
 @mark.least_squares
@@ -882,7 +642,22 @@ class HelicalValley(BenchmarkFunction):
     max_n_params = 3
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return helical_valley(x)
+        return _helical_valley(x)
+
+
+def _helical_valley(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp = 8 * np.arctan(1.0)
+    temp1 = np.sign(x[1]) * 0.25
+    if x[0] > 0:
+        temp1 = np.arctan(x[1] / x[0]) / temp
+    elif x[0] < 0:
+        temp1 = np.arctan(x[1] / x[0]) / temp + 0.5
+    temp2 = np.sqrt(x[0] ** 2 + x[1] ** 2)
+    fvec = np.zeros(3)
+    fvec[0] = 10 * (x[2] - 10 * temp1)
+    fvec[1] = 10 * (temp2 - 1.0)
+    fvec[2] = x[2]
+    return fvec
 
 
 @mark.least_squares
@@ -897,7 +672,16 @@ class PowellSingular(BenchmarkFunction):
     max_n_params = 4
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return powell_singular(x)
+        return _powell_singular(x)
+
+
+def _powell_singular(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(4)
+    fvec[0] = x[0] + 10 * x[1]
+    fvec[1] = np.sqrt(5.0) * (x[2] - x[3])
+    fvec[2] = (x[1] - 2 * x[2]) ** 2
+    fvec[3] = np.sqrt(10.0) * (x[0] - x[3]) ** 2
+    return fvec
 
 
 @mark.least_squares
@@ -914,7 +698,14 @@ class FreudensteinRoth(BenchmarkFunction):
     max_n_params = 2
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return freudenstein_roth(x)
+        return _freudenstein_roth(x)
+
+
+def _freudenstein_roth(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(2)
+    fvec[0] = -13 + x[0] + ((5 - x[1]) * x[1] - 2) * x[1]
+    fvec[1] = -29 + x[0] + ((1.0 + x[1]) * x[1] - 14) * x[1]
+    return fvec
 
 
 @mark.least_squares
@@ -927,7 +718,18 @@ class Bard(BenchmarkFunction):
     max_n_params = 3
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return bard(x, y=y_vec)
+        return _bard(x, y=y_vec)
+
+
+def _bard(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(len(y))
+    for i in range(1, round(len(y) / 2) + 1):
+        temp = len(y) + 1 - i
+        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * i))
+    for i in range(round(len(y) / 2) + 1, len(y) + 1):
+        temp = len(y) + 1 - i
+        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * temp))
+    return fvec
 
 
 @mark.least_squares
@@ -940,7 +742,16 @@ class KowalikOsborne(BenchmarkFunction):
     max_n_params = 4
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return kowalik_osborne(x, y1=v_vec, y2=y2_vec)
+        return _kowalik_osborne(x, y1=v_vec, y2=y2_vec)
+
+
+def _kowalik_osborne(
+    x: NDArray[np.float64], y1: NDArray[np.float64], y2: NDArray[np.float64]
+) -> NDArray[np.float64]:
+    temp1 = y1 * (y1 + x[1])
+    temp2 = y1 * (y1 + x[2]) + x[3]
+    fvec = y2 - x[0] * temp1 / temp2
+    return fvec
 
 
 @mark.least_squares
@@ -953,7 +764,15 @@ class Meyer(BenchmarkFunction):
     max_n_params = 3
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return meyer(x, y=y3_vec)
+        return _meyer(x, y=y3_vec)
+
+
+def _meyer(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp = 5 * np.arange(1, len(y) + 1) + 45 + x[2]
+    temp1 = x[1] / temp
+    temp2 = np.exp(temp1)
+    fvec = x[0] * temp2 - y
+    return fvec
 
 
 @mark.least_squares
@@ -966,7 +785,20 @@ class Watson(BenchmarkFunction):
     max_n_params = 31
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return watson(x)
+        return _watson(x)
+
+
+def _watson(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(31)
+    for i in range(1, 30):
+        temp = i / 29
+        sum_1 = (np.arange(1, dim_in) * temp ** np.arange(dim_in - 1) * x[1:]).sum()
+        sum_2 = (temp ** np.arange(dim_in) * x).sum()
+        fvec[i - 1] = sum_1 - sum_2**2 - 1.0
+    fvec[29] = x[0]
+    fvec[30] = x[1] - x[0] ** 2 - 1.0
+    return fvec
 
 
 @mark.least_squares
@@ -982,7 +814,18 @@ class Box3D(BenchmarkFunction):
     max_n_params = 3
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return box_3d(x, dim_out=self.dim_out)
+        return _box_3d(x, dim_out=self.dim_out)
+
+
+def _box_3d(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = np.zeros(dim_out)
+    for i in range(1, dim_out + 1):
+        fvec[i - 1] = (
+            np.exp(-i / 10 * x[0])
+            - np.exp(-i / 10 * x[1])
+            + (np.exp(-i) - np.exp(-i / 10)) * x[2]
+        )
+    return fvec
 
 
 @mark.least_squares
@@ -998,7 +841,16 @@ class JennrichSampson(BenchmarkFunction):
     max_n_params = 2
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return jennrich_sampson(x, dim_out=self.dim_out)
+        return _jennrich_sampson(x, dim_out=self.dim_out)
+
+
+def _jennrich_sampson(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = (
+        2 * (1.0 + np.arange(1, dim_out + 1))
+        - np.exp(np.arange(1, dim_out + 1) * x[0])
+        - np.exp(np.arange(1, dim_out + 1) * x[1])
+    )
+    return fvec
 
 
 @mark.least_squares
@@ -1014,7 +866,17 @@ class BrownDennis(BenchmarkFunction):
     max_n_params = 4
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return brown_dennis(x, dim_out=self.dim_out)
+        return _brown_dennis(x, dim_out=self.dim_out)
+
+
+def _brown_dennis(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = np.zeros(dim_out)
+    for i in range(1, dim_out + 1):
+        temp = i / 5
+        temp_1 = x[0] + temp * x[1] - np.exp(temp)
+        temp_2 = x[2] + np.sin(temp) * x[3] - np.cos(temp)
+        fvec[i - 1] = temp_1**2 + temp_2**2
+    return fvec
 
 
 @mark.least_squares
@@ -1028,10 +890,29 @@ class Chebyquad(BenchmarkFunction):
     differentiable = True
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return chebyquad(x, dim_out=self.dim_out)
+        return _chebyquad(x, dim_out=self.dim_out)
 
     def supports_n_params(self, n_params: int) -> bool:
         return 1 <= n_params <= self.dim_out
+
+
+def _chebyquad(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = np.zeros(dim_out)
+    dim_in = len(x)
+    for i in range(1, dim_in + 1):
+        temp_1 = 1.0
+        temp_2 = 2 * x[i - 1] - 1.0
+        temp_3 = 2 * temp_2
+        for j in range(dim_out):
+            fvec[j] = fvec[j] + temp_2
+            temp_4 = temp_3 * temp_2 - temp_1
+            temp_1 = temp_2
+            temp_2 = temp_4
+    for i in range(1, dim_out + 1):
+        fvec[i - 1] = fvec[i - 1] / dim_in
+        if i % 2 == 0:
+            fvec[i - 1] = fvec[i - 1] + 1 / (i**2 - 1.0)
+    return fvec
 
 
 @mark.least_squares
@@ -1042,7 +923,16 @@ class BrownAlmostLinear(BenchmarkFunction):
     differentiable = True
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return brown_almost_linear(x)
+        return _brown_almost_linear(x)
+
+
+def _brown_almost_linear(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    sm = -(dim_in + 1) + x.sum()
+    product = x.prod()
+    fvec = x + sm
+    fvec[dim_in - 1] = product - 1.0
+    return fvec
 
 
 @mark.least_squares
@@ -1055,7 +945,15 @@ class OsborneOne(BenchmarkFunction):
     max_n_params = 5
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return osborne_one(x, y=y4_vec)
+        return _osborne_one(x, y=y4_vec)
+
+
+def _osborne_one(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp = 10 * np.arange(len(y))
+    temp_1 = np.exp(-x[3] * temp)
+    temp_2 = np.exp(-x[4] * temp)
+    fvec = y - (x[0] + x[1] * temp_1 + x[2] * temp_2)
+    return fvec
 
 
 @mark.least_squares
@@ -1068,7 +966,18 @@ class OsborneTwo(BenchmarkFunction):
     max_n_params = 11
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return osborne_two(x, y=y5_vec)
+        return _osborne_two(x, y=y5_vec)
+
+
+def _osborne_two(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp_array = np.zeros((4, len(y)))
+    temp = np.arange(len(y)) / 10
+    temp_array[0] = np.exp(-x[4] * temp)
+    temp_array[1] = np.exp(-x[5] * (temp - x[8]) ** 2)
+    temp_array[2] = np.exp(-x[6] * (temp - x[9]) ** 2)
+    temp_array[3] = np.exp(-x[7] * (temp - x[10]) ** 2)
+    fvec = y - (temp_array.T * x[:4]).T.sum(axis=0)
+    return fvec
 
 
 @mark.least_squares
@@ -1080,7 +989,22 @@ class Bdqrtic(BenchmarkFunction):
     min_n_params = 5
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return bdqrtic(x)
+        return _bdqrtic(x)
+
+
+def _bdqrtic(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(2 * (dim_in - 4))
+    for i in range(dim_in - 4):
+        fvec[i] = -4 * x[i] + 3
+        fvec[dim_in - 4 + i] = (
+            x[i] ** 2
+            + 2 * x[i + 1] ** 2
+            + 3 * x[i + 2] ** 2
+            + 4 * x[i + 3] ** 2
+            + 5 * x[dim_in - 1] ** 2
+        )
+    return fvec
 
 
 @mark.least_squares
@@ -1092,7 +1016,13 @@ class Cube(BenchmarkFunction):
     min_n_params = 2
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return cube(x)
+        return _cube(x)
+
+
+def _cube(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = 10 * (x - np.roll(x, 1) ** 3)
+    fvec[0] = x[0] - 1.0
+    return fvec
 
 
 @mark.least_squares
@@ -1103,7 +1033,19 @@ class Mancino(BenchmarkFunction):
     differentiable = True
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return mancino(x)
+        return _mancino(x)
+
+
+def _mancino(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(dim_in)
+    for i in range(dim_in):
+        sm = 0
+        for j in range(dim_in):
+            temp = np.sqrt(x[i] ** 2 + (i + 1) / (j + 1))
+            sm += temp * ((np.sin(np.log(temp))) ** 5 + (np.cos(np.log(temp))) ** 5)
+        fvec[i] = 1400 * x[i] + (i + 1 - 50) ** 3 + sm
+    return fvec
 
 
 @mark.least_squares
@@ -1116,7 +1058,45 @@ class HeartEight(BenchmarkFunction):
     max_n_params = 8
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return heart_eight(x, y=heart_eight_y_vec)
+        return _heart_eight(x, y=heart_eight_y_vec)
+
+
+def _heart_eight(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_y = len(y)
+    fvec = np.zeros(dim_y)
+    fvec[0] = x[0] + x[1] - y[0]
+    fvec[1] = x[2] + x[3] - y[1]
+    fvec[2] = x[4] * x[0] + x[5] * x[1] - x[6] * x[2] - x[7] * x[3] - y[2]
+    fvec[3] = x[6] * x[0] + x[7] * x[1] + x[4] * x[2] + x[5] * x[3] - y[3]
+    fvec[4] = (
+        x[0] * (x[4] ** 2 - x[6] ** 2)
+        - 2 * x[2] * x[4] * x[6]
+        + x[1] * (x[5] ** 2 - x[7] ** 2)
+        - 2 * x[3] * x[5] * x[7]
+        - y[4]
+    )
+    fvec[5] = (
+        x[2] * (x[4] ** 2 - x[6] ** 2)
+        + 2 * x[0] * x[4] * x[6]
+        + x[3] * (x[5] ** 2 - x[7] ** 2)
+        + 2 * x[1] * x[5] * x[7]
+        - y[5]
+    )
+    fvec[6] = (
+        x[0] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
+        + x[2] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
+        + x[1] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
+        + x[3] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
+        - y[6]
+    )
+    fvec[7] = (
+        x[2] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
+        - x[0] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
+        + x[3] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
+        - x[1] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
+        - y[7]
+    )
+    return fvec
 
 
 # ======================================================================================

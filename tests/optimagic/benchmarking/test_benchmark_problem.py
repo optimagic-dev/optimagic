@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import partial
 
 import numpy as np
 import pytest
@@ -31,16 +32,18 @@ class Sphere(BenchmarkFunction):
     multimodal = False
 
     def fun(self, x):
-        return float(x @ x)
+        return _sphere(x)
 
     def jac(self, solver_type):
-        if solver_type != SCALAR:
-            return None
+        return _sphere_gradient if solver_type == SCALAR else None
 
-        def gradient(x):
-            return 2 * x
 
-        return gradient
+def _sphere(x):
+    return float(x @ x)
+
+
+def _sphere_gradient(x):
+    return 2 * x
 
 
 @om.mark.least_squares
@@ -52,43 +55,51 @@ class ShiftedResiduals(BenchmarkFunction):
     max_n_params = 4
 
     def fun(self, x):
-        return np.append(x - self.shift, x[0] * x[1])
+        return _shifted_residuals(x, shift=self.shift)
 
     def jac(self, solver_type):
-        def residual_jac(x):
-            last_row = np.zeros(len(x))
-            last_row[0] = x[1]
-            last_row[1] = x[0]
-            return np.vstack([np.eye(len(x)), last_row])
-
-        def gradient(x):
-            return 2 * residual_jac(x).T @ self.fun(x)
-
         if solver_type == LEAST_SQUARES:
-            return residual_jac
+            return _shifted_residuals_jac
         if solver_type == SCALAR:
-            return gradient
+            return partial(_shifted_residuals_gradient, shift=self.shift)
         return None
+
+
+def _shifted_residuals(x, shift):
+    return np.append(x - shift, x[0] * x[1])
+
+
+def _shifted_residuals_jac(x):
+    last_row = np.zeros(len(x))
+    last_row[0] = x[1]
+    last_row[1] = x[0]
+    return np.vstack([np.eye(len(x)), last_row])
+
+
+def _shifted_residuals_gradient(x, shift):
+    return 2 * _shifted_residuals_jac(x).T @ _shifted_residuals(x, shift=shift)
 
 
 @om.mark.likelihood
 class Contributions(BenchmarkFunction):
     def fun(self, x):
-        return np.array([x[0] ** 2, x[1] ** 2 + x[0], 3.0])
+        return _contributions(x)
 
     def jac(self, solver_type):
-        if solver_type != LIKELIHOOD:
-            return None
+        return _contributions_jac if solver_type == LIKELIHOOD else None
 
-        def contribution_jac(x):
-            return np.array([[2 * x[0], 0.0], [1.0, 2 * x[1]], [0.0, 0.0]])
 
-        return contribution_jac
+def _contributions(x):
+    return np.array([x[0] ** 2, x[1] ** 2 + x[0], 3.0])
+
+
+def _contributions_jac(x):
+    return np.array([[2 * x[0], 0.0], [1.0, 2 * x[1]], [0.0, 0.0]])
 
 
 class EvenSphere(BenchmarkFunction):
     def fun(self, x):
-        return float(x @ x)
+        return _sphere(x)
 
     def supports_n_params(self, n_params):
         return n_params % 2 == 0
@@ -96,22 +107,26 @@ class EvenSphere(BenchmarkFunction):
 
 class LogSum(BenchmarkFunction):
     def fun(self, x):
-        return float(np.log(x).sum() + x @ x)
+        return _log_sum(x)
 
     def bounds(self, n_params):
         return om.Bounds(lower=np.zeros(n_params))
 
 
-def _sum_is_one(x):
-    return x.sum()
+def _log_sum(x):
+    return float(np.log(x).sum() + x @ x)
 
 
 class ConstrainedSphere(BenchmarkFunction):
     def fun(self, x):
-        return float(x @ x)
+        return _sphere(x)
 
     def constraints(self, n_params):  # noqa: ARG002
         return [om.NonlinearConstraint(func=_sum_is_one, value=1.0)]
+
+
+def _sum_is_one(x):
+    return x.sum()
 
 
 ALL_FUNCTIONS = [Sphere(), ShiftedResiduals(), Contributions()]

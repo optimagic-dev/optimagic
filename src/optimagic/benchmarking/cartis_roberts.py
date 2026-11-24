@@ -49,11 +49,15 @@ class Luksan11(BenchmarkFunction):
     """The LUKSAN11 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = np.zeros(2 * (dim_in - 1))
-        fvec[::2] = 20 * x[:-1] / (1 + x[:-1] ** 2) - 10 * x[1:]
-        fvec[1::2] = x[:-1] - 1
-        return fvec
+        return _luksan11(x)
+
+
+def _luksan11(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(2 * (dim_in - 1))
+    fvec[::2] = 20 * x[:-1] / (1 + x[:-1] ** 2) - 10 * x[1:]
+    fvec[1::2] = x[:-1] - 1
+    return fvec
 
 
 @mark.least_squares
@@ -62,17 +66,21 @@ class Luksan12(BenchmarkFunction):
     """The LUKSAN12 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        n = (dim_in - 2) // 3
-        i = np.arange(0, 3 * n, 3)
-        fvec = np.zeros(6 * n)
-        fvec[::6] = 10 * (x[i] ** 2 - x[i + 1])
-        fvec[1::6] = x[i + 2] - 1
-        fvec[2::6] = (x[i + 3] - 1) ** 2
-        fvec[3::6] = (x[i + 4] - 1) ** 3
-        fvec[4::6] = x[i] ** 2 * x[i + 3] + np.sin(x[i + 3] - x[i + 4]) - 10
-        fvec[5::6] = x[i + 1] + (x[i + 2] ** 4) * (x[i + 3] ** 2) - 20
-        return fvec
+        return _luksan12(x)
+
+
+def _luksan12(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    n = (dim_in - 2) // 3
+    i = np.arange(0, 3 * n, 3)
+    fvec = np.zeros(6 * n)
+    fvec[::6] = 10 * (x[i] ** 2 - x[i + 1])
+    fvec[1::6] = x[i + 2] - 1
+    fvec[2::6] = (x[i + 3] - 1) ** 2
+    fvec[3::6] = (x[i + 4] - 1) ** 3
+    fvec[4::6] = x[i] ** 2 * x[i + 3] + np.sin(x[i + 3] - x[i + 4]) - 10
+    fvec[5::6] = x[i + 1] + (x[i + 2] ** 4) * (x[i + 3] ** 2) - 20
+    return fvec
 
 
 @mark.least_squares
@@ -81,20 +89,24 @@ class Luksan13(BenchmarkFunction):
     """The LUKSAN13 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        n = (dim_in - 2) // 3
-        fvec = np.zeros(n * 7)
-        i = np.arange(n)
-        k = i * 7
-        fvec[k] = 10 * (x[3 * i] ** 2 - x[3 * i + 1])
-        fvec[k + 1] = 10 * (x[3 * i + 1] ** 2 - x[3 * i + 2])
-        fvec[k + 2] = (x[3 * i + 2] - x[3 * i + 3]) ** 2
-        fvec[k + 3] = (x[3 * i + 3] - x[3 * i + 4]) ** 2
-        fvec[k + 4] = x[3 * i] + x[3 * i + 1] ** 2 + x[3 * i + 2] - 30
-        fvec[k + 5] = x[3 * i + 1] - x[3 * i + 2] ** 2 + x[3 * i + 3] - 10
-        fvec[k + 6] = x[3 * i + 1] * x[3 * i + 4] - 10
+        return _luksan13(x)
 
-        return fvec
+
+def _luksan13(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    n = (dim_in - 2) // 3
+    fvec = np.zeros(n * 7)
+    i = np.arange(n)
+    k = i * 7
+    fvec[k] = 10 * (x[3 * i] ** 2 - x[3 * i + 1])
+    fvec[k + 1] = 10 * (x[3 * i + 1] ** 2 - x[3 * i + 2])
+    fvec[k + 2] = (x[3 * i + 2] - x[3 * i + 3]) ** 2
+    fvec[k + 3] = (x[3 * i + 3] - x[3 * i + 4]) ** 2
+    fvec[k + 4] = x[3 * i] + x[3 * i + 1] ** 2 + x[3 * i + 2] - 30
+    fvec[k + 5] = x[3 * i + 1] - x[3 * i + 2] ** 2 + x[3 * i + 3] - 10
+    fvec[k + 6] = x[3 * i + 1] * x[3 * i + 4] - 10
+
+    return fvec
 
 
 @mark.least_squares
@@ -103,23 +115,27 @@ class Luksan14(BenchmarkFunction):
     """The LUKSAN14 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        dim_out = 7 * (dim_in - 2) // 3
-        fvec = np.zeros(dim_out, dtype=np.float64)
+        return _luksan14(x)
 
-        for i in range(0, dim_in - 2, 3):
-            k = (i // 3) * 7
-            fvec[k : k + 7] = [
-                10 * (x[i] ** 2 - x[i + 1]),
-                x[i + 1] + x[i + 2] - 2,
-                x[i + 3] - 1,
-                x[i + 4] - 1,
-                x[i] + 3 * x[i + 1],
-                x[i + 2] + x[i + 3] - 2 * x[i + 4],
-                10 * (x[i + 1] ** 2 - x[i + 4]),
-            ]
 
-        return fvec
+def _luksan14(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    dim_out = 7 * (dim_in - 2) // 3
+    fvec = np.zeros(dim_out, dtype=np.float64)
+
+    for i in range(0, dim_in - 2, 3):
+        k = (i // 3) * 7
+        fvec[k : k + 7] = [
+            10 * (x[i] ** 2 - x[i + 1]),
+            x[i + 1] + x[i + 2] - 2,
+            x[i + 3] - 1,
+            x[i + 4] - 1,
+            x[i] + 3 * x[i + 1],
+            x[i + 2] + x[i + 3] - 2 * x[i + 4],
+            10 * (x[i + 1] ** 2 - x[i + 4]),
+        ]
+
+    return fvec
 
 
 @mark.least_squares
@@ -128,24 +144,28 @@ class Luksan15(BenchmarkFunction):
     """The LUKSAN15 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        dim_out = (dim_in - 2) * 2
-        temp = np.zeros((dim_out, 3), dtype=np.float64)
-        y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
+        return _luksan15(x)
 
-        for p in range(1, 4):
-            k = 0
-            for i in range(0, dim_in - 2, 2):
-                for j in range(1, 5):
-                    temp[k, p - 1] = (p**2 / j) * np.abs(
-                        x[i] * (x[i + 1] ** 2) * (x[i + 2] ** 3) * (x[i + 3] ** 4)
-                    ) ** (1 / (p * j))
 
-                    k += 1
+def _luksan15(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    dim_out = (dim_in - 2) * 2
+    temp = np.zeros((dim_out, 3), dtype=np.float64)
+    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
 
-        fvec = y - np.sum(temp, axis=1)
+    for p in range(1, 4):
+        k = 0
+        for i in range(0, dim_in - 2, 2):
+            for j in range(1, 5):
+                temp[k, p - 1] = (p**2 / j) * np.abs(
+                    x[i] * (x[i + 1] ** 2) * (x[i + 2] ** 3) * (x[i + 3] ** 4)
+                ) ** (1 / (p * j))
 
-        return fvec
+                k += 1
+
+    fvec = y - np.sum(temp, axis=1)
+
+    return fvec
 
 
 @mark.least_squares
@@ -154,24 +174,27 @@ class Luksan16(BenchmarkFunction):
     """The LUKSAN16 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        dim_out = (dim_in - 2) * 2
-        temp = np.zeros((dim_out, 3), dtype=np.float64)
-        y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
+        return _luksan16(x)
 
-        for p in range(1, 4):
-            k = 0
-            for i in range(0, dim_in - 2, 2):
-                for j in range(1, 5):
-                    temp[k, p - 1] = (p**2 / j) * np.exp(
-                        (x[i] + 2 * x[i + 1] + 3 * x[i + 2] + 4 * x[i + 3])
-                        * (1 / (p * j))
-                    )
-                    k += 1
 
-        fvec = y - np.sum(temp, axis=1)
+def _luksan16(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    dim_out = (dim_in - 2) * 2
+    temp = np.zeros((dim_out, 3), dtype=np.float64)
+    y = np.tile([35.8, 11.2, 6.2, 4.4], dim_out // 4)
 
-        return fvec
+    for p in range(1, 4):
+        k = 0
+        for i in range(0, dim_in - 2, 2):
+            for j in range(1, 5):
+                temp[k, p - 1] = (p**2 / j) * np.exp(
+                    (x[i] + 2 * x[i + 1] + 3 * x[i + 2] + 4 * x[i + 3]) * (1 / (p * j))
+                )
+                k += 1
+
+    fvec = y - np.sum(temp, axis=1)
+
+    return fvec
 
 
 @mark.least_squares
@@ -180,23 +203,27 @@ class Luksan17(BenchmarkFunction):
     """The LUKSAN17 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        dim_out = (dim_in - 2) * 2
-        temp = np.zeros((dim_out, 4), dtype=np.float64)
-        y = np.tile([30.6, 72.2, 124.4, 187.4], dim_out // 4)
+        return _luksan17(x)
 
-        for q in range(1, 5):
-            k = 0
-            for i in range(-1, dim_in - 4, 2):
-                for j in range(1, 5):
-                    temp[k, q - 1] += -j * q**2 * np.sin(x[i + q]) + j**2 * q * np.cos(
-                        x[i + q]
-                    )
-                    k += 1
 
-        fvec = y - np.sum(temp, axis=1)
+def _luksan17(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    dim_out = (dim_in - 2) * 2
+    temp = np.zeros((dim_out, 4), dtype=np.float64)
+    y = np.tile([30.6, 72.2, 124.4, 187.4], dim_out // 4)
 
-        return fvec
+    for q in range(1, 5):
+        k = 0
+        for i in range(-1, dim_in - 4, 2):
+            for j in range(1, 5):
+                temp[k, q - 1] += -j * q**2 * np.sin(x[i + q]) + j**2 * q * np.cos(
+                    x[i + q]
+                )
+                k += 1
+
+    fvec = y - np.sum(temp, axis=1)
+
+    return fvec
 
 
 @mark.least_squares
@@ -205,22 +232,26 @@ class Luksan21(BenchmarkFunction):
     """The LUKSAN21 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_out = len(x)
-        h = 1 / (dim_out + 1)
-        fvec = np.zeros(dim_out, dtype=np.float64)
+        return _luksan21(x)
 
-        fvec[0] = 2 * x[0] + 0.5 * h**2 * (x[0] + h + 1) ** 3 - x[1] + 1
-        for i in range(1, dim_out - 1):
-            fvec[i] = (
-                2 * x[i]
-                + 0.5 * h**2 * (x[i] + h * (i + 1) + 1) ** 3
-                - x[i - 1]
-                - x[i + 1]
-                + 1
-            )
-        fvec[-1] = 2 * x[-1] + 0.5 * h**2 * (x[-1] + h * dim_out + 1) ** 3 - x[-2] + 1
 
-        return fvec
+def _luksan21(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_out = len(x)
+    h = 1 / (dim_out + 1)
+    fvec = np.zeros(dim_out, dtype=np.float64)
+
+    fvec[0] = 2 * x[0] + 0.5 * h**2 * (x[0] + h + 1) ** 3 - x[1] + 1
+    for i in range(1, dim_out - 1):
+        fvec[i] = (
+            2 * x[i]
+            + 0.5 * h**2 * (x[i] + h * (i + 1) + 1) ** 3
+            - x[i - 1]
+            - x[i + 1]
+            + 1
+        )
+    fvec[-1] = 2 * x[-1] + 0.5 * h**2 * (x[-1] + h * dim_out + 1) ** 3 - x[-2] + 1
+
+    return fvec
 
 
 @mark.least_squares
@@ -229,15 +260,19 @@ class Luksan22(BenchmarkFunction):
     """The LUKSAN22 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_out = 2 * len(x) - 2
-        fvec = np.zeros(dim_out)
-        fvec[0] = x[0] - 1
-        fvec[1:-1:2] = 10 * (x[:-2] ** 2 - x[1:-1])
-        fvec[2:-1:2] = 2 * np.exp(-((x[:-2] - x[1:-1]) ** 2)) + np.exp(
-            -2 * (x[1:-1] - x[2:]) ** 2
-        )
-        fvec[-1] = -10 * (x[-2] ** 2)
-        return fvec
+        return _luksan22(x)
+
+
+def _luksan22(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_out = 2 * len(x) - 2
+    fvec = np.zeros(dim_out)
+    fvec[0] = x[0] - 1
+    fvec[1:-1:2] = 10 * (x[:-2] ** 2 - x[1:-1])
+    fvec[2:-1:2] = 2 * np.exp(-((x[:-2] - x[1:-1]) ** 2)) + np.exp(
+        -2 * (x[1:-1] - x[2:]) ** 2
+    )
+    fvec[-1] = -10 * (x[-2] ** 2)
+    return fvec
 
 
 @mark.least_squares
@@ -246,22 +281,51 @@ class Morebvne(BenchmarkFunction):
     """The MOREBVNE function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        h = 1 / (dim_in + 1)
-        i = np.arange(1, dim_in + 1)
-        fvec = np.zeros(dim_in)
+        return _morebvne(x)
 
-        fvec[0] = 2 * x[0] - x[1] + h**2 / 2 * (x[0] + i[0] * h + 1) ** 3
-        fvec[1:-1] = (
-            2 * x[1:-1] - x[:-2] - x[2:] + h**2 / 2 * (x[1:-1] + i[1:-1] * h + 1) ** 3
+
+def _morebvne(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    h = 1 / (dim_in + 1)
+    i = np.arange(1, dim_in + 1)
+    fvec = np.zeros(dim_in)
+
+    fvec[0] = 2 * x[0] - x[1] + h**2 / 2 * (x[0] + i[0] * h + 1) ** 3
+    fvec[1:-1] = (
+        2 * x[1:-1] - x[:-2] - x[2:] + h**2 / 2 * (x[1:-1] + i[1:-1] * h + 1) ** 3
+    )
+    fvec[-1] = 2 * x[-2] - x[-2] + h**2 / 2 * (x[-1] + i[-1] * h + 1) ** 3
+
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Flosp2(BenchmarkFunction):
+    """The FLOSP2 function from the CUTEst collection."""
+
+    a: tuple[float, float, float]
+    """Coefficients of the boundary conditions."""
+
+    b: tuple[float, float, float]
+    """Coefficients of the boundary conditions."""
+
+    ra: float = 1.0e7
+    """The Rayleigh number."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _flosp2(
+            x,
+            a=np.array(self.a, dtype=np.float64),
+            b=np.array(self.b, dtype=np.float64),
+            ra=self.ra,
         )
-        fvec[-1] = 2 * x[-2] - x[-2] + h**2 / 2 * (x[-1] + i[-1] * h + 1) ** 3
-
-        return fvec
 
 
 @njit
-def flosp2(x, a, b, ra=1.0e7):
+def _flosp2(
+    x: NDArray[np.float64], a: NDArray[np.float64], b: NDArray[np.float64], ra: float
+) -> NDArray[np.float64]:
     n = 5
     xvec = np.ones((3, n, n), dtype=np.float64)
     xvec[0] = x[: n**2].reshape(n, n)
@@ -374,45 +438,26 @@ def flosp2(x, a, b, ra=1.0e7):
 
 @mark.least_squares
 @dataclass(frozen=True)
-class Flosp2(BenchmarkFunction):
-    """The FLOSP2 function from the CUTEst collection."""
-
-    a: tuple[float, float, float]
-    """Coefficients of the boundary conditions."""
-
-    b: tuple[float, float, float]
-    """Coefficients of the boundary conditions."""
-
-    ra: float = 1.0e7
-    """The Rayleigh number."""
-
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return flosp2(
-            x,
-            np.array(self.a, dtype=np.float64),
-            np.array(self.b, dtype=np.float64),
-            self.ra,
-        )
-
-
-@mark.least_squares
-@dataclass(frozen=True)
 class Oscigrne(BenchmarkFunction):
     """The OSCIGRNE function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        rho = 500
+        return _oscigrne(x)
 
-        fvec = np.zeros(dim_in)
-        fvec[0] = 0.5 * x[0] - 0.5 - 4 * rho * (x[1] - 2.0 * x[0] ** 2 + 1.0) * x[0]
-        fvec[1:-1] = (
-            2 * rho * (x[1:-1] - 2.0 * x[:-2] ** 2 + 1.0)
-            - 4 * rho * (x[2:] - 2.0 * x[:-2] ** 2 + 1.0) * x[2:]
-        )
-        fvec[-1] = 2 * rho * (x[-1] - 2.0 * x[-2] ** 2 + 1.0)
 
-        return fvec
+def _oscigrne(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    rho = 500
+
+    fvec = np.zeros(dim_in)
+    fvec[0] = 0.5 * x[0] - 0.5 - 4 * rho * (x[1] - 2.0 * x[0] ** 2 + 1.0) * x[0]
+    fvec[1:-1] = (
+        2 * rho * (x[1:-1] - 2.0 * x[:-2] ** 2 + 1.0)
+        - 4 * rho * (x[2:] - 2.0 * x[:-2] ** 2 + 1.0) * x[2:]
+    )
+    fvec[-1] = 2 * rho * (x[-1] - 2.0 * x[-2] ** 2 + 1.0)
+
+    return fvec
 
 
 @mark.least_squares
@@ -421,79 +466,81 @@ class Spmsqrt(BenchmarkFunction):
     """The SPMSQRT function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        m = (len(x) + 2) // 3
-        xmat = np.diag(x[2:-1:3], -1) + np.diag(x[::3], 0) + np.diag(x[1:-2:3], 1)
+        return _spmsqrt(x)
 
-        b = np.zeros((m, m), dtype=np.float64)
-        b[0, 0] = np.sin(1)
-        b[0, 1] = np.sin(4)
-        k = 2
-        for i in range(1, m - 1):
-            k += 1
-            b[i, i - 1] = np.sin(k**2)
-            k += 1
-            b[i, i] = np.sin(k**2)
-            k += 1
-            b[i, i + 1] = np.sin(k**2)
+
+def _spmsqrt(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    m = (len(x) + 2) // 3
+    xmat = np.diag(x[2:-1:3], -1) + np.diag(x[::3], 0) + np.diag(x[1:-2:3], 1)
+
+    b = np.zeros((m, m), dtype=np.float64)
+    b[0, 0] = np.sin(1)
+    b[0, 1] = np.sin(4)
+    k = 2
+    for i in range(1, m - 1):
         k += 1
-        b[-1, -2] = np.sin(k**2)
+        b[i, i - 1] = np.sin(k**2)
         k += 1
-        b[-1, -1] = np.sin(k**2)
+        b[i, i] = np.sin(k**2)
+        k += 1
+        b[i, i + 1] = np.sin(k**2)
+    k += 1
+    b[-1, -2] = np.sin(k**2)
+    k += 1
+    b[-1, -1] = np.sin(k**2)
 
-        fmat = np.zeros((m, m), dtype=np.float64)
-        fmat[0, 0] = xmat[0, 0] ** 2 + xmat[0, 1] * xmat[1, 0]
-        fmat[0, 1] = xmat[0, 0] * xmat[0, 1] + xmat[0, 1] * xmat[1, 1]
-        fmat[0, 2] = xmat[0, 1] * xmat[1, 2]
+    fmat = np.zeros((m, m), dtype=np.float64)
+    fmat[0, 0] = xmat[0, 0] ** 2 + xmat[0, 1] * xmat[1, 0]
+    fmat[0, 1] = xmat[0, 0] * xmat[0, 1] + xmat[0, 1] * xmat[1, 1]
+    fmat[0, 2] = xmat[0, 1] * xmat[1, 2]
 
-        fmat[1, 0] = xmat[1, 0] * xmat[0, 0] + xmat[1, 1] * xmat[1, 0]
-        fmat[1, 1] = xmat[1, 0] * xmat[0, 1] + xmat[1, 1] ** 2 + xmat[1, 2] * xmat[2, 1]
-        fmat[1, 2] = xmat[1, 1] * xmat[1, 2] + xmat[1, 2] * xmat[2, 2]
-        fmat[1, 3] = xmat[1, 2] * xmat[2, 3]
+    fmat[1, 0] = xmat[1, 0] * xmat[0, 0] + xmat[1, 1] * xmat[1, 0]
+    fmat[1, 1] = xmat[1, 0] * xmat[0, 1] + xmat[1, 1] ** 2 + xmat[1, 2] * xmat[2, 1]
+    fmat[1, 2] = xmat[1, 1] * xmat[1, 2] + xmat[1, 2] * xmat[2, 2]
+    fmat[1, 3] = xmat[1, 2] * xmat[2, 3]
 
-        for i in range(2, m - 2):
-            fmat[i, i - 2] = xmat[i, i - 1] * xmat[i - 1, i - 2]
-            fmat[i, i - 1] = (
-                xmat[i, i - 1] * xmat[i - 1, i - 1] + xmat[i, i] * xmat[i, i - 1]
-            )
-            fmat[i, i] = (
-                xmat[i, i - 1] * xmat[i - 1, i]
-                + xmat[i, i] ** 2
-                + xmat[i, i + 1] * xmat[i + 1, i]
-            )
-            fmat[i, i + 1] = (
-                xmat[i, i] * xmat[i, i + 1] + xmat[i, i + 1] * xmat[i + 1, i + 1]
-            )
-            fmat[i, i + 2] = xmat[i, i + 1] * xmat[i + 1, i + 2]
-
-        fmat[-2, -4] = xmat[-2, -3] * xmat[-3, -4]
-        fmat[-2, -3] = xmat[-2, -3] * xmat[-3, -3] + xmat[-2, -2] * xmat[-2, -3]
-        fmat[-2, -2] = (
-            xmat[-2, -3] * xmat[-3, -2]
-            + xmat[-2, -2] ** 2
-            + xmat[-2, -1] * xmat[-1, -2]
+    for i in range(2, m - 2):
+        fmat[i, i - 2] = xmat[i, i - 1] * xmat[i - 1, i - 2]
+        fmat[i, i - 1] = (
+            xmat[i, i - 1] * xmat[i - 1, i - 1] + xmat[i, i] * xmat[i, i - 1]
         )
-        fmat[-2, -1] = xmat[-2, -2] * xmat[-2, -1] + xmat[-2, -1] * xmat[-1, -1]
+        fmat[i, i] = (
+            xmat[i, i - 1] * xmat[i - 1, i]
+            + xmat[i, i] ** 2
+            + xmat[i, i + 1] * xmat[i + 1, i]
+        )
+        fmat[i, i + 1] = (
+            xmat[i, i] * xmat[i, i + 1] + xmat[i, i + 1] * xmat[i + 1, i + 1]
+        )
+        fmat[i, i + 2] = xmat[i, i + 1] * xmat[i + 1, i + 2]
 
-        fmat[-1, -3] = xmat[-1, -2] * xmat[-2, -3]
-        fmat[-1, -2] = xmat[-1, -2] * xmat[-2, -2] + xmat[-1, -1] * xmat[-1, -2]
-        fmat[-1, -1] = xmat[-1, -2] * xmat[-2, -1] + xmat[-1, -1] ** 2
+    fmat[-2, -4] = xmat[-2, -3] * xmat[-3, -4]
+    fmat[-2, -3] = xmat[-2, -3] * xmat[-3, -3] + xmat[-2, -2] * xmat[-2, -3]
+    fmat[-2, -2] = (
+        xmat[-2, -3] * xmat[-3, -2] + xmat[-2, -2] ** 2 + xmat[-2, -1] * xmat[-1, -2]
+    )
+    fmat[-2, -1] = xmat[-2, -2] * xmat[-2, -1] + xmat[-2, -1] * xmat[-1, -1]
 
-        fmat[0, 0] -= b[0, 0] ** 2 + b[0, 1] * b[1, 0]
-        for i in range(1, m - 1):
-            fmat[i, i] -= (
-                b[i, i] ** 2 + b[i - 1, i] * b[i, i - 1] + b[i + 1, i] * b[i, i + 1]
-            )
-        fmat[-1, -1] -= b[-1, -1] ** 2 + b[-2, -1] * b[-1, -2]
-        for i in range(m - 1):
-            fmat[i + 1, i] -= b[i + 1, i] * b[i, i] + b[i + 1, i + 1] * b[i + 1, i]
-        for i in range(1, m):
-            fmat[i - 1, i] -= b[i - 1, i] * b[i, i] + b[i - 1, i - 1] * b[i - 1, i]
-        for i in range(1, m - 1):
-            fmat[i + 1, i - 1] -= b[i + 1, i] * b[i, i - 1]
-        for i in range(1, m - 1):
-            fmat[i - 1, i + 1] -= b[i - 1, i] * b[i, i + 1]
+    fmat[-1, -3] = xmat[-1, -2] * xmat[-2, -3]
+    fmat[-1, -2] = xmat[-1, -2] * xmat[-2, -2] + xmat[-1, -1] * xmat[-1, -2]
+    fmat[-1, -1] = xmat[-1, -2] * xmat[-2, -1] + xmat[-1, -1] ** 2
 
-        return fmat.flatten()
+    fmat[0, 0] -= b[0, 0] ** 2 + b[0, 1] * b[1, 0]
+    for i in range(1, m - 1):
+        fmat[i, i] -= (
+            b[i, i] ** 2 + b[i - 1, i] * b[i, i - 1] + b[i + 1, i] * b[i, i + 1]
+        )
+    fmat[-1, -1] -= b[-1, -1] ** 2 + b[-2, -1] * b[-1, -2]
+    for i in range(m - 1):
+        fmat[i + 1, i] -= b[i + 1, i] * b[i, i] + b[i + 1, i + 1] * b[i + 1, i]
+    for i in range(1, m):
+        fmat[i - 1, i] -= b[i - 1, i] * b[i, i] + b[i - 1, i - 1] * b[i - 1, i]
+    for i in range(1, m - 1):
+        fmat[i + 1, i - 1] -= b[i + 1, i] * b[i, i - 1]
+    for i in range(1, m - 1):
+        fmat[i - 1, i + 1] -= b[i - 1, i] * b[i, i + 1]
+
+    return fmat.flatten()
 
 
 @mark.least_squares
@@ -502,49 +549,53 @@ class Semicon2(BenchmarkFunction):
     """The SEMICON2 function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        n = len(x) // 1
-        ln = 9 * n // 10
+        return _semicon2(x)
 
-        lambda_ = 0.2
-        a = -0.00009
-        b = 0.00001
-        ua = 0.0
-        ub = 700.0
-        ca = 1e12
-        cb = 1e13
-        beta = 40.0
 
-        h = (b - a) / (n + 1)
-        lb = lambda_ * beta
-        lua = lambda_ * ua
-        lub = lambda_ * ub
+def _semicon2(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    n = len(x) // 1
+    ln = 9 * n // 10
 
-        xvec = np.zeros(n + 2, dtype=np.float64)
-        xvec[0] = lua
-        xvec[1:-1] = x
-        xvec[-1] = lub
+    lambda_ = 0.2
+    a = -0.00009
+    b = 0.00001
+    ua = 0.0
+    ub = 700.0
+    ca = 1e12
+    cb = 1e13
+    beta = 40.0
 
-        fvec = np.zeros(n, dtype=np.float64)
-        for i in range(1, ln + 1):
-            fvec[i - 1] = (
-                xvec[i - 1]
-                - 2 * xvec[i]
-                + xvec[i + 1]
-                + lambda_ * (h**2) * ca * np.exp(-lb * (xvec[i] - lua))
-                - lambda_ * (h**2) * cb * np.exp(lb * (xvec[i] - lub))
-                - lambda_ * (h**2) * ca
-            )
-        for i in range(ln + 1, n + 1):
-            fvec[i - 1] = (
-                xvec[i - 1]
-                - 2 * xvec[i]
-                + xvec[i + 1]
-                - lambda_ * (h**2) * cb * np.exp(lb * (xvec[i] - lub))
-                + lambda_ * (h**2) * ca * np.exp(-lb * (xvec[i] - lua))
-                + lambda_ * (h**2) * cb
-            )
+    h = (b - a) / (n + 1)
+    lb = lambda_ * beta
+    lua = lambda_ * ua
+    lub = lambda_ * ub
 
-        return fvec
+    xvec = np.zeros(n + 2, dtype=np.float64)
+    xvec[0] = lua
+    xvec[1:-1] = x
+    xvec[-1] = lub
+
+    fvec = np.zeros(n, dtype=np.float64)
+    for i in range(1, ln + 1):
+        fvec[i - 1] = (
+            xvec[i - 1]
+            - 2 * xvec[i]
+            + xvec[i + 1]
+            + lambda_ * (h**2) * ca * np.exp(-lb * (xvec[i] - lua))
+            - lambda_ * (h**2) * cb * np.exp(lb * (xvec[i] - lub))
+            - lambda_ * (h**2) * ca
+        )
+    for i in range(ln + 1, n + 1):
+        fvec[i - 1] = (
+            xvec[i - 1]
+            - 2 * xvec[i]
+            + xvec[i + 1]
+            - lambda_ * (h**2) * cb * np.exp(lb * (xvec[i] - lub))
+            + lambda_ * (h**2) * ca * np.exp(-lb * (xvec[i] - lua))
+            + lambda_ * (h**2) * cb
+        )
+
+    return fvec
 
 
 @mark.least_squares
@@ -556,47 +607,48 @@ class Qr3d(BenchmarkFunction):
     """The number of rows and columns of the matrices Q and R."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        m = self.m
-        q = x[: m**2].reshape(m, m)
-        r = np.zeros((m, m), dtype=np.float64)
-        r[np.triu_indices_from(r)] = x[m**2 :]
+        return _qr3d(x, m=self.m)
 
-        a = (
-            np.diag((1 - np.arange(2, m + 1)) / m, -1)
-            + np.diag(2 * np.arange(1, m + 1) / m, 0)
-            + np.diag((1 - np.arange(1, m)) / m, 1)
-        )
-        a[0, 1] = 0
-        a[-1, -2] = (1 - m) / m
-        a[-1, -1] = 2 * m
 
-        omat = np.zeros((m, m), dtype=np.float64)  # triu
-        fmat = np.zeros((m, m), dtype=np.float64)
+def _qr3d(x: NDArray[np.float64], m: int) -> NDArray[np.float64]:
+    q = x[: m**2].reshape(m, m)
+    r = np.zeros((m, m), dtype=np.float64)
+    r[np.triu_indices_from(r)] = x[m**2 :]
 
-        for i in range(m):
-            for j in range(i, m):
-                for k in range(m):
-                    omat[i, j] += q[i, k] * q[j, k]
+    a = (
+        np.diag((1 - np.arange(2, m + 1)) / m, -1)
+        + np.diag(2 * np.arange(1, m + 1) / m, 0)
+        + np.diag((1 - np.arange(1, m)) / m, 1)
+    )
+    a[0, 1] = 0
+    a[-1, -2] = (1 - m) / m
+    a[-1, -1] = 2 * m
 
-        for i in range(m):
-            for j in range(m):
-                for k in range(j + 1):
-                    fmat[i, j] += q[i, k] * r[k, j]
+    omat = np.zeros((m, m), dtype=np.float64)  # triu
+    fmat = np.zeros((m, m), dtype=np.float64)
 
-        for i in range(m):
-            omat[i, i] -= 1
-        fmat[0, 0] -= a[0, 0]
-        fmat[0, 1] -= a[0, 1]
-        for i in range(1, m - 1):
-            fmat[i, i - 1] -= a[i, i - 1]
-            fmat[i, i] -= a[i, i]
-            fmat[i, i + 1] -= a[i, i + 1]
-        fmat[-1, -2] -= a[-1, -2]
-        fmat[-1, -1] -= a[-1, -1]
+    for i in range(m):
+        for j in range(i, m):
+            for k in range(m):
+                omat[i, j] += q[i, k] * q[j, k]
 
-        return np.concatenate(
-            (omat[np.triu_indices_from(omat)].flatten(), fmat.flatten())
-        )
+    for i in range(m):
+        for j in range(m):
+            for k in range(j + 1):
+                fmat[i, j] += q[i, k] * r[k, j]
+
+    for i in range(m):
+        omat[i, i] -= 1
+    fmat[0, 0] -= a[0, 0]
+    fmat[0, 1] -= a[0, 1]
+    for i in range(1, m - 1):
+        fmat[i, i - 1] -= a[i, i - 1]
+        fmat[i, i] -= a[i, i]
+        fmat[i, i + 1] -= a[i, i + 1]
+    fmat[-1, -2] -= a[-1, -2]
+    fmat[-1, -1] -= a[-1, -1]
+
+    return np.concatenate((omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()))
 
 
 @mark.least_squares
@@ -605,53 +657,55 @@ class Qr3dbd(BenchmarkFunction):
     """The QR3DBD function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        m = 5
-        q = x[: m**2].reshape(m, m)
-        r = np.zeros((m, m), dtype=np.float64)
-        r[0, :-2] = x[m**2 : -9]
-        r[1, 1:-1] = x[-9:-6]
-        r[2, 2:] = x[-6:-3]
-        r[3, 3:] = x[-3:-1]
-        r[4, 4] = x[-1]
+        return _qr3dbd(x)
 
-        a = (
-            np.diag((1 - np.arange(2, m + 1)) / m, -1)
-            + np.diag(2 * np.arange(1, m + 1) / m, 0)
-            + np.diag((1 - np.arange(1, m)) / m, 1)
-        )
-        a[0, 1] = 0
-        a[-1, -2] = (1 - m) / m
-        a[-1, -1] = 2 * m
 
-        omat = np.zeros((m, m), dtype=np.float64)  # triu
-        fmat = np.zeros((m, m), dtype=np.float64)
+def _qr3dbd(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    m = 5
+    q = x[: m**2].reshape(m, m)
+    r = np.zeros((m, m), dtype=np.float64)
+    r[0, :-2] = x[m**2 : -9]
+    r[1, 1:-1] = x[-9:-6]
+    r[2, 2:] = x[-6:-3]
+    r[3, 3:] = x[-3:-1]
+    r[4, 4] = x[-1]
 
-        for i in range(m):
-            for j in range(i, m):
-                for k in range(m):
-                    omat[i, j] += q[i, k] * q[j, k]
+    a = (
+        np.diag((1 - np.arange(2, m + 1)) / m, -1)
+        + np.diag(2 * np.arange(1, m + 1) / m, 0)
+        + np.diag((1 - np.arange(1, m)) / m, 1)
+    )
+    a[0, 1] = 0
+    a[-1, -2] = (1 - m) / m
+    a[-1, -1] = 2 * m
 
-        for i in range(m):
-            fmat[i, 0] += q[i, 0] * r[0, 0]
-            fmat[i, 1] += q[i, 0] * r[0, 1] + q[i, 1] * r[1, 1]
-            for j in range(2, m):
-                for k in range(j - 2, j + 1):
-                    fmat[i, j] += q[i, k] * r[k, j]
+    omat = np.zeros((m, m), dtype=np.float64)  # triu
+    fmat = np.zeros((m, m), dtype=np.float64)
 
-        for i in range(m):
-            omat[i, i] -= 1
-        fmat[0, 0] -= a[0, 0]
-        fmat[0, 1] -= a[0, 1]
-        for i in range(1, m - 1):
-            fmat[i, i - 1] -= a[i, i - 1]
-            fmat[i, i] -= a[i, i]
-            fmat[i, i + 1] -= a[i, i + 1]
-        fmat[-1, -2] -= a[-1, -2]
-        fmat[-1, -1] -= a[-1, -1]
+    for i in range(m):
+        for j in range(i, m):
+            for k in range(m):
+                omat[i, j] += q[i, k] * q[j, k]
 
-        return np.concatenate(
-            (omat[np.triu_indices_from(omat)].flatten(), fmat.flatten())
-        )
+    for i in range(m):
+        fmat[i, 0] += q[i, 0] * r[0, 0]
+        fmat[i, 1] += q[i, 0] * r[0, 1] + q[i, 1] * r[1, 1]
+        for j in range(2, m):
+            for k in range(j - 2, j + 1):
+                fmat[i, j] += q[i, k] * r[k, j]
+
+    for i in range(m):
+        omat[i, i] -= 1
+    fmat[0, 0] -= a[0, 0]
+    fmat[0, 1] -= a[0, 1]
+    for i in range(1, m - 1):
+        fmat[i, i - 1] -= a[i, i - 1]
+        fmat[i, i] -= a[i, i]
+        fmat[i, i + 1] -= a[i, i + 1]
+    fmat[-1, -2] -= a[-1, -2]
+    fmat[-1, -1] -= a[-1, -1]
+
+    return np.concatenate((omat[np.triu_indices_from(omat)].flatten(), fmat.flatten()))
 
 
 @mark.least_squares
@@ -664,12 +718,16 @@ class Eigen(BenchmarkFunction):
     number of parameters is m * (m + 1)."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = int(np.sqrt(len(x) + 0.25))
-        dvec = x[:dim_in]
-        qmat = x[dim_in:].reshape(dim_in, dim_in)
-        emat = qmat @ np.diag(dvec) @ qmat - self.matrix
-        omat = qmat @ qmat - np.eye(dim_in)
-        return np.concatenate((emat.flatten(), omat.flatten()))
+        return _eigen(x, matrix=self.matrix)
+
+
+def _eigen(x: NDArray[np.float64], matrix: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = int(np.sqrt(len(x) + 0.25))
+    dvec = x[:dim_in]
+    qmat = x[dim_in:].reshape(dim_in, dim_in)
+    emat = qmat @ np.diag(dvec) @ qmat - matrix
+    omat = qmat @ qmat - np.eye(dim_in)
+    return np.concatenate((emat.flatten(), omat.flatten()))
 
 
 @mark.least_squares
@@ -678,22 +736,39 @@ class ExtendedPowellSingular(BenchmarkFunction):
     """The extended Powell singular function (POWELLSE in the CUTEst collection)."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = np.zeros(dim_in)
-        fvec[::4] = x[::4] + 10 * x[1::4]
-        fvec[1::4] = 5 * (x[2::4] - x[3::4])
-        fvec[2::4] = (x[1::4] - 2 * x[2::4]) ** 2
-        fvec[3::4] = 10 * (x[0::4] - x[3::4]) ** 2
-        return fvec
+        return _extended_powell_singular(x)
+
+
+def _extended_powell_singular(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(dim_in)
+    fvec[::4] = x[::4] + 10 * x[1::4]
+    fvec[1::4] = 5 * (x[2::4] - x[3::4])
+    fvec[2::4] = (x[1::4] - 2 * x[2::4]) ** 2
+    fvec[3::4] = 10 * (x[0::4] - x[3::4]) ** 2
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Hydcar(BenchmarkFunction):
+    """The HYDCAR function from the CUTEst collection."""
+
+    n: int
+    """The number of plates."""
+
+    m: int
+    """The number of components."""
+
+    k: int
+    """The index of the feed plate."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _hydcar(x, n=self.n, m=self.m, k=self.k)
 
 
 @njit
-def hydcar(
-    x_in,
-    n,
-    m,
-    k,
-):
+def _hydcar(x_in: NDArray[np.float64], n: int, m: int, k: int) -> NDArray[np.float64]:
     x = x_in[: (n * m)].reshape((n, m))
     t = x_in[(n * m) : 4 * n]
     v = x_in[4 * n :]
@@ -810,416 +885,393 @@ def hydcar(
 
 @mark.least_squares
 @dataclass(frozen=True)
-class Hydcar(BenchmarkFunction):
-    """The HYDCAR function from the CUTEst collection."""
-
-    n: int
-    """The number of plates."""
-
-    m: int
-    """The number of components."""
-
-    k: int
-    """The index of the feed plate."""
-
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return hydcar(x, self.n, self.m, self.k)
-
-
-@mark.least_squares
-@dataclass(frozen=True)
 class Methane(BenchmarkFunction):
     """Function of the METHANB8 and METHANL8 problems from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        fvec = np.zeros(31, dtype=np.float64)
-        fvec[0] = 0.01 * (
-            0.000826446280991736
-            * x[24]
-            * x[1]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
-            - x[4] * (693.37 + x[24])
-            + 693.37 * x[1]
-        )
-        fvec[1] = (
-            0.000869565217391304 * np.exp(18.5751 - 3632.649 / (239.2 + x[18])) * x[19]
-            - x[22]
-        )
-        fvec[2] = 0.01 * (
-            -0.000826446280991736
-            * x[24]
-            * x[1]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
-            - x[7] * (693.37 + x[25])
-            + x[4] * (693.37 + x[24])
-            + 0.000833333333333333
-            * x[25]
-            * x[4]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
-        )
-        fvec[3] = -4.5125 + 0.01 * (
-            -0.000833333333333333
-            * x[25]
-            * x[4]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
-            - x[10] * (-442.13 + x[26])
-            + x[7] * (693.37 + x[25])
-            + 0.000840336134453782
-            * x[26]
-            * x[7]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
-        )
-        fvec[4] = 0.01 * (
-            -0.000840336134453782
-            * x[26]
-            * x[7]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
-            - x[13] * (-442.13 + x[27])
-            + x[10] * (-442.13 + x[26])
-            + 0.000847457627118644
-            * x[27]
-            * x[10]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
-        )
-        fvec[5] = 0.01 * (
-            -0.000847457627118644
-            * x[27]
-            * x[10]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
-            - x[16] * (-442.13 + x[28])
-            + x[13] * (-442.13 + x[27])
-            + 0.000854700854700855
-            * x[28]
-            * x[13]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
-        )
-        fvec[6] = 0.01 * (
-            -0.000854700854700855
-            * x[28]
-            * x[13]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
-            - x[19] * (-442.13 + x[29])
-            + x[16] * (-442.13 + x[28])
-            + 0.000862068965517241
-            * x[29]
-            * x[16]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
-        )
-        fvec[7] = 0.01 * (
-            -0.000862068965517241
-            * x[29]
-            * x[16]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
-            - x[22] * (-442.13 + x[30])
-            + x[19] * (-442.13 + x[29])
-            + 0.000869565217391304
-            * x[30]
-            * x[19]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[18]))
-        )
-        fvec[8] = 0.01 * (
-            0.000826446280991736
-            * x[24]
-            * x[2]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
-            - x[5] * (693.37 + x[24])
-            + 693.37 * x[2]
-        )
-        fvec[9] = (
-            0.000869565217391304 * np.exp(18.3443 - 3841.2203 / (228 + x[18])) * x[20]
-            - x[23]
-        )
-        fvec[10] = 0.01 * (
-            -0.000826446280991736
-            * x[24]
-            * x[2]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
-            - x[8] * (693.37 + x[25])
-            + x[5] * (693.37 + x[24])
-            + 0.000833333333333333
-            * x[25]
-            * x[5]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
-        )
-        fvec[11] = -6.8425 + 0.01 * (
-            -0.000833333333333333
-            * x[25]
-            * x[5]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
-            - x[11] * (-442.13 + x[26])
-            + x[8] * (693.37 + x[25])
-            + 0.000840336134453782
-            * x[26]
-            * x[8]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
-        )
-        fvec[12] = 0.01 * (
-            -0.000840336134453782
-            * x[26]
-            * x[8]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
-            - x[14] * (-442.13 + x[27])
-            + x[11] * (-442.13 + x[26])
-            + 0.000847457627118644
-            * x[27]
-            * x[11]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
-        )
-        fvec[13] = 0.01 * (
-            -0.000847457627118644
-            * x[27]
-            * x[11]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
-            - x[17] * (-442.13 + x[28])
-            + x[14] * (-442.13 + x[27])
-            + 0.000854700854700855
-            * x[28]
-            * x[14]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
-        )
-        fvec[14] = 0.01 * (
-            -0.000854700854700855
-            * x[28]
-            * x[14]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
-            - x[20] * (-442.13 + x[29])
-            + x[17] * (-442.13 + x[28])
-            + 0.000862068965517241
-            * x[29]
-            * x[17]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
-        )
-        fvec[15] = 0.01 * (
-            -0.000862068965517241
-            * x[29]
-            * x[17]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
-            - x[23] * (-442.13 + x[30])
-            + x[20] * (-442.13 + x[29])
-            + 0.000869565217391304
-            * x[30]
-            * x[20]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[18]))
-        )
-        fvec[16] = (
-            -1
-            + 0.000826446280991736 * np.exp(18.5751 - 3632.649 / (239.2 + x[0])) * x[1]
-            + 0.000826446280991736 * np.exp(18.3443 - 3841.2203 / (228 + x[0])) * x[2]
-        )
-        fvec[17] = (
-            -1
-            + 0.000833333333333333 * np.exp(18.5751 - 3632.649 / (239.2 + x[3])) * x[4]
-            + 0.000833333333333333 * np.exp(18.3443 - 3841.2203 / (228 + x[3])) * x[5]
-        )
-        fvec[18] = (
-            -1
-            + 0.000840336134453782 * np.exp(18.5751 - 3632.649 / (239.2 + x[6])) * x[7]
-            + 0.000840336134453782 * np.exp(18.3443 - 3841.2203 / (228 + x[6])) * x[8]
-        )
-        fvec[19] = (
-            -1
-            + 0.000847457627118644 * np.exp(18.5751 - 3632.649 / (239.2 + x[9])) * x[10]
-            + 0.000847457627118644 * np.exp(18.3443 - 3841.2203 / (228 + x[9])) * x[11]
-        )
-        fvec[20] = (
-            -1
-            + 0.000854700854700855
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
-            * x[13]
-            + 0.000854700854700855 * np.exp(18.3443 - 3841.2203 / (228 + x[12])) * x[14]
-        )
-        fvec[21] = (
-            -1
-            + 0.000862068965517241
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
-            * x[16]
-            + 0.000862068965517241 * np.exp(18.3443 - 3841.2203 / (228 + x[15])) * x[17]
-        )
-        fvec[22] = (
-            -1
-            + 0.000869565217391304
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[18]))
-            * x[19]
-            + 0.000869565217391304 * np.exp(18.3443 - 3841.2203 / (228 + x[18])) * x[20]
-        )
-        fvec[23] = (
-            -1
-            + 0.00087719298245614 * np.exp(18.5751 - 3632.649 / (239.2 + x[21])) * x[22]
-            + 0.00087719298245614 * np.exp(18.3443 - 3841.2203 / (228 + x[21])) * x[23]
-        )
-        fvec[24] = -83.862 + 1e-5 * (
-            0.000826446280991736
-            * x[24]
-            * x[1]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
-            * (9566.67 + 0.0422 * x[0] * x[0] - 1.59 * x[0])
-            + 693.37 * (0.0422 * x[0] * x[0] + 15.97 * x[0]) * x[1]
-            - x[4] * (693.37 + x[24]) * (0.0422 * x[3] * x[3] + 15.97 * x[3])
-            + 0.000826446280991736
-            * x[24]
-            * x[2]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
-            * (10834.67 + 8.74 * x[0])
-            + 12549.997 * x[2] * x[0]
-            - 18.1 * x[5] * (693.37 + x[24]) * x[3]
-        )
-        fvec[25] = 1e-5 * (
-            0.000833333333333333
-            * x[25]
-            * x[4]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
-            * (9566.67 + 0.0422 * x[3] * x[3] - 1.59 * x[3])
-            + x[4] * (693.37 + x[24]) * (0.0422 * x[3] * x[3] + 15.97 * x[3])
-            - 0.000826446280991736
-            * x[24]
-            * x[1]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
-            * (9566.67 + 0.0422 * x[0] * x[0] - 1.59 * x[0])
-            - x[7] * (693.37 + x[25]) * (0.0422 * x[6] * x[6] + 15.97 * x[6])
-            + 0.000833333333333333
-            * x[25]
-            * x[5]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
-            * (10834.67 + 8.74 * x[3])
-            + 18.1 * x[5] * (693.37 + x[24]) * x[3]
-            - 0.000826446280991736
-            * x[24]
-            * x[2]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
-            * (10834.67 + 8.74 * x[0])
-            - 18.1 * x[8] * (693.37 + x[25]) * x[6]
-        )
-        fvec[26] = -18.9447111025 + 1e-5 * (
-            0.000840336134453782
-            * x[26]
-            * x[7]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
-            * (9566.67 + 0.0422 * x[6] * x[6] - 1.59 * x[6])
-            + x[7] * (693.37 + x[25]) * (0.0422 * x[6] * x[6] + 15.97 * x[6])
-            - 0.000833333333333333
-            * x[25]
-            * x[4]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
-            * (9566.67 + 0.0422 * x[3] * x[3] - 1.59 * x[3])
-            - x[10] * (-442.13 + x[26]) * (0.0422 * x[9] * x[9] + 15.97 * x[9])
-            + 0.000840336134453782
-            * x[26]
-            * x[8]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
-            * (10834.67 + 8.74 * x[6])
-            + 18.1 * x[8] * (693.37 + x[25]) * x[6]
-            - 0.000833333333333333
-            * x[25]
-            * x[5]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
-            * (10834.67 + 8.74 * x[3])
-            - 18.1 * x[11] * (-442.13 + x[26]) * x[9]
-        )
-        fvec[27] = 1e-5 * (
-            0.000847457627118644
-            * x[27]
-            * x[10]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
-            * (9566.67 + 0.0422 * x[9] * x[9] - 1.59 * x[9])
-            + x[10] * (-442.13 + x[26]) * (0.0422 * x[9] * x[9] + 15.97 * x[9])
-            - 0.000840336134453782
-            * x[26]
-            * x[7]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
-            * (9566.67 + 0.0422 * x[6] * x[6] - 1.59 * x[6])
-            - x[13] * (-442.13 + x[27]) * (0.0422 * x[12] * x[12] + 15.97 * x[12])
-            + 0.000847457627118644
-            * x[27]
-            * x[11]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
-            * (10834.67 + 8.74 * x[9])
-            + 18.1 * x[11] * (-442.13 + x[26]) * x[9]
-            - 0.000840336134453782
-            * x[26]
-            * x[8]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
-            * (10834.67 + 8.74 * x[6])
-            - 18.1 * x[14] * (-442.13 + x[27]) * x[12]
-        )
-        fvec[28] = 1e-5 * (
-            0.000854700854700855
-            * x[28]
-            * x[13]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
-            * (9566.67 + 0.0422 * x[12] * x[12] - 1.59 * x[12])
-            + x[13] * (-442.13 + x[27]) * (0.0422 * x[12] * x[12] + 15.97 * x[12])
-            - 0.000847457627118644
-            * x[27]
-            * x[10]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
-            * (9566.67 + 0.0422 * x[9] * x[9] - 1.59 * x[9])
-            - x[16] * (-442.13 + x[28]) * (0.0422 * x[15] * x[15] + 15.97 * x[15])
-            + 0.000854700854700855
-            * x[28]
-            * x[14]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
-            * (10834.67 + 8.74 * x[12])
-            + 18.1 * x[14] * (-442.13 + x[27]) * x[12]
-            - 0.000847457627118644
-            * x[27]
-            * x[11]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
-            * (10834.67 + 8.74 * x[9])
-            - 18.1 * x[17] * (-442.13 + x[28]) * x[15]
-        )
-        fvec[29] = 1e-5 * (
-            0.000862068965517241
-            * x[29]
-            * x[16]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
-            * (9566.67 + 0.0422 * x[15] * x[15] - 1.59 * x[15])
-            + x[16] * (-442.13 + x[28]) * (0.0422 * x[15] * x[15] + 15.97 * x[15])
-            - 0.000854700854700855
-            * x[28]
-            * x[13]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
-            * (9566.67 + 0.0422 * x[12] * x[12] - 1.59 * x[12])
-            - x[19] * (-442.13 + x[29]) * (0.0422 * x[18] * x[18] + 15.97 * x[18])
-            + 0.000862068965517241
-            * x[29]
-            * x[17]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
-            * (10834.67 + 8.74 * x[15])
-            + 18.1 * x[17] * (-442.13 + x[28]) * x[15]
-            - 0.000854700854700855
-            * x[28]
-            * x[14]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
-            * (10834.67 + 8.74 * x[12])
-            - 18.1 * x[20] * (-442.13 + x[29]) * x[18]
-        )
-        fvec[30] = 1e-5 * (
-            0.000869565217391304
-            * x[30]
-            * x[19]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[18]))
-            * (9566.67 + 0.0422 * x[18] * x[18] - 1.59 * x[18])
-            + x[19] * (-442.13 + x[29]) * (0.0422 * x[18] * x[18] + 15.97 * x[18])
-            - 0.000862068965517241
-            * x[29]
-            * x[16]
-            * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
-            * (9566.67 + 0.0422 * x[15] * x[15] - 1.59 * x[15])
-            - x[22] * (-442.13 + x[30]) * (0.0422 * x[21] * x[21] + 15.97 * x[21])
-            + 0.000869565217391304
-            * x[30]
-            * x[20]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[18]))
-            * (10834.67 + 8.74 * x[18])
-            + 18.1 * x[20] * (-442.13 + x[29]) * x[18]
-            - 0.000862068965517241
-            * x[29]
-            * x[17]
-            * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
-            * (10834.67 + 8.74 * x[15])
-            - 18.1 * x[23] * (-442.13 + x[30]) * x[21]
-        )
-        return fvec
+        return _methane(x)
+
+
+def _methane(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(31, dtype=np.float64)
+    fvec[0] = 0.01 * (
+        0.000826446280991736
+        * x[24]
+        * x[1]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
+        - x[4] * (693.37 + x[24])
+        + 693.37 * x[1]
+    )
+    fvec[1] = (
+        0.000869565217391304 * np.exp(18.5751 - 3632.649 / (239.2 + x[18])) * x[19]
+        - x[22]
+    )
+    fvec[2] = 0.01 * (
+        -0.000826446280991736
+        * x[24]
+        * x[1]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
+        - x[7] * (693.37 + x[25])
+        + x[4] * (693.37 + x[24])
+        + 0.000833333333333333
+        * x[25]
+        * x[4]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
+    )
+    fvec[3] = -4.5125 + 0.01 * (
+        -0.000833333333333333
+        * x[25]
+        * x[4]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
+        - x[10] * (-442.13 + x[26])
+        + x[7] * (693.37 + x[25])
+        + 0.000840336134453782
+        * x[26]
+        * x[7]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
+    )
+    fvec[4] = 0.01 * (
+        -0.000840336134453782
+        * x[26]
+        * x[7]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
+        - x[13] * (-442.13 + x[27])
+        + x[10] * (-442.13 + x[26])
+        + 0.000847457627118644
+        * x[27]
+        * x[10]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
+    )
+    fvec[5] = 0.01 * (
+        -0.000847457627118644
+        * x[27]
+        * x[10]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
+        - x[16] * (-442.13 + x[28])
+        + x[13] * (-442.13 + x[27])
+        + 0.000854700854700855
+        * x[28]
+        * x[13]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
+    )
+    fvec[6] = 0.01 * (
+        -0.000854700854700855
+        * x[28]
+        * x[13]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
+        - x[19] * (-442.13 + x[29])
+        + x[16] * (-442.13 + x[28])
+        + 0.000862068965517241
+        * x[29]
+        * x[16]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
+    )
+    fvec[7] = 0.01 * (
+        -0.000862068965517241
+        * x[29]
+        * x[16]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
+        - x[22] * (-442.13 + x[30])
+        + x[19] * (-442.13 + x[29])
+        + 0.000869565217391304
+        * x[30]
+        * x[19]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[18]))
+    )
+    fvec[8] = 0.01 * (
+        0.000826446280991736 * x[24] * x[2] * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
+        - x[5] * (693.37 + x[24])
+        + 693.37 * x[2]
+    )
+    fvec[9] = (
+        0.000869565217391304 * np.exp(18.3443 - 3841.2203 / (228 + x[18])) * x[20]
+        - x[23]
+    )
+    fvec[10] = 0.01 * (
+        -0.000826446280991736
+        * x[24]
+        * x[2]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
+        - x[8] * (693.37 + x[25])
+        + x[5] * (693.37 + x[24])
+        + 0.000833333333333333
+        * x[25]
+        * x[5]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
+    )
+    fvec[11] = -6.8425 + 0.01 * (
+        -0.000833333333333333
+        * x[25]
+        * x[5]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
+        - x[11] * (-442.13 + x[26])
+        + x[8] * (693.37 + x[25])
+        + 0.000840336134453782
+        * x[26]
+        * x[8]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
+    )
+    fvec[12] = 0.01 * (
+        -0.000840336134453782
+        * x[26]
+        * x[8]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
+        - x[14] * (-442.13 + x[27])
+        + x[11] * (-442.13 + x[26])
+        + 0.000847457627118644
+        * x[27]
+        * x[11]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
+    )
+    fvec[13] = 0.01 * (
+        -0.000847457627118644
+        * x[27]
+        * x[11]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
+        - x[17] * (-442.13 + x[28])
+        + x[14] * (-442.13 + x[27])
+        + 0.000854700854700855
+        * x[28]
+        * x[14]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
+    )
+    fvec[14] = 0.01 * (
+        -0.000854700854700855
+        * x[28]
+        * x[14]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
+        - x[20] * (-442.13 + x[29])
+        + x[17] * (-442.13 + x[28])
+        + 0.000862068965517241
+        * x[29]
+        * x[17]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
+    )
+    fvec[15] = 0.01 * (
+        -0.000862068965517241
+        * x[29]
+        * x[17]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
+        - x[23] * (-442.13 + x[30])
+        + x[20] * (-442.13 + x[29])
+        + 0.000869565217391304
+        * x[30]
+        * x[20]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[18]))
+    )
+    fvec[16] = (
+        -1
+        + 0.000826446280991736 * np.exp(18.5751 - 3632.649 / (239.2 + x[0])) * x[1]
+        + 0.000826446280991736 * np.exp(18.3443 - 3841.2203 / (228 + x[0])) * x[2]
+    )
+    fvec[17] = (
+        -1
+        + 0.000833333333333333 * np.exp(18.5751 - 3632.649 / (239.2 + x[3])) * x[4]
+        + 0.000833333333333333 * np.exp(18.3443 - 3841.2203 / (228 + x[3])) * x[5]
+    )
+    fvec[18] = (
+        -1
+        + 0.000840336134453782 * np.exp(18.5751 - 3632.649 / (239.2 + x[6])) * x[7]
+        + 0.000840336134453782 * np.exp(18.3443 - 3841.2203 / (228 + x[6])) * x[8]
+    )
+    fvec[19] = (
+        -1
+        + 0.000847457627118644 * np.exp(18.5751 - 3632.649 / (239.2 + x[9])) * x[10]
+        + 0.000847457627118644 * np.exp(18.3443 - 3841.2203 / (228 + x[9])) * x[11]
+    )
+    fvec[20] = (
+        -1
+        + 0.000854700854700855 * np.exp(18.5751 - 3632.649 / (239.2 + x[12])) * x[13]
+        + 0.000854700854700855 * np.exp(18.3443 - 3841.2203 / (228 + x[12])) * x[14]
+    )
+    fvec[21] = (
+        -1
+        + 0.000862068965517241 * np.exp(18.5751 - 3632.649 / (239.2 + x[15])) * x[16]
+        + 0.000862068965517241 * np.exp(18.3443 - 3841.2203 / (228 + x[15])) * x[17]
+    )
+    fvec[22] = (
+        -1
+        + 0.000869565217391304 * np.exp(18.5751 - 3632.649 / (239.2 + x[18])) * x[19]
+        + 0.000869565217391304 * np.exp(18.3443 - 3841.2203 / (228 + x[18])) * x[20]
+    )
+    fvec[23] = (
+        -1
+        + 0.00087719298245614 * np.exp(18.5751 - 3632.649 / (239.2 + x[21])) * x[22]
+        + 0.00087719298245614 * np.exp(18.3443 - 3841.2203 / (228 + x[21])) * x[23]
+    )
+    fvec[24] = -83.862 + 1e-5 * (
+        0.000826446280991736
+        * x[24]
+        * x[1]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
+        * (9566.67 + 0.0422 * x[0] * x[0] - 1.59 * x[0])
+        + 693.37 * (0.0422 * x[0] * x[0] + 15.97 * x[0]) * x[1]
+        - x[4] * (693.37 + x[24]) * (0.0422 * x[3] * x[3] + 15.97 * x[3])
+        + 0.000826446280991736
+        * x[24]
+        * x[2]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
+        * (10834.67 + 8.74 * x[0])
+        + 12549.997 * x[2] * x[0]
+        - 18.1 * x[5] * (693.37 + x[24]) * x[3]
+    )
+    fvec[25] = 1e-5 * (
+        0.000833333333333333
+        * x[25]
+        * x[4]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
+        * (9566.67 + 0.0422 * x[3] * x[3] - 1.59 * x[3])
+        + x[4] * (693.37 + x[24]) * (0.0422 * x[3] * x[3] + 15.97 * x[3])
+        - 0.000826446280991736
+        * x[24]
+        * x[1]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[0]))
+        * (9566.67 + 0.0422 * x[0] * x[0] - 1.59 * x[0])
+        - x[7] * (693.37 + x[25]) * (0.0422 * x[6] * x[6] + 15.97 * x[6])
+        + 0.000833333333333333
+        * x[25]
+        * x[5]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
+        * (10834.67 + 8.74 * x[3])
+        + 18.1 * x[5] * (693.37 + x[24]) * x[3]
+        - 0.000826446280991736
+        * x[24]
+        * x[2]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[0]))
+        * (10834.67 + 8.74 * x[0])
+        - 18.1 * x[8] * (693.37 + x[25]) * x[6]
+    )
+    fvec[26] = -18.9447111025 + 1e-5 * (
+        0.000840336134453782
+        * x[26]
+        * x[7]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
+        * (9566.67 + 0.0422 * x[6] * x[6] - 1.59 * x[6])
+        + x[7] * (693.37 + x[25]) * (0.0422 * x[6] * x[6] + 15.97 * x[6])
+        - 0.000833333333333333
+        * x[25]
+        * x[4]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[3]))
+        * (9566.67 + 0.0422 * x[3] * x[3] - 1.59 * x[3])
+        - x[10] * (-442.13 + x[26]) * (0.0422 * x[9] * x[9] + 15.97 * x[9])
+        + 0.000840336134453782
+        * x[26]
+        * x[8]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
+        * (10834.67 + 8.74 * x[6])
+        + 18.1 * x[8] * (693.37 + x[25]) * x[6]
+        - 0.000833333333333333
+        * x[25]
+        * x[5]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[3]))
+        * (10834.67 + 8.74 * x[3])
+        - 18.1 * x[11] * (-442.13 + x[26]) * x[9]
+    )
+    fvec[27] = 1e-5 * (
+        0.000847457627118644
+        * x[27]
+        * x[10]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
+        * (9566.67 + 0.0422 * x[9] * x[9] - 1.59 * x[9])
+        + x[10] * (-442.13 + x[26]) * (0.0422 * x[9] * x[9] + 15.97 * x[9])
+        - 0.000840336134453782
+        * x[26]
+        * x[7]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[6]))
+        * (9566.67 + 0.0422 * x[6] * x[6] - 1.59 * x[6])
+        - x[13] * (-442.13 + x[27]) * (0.0422 * x[12] * x[12] + 15.97 * x[12])
+        + 0.000847457627118644
+        * x[27]
+        * x[11]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
+        * (10834.67 + 8.74 * x[9])
+        + 18.1 * x[11] * (-442.13 + x[26]) * x[9]
+        - 0.000840336134453782
+        * x[26]
+        * x[8]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[6]))
+        * (10834.67 + 8.74 * x[6])
+        - 18.1 * x[14] * (-442.13 + x[27]) * x[12]
+    )
+    fvec[28] = 1e-5 * (
+        0.000854700854700855
+        * x[28]
+        * x[13]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
+        * (9566.67 + 0.0422 * x[12] * x[12] - 1.59 * x[12])
+        + x[13] * (-442.13 + x[27]) * (0.0422 * x[12] * x[12] + 15.97 * x[12])
+        - 0.000847457627118644
+        * x[27]
+        * x[10]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[9]))
+        * (9566.67 + 0.0422 * x[9] * x[9] - 1.59 * x[9])
+        - x[16] * (-442.13 + x[28]) * (0.0422 * x[15] * x[15] + 15.97 * x[15])
+        + 0.000854700854700855
+        * x[28]
+        * x[14]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
+        * (10834.67 + 8.74 * x[12])
+        + 18.1 * x[14] * (-442.13 + x[27]) * x[12]
+        - 0.000847457627118644
+        * x[27]
+        * x[11]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[9]))
+        * (10834.67 + 8.74 * x[9])
+        - 18.1 * x[17] * (-442.13 + x[28]) * x[15]
+    )
+    fvec[29] = 1e-5 * (
+        0.000862068965517241
+        * x[29]
+        * x[16]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
+        * (9566.67 + 0.0422 * x[15] * x[15] - 1.59 * x[15])
+        + x[16] * (-442.13 + x[28]) * (0.0422 * x[15] * x[15] + 15.97 * x[15])
+        - 0.000854700854700855
+        * x[28]
+        * x[13]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[12]))
+        * (9566.67 + 0.0422 * x[12] * x[12] - 1.59 * x[12])
+        - x[19] * (-442.13 + x[29]) * (0.0422 * x[18] * x[18] + 15.97 * x[18])
+        + 0.000862068965517241
+        * x[29]
+        * x[17]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
+        * (10834.67 + 8.74 * x[15])
+        + 18.1 * x[17] * (-442.13 + x[28]) * x[15]
+        - 0.000854700854700855
+        * x[28]
+        * x[14]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[12]))
+        * (10834.67 + 8.74 * x[12])
+        - 18.1 * x[20] * (-442.13 + x[29]) * x[18]
+    )
+    fvec[30] = 1e-5 * (
+        0.000869565217391304
+        * x[30]
+        * x[19]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[18]))
+        * (9566.67 + 0.0422 * x[18] * x[18] - 1.59 * x[18])
+        + x[19] * (-442.13 + x[29]) * (0.0422 * x[18] * x[18] + 15.97 * x[18])
+        - 0.000862068965517241
+        * x[29]
+        * x[16]
+        * np.exp(18.5751 - 3632.649 / (239.2 + x[15]))
+        * (9566.67 + 0.0422 * x[15] * x[15] - 1.59 * x[15])
+        - x[22] * (-442.13 + x[30]) * (0.0422 * x[21] * x[21] + 15.97 * x[21])
+        + 0.000869565217391304
+        * x[30]
+        * x[20]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[18]))
+        * (10834.67 + 8.74 * x[18])
+        + 18.1 * x[20] * (-442.13 + x[29]) * x[18]
+        - 0.000862068965517241
+        * x[29]
+        * x[17]
+        * np.exp(18.3443 - 3841.2203 / (228 + x[15]))
+        * (10834.67 + 8.74 * x[15])
+        - 18.1 * x[23] * (-442.13 + x[30]) * x[21]
+    )
+    return fvec
 
 
 @mark.least_squares
@@ -1228,13 +1280,17 @@ class Argtrig(BenchmarkFunction):
     """The ARGTRIG function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = (
-            dim_in
-            - np.sum(np.cos(x))
-            + np.arange(1, dim_in + 1) * (1 - np.cos(x) - np.sin(x))
-        )
-        return fvec
+        return _argtrig(x)
+
+
+def _argtrig(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = (
+        dim_in
+        - np.sum(np.cos(x))
+        + np.arange(1, dim_in + 1) * (1 - np.cos(x) - np.sin(x))
+    )
+    return fvec
 
 
 @mark.least_squares
@@ -1243,15 +1299,19 @@ class Artif(BenchmarkFunction):
     """The ARTIF function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        xvec = np.zeros(dim_in + 2, dtype=np.float64)
-        xvec[1:-1] = x
-        fvec = np.zeros(dim_in, dtype=np.float64)
-        for i in range(dim_in):
-            fvec[i] = -0.05 * (xvec[i + 1] + xvec[i + 2] + xvec[i]) + np.arctan(
-                np.sin(np.mod(i + 1, 100) * xvec[i + 1])
-            )
-        return fvec
+        return _artif(x)
+
+
+def _artif(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    xvec = np.zeros(dim_in + 2, dtype=np.float64)
+    xvec[1:-1] = x
+    fvec = np.zeros(dim_in, dtype=np.float64)
+    for i in range(dim_in):
+        fvec[i] = -0.05 * (xvec[i + 1] + xvec[i + 2] + xvec[i]) + np.arctan(
+            np.sin(np.mod(i + 1, 100) * xvec[i + 1])
+        )
+    return fvec
 
 
 @mark.least_squares
@@ -1260,15 +1320,28 @@ class Arwhdne(BenchmarkFunction):
     """The ARWHDNE function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = np.zeros(2 * (dim_in - 1))
-        fvec[: dim_in - 1] = x[:-1] ** 2 + x[-1] ** 2
-        fvec[dim_in - 1 :] = 4 * x[:-1] - 3
-        return fvec
+        return _arwhdne(x)
+
+
+def _arwhdne(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(2 * (dim_in - 1))
+    fvec[: dim_in - 1] = x[:-1] ** 2 + x[-1] ** 2
+    fvec[dim_in - 1 :] = 4 * x[:-1] - 3
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Bdvalues(BenchmarkFunction):
+    """The BDVALUES function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _bdvalues(x)
 
 
 @njit
-def bdvalues(x):
+def _bdvalues(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     h = 1 / (dim_in + 1)
     xvec = np.zeros(dim_in + 2, dtype=np.float64)
@@ -1287,15 +1360,6 @@ def bdvalues(x):
 
 @mark.least_squares
 @dataclass(frozen=True)
-class Bdvalues(BenchmarkFunction):
-    """The BDVALUES function from the CUTEst collection."""
-
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return bdvalues(x)
-
-
-@mark.least_squares
-@dataclass(frozen=True)
 class Bratu2d(BenchmarkFunction):
     """The BRATU2D function from the CUTEst collection."""
 
@@ -1303,24 +1367,28 @@ class Bratu2d(BenchmarkFunction):
     """The parameter of the Bratu equation."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        x = x.reshape((int(np.sqrt(len(x))), int(np.sqrt(len(x)))))
-        p = x.shape[0] + 2
-        h = 1 / (p - 1)
-        c = h**2 * self.alpha
-        xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2), dtype=np.float64)
-        xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1] = x
-        fvec = np.zeros(x.shape)
-        for i in range(2, p):
-            for j in range(2, p):
-                fvec[i - 2, j - 2] = (
-                    4 * xvec[i - 1, j - 1]
-                    - xvec[i, j - 1]
-                    - xvec[i - 2, j - 1]
-                    - xvec[i - 1, j]
-                    - xvec[i - 1, j - 2]
-                    - c * np.exp(xvec[i - 1, j - 1])
-                )
-        return fvec.flatten()
+        return _bratu_2d(x, alpha=self.alpha)
+
+
+def _bratu_2d(x: NDArray[np.float64], alpha: float) -> NDArray[np.float64]:
+    x = x.reshape((int(np.sqrt(len(x))), int(np.sqrt(len(x)))))
+    p = x.shape[0] + 2
+    h = 1 / (p - 1)
+    c = h**2 * alpha
+    xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2), dtype=np.float64)
+    xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1] = x
+    fvec = np.zeros(x.shape)
+    for i in range(2, p):
+        for j in range(2, p):
+            fvec[i - 2, j - 2] = (
+                4 * xvec[i - 1, j - 1]
+                - xvec[i, j - 1]
+                - xvec[i - 2, j - 1]
+                - xvec[i - 1, j]
+                - xvec[i - 1, j - 2]
+                - c * np.exp(xvec[i - 1, j - 1])
+            )
+    return fvec.flatten()
 
 
 @mark.least_squares
@@ -1332,30 +1400,32 @@ class Bratu3d(BenchmarkFunction):
     """The parameter of the Bratu equation."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        n = int(np.cbrt(len(x)))
-        x = x.reshape((n, n, n))
-        p = x.shape[0] + 2
-        h = 1 / (p - 1)
-        c = h**2 * self.alpha
-        xvec = np.zeros(
-            (x.shape[0] + 2, x.shape[1] + 2, x.shape[2] + 2), dtype=np.float64
-        )
-        xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x
-        fvec = np.zeros(x.shape, dtype=np.float64)
-        for i in range(2, p):
-            for j in range(2, p):
-                for k in range(2, p):
-                    fvec[i - 2, j - 2, k - 2] = (
-                        6 * xvec[i - 1, j - 1, k - 1]
-                        - xvec[i, j - 1, k - 1]
-                        - xvec[i - 2, j - 1, k - 1]
-                        - xvec[i - 1, j, k - 1]
-                        - xvec[i - 1, j - 2, k - 1]
-                        - xvec[i - 1, j - 1, k]
-                        - xvec[i - 1, j - 1, k - 2]
-                        - c * np.exp(xvec[i, j, k])
-                    )
-        return fvec.flatten()
+        return _bratu_3d(x, alpha=self.alpha)
+
+
+def _bratu_3d(x: NDArray[np.float64], alpha: float) -> NDArray[np.float64]:
+    n = int(np.cbrt(len(x)))
+    x = x.reshape((n, n, n))
+    p = x.shape[0] + 2
+    h = 1 / (p - 1)
+    c = h**2 * alpha
+    xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2, x.shape[2] + 2), dtype=np.float64)
+    xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x
+    fvec = np.zeros(x.shape, dtype=np.float64)
+    for i in range(2, p):
+        for j in range(2, p):
+            for k in range(2, p):
+                fvec[i - 2, j - 2, k - 2] = (
+                    6 * xvec[i - 1, j - 1, k - 1]
+                    - xvec[i, j - 1, k - 1]
+                    - xvec[i - 2, j - 1, k - 1]
+                    - xvec[i - 1, j, k - 1]
+                    - xvec[i - 1, j - 2, k - 1]
+                    - xvec[i - 1, j - 1, k]
+                    - xvec[i - 1, j - 1, k - 2]
+                    - c * np.exp(xvec[i, j, k])
+                )
+    return fvec.flatten()
 
 
 @mark.least_squares
@@ -1364,15 +1434,19 @@ class Broydn3d(BenchmarkFunction):
     """The BROYDN3D function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        kappa_1 = 2
-        kappa_2 = 1
-        fvec = np.zeros_like(x)
-        fvec[0] = -2 * x[1] + kappa_2 + (3 - kappa_1 * x[0]) * x[0]
-        fvec[1 : len(x) - 1] = (
-            -x[:-2] - 2 * x[2:] + kappa_2 + (3 - kappa_1 * x[1:-1]) * x[1:-1]
-        )
-        fvec[-1] = -x[-2] + kappa_2 + (3 - kappa_1 * x[-1]) * x[-1]
-        return fvec
+        return _broydn_3d(x)
+
+
+def _broydn_3d(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    kappa_1 = 2
+    kappa_2 = 1
+    fvec = np.zeros_like(x)
+    fvec[0] = -2 * x[1] + kappa_2 + (3 - kappa_1 * x[0]) * x[0]
+    fvec[1 : len(x) - 1] = (
+        -x[:-2] - 2 * x[2:] + kappa_2 + (3 - kappa_1 * x[1:-1]) * x[1:-1]
+    )
+    fvec[-1] = -x[-2] + kappa_2 + (3 - kappa_1 * x[-1]) * x[-1]
+    return fvec
 
 
 @mark.least_squares
@@ -1381,19 +1455,23 @@ class BroydnBd(BenchmarkFunction):
     """The BROYDNBD function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = np.zeros(dim_in, dtype=np.float64)
-        for i in range(1, 1 + dim_in):
-            ji = []
-            lb = max(1, i - 5)
-            ub = min(dim_in, i + 1)
-            for j in range(lb, ub + 1):
-                if j != i:
-                    ji.append(j)
-            fvec[i - 1] = x[i - 1] * (2 + 5 * x[i - 1] ** 2) - np.sum(
-                x[np.array(ji) - 1] * (1 + x[np.array(ji) - 1])
-            )
-        return fvec
+        return _broydn_bd(x)
+
+
+def _broydn_bd(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(dim_in, dtype=np.float64)
+    for i in range(1, 1 + dim_in):
+        ji = []
+        lb = max(1, i - 5)
+        ub = min(dim_in, i + 1)
+        for j in range(lb, ub + 1):
+            if j != i:
+                ji.append(j)
+        fvec[i - 1] = x[i - 1] * (2 + 5 * x[i - 1] ** 2) - np.sum(
+            x[np.array(ji) - 1] * (1 + x[np.array(ji) - 1])
+        )
+    return fvec
 
 
 @mark.least_squares
@@ -1402,35 +1480,39 @@ class Cbratu2d(BenchmarkFunction):
     """The CBRATU2D function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        n = int(np.sqrt(len(x) / 2))
-        x = x.reshape((2, n, n))
-        xvec = np.zeros((x.shape[0], x.shape[1] + 2, x.shape[2] + 2), dtype=np.float64)
-        xvec[0, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x[0, :, :]
-        xvec[1, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x[1, :, :]
-        p = x.shape[1] + 2
-        h = 1 / (p - 1)
-        alpha = 5
-        c = h**2 * alpha
-        fvec = np.zeros(x.shape, dtype=np.float64)
-        for i in range(2, p):
-            for j in range(2, p):
-                fvec[0, i - 2, j - 2] = (
-                    4 * xvec[0, i - 1, j - 1]
-                    - xvec[0, i, j - 1]
-                    - xvec[0, i - 2, j - 1]
-                    - xvec[0, i - 1, j]
-                    - xvec[0, i - 1, j - 2]
-                    - c * np.exp(xvec[0, i - 1, j - 1]) * np.cos(xvec[0, i - 1, j - 1])
-                )
-                fvec[1, i - 2, j - 2] = (
-                    4 * xvec[1, i - 1, j - 1]
-                    - xvec[1, i, j - 1]
-                    - xvec[1, i - 2, j - 1]
-                    - xvec[1, i - 1, j]
-                    - xvec[1, i - 1, j - 2]
-                    - c * np.exp(xvec[1, i - 1, j - 1]) * np.sin(xvec[1, i - 1, j - 1])
-                )
-        return fvec.flatten()
+        return _cbratu_2d(x)
+
+
+def _cbratu_2d(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    n = int(np.sqrt(len(x) / 2))
+    x = x.reshape((2, n, n))
+    xvec = np.zeros((x.shape[0], x.shape[1] + 2, x.shape[2] + 2), dtype=np.float64)
+    xvec[0, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x[0, :, :]
+    xvec[1, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x[1, :, :]
+    p = x.shape[1] + 2
+    h = 1 / (p - 1)
+    alpha = 5
+    c = h**2 * alpha
+    fvec = np.zeros(x.shape, dtype=np.float64)
+    for i in range(2, p):
+        for j in range(2, p):
+            fvec[0, i - 2, j - 2] = (
+                4 * xvec[0, i - 1, j - 1]
+                - xvec[0, i, j - 1]
+                - xvec[0, i - 2, j - 1]
+                - xvec[0, i - 1, j]
+                - xvec[0, i - 1, j - 2]
+                - c * np.exp(xvec[0, i - 1, j - 1]) * np.cos(xvec[0, i - 1, j - 1])
+            )
+            fvec[1, i - 2, j - 2] = (
+                4 * xvec[1, i - 1, j - 1]
+                - xvec[1, i, j - 1]
+                - xvec[1, i - 2, j - 1]
+                - xvec[1, i - 1, j]
+                - xvec[1, i - 1, j - 2]
+                - c * np.exp(xvec[1, i - 1, j - 1]) * np.sin(xvec[1, i - 1, j - 1])
+            )
+    return fvec.flatten()
 
 
 @mark.least_squares
@@ -1439,20 +1521,31 @@ class Chandheq(BenchmarkFunction):
     """The CHANDHEQ function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        constant = 1
-        w = np.ones(dim_in, dtype=np.int64) / dim_in
-        h = np.ones(dim_in, dtype=np.int64)
-        fvec = np.zeros(dim_in, dtype=np.float64)
-        for i in range(dim_in):
-            fvec[i] = (
-                -0.5 * constant * w * x[i] / (x[i] + x) * h[i] * h + h[i] - 1
-            ).sum()
-        return fvec
+        return _chandheq(x)
+
+
+def _chandheq(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    constant = 1
+    w = np.ones(dim_in, dtype=np.int64) / dim_in
+    h = np.ones(dim_in, dtype=np.int64)
+    fvec = np.zeros(dim_in, dtype=np.float64)
+    for i in range(dim_in):
+        fvec[i] = (-0.5 * constant * w * x[i] / (x[i] + x) * h[i] * h + h[i] - 1).sum()
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Chemrcta(BenchmarkFunction):
+    """The CHEMRCTA function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _chemrcta(x)
 
 
 @njit
-def chemrcta(x):
+def _chemrcta(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = int(len(x) / 2)
     x = x.reshape((2, dim_in))
     fvec = np.zeros(2 * dim_in, dtype=np.float64)
@@ -1495,15 +1588,15 @@ def chemrcta(x):
 
 @mark.least_squares
 @dataclass(frozen=True)
-class Chemrcta(BenchmarkFunction):
-    """The CHEMRCTA function from the CUTEst collection."""
+class Chemrctb(BenchmarkFunction):
+    """The CHEMRCTB function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return chemrcta(x)
+        return _chemrctb(x)
 
 
 @njit
-def chemrctb(x):
+def _chemrctb(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = int(len(x))
     fvec = np.zeros(dim_in, dtype=np.float64)
 
@@ -1531,82 +1624,89 @@ def chemrctb(x):
 
 @mark.least_squares
 @dataclass(frozen=True)
-class Chemrctb(BenchmarkFunction):
-    """The CHEMRCTB function from the CUTEst collection."""
-
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return chemrctb(x)
-
-
-@mark.least_squares
-@dataclass(frozen=True)
 class Chnrsbne(BenchmarkFunction):
     """The CHNRSBNE function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        alfa = np.array(
-            [
-                1.25,
-                1.40,
-                2.40,
-                1.40,
-                1.75,
-                1.20,
-                2.25,
-                1.20,
-                1.00,
-                1.10,
-                1.50,
-                1.60,
-                1.25,
-                1.25,
-                1.20,
-                1.20,
-                1.40,
-                0.50,
-                0.50,
-                1.25,
-                1.80,
-                0.75,
-                1.25,
-                1.40,
-                1.60,
-                2.00,
-                1.00,
-                1.60,
-                1.25,
-                2.75,
-                1.25,
-                1.25,
-                1.25,
-                3.00,
-                1.50,
-                2.00,
-                1.25,
-                1.40,
-                1.80,
-                1.50,
-                2.20,
-                1.40,
-                1.50,
-                1.25,
-                2.00,
-                1.50,
-                1.25,
-                1.40,
-                0.60,
-                1.50,
-            ]
-        )
-        dim_in = len(x)
-        fvec = np.zeros(2 * (dim_in - 1))
-        fvec[: dim_in - 1] = 4 * alfa[1:] * (x[:-1] - x[1:] ** 2)
-        fvec[dim_in - 1 :] = x[1:] - 1
-        return fvec
+        return _chnrsbne(x)
+
+
+def _chnrsbne(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    alfa = np.array(
+        [
+            1.25,
+            1.40,
+            2.40,
+            1.40,
+            1.75,
+            1.20,
+            2.25,
+            1.20,
+            1.00,
+            1.10,
+            1.50,
+            1.60,
+            1.25,
+            1.25,
+            1.20,
+            1.20,
+            1.40,
+            0.50,
+            0.50,
+            1.25,
+            1.80,
+            0.75,
+            1.25,
+            1.40,
+            1.60,
+            2.00,
+            1.00,
+            1.60,
+            1.25,
+            2.75,
+            1.25,
+            1.25,
+            1.25,
+            3.00,
+            1.50,
+            2.00,
+            1.25,
+            1.40,
+            1.80,
+            1.50,
+            2.20,
+            1.40,
+            1.50,
+            1.25,
+            2.00,
+            1.50,
+            1.25,
+            1.40,
+            0.60,
+            1.50,
+        ]
+    )
+    dim_in = len(x)
+    fvec = np.zeros(2 * (dim_in - 1))
+    fvec[: dim_in - 1] = 4 * alfa[1:] * (x[:-1] - x[1:] ** 2)
+    fvec[dim_in - 1 :] = x[1:] - 1
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Drcavty(BenchmarkFunction):
+    """The DRCAVTY function from the CUTEst collection."""
+
+    r: float
+    """The Reynolds number."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _drcavty(x, r=self.r)
 
 
 @njit
-def drcavty(x, r):
+def _drcavty(x: NDArray[np.float64], r: float) -> NDArray[np.float64]:
     m = int(np.sqrt(len(x)))
     x = x.reshape((m, m))
     h = 1 / (m + 2)
@@ -1662,28 +1762,20 @@ def drcavty(x, r):
 
 @mark.least_squares
 @dataclass(frozen=True)
-class Drcavty(BenchmarkFunction):
-    """The DRCAVTY function from the CUTEst collection."""
-
-    r: float
-    """The Reynolds number."""
-
-    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        return drcavty(x, self.r)
-
-
-@mark.least_squares
-@dataclass(frozen=True)
 class Freurone(BenchmarkFunction):
     """The FREURONE function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = np.zeros((2, dim_in - 1), dtype=np.float64)
-        for i in range(dim_in - 1):
-            fvec[0, i] = (5.0 - x[i + 1]) * x[i + 1] ** 2 + x[i] - 2 * x[i + 1] - 13.0
-            fvec[1, i] = (1.0 + x[i + 1]) * x[i + 1] ** 2 + x[i] - 14 * x[i + 1] - 29.0
-        return fvec.flatten()
+        return _freurone(x)
+
+
+def _freurone(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros((2, dim_in - 1), dtype=np.float64)
+    for i in range(dim_in - 1):
+        fvec[0, i] = (5.0 - x[i + 1]) * x[i + 1] ** 2 + x[i] - 2 * x[i + 1] - 13.0
+        fvec[1, i] = (1.0 + x[i + 1]) * x[i + 1] ** 2 + x[i] - 14 * x[i + 1] - 29.0
+    return fvec.flatten()
 
 
 @mark.least_squares
@@ -1692,13 +1784,17 @@ class Hatfldg(BenchmarkFunction):
     """The HATFLDG function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = np.zeros(dim_in, dtype=np.float64)
-        for i in range(1, dim_in - 1):
-            fvec[i - 1] = x[i] * (x[i - 1] - x[i + 1]) + x[i] - x[12] + 1
-        fvec[-2] = x[0] - x[12] + 1 - x[0] * x[1]
-        fvec[-1] = x[-1] - x[12] + 1 + x[-2] * x[-1]
-        return fvec
+        return _hatfldg(x)
+
+
+def _hatfldg(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(dim_in, dtype=np.float64)
+    for i in range(1, dim_in - 1):
+        fvec[i - 1] = x[i] * (x[i - 1] - x[i + 1]) + x[i] - x[12] + 1
+    fvec[-2] = x[0] - x[12] + 1 - x[0] * x[1]
+    fvec[-1] = x[-1] - x[12] + 1 + x[-2] * x[-1]
+    return fvec
 
 
 @mark.least_squares
@@ -1707,33 +1803,36 @@ class Integreq(BenchmarkFunction):
     """The INTEGREQ function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        h = 1 / (dim_in + 1)
-        t = np.arange(1, dim_in + 1) * h
-        xvec = np.zeros(dim_in + 2, dtype=np.float64)
-        xvec[1:-1] = x
-        fvec = np.zeros_like(x)
-        for i in range(1, dim_in):
-            fvec[i - 1] = (
-                xvec[i]
-                + h
-                * (
-                    (1 - t[i - 1]) * (t[:i] * (xvec[1 : i + 1] + t[:i] + 1) ** 3).sum()
-                    + t[i - 1]
-                    * ((1 - t[i:]) * (xvec[i + 1 : -1] + t[i:] + 1) ** 3).sum()
-                )
-                / 2
-            )
-        fvec[-1] = (
-            xvec[-2]
+        return _integreq(x)
+
+
+def _integreq(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    h = 1 / (dim_in + 1)
+    t = np.arange(1, dim_in + 1) * h
+    xvec = np.zeros(dim_in + 2, dtype=np.float64)
+    xvec[1:-1] = x
+    fvec = np.zeros_like(x)
+    for i in range(1, dim_in):
+        fvec[i - 1] = (
+            xvec[i]
             + h
             * (
-                (1 - t[-1]) * (t * (xvec[1:-1] + t + 1) ** 3).sum()
-                + t[-1] * ((1 - t[-1]) * (xvec[-2] + t[-1] + 1) ** 3)
+                (1 - t[i - 1]) * (t[:i] * (xvec[1 : i + 1] + t[:i] + 1) ** 3).sum()
+                + t[i - 1] * ((1 - t[i:]) * (xvec[i + 1 : -1] + t[i:] + 1) ** 3).sum()
             )
             / 2
         )
-        return fvec
+    fvec[-1] = (
+        xvec[-2]
+        + h
+        * (
+            (1 - t[-1]) * (t * (xvec[1:-1] + t + 1) ** 3).sum()
+            + t[-1] * ((1 - t[-1]) * (xvec[-2] + t[-1] + 1) ** 3)
+        )
+        / 2
+    )
+    return fvec
 
 
 @mark.least_squares
@@ -1742,20 +1841,24 @@ class Msqrta(BenchmarkFunction):
     """The MSQRTA function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = int(np.sqrt(len(x)))
-        xmat = x.reshape((dim_in, dim_in))
-        bmat = 5 * xmat
-        amat = np.zeros((dim_in, dim_in), dtype=np.float64)
-        for i in range(1, dim_in + 1):
-            for j in range(1, dim_in + 1):
-                amat[i - 1, j - 1] = (bmat[i - 1, :] * bmat[:, j - 1]).sum()
-        fmat = np.zeros((dim_in, dim_in))
-        for i in range(1, dim_in + 1):
-            for j in range(1, dim_in + 1):
-                fmat[i - 1, j - 1] = (xmat[i - 1, :] * xmat[:, j - 1]).sum() - amat[
-                    i - 1, j - 1
-                ]
-        return fmat.flatten()
+        return _msqrta(x)
+
+
+def _msqrta(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = int(np.sqrt(len(x)))
+    xmat = x.reshape((dim_in, dim_in))
+    bmat = 5 * xmat
+    amat = np.zeros((dim_in, dim_in), dtype=np.float64)
+    for i in range(1, dim_in + 1):
+        for j in range(1, dim_in + 1):
+            amat[i - 1, j - 1] = (bmat[i - 1, :] * bmat[:, j - 1]).sum()
+    fmat = np.zeros((dim_in, dim_in))
+    for i in range(1, dim_in + 1):
+        for j in range(1, dim_in + 1):
+            fmat[i - 1, j - 1] = (xmat[i - 1, :] * xmat[:, j - 1]).sum() - amat[
+                i - 1, j - 1
+            ]
+    return fmat.flatten()
 
 
 @mark.least_squares
@@ -1768,9 +1871,13 @@ class Penalty1(BenchmarkFunction):
     root."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        fvec = np.sqrt(self.a) * (x - 2)
-        fvec = np.concatenate([fvec, [x @ x - 1 / 4]])
-        return fvec
+        return _penalty_1(x, a=self.a)
+
+
+def _penalty_1(x: NDArray[np.float64], a: float) -> NDArray[np.float64]:
+    fvec = np.sqrt(a) * (x - 2)
+    fvec = np.concatenate([fvec, [x @ x - 1 / 4]])
+    return fvec
 
 
 @mark.least_squares
@@ -1783,18 +1890,20 @@ class Penalty2(BenchmarkFunction):
     its square root."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        y = np.exp(np.arange(1, 2 * dim_in + 1) / 10) + np.exp(
-            np.arange(2 * dim_in) / 10
-        )
-        fvec = np.zeros(2 * dim_in)
-        fvec[0] = x[0] - 0.2
-        fvec[1:dim_in] = np.sqrt(self.a) * (
-            np.exp(x[1:] / 10) + np.exp(x[:-1] / 10) - y[1:dim_in]
-        )
-        fvec[dim_in:-1] = np.sqrt(self.a) * (np.exp(x[1:] / 10) - np.exp(-1 / 10))
-        fvec[-1] = (np.arange(1, dim_in + 1)[::-1] * x**2).sum() - 1
-        return fvec
+        return _penalty_2(x, a=self.a)
+
+
+def _penalty_2(x: NDArray[np.float64], a: float) -> NDArray[np.float64]:
+    dim_in = len(x)
+    y = np.exp(np.arange(1, 2 * dim_in + 1) / 10) + np.exp(np.arange(2 * dim_in) / 10)
+    fvec = np.zeros(2 * dim_in)
+    fvec[0] = x[0] - 0.2
+    fvec[1:dim_in] = np.sqrt(a) * (
+        np.exp(x[1:] / 10) + np.exp(x[:-1] / 10) - y[1:dim_in]
+    )
+    fvec[dim_in:-1] = np.sqrt(a) * (np.exp(x[1:] / 10) - np.exp(-1 / 10))
+    fvec[-1] = (np.arange(1, dim_in + 1)[::-1] * x**2).sum() - 1
+    return fvec
 
 
 @mark.least_squares
@@ -1803,12 +1912,16 @@ class Vardimne(BenchmarkFunction):
     """The VARDIMNE function from the CUTEst collection."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = len(x)
-        fvec = np.zeros(dim_in + 2)
-        fvec[:-2] = x - 1
-        fvec[-2] = (np.arange(1, dim_in + 1) * (x - 1)).sum()
-        fvec[-1] = ((np.arange(1, dim_in + 1) * (x - 1)).sum()) ** 2
-        return fvec
+        return _vardimne(x)
+
+
+def _vardimne(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(dim_in + 2)
+    fvec[:-2] = x - 1
+    fvec[-2] = (np.arange(1, dim_in + 1) * (x - 1)).sum()
+    fvec[-1] = ((np.arange(1, dim_in + 1) * (x - 1)).sum()) ** 2
+    return fvec
 
 
 @mark.least_squares
@@ -1821,26 +1934,29 @@ class Yatpsq1(BenchmarkFunction):
     parameters is dim_in**2 + 2 * dim_in."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = self.dim_in
-        xvec = x[: dim_in**2]
-        xvec = xvec.reshape((dim_in, dim_in))
-        yvec = x[dim_in**2 : dim_in**2 + dim_in]
-        zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
-        fvec = np.zeros((dim_in, dim_in), dtype=np.float64)
-        for i in range(dim_in):
-            for j in range(dim_in):
-                fvec[i, j] = (
-                    xvec[i, j] ** 3
-                    - 10 * xvec[i, j] ** 2
-                    - (yvec[i] + zvec[j])
-                    * (xvec[i, j] * np.cos(xvec[i, j]) - np.sin(xvec[i, j]))
-                )
-        fvec = fvec.flatten()
-        temp = (np.sin(xvec) / xvec).sum(axis=0) - 1
-        fvec = np.concatenate((fvec, temp))
-        temp = (np.sin(xvec) / xvec).sum(axis=1) - 1
-        fvec = np.concatenate((fvec, temp))
-        return fvec
+        return _yatpsq_1(x, dim_in=self.dim_in)
+
+
+def _yatpsq_1(x: NDArray[np.float64], dim_in: int) -> NDArray[np.float64]:
+    xvec = x[: dim_in**2]
+    xvec = xvec.reshape((dim_in, dim_in))
+    yvec = x[dim_in**2 : dim_in**2 + dim_in]
+    zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
+    fvec = np.zeros((dim_in, dim_in), dtype=np.float64)
+    for i in range(dim_in):
+        for j in range(dim_in):
+            fvec[i, j] = (
+                xvec[i, j] ** 3
+                - 10 * xvec[i, j] ** 2
+                - (yvec[i] + zvec[j])
+                * (xvec[i, j] * np.cos(xvec[i, j]) - np.sin(xvec[i, j]))
+            )
+    fvec = fvec.flatten()
+    temp = (np.sin(xvec) / xvec).sum(axis=0) - 1
+    fvec = np.concatenate((fvec, temp))
+    temp = (np.sin(xvec) / xvec).sum(axis=1) - 1
+    fvec = np.concatenate((fvec, temp))
+    return fvec
 
 
 @mark.least_squares
@@ -1853,23 +1969,24 @@ class Yatpsq2(BenchmarkFunction):
     parameters is dim_in**2 + 2 * dim_in."""
 
     def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
-        dim_in = self.dim_in
-        xvec = x[: dim_in**2]
-        xvec = xvec.reshape((dim_in, dim_in))
-        yvec = x[dim_in**2 : dim_in**2 + dim_in]
-        zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
-        fvec = np.zeros((dim_in, dim_in), dtype=np.float64)
-        for i in range(dim_in):
-            for j in range(dim_in):
-                fvec[i, j] = (
-                    xvec[i, j] - (yvec[i] + zvec[j]) * (1 + np.cos(xvec[i, j])) - 1
-                )
-        fvec = fvec.flatten()
-        temp = (np.sin(xvec) + xvec).sum(axis=0) - 1
-        fvec = np.concatenate((fvec, temp))
-        temp = (np.sin(xvec) + xvec).sum(axis=1) - 1
-        fvec = np.concatenate((fvec, temp))
-        return fvec
+        return _yatpsq_2(x, dim_in=self.dim_in)
+
+
+def _yatpsq_2(x: NDArray[np.float64], dim_in: int) -> NDArray[np.float64]:
+    xvec = x[: dim_in**2]
+    xvec = xvec.reshape((dim_in, dim_in))
+    yvec = x[dim_in**2 : dim_in**2 + dim_in]
+    zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
+    fvec = np.zeros((dim_in, dim_in), dtype=np.float64)
+    for i in range(dim_in):
+        for j in range(dim_in):
+            fvec[i, j] = xvec[i, j] - (yvec[i] + zvec[j]) * (1 + np.cos(xvec[i, j])) - 1
+    fvec = fvec.flatten()
+    temp = (np.sin(xvec) + xvec).sum(axis=0) - 1
+    fvec = np.concatenate((fvec, temp))
+    temp = (np.sin(xvec) + xvec).sum(axis=1) - 1
+    fvec = np.concatenate((fvec, temp))
+    return fvec
 
 
 def get_start_points_msqrta(dim_in, flag=1):

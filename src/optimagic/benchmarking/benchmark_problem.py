@@ -52,24 +52,40 @@ class BenchmarkFunction(ABC):
     scalar function. The mark is inherited by subclasses.
 
     Parameters of a family of functions (e.g. the number of residuals) are attributes
-    of the subclass. If the objective function already exists as a Python function,
-    ``fun`` simply calls it.
+    of the subclass. The calculations are best defined in pure functions next to the
+    class; ``fun`` and ``jac`` only call or return them.
 
     A benchmark function is not tied to one number of parameters. The number of
     parameters is fixed by the start parameters of a ``BenchmarkProblem``.
 
     Example:
-        A least-squares function for any number of parameters::
+        A least-squares function for any number of parameters with a closed form
+        jacobian for least-squares optimizers::
 
             @om.mark.least_squares
             @dataclass(frozen=True)
-            class Sphere(om.BenchmarkFunction):
+            class ShiftedSphere(om.BenchmarkFunction):
+                shift: float = 1.0
+
                 differentiable = True
                 convex = True
                 multimodal = False
 
                 def fun(self, x):
-                    return x
+                    return _shifted_sphere(x, shift=self.shift)
+
+                def jac(self, solver_type):
+                    if solver_type == om.typing.AggregationLevel.LEAST_SQUARES:
+                        return _shifted_sphere_jac
+                    return None
+
+
+            def _shifted_sphere(x, shift):
+                return x - shift
+
+
+            def _shifted_sphere_jac(x):
+                return np.eye(len(x))
 
     """
 
@@ -125,10 +141,11 @@ class BenchmarkFunction(ABC):
         the residuals, whereas a scalar optimizer needs the gradient of the sum of
         squared residuals.
 
-        Subclasses override this method, define the derivative function for the
-        requested solver type inside of it and return it. Return None for solver types
-        without a closed form derivative; optimizers of that type then use numerical
-        derivatives.
+        Subclasses override this method and return the derivative function for the
+        requested solver type. Define the derivatives as pure functions next to the
+        class; attributes of the class can be bound with ``functools.partial``. Return
+        None for solver types without a closed form derivative; optimizers of that type
+        then use numerical derivatives.
 
         Args:
             solver_type: The type of optimizer the derivative is for.
