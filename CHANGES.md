@@ -10,6 +10,14 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
+- {gh}`751` Adds typed benchmark problems as proposed in EP-02. A `BenchmarkFunction`
+  holds the objective function, its closed form derivatives and properties like
+  convexity; a `BenchmarkProblem` combines it with start parameters, an optional known
+  solution, noise and scaling. `run_benchmark` returns `BenchmarkResult` objects and
+  accepts `OptimizeOptions`. Lists of algorithms and dictionaries of `minimize`
+  arguments in `run_benchmark`, as well as the noise and scaling options of
+  `get_benchmark_problems`, are deprecated and will be removed in version 0.7.0
+  ({ghuser}`janosg`).
 - {gh}`747` Reduces the time it takes to import optimagic from about 2 seconds to about
   0.6 seconds. Dependencies that are only needed for some features (scipy, numba,
   sqlalchemy, plotly.express and joblib) are imported when they are used, the
