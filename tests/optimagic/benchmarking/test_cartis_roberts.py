@@ -102,6 +102,13 @@ def test_cartis_roberts_function_is_least_squares_function(name, problem):  # no
     assert problem.function.fun(problem.start_params).ndim == 1
 
 
+def test_problems_with_the_same_function_and_parameters_have_equal_functions():
+    problems = CARTIS_ROBERTS_PROBLEMS
+    assert problems["methanb8"].function == problems["methanl8"].function
+    assert problems["flosp2hh"].function != problems["flosp2hl"].function
+    assert hash(problems["flosp2hh"].function) == hash(problems["flosp2hh"].function)
+
+
 def test_bounds_of_original_problems_are_only_stored_in_info():
     with_bounds = {
         name for name, problem in CARTIS_ROBERTS_PROBLEMS.items() if problem.info

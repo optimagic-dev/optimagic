@@ -9,7 +9,6 @@ from optimagic.benchmarking.benchmark_problem import (
     BenchmarkFunction,
     BenchmarkProblem,
     BenchmarkSolution,
-    CallableBenchmarkFunction,
     aggregate_function_value,
 )
 from optimagic.benchmarking.noise import AdditiveBenchmarkNoise
@@ -255,65 +254,6 @@ def test_function_that_returns_residuals_without_mark_raises():
     problem = BenchmarkProblem(function=ForgottenMark(), start_params=np.zeros(3))
     with pytest.raises(ValueError, match=r"mark the benchmark function class"):
         problem.start_fun  # noqa: B018
-
-
-# ======================================================================================
-# CallableBenchmarkFunction
-# ======================================================================================
-
-
-def test_callable_benchmark_function():
-    @om.mark.least_squares
-    def residuals(x):
-        return x - 1
-
-    @om.mark.least_squares
-    def residual_jac(x):
-        return np.eye(len(x))
-
-    def gradient(x):
-        return 2 * (x - 1)
-
-    function = CallableBenchmarkFunction(
-        func=residuals,
-        jac_funcs=[residual_jac, gradient],
-        differentiable=True,
-        multimodal=False,
-        min_n_params=2,
-        max_n_params=3,
-    )
-    assert function.problem_type == LEAST_SQUARES
-    aaae(function.fun(np.array([1.0, 3.0])), np.array([0.0, 2.0]))
-    assert function.has_jac
-    assert function.jac(LEAST_SQUARES) is residual_jac
-    # functions without a mark are for scalar optimizers
-    assert function.jac(SCALAR) is gradient
-    assert function.jac(LIKELIHOOD) is None
-    assert function.differentiable is True
-    assert function.convex is None
-    assert function.multimodal is False
-    assert function.supports_n_params(3)
-    assert not function.supports_n_params(4)
-
-
-def test_callable_benchmark_function_without_mark_is_scalar():
-    function = CallableBenchmarkFunction(func=lambda x: float(x @ x))
-    assert function.problem_type == SCALAR
-    assert not function.has_jac
-    assert function.jac(SCALAR) is None
-
-
-def test_callable_benchmark_function_with_two_jacs_for_one_solver_type_raises():
-    with pytest.raises(ValueError, match="more than one derivative"):
-        CallableBenchmarkFunction(
-            func=lambda x: float(x @ x),
-            jac_funcs=[lambda x: 2 * x, om.mark.scalar(lambda x: 2 * x)],
-        )
-
-
-def test_callable_benchmark_function_with_invalid_func_raises():
-    with pytest.raises(TypeError, match="func must be callable"):
-        CallableBenchmarkFunction(func=1)  # ty: ignore[invalid-argument-type]
 
 
 # ======================================================================================
@@ -735,10 +675,14 @@ def test_marking_the_jac_of_a_problem_does_not_modify_the_function():
     def gradient(x):
         return 2 * x
 
-    function = CallableBenchmarkFunction(
-        func=lambda x: float(x @ x), jac_funcs=[gradient]
-    )
-    problem = BenchmarkProblem(function=function, start_params=np.ones(2))
+    class SphereWithGradient(BenchmarkFunction):
+        def fun(self, x):
+            return float(x @ x)
+
+        def jac(self, solver_type):
+            return gradient if solver_type == SCALAR else None
+
+    problem = BenchmarkProblem(function=SphereWithGradient(), start_params=np.ones(2))
     derivative = problem.jac(SCALAR)
     assert derivative is not None
     assert derivative is not gradient

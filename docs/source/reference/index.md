@@ -199,8 +199,6 @@
     .. autoclass:: BenchmarkFunction
         :members:
 
-    .. autoclass:: CallableBenchmarkFunction
-
 ```
 
 ```{eval-rst}

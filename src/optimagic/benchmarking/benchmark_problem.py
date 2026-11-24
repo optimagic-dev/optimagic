@@ -52,8 +52,11 @@ class BenchmarkFunction(ABC):
     scalar function. The mark is inherited by subclasses.
 
     Parameters of a family of functions (e.g. the number of residuals) are attributes
-    of the subclass. Use ``CallableBenchmarkFunction`` to wrap an existing Python
-    function instead of writing a class.
+    of the subclass. If the objective function already exists as a Python function,
+    ``fun`` simply calls it.
+
+    A benchmark function is not tied to one number of parameters. The number of
+    parameters is fixed by the start parameters of a ``BenchmarkProblem``.
 
     Example:
         A least-squares function for any number of parameters::
@@ -67,9 +70,6 @@ class BenchmarkFunction(ABC):
 
                 def fun(self, x):
                     return x
-
-    A benchmark function is not tied to one number of parameters. The number of
-    parameters is fixed by the start parameters of a ``BenchmarkProblem``.
 
     """
 
@@ -201,67 +201,6 @@ class BenchmarkFunction(ABC):
         return []
 
 
-@dataclass(frozen=True)
-class CallableBenchmarkFunction(BenchmarkFunction):
-    """Benchmark function that wraps existing Python functions.
-
-    This is the quickest way to turn your own objective function into a benchmark
-    function. The functions are marked in the same way as for ``minimize``.
-
-    """
-
-    func: ObjectiveFunction
-    """The function that is wrapped. Takes parameters of shape (n_params,). It has to be
-    marked with ``om.mark.least_squares`` or ``om.mark.likelihood`` if it returns
-    least-squares residuals or likelihood contributions."""
-
-    jac_funcs: Sequence[DerivativeFunction] = ()
-    """Closed form first derivatives of ``func``. Each function is marked with the type
-    of optimizer it is for (``om.mark.scalar``, ``om.mark.least_squares`` or
-    ``om.mark.likelihood``); functions without a mark are for scalar optimizers."""
-
-    differentiable: bool | None = None
-    """Whether the function is differentiable at every point where it is defined. None
-    if this is not known."""
-
-    convex: bool | None = None
-    """Whether the function is convex. None if this is not known."""
-
-    multimodal: bool | None = None
-    """Whether the function has local minima that are not global minima. None if this is
-    not known."""
-
-    min_n_params: int = 1
-    """The smallest number of parameters the function supports."""
-
-    max_n_params: int | None = None
-    """The largest number of parameters the function supports. None if there is no upper
-    limit."""
-
-    def __post_init__(self) -> None:
-        if not callable(self.func):
-            raise TypeError(f"func must be callable, not {type(self.func)}.")
-        solver_types = [infer_aggregation_level(func) for func in self.jac_funcs]
-        if len(set(solver_types)) < len(solver_types):
-            raise ValueError(
-                "jac_funcs contains more than one derivative for the same type of "
-                "optimizer."
-            )
-
-    def fun(self, x: NDArray[np.float64]) -> float | NDArray[np.float64]:
-        return self.func(x)
-
-    @property
-    def problem_type(self) -> AggregationLevel:
-        return infer_aggregation_level(self.func)
-
-    def jac(self, solver_type: AggregationLevel) -> DerivativeFunction | None:
-        for func in self.jac_funcs:
-            if infer_aggregation_level(func) == solver_type:
-                return func
-        return None
-
-
 def aggregate_function_value(
     value: float | NDArray[np.float64], problem_type: AggregationLevel
 ) -> float:
@@ -285,8 +224,7 @@ def aggregate_function_value(
                 "A scalar benchmark function returned an array with "
                 f"{np.size(value)} entries. If the function returns least-squares "
                 "residuals or likelihood contributions, mark the benchmark function "
-                "class (or the function wrapped by CallableBenchmarkFunction) with "
-                "`om.mark.least_squares` or `om.mark.likelihood`."
+                "class with `om.mark.least_squares` or `om.mark.likelihood`."
             )
         return float(np.asarray(value, dtype=np.float64).reshape(-1)[0])
     arr = np.asarray(value, dtype=np.float64)
