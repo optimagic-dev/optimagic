@@ -44,6 +44,7 @@ class Sphere(BenchmarkFunction):
         return gradient
 
 
+@om.mark.least_squares
 @dataclass(frozen=True)
 class ShiftedResiduals(BenchmarkFunction):
     shift: float = 1.0
@@ -51,7 +52,6 @@ class ShiftedResiduals(BenchmarkFunction):
     min_n_params = 2
     max_n_params = 4
 
-    @om.mark.least_squares
     def fun(self, x):
         return np.append(x - self.shift, x[0] * x[1])
 
@@ -72,8 +72,8 @@ class ShiftedResiduals(BenchmarkFunction):
         return None
 
 
+@om.mark.likelihood
 class Contributions(BenchmarkFunction):
-    @om.mark.likelihood
     def fun(self, x):
         return np.array([x[0] ** 2, x[1] ** 2 + x[0], 3.0])
 
@@ -123,10 +123,42 @@ ALL_FUNCTIONS = [Sphere(), ShiftedResiduals(), Contributions()]
 # ======================================================================================
 
 
-def test_problem_type_is_read_from_mark_of_fun():
+def test_problem_type_is_read_from_mark_of_class():
     assert Sphere().problem_type == SCALAR
     assert ShiftedResiduals().problem_type == LEAST_SQUARES
     assert Contributions().problem_type == LIKELIHOOD
+
+
+def test_mark_keeps_the_class():
+    assert isinstance(ShiftedResiduals, type)
+    assert ShiftedResiduals(shift=2.0) == ShiftedResiduals(shift=2.0)
+
+
+def test_mark_is_inherited_by_subclasses():
+    class Child(ShiftedResiduals):
+        def fun(self, x):
+            return x - self.shift
+
+    assert Child().problem_type == LEAST_SQUARES
+
+
+def test_mark_of_subclass_overrides_mark_of_parent():
+    @om.mark.scalar
+    class Child(ShiftedResiduals):
+        def fun(self, x):
+            return float((x - self.shift) @ (x - self.shift))
+
+    assert Child().problem_type == SCALAR
+    assert ShiftedResiduals().problem_type == LEAST_SQUARES
+
+
+def test_mark_on_fun_is_not_used():
+    class MarkedMethod(BenchmarkFunction):
+        @om.mark.least_squares
+        def fun(self, x):
+            return x - 1
+
+    assert MarkedMethod().problem_type == SCALAR
 
 
 def test_default_properties_are_unknown():
@@ -221,7 +253,7 @@ def test_function_that_returns_residuals_without_mark_raises():
             return x - 1
 
     problem = BenchmarkProblem(function=ForgottenMark(), start_params=np.zeros(3))
-    with pytest.raises(ValueError, match=r"mark `fun` with `om.mark.least_squares`"):
+    with pytest.raises(ValueError, match=r"mark the benchmark function class"):
         problem.start_fun  # noqa: B018
 
 

@@ -154,8 +154,8 @@ def test_run_benchmark_uses_the_derivative_for_the_solver_type():
     requested = []
     called = []
 
+    @om.mark.least_squares
     class Residuals(BenchmarkFunction):
-        @om.mark.least_squares
         def fun(self, x):
             return x - 1
 

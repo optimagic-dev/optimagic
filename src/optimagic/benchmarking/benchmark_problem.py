@@ -46,14 +46,27 @@ FuncT = TypeVar("FuncT")
 class BenchmarkFunction(ABC):
     """Base class for the functions that benchmark problems are built from.
 
-    To define a new function, create a subclass and implement ``fun``. As for
-    ``minimize``, ``fun`` has to be marked with ``om.mark.least_squares`` or
-    ``om.mark.likelihood`` if it returns least-squares residuals or likelihood
-    contributions. Without a mark it is a scalar function.
+    To define a new function, create a subclass and implement ``fun``. The subclass has
+    to be marked with ``om.mark.least_squares`` or ``om.mark.likelihood`` if ``fun``
+    returns least-squares residuals or likelihood contributions. Without a mark it is a
+    scalar function. The mark is inherited by subclasses.
 
     Parameters of a family of functions (e.g. the number of residuals) are attributes
     of the subclass. Use ``CallableBenchmarkFunction`` to wrap an existing Python
     function instead of writing a class.
+
+    Example:
+        A least-squares function for any number of parameters::
+
+            @om.mark.least_squares
+            @dataclass(frozen=True)
+            class Sphere(om.BenchmarkFunction):
+                differentiable = True
+                convex = True
+                multimodal = False
+
+                def fun(self, x):
+                    return x
 
     A benchmark function is not tied to one number of parameters. The number of
     parameters is fixed by the start parameters of a ``BenchmarkProblem``.
@@ -99,10 +112,10 @@ class BenchmarkFunction(ABC):
     def problem_type(self) -> AggregationLevel:
         """Whether ``fun`` returns a scalar, residuals or likelihood contributions.
 
-        The problem type is read from the mark of ``fun``.
+        The problem type is read from the mark of the class.
 
         """
-        return infer_aggregation_level(self.fun)
+        return infer_aggregation_level(type(self))
 
     def jac(self, solver_type: AggregationLevel) -> DerivativeFunction | None:  # noqa: ARG002
         """Get the closed form first derivative for one type of optimizer.
@@ -271,7 +284,8 @@ def aggregate_function_value(
             raise ValueError(
                 "A scalar benchmark function returned an array with "
                 f"{np.size(value)} entries. If the function returns least-squares "
-                "residuals or likelihood contributions, mark `fun` with "
+                "residuals or likelihood contributions, mark the benchmark function "
+                "class (or the function wrapped by CallableBenchmarkFunction) with "
                 "`om.mark.least_squares` or `om.mark.likelihood`."
             )
         return float(np.asarray(value, dtype=np.float64).reshape(-1)[0])
