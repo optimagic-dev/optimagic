@@ -1,5 +1,6 @@
 """Test helper functions for nevergrad optimizers."""
 
+import time
 from typing import get_args, get_type_hints
 
 import numpy as np
@@ -141,3 +142,33 @@ def test_ngopt_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(alg
     )
     assert res.success in [True, None]
     aaae(res.params, np.array([0.2, 0]), decimal=1)
+
+
+def test_cmaes_returns_best_point_of_all_restarts():
+    # stopping_maxiter=5 makes nevergrad restart CMA-ES every 5 iterations, and
+    # nevergrad only recommends the best point of the last restart.
+    res = minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(3.0),
+        algorithm=algorithms.NevergradCMAES(
+            stopping_maxiter=5, stopping_maxfun=500, seed=0
+        ),
+    )
+    assert res.history is not None
+    assert res.fun == min(res.history.fun)
+
+
+def test_cmaes_stops_after_stopping_maxtime():
+    def slow_sphere(x):
+        time.sleep(0.01)
+        return x @ x
+
+    res = minimize(
+        fun=slow_sphere,
+        params=np.arange(3.0),
+        algorithm=algorithms.NevergradCMAES(
+            stopping_maxtime=0.1, stopping_maxfun=1_000, seed=0
+        ),
+    )
+    assert res.n_fun_evals is not None
+    assert res.n_fun_evals < 100

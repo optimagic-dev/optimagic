@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -204,6 +205,11 @@ class NevergradCMAES(Algorithm):
     Original paper can be accessed at `cma-es
     <https://cma-es.github.io/>`_.
 
+    Only ``stopping_maxfun`` and ``stopping_maxtime`` end the optimization. When CMA-ES
+    meets one of its other stopping or convergence criteria, nevergrad restarts it from
+    the start parameters until the budget is used up. The result is the best point of
+    all restarts.
+
     """
 
     scale: NonNegativeFloat = 1.0
@@ -364,7 +370,6 @@ class NevergradCMAES(Algorithm):
             "CMA_diagonal": self.CMA_diagonal,
             "maxfevals": self.stopping_maxfun,
             "maxiter": self.stopping_maxiter,
-            "timeout": self.stopping_maxtime,
             "tolconditioncov": self.stopping_cov_mat_cond,
             "tolfun": self.convergence_ftol_abs,
             "tolfunrel": self.convergence_ftol_rel,
@@ -388,6 +393,7 @@ class NevergradCMAES(Algorithm):
             x0=x0,
             configured_optimizer=configured_optimizer,
             stopping_maxfun=self.stopping_maxfun,
+            stopping_maxtime=self.stopping_maxtime,
             n_cores=self.n_cores,
             seed=self.seed,
             sigma=self.sigma,
@@ -1512,6 +1518,7 @@ def _nevergrad_internal(
     seed: int | None,
     sigma: float | None,
     nonlinear_constraints: list[dict[str, Any]] | None,
+    stopping_maxtime: float = float("inf"),
 ) -> InternalOptimizeResult:
     """Internal helper function for nevergrad.
 
@@ -1526,9 +1533,13 @@ def _nevergrad_internal(
             configured with options.
         stopping_maxfun (int): Maximum number of function evaluations.
         seed (int): Random seed for reproducibility. Defaults to None.
+        stopping_maxtime: Maximum time in seconds. No new evaluations are started
+            after it has passed.
 
     Returns:
-        InternalOptimizeResult: Internal optimization result
+        InternalOptimizeResult: Internal optimization result. Its parameters are
+            nevergrad's recommendation, or the best evaluated parameters if they have
+            a lower function value.
 
     """
     import nevergrad as ng
@@ -1558,14 +1569,25 @@ def _nevergrad_internal(
     #     constraints = _process_nonlinear_constraints(nonlinear_constraints)
     ###
 
+    best_x = x0
+    best_loss = np.inf
+    start = time.monotonic()
+
     # optimization loop using the ask-and-tell interface
-    while optimizer.num_ask < stopping_maxfun:
+    while (
+        optimizer.num_ask < stopping_maxfun
+        and time.monotonic() - start < stopping_maxtime
+    ):
         x_list = [
             optimizer.ask()
             for _ in range(min(n_cores, stopping_maxfun - optimizer.num_ask))
         ]
 
         losses = problem.batch_fun([x.value[0][0] for x in x_list], n_cores=n_cores)
+
+        for x, loss in zip(x_list, losses, strict=True):
+            if loss < best_loss:
+                best_x, best_loss = x.value[0][0], loss
 
         if not nonlinear_constraints:
             for x, loss in zip(x_list, losses, strict=True):
@@ -1581,16 +1603,22 @@ def _nevergrad_internal(
     ###
 
     recommendation = optimizer.provide_recommendation()
-    best_x = recommendation.value[0][0]
+    x = recommendation.value[0][0]
     loss = recommendation.loss
 
     # In case of CMA, loss is not provided by the optimizer, in that case,
     # evaluate it manually using problem.fun
     if loss is None:
-        loss = problem.fun(best_x)
+        loss = problem.fun(x)
+
+    # The recommendation can be worse than a point that was evaluated. For example,
+    # nevergrad restarts CMA-ES whenever one of its stopping criteria is met and only
+    # recommends the best point of the last restart.
+    if best_loss < loss:
+        x, loss = best_x, best_loss
 
     result = InternalOptimizeResult(
-        x=best_x,
+        x=x,
         fun=loss,
         success=True,
         n_fun_evals=optimizer.num_ask,

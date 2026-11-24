@@ -37,10 +37,12 @@ PRECISION_LOOKUP = {
     "iminuit_migrad": 2,
 }
 
-# Algorithms whose default budget is too small to reach the required precision.
 OPTIONS_LOOKUP = {
+    # The default budget is too small to reach the required precision.
     "nevergrad_de": {"stopping_maxfun": 20_000},
     "nevergrad_meta": {"stopping_maxfun": 20_000},
+    # With a time limit, the result would depend on the speed of the machine.
+    "nevergrad_cmaes": {"stopping_maxtime": float("inf")},
 }
 
 

@@ -21,6 +21,4 @@ def test_no_bounds_with_nevergrad():
         skip_checks=True,
         algo_options={"seed": 12345, "stopping_maxfun": 10000},
     )
-    # The test checks that nevergrad works without bounds. CMA-ES ends between 2e-5
-    # and 0.2 away from the optimum, depending on the seed and the platform.
-    aaae(res.x, np.zeros(3), 2)
+    aaae(res.x, np.zeros(3), 4)
