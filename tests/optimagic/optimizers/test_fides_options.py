@@ -1,4 +1,4 @@
-"""Smoke tests for fides that run by default.
+"""Smoke tests for fides.
 
 Detailed tests of the options are in test_fides_wrappers.py.
 
@@ -111,7 +111,6 @@ def test_fides_stop_after_one_iteration():
     assert res.n_iterations == 1
 
 
-@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
 def test_fides_deprecated_option_name_still_works():
     with pytest.warns(FutureWarning, match="Use `subspace_solver='scg'` instead"):
         deprecated: dict[str, Any] = {"trustregion_subspace_dimension": "scg"}

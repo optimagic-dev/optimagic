@@ -1,8 +1,8 @@
 ---
-# Detailed tests of optimizer wrappers against the newest release of the wrapped
-# libraries, to detect upstream changes. They run once a month and can be started by
-# hand. For every pull request, the main workflow runs the same tests with the library
-# versions in the lock file.
+# Tests of the wrapped optimizer libraries against their newest release, to detect
+# upstream changes. They run once a month and can be started by hand. For every pull
+# request, the main workflow runs the same tests with the library versions in the lock
+# file.
 permissions:
   contents: read
 name: wrapper-tests
@@ -10,13 +10,20 @@ on:
   schedule:
     - cron: 0 5 1 * *
   workflow_dispatch: null
-env:
-  # Libraries that have wrapper tests. Add a library when you add its wrapper tests.
-  WRAPPED_PACKAGES: fides dfo-ls py-bobyqa
 jobs:
   run-wrapper-tests:
-    name: Run wrapper tests
+    name: Run ${{ matrix.library }} tests with the newest release
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Libraries that have wrapper tests, with their packages. Add a library when
+        # you add its wrapper tests.
+        include:
+          - library: fides
+            packages: fides
+          - library: nag
+            packages: dfo-ls py-bobyqa
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -27,10 +34,12 @@ jobs:
           cache: true
           cache-write: false
           frozen: true
-          environments: tests-linux-py314
-      - name: Update wrapped libraries to their newest release
+          environments: tests-${{ matrix.library }}
+      - name: Update the wrapped library to its newest release
         shell: bash -el {0}
-        run: pixi update -e tests-linux-py314 $WRAPPED_PACKAGES
-      - name: Run wrapper tests
+        run: pixi update -e tests-${{ matrix.library }} ${{ matrix.packages }}
+      - name: Run pytest
         shell: bash -el {0}
-        run: pixi run -e tests-linux-py314 tests-wrappers
+        run: >-
+          pixi run -e tests-${{ matrix.library }} tests
+          --library ${{ matrix.library }}

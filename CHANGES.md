@@ -56,10 +56,9 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
 - {gh}`746` Adds tools for the options of algorithm wrappers: the
   `mark.deprecated_options` decorator keeps old option names working with a
   `FutureWarning`, and related options can be bundled in validated option groups,
-  which are passed as instances of their class. Adds detailed wrapper tests that are
-  selected with markers such as `-m fides_wrappers` and do not run by default. A
-  separate CI job runs them for every pull request, and a monthly workflow runs them
-  against the newest releases of the wrapped libraries. The guides on adding and
+  which are passed as instances of their class. Adds detailed wrapper tests, which
+  run in the CI jobs of the libraries for every pull request and once a month against
+  the newest releases of the wrapped libraries. The guides on adding and
   documenting optimizers describe the new standards for wrappers, and a
   `wrap-optimizer` skill guides coding agents through them ({ghuser}`janosg`).
 - {gh}`739` Fixes `tao_pounders` ignoring `convergence_gtol_abs`,

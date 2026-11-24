@@ -127,11 +127,12 @@ Done when
 
 - every row has the test planned for it, and every deprecated name and changed default
   has a deprecation test,
-- `pixi run tests -m <library>_wrappers` passes in under a minute,
+- `pixi run tests tests/optimagic/optimizers/test_<library>_wrappers.py` passes in
+  under a minute,
 - deleting one entry from the name table makes a contract test fail (try it, then
   restore the entry),
-- the default test run still covers the wrapper: `pixi run tests-fast` passes and
-  includes the fast tests of this wrapper.
+- `pixi run -e tests-<library> tests --library <library>` passes; it fails if a test
+  of the library is skipped.
 
 ## 6. Document
 

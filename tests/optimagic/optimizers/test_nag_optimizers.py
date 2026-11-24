@@ -1,7 +1,6 @@
 """Fast tests for the optimizers from DFO-LS and Py-BOBYQA.
 
-The detailed tests of all options are in ``test_nag_wrappers.py`` and only run when
-selected with ``-m nag_wrappers``.
+The detailed tests of all options are in ``test_nag_wrappers.py``.
 
 """
 
@@ -12,7 +11,6 @@ import pytest
 
 import optimagic as om
 from optimagic import mark
-from optimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
 from optimagic.exceptions import InvalidAlgoOptionError
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.nag_optimizers import (
@@ -37,11 +35,6 @@ pytestmark = pytest.mark.nag
 DFOLS: Any = NagDFOLS
 PYBOBYQA: Any = NagPyBOBYQA
 
-needs_dfols = pytest.mark.skipif(not IS_DFOLS_INSTALLED, reason="DFO-LS not installed.")
-needs_pybobyqa = pytest.mark.skipif(
-    not IS_PYBOBYQA_INSTALLED, reason="Py-BOBYQA not installed."
-)
-
 
 @mark.least_squares
 def sos(x):
@@ -60,7 +53,6 @@ def test_nag_dfols_starting_at_optimum():
     aaae(res.params, params)
 
 
-@needs_dfols
 def test_nag_dfols_with_option_groups_and_evaluation_count():
     algo = DFOLS(
         n_evals_per_point=2,
@@ -77,7 +69,6 @@ def test_nag_dfols_with_option_groups_and_evaluation_count():
     assert res.n_fun_evals == 2 * res.algorithm_output["n_evaluated_points"]
 
 
-@needs_pybobyqa
 def test_nag_pybobyqa_with_option_groups_and_evaluation_count():
     algo = PYBOBYQA(
         n_evals_per_point=lambda radius, min_radius, n_iterations, n_restarts: 2,
@@ -95,7 +86,6 @@ def test_nag_pybobyqa_with_option_groups_and_evaluation_count():
     assert res.n_fun_evals == 2 * res.algorithm_output["n_evaluated_points"]
 
 
-@needs_dfols
 def test_nag_dfols_deprecated_options():
     old = {
         "clip_criterion_if_overflowing": False,
@@ -135,7 +125,6 @@ def test_nag_dfols_deprecated_options():
     assert algo == DFOLS(**new)
 
 
-@needs_pybobyqa
 def test_nag_pybobyqa_deprecated_options():
     old = {
         "stopping_max_criterion_evaluations": 50,
@@ -215,7 +204,6 @@ def test_nag_option_groups_are_rejected_as_dictionaries():
         PYBOBYQA().with_option(noisy={"additive_noise_level": 0.1})
 
 
-@needs_dfols
 def test_nag_dfols_raises_if_solver_rejects_options():
     with pytest.raises(InvalidAlgoOptionError, match="npt must be >= n"):
         minimize(

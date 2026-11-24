@@ -9,8 +9,6 @@ The tests check four things:
 - behavior: options have the documented effect on tiny problems.
 - deprecations: every old option name still works, warns and translates correctly.
 
-Run them with ``pytest -m nag_wrappers``.
-
 """
 
 import inspect
@@ -24,23 +22,25 @@ import numpy as np
 import pytest
 
 import optimagic as om
+from optimagic.config import IS_DFOLS_INSTALLED, IS_PYBOBYQA_INSTALLED
 from optimagic.exceptions import InvalidAlgoOptionError
 from optimagic.optimization.algo_options import STOPPING_MAXFUN
 from optimagic.optimizers import nag_optimizers as nag
 from optimagic.optimizers.nag_optimizers import NagDFOLS, NagPyBOBYQA
 
-dfols = pytest.importorskip("dfols")
-pybobyqa = pytest.importorskip("pybobyqa")
+if IS_DFOLS_INSTALLED:
+    import dfols
+    from dfols.params import ParameterList as DfolsParameterList
 
-from dfols.params import ParameterList as DfolsParameterList  # noqa: E402
-from pybobyqa.params import ParameterList as PybobyqaParameterList  # noqa: E402
+if IS_PYBOBYQA_INSTALLED:
+    import pybobyqa
+    from pybobyqa.params import ParameterList as PybobyqaParameterList
 
-pytestmark = pytest.mark.nag_wrappers
+pytestmark = pytest.mark.nag
 
 # Typed as Any because the tests use deprecated options and build options from
 # tables, which type checkers cannot verify.
 ALGORITHMS: dict[str, Any] = {"nag_dfols": NagDFOLS, "nag_pybobyqa": NagPyBOBYQA}
-UPSTREAM = {"nag_dfols": dfols, "nag_pybobyqa": pybobyqa}
 
 SOLVE_ARGUMENTS = {
     "nag_dfols": nag.DFOLS_SOLVE_ARGUMENTS,
@@ -236,11 +236,16 @@ def _n_leading_axis_points(res, x0, radius):
     return count
 
 
+def _get_upstream_modules():
+    """Return the upstream modules of the algorithms by algorithm name."""
+    return {"nag_dfols": dfols, "nag_pybobyqa": pybobyqa}
+
+
 @pytest.fixture()
 def solve_calls(monkeypatch):
     """Record the keyword arguments with which the upstream solvers are called."""
     calls = {}
-    for name, module in UPSTREAM.items():
+    for name, module in _get_upstream_modules().items():
         original = module.solve
 
         def spy(*args, _original=original, _name=name, **kwargs):
@@ -255,7 +260,7 @@ def solve_calls(monkeypatch):
 def raw_results(monkeypatch):
     """Record the result objects that the upstream solvers return."""
     results = {}
-    for name, module in UPSTREAM.items():
+    for name, module in _get_upstream_modules().items():
         original = module.solve
 
         def spy(*args, _original=original, _name=name, **kwargs):
@@ -307,7 +312,9 @@ def _upstream_parameter_lists(algo_name, only_noisy=False):
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_all_solve_arguments_are_mapped_or_unsupported(algo_name):
-    upstream = set(inspect.signature(UPSTREAM[algo_name].solve).parameters)
+    upstream = set(
+        inspect.signature(_get_upstream_modules()[algo_name].solve).parameters
+    )
     mapped = set(SOLVE_ARGUMENTS[algo_name].values())
     unsupported = set(UNSUPPORTED_SOLVE_ARGUMENTS[algo_name])
 
@@ -340,7 +347,7 @@ def test_all_options_of_the_wrapper_are_mapped(algo_name):
     ],
 )
 def test_defaults_of_solve_arguments_match_upstream(algo_name, path, upstream_name):
-    signature = inspect.signature(UPSTREAM[algo_name].solve)
+    signature = inspect.signature(_get_upstream_modules()[algo_name].solve)
     upstream_default = signature.parameters[upstream_name].default
     wrapper_default = _default(algo_name, path)
 
@@ -414,7 +421,7 @@ def test_defaults_of_advanced_options_match_upstream(algo_name, path, upstream_n
 
 @pytest.mark.parametrize("algo_name", ALGORITHMS)
 def test_unsupported_arguments_have_the_values_the_wrapper_relies_on(algo_name):
-    signature = inspect.signature(UPSTREAM[algo_name].solve)
+    signature = inspect.signature(_get_upstream_modules()[algo_name].solve)
     assert signature.parameters["scaling_within_bounds"].default is False
     assert signature.parameters["projections"].default in (None, [])
     for params in _upstream_parameter_lists(algo_name):

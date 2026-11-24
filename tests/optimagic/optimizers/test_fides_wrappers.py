@@ -1,7 +1,7 @@
 """Wrapper tests for fides.
 
 The tests check that every option of the wrapper has the intended effect and that the
-wrapper still matches the fides package. Run them with ``-m fides_wrappers``.
+wrapper still matches the fides package.
 
 """
 
@@ -29,10 +29,7 @@ from optimagic.optimizers.fides import (
     SubspaceSolver,
 )
 
-pytestmark = [
-    pytest.mark.fides_wrappers,
-    pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed."),
-]
+pytestmark = pytest.mark.fides
 
 if IS_FIDES_INSTALLED:
     import fides

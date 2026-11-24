@@ -548,23 +548,22 @@ The version in the warnings is the minor release after the one that ships the ch
 
 Every wrapper has two sets of tests.
 
-**A few fast tests that run by default.** All algorithms are tested on simple problems
-in `test_many_algorithms.py`. Add a small file with tests for everything this does not
-cover, for example that deprecated names work.
+**General tests.** All algorithms are tested on simple problems in
+`test_many_algorithms.py`.
 
 **Wrapper tests** check every option. They are in
-`tests/optimagic/optimizers/test_<library>_wrappers.py` and carry the marker
-`<library>_wrappers`. Tests with such a marker only run if they are selected:
+`tests/optimagic/optimizers/test_<library>_wrappers.py` and carry the marker of the
+library, for example `pytestmark = pytest.mark.fides`. Like all tests with this marker,
+they run whenever the library is installed, and in the CI job of the library for every
+pull request. To run all tests of one library in its own environment:
 
 ```console
-$ pixi run tests -m fides_wrappers    # one library
-$ pixi run tests -m wrappers          # all libraries
+$ pixi run -e tests-fides tests --library fides
 ```
 
-For every pull request, a separate job runs all wrapper tests on Linux with the newest
-supported Python version. In addition, the `wrapper-tests` workflow runs them once a
-month against the newest releases of the wrapped libraries and can be started by hand.
-The wrapper tests consist of:
+In addition, the `wrapper-tests` workflow runs the tests of each library that has
+wrapper tests once a month against the newest release of the library and can be started
+by hand. The wrapper tests consist of:
 
 - **Contract tests** that detect changes in the library. They compare the options the
   library offers (found by introspection) with tables in the wrapper module: one that
@@ -608,16 +607,22 @@ reproduce the effect. The [fides tutorial](fides_tutorial) is an example.
 
 ## Integrate the wrapper into optimagic
 
-1. Add the library to `[tool.pixi.pypi-dependencies]` or `[tool.pixi.dependencies]` in
-   `pyproject.toml` and run `pixi install` to update the lock file. Use the newest
-   release as the minimal version. If the library does not work on all platforms, reach
-   out to a maintainer.
+1. Add a pixi feature for the library to `pyproject.toml`, named after the pytest marker
+   of the library (for example `[tool.pixi.feature.fides.pypi-dependencies]`), and the
+   environment `tests-<marker>`. If the library can be installed together with the other
+   libraries, also add the feature to the environments `default`, `type-checking` and
+   `docs`. Run `pixi install` to update the lock file. Use the newest release as the
+   minimal version. If the library does not work on all platforms, reach out to a
+   maintainer.
 1. Put the wrapper into a module in `src/optimagic/optimizers`. Use the existing module
    if we already wrap other optimizers from the library.
 1. Run `prek run --all-files`. This also generates the code that makes the algorithm
    available as `om.algos.<name>`.
-1. Add the tests. Register the marker `<library>_wrappers` in `pyproject.toml` and add
-   the library to `WRAPPED_PACKAGES` in `.github/workflows/wrapper-tests.yml`.
+1. Add the tests. For a new library, register its marker in `pyproject.toml`, map the
+   wrapper module to the marker in `OPTIMIZER_MODULE_TO_LIBRARY` in `tests/conftest.py`
+   and add the marker to the `library` matrix of `.github/workflows/main.yml`;
+   `tests/test_optimizer_library_markers.py` checks these three steps. Add the library
+   and its packages to the matrix of `.github/workflows/wrapper-tests.yml`.
 1. Add the algorithm to `docs/source/algorithms.md` as described in
    [how to document optimizers](how_to_document_optimizers.md).
 1. Add an entry to `CHANGES.md` and create a pull request. Put the final option table
