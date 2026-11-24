@@ -44,7 +44,9 @@ fill, directly or with a counter in the wrapper.
 passed, passed under a wrong key, typed so that they cannot be used, results read
 from the wrong field. Check whether `replace_and_warn_about_deprecated_algo_options`
 in `src/optimagic/deprecations.py` renames an option of this wrapper before it
-arrives.
+arrives. Search the open issues for the wrapper, its algorithms and the library (for
+example `gh issue list --state open --search "<library>"`, then once per algorithm
+name), and add every problem they report to the list of defects.
 
 Done when every argument of the library's entry point, every key of its option
 dictionaries and every attribute of its configuration objects has a row, for each
@@ -78,7 +80,8 @@ Present to the user, in plain language with examples from this library:
 - the option table and the list of options that are not exposed,
 - the fields of the result the wrapper will fill and those it cannot,
 - the defaults that deviate or change, with the evidence,
-- **Existing:** the defects found and the deprecations the table implies,
+- **Existing:** the defects found, the open issues and which of them this work
+  closes, and the deprecations the table implies,
 - whether a tutorial is due (section "Tutorials"),
 - every open question as a recommendation with its alternative.
 
@@ -159,7 +162,8 @@ is linked from `docs/source/tutorials/index.md` and from the class docstring.
   `prek run --all-files`.
 - Draft an issue for every unsupported feature that a reasonable extension of
   optimagic could support.
-- Draft the pull request description: what changed for users, the final option table,
+- Draft the pull request description: what changed for users, the issues it closes,
+  the final option table,
   the evidence for defaults, and the AI-use note the contributor guide asks for
   (`docs/source/development/how_to_contribute.md`, "Using AI tools").
 
