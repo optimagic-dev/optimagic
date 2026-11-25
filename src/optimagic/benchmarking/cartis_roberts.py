@@ -15,12 +15,23 @@ Implementation is based on
 
 """
 
-from functools import partial
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 
 from optimagic import mark
+from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkFunction,
+    BenchmarkProblem,
+    BenchmarkSolution,
+)
+from optimagic.benchmarking.more_wild import (
+    BrownAlmostLinear,
+    LinearFullRank,
+    LinearRankOne,
+    Watson,
+)
 from optimagic.config import IS_NUMBA_INSTALLED
 from optimagic.parameters.bounds import Bounds
 
@@ -32,16 +43,16 @@ else:
         return func
 
 
-from optimagic.benchmarking.more_wild import (
-    brown_almost_linear,
-    linear_full_rank,
-    linear_rank_one,
-    watson,
-)
-
-
 @mark.least_squares
-def luksan11(x):
+@dataclass(frozen=True)
+class Luksan11(BenchmarkFunction):
+    """The LUKSAN11 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan11(x)
+
+
+def _luksan11(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = np.zeros(2 * (dim_in - 1))
     fvec[::2] = 20 * x[:-1] / (1 + x[:-1] ** 2) - 10 * x[1:]
@@ -50,7 +61,15 @@ def luksan11(x):
 
 
 @mark.least_squares
-def luksan12(x):
+@dataclass(frozen=True)
+class Luksan12(BenchmarkFunction):
+    """The LUKSAN12 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan12(x)
+
+
+def _luksan12(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     n = (dim_in - 2) // 3
     i = np.arange(0, 3 * n, 3)
@@ -65,7 +84,15 @@ def luksan12(x):
 
 
 @mark.least_squares
-def luksan13(x):
+@dataclass(frozen=True)
+class Luksan13(BenchmarkFunction):
+    """The LUKSAN13 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan13(x)
+
+
+def _luksan13(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     n = (dim_in - 2) // 3
     fvec = np.zeros(n * 7)
@@ -83,7 +110,15 @@ def luksan13(x):
 
 
 @mark.least_squares
-def luksan14(x):
+@dataclass(frozen=True)
+class Luksan14(BenchmarkFunction):
+    """The LUKSAN14 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan14(x)
+
+
+def _luksan14(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     dim_out = 7 * (dim_in - 2) // 3
     fvec = np.zeros(dim_out, dtype=np.float64)
@@ -104,7 +139,15 @@ def luksan14(x):
 
 
 @mark.least_squares
-def luksan15(x):
+@dataclass(frozen=True)
+class Luksan15(BenchmarkFunction):
+    """The LUKSAN15 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan15(x)
+
+
+def _luksan15(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
     temp = np.zeros((dim_out, 3), dtype=np.float64)
@@ -126,7 +169,15 @@ def luksan15(x):
 
 
 @mark.least_squares
-def luksan16(x):
+@dataclass(frozen=True)
+class Luksan16(BenchmarkFunction):
+    """The LUKSAN16 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan16(x)
+
+
+def _luksan16(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
     temp = np.zeros((dim_out, 3), dtype=np.float64)
@@ -147,7 +198,15 @@ def luksan16(x):
 
 
 @mark.least_squares
-def luksan17(x):
+@dataclass(frozen=True)
+class Luksan17(BenchmarkFunction):
+    """The LUKSAN17 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan17(x)
+
+
+def _luksan17(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     dim_out = (dim_in - 2) * 2
     temp = np.zeros((dim_out, 4), dtype=np.float64)
@@ -168,7 +227,15 @@ def luksan17(x):
 
 
 @mark.least_squares
-def luksan21(x):
+@dataclass(frozen=True)
+class Luksan21(BenchmarkFunction):
+    """The LUKSAN21 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan21(x)
+
+
+def _luksan21(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_out = len(x)
     h = 1 / (dim_out + 1)
     fvec = np.zeros(dim_out, dtype=np.float64)
@@ -188,7 +255,15 @@ def luksan21(x):
 
 
 @mark.least_squares
-def luksan22(x):
+@dataclass(frozen=True)
+class Luksan22(BenchmarkFunction):
+    """The LUKSAN22 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _luksan22(x)
+
+
+def _luksan22(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_out = 2 * len(x) - 2
     fvec = np.zeros(dim_out)
     fvec[0] = x[0] - 1
@@ -201,7 +276,15 @@ def luksan22(x):
 
 
 @mark.least_squares
-def morebvne(x):
+@dataclass(frozen=True)
+class Morebvne(BenchmarkFunction):
+    """The MOREBVNE function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _morebvne(x)
+
+
+def _morebvne(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     h = 1 / (dim_in + 1)
     i = np.arange(1, dim_in + 1)
@@ -217,8 +300,32 @@ def morebvne(x):
 
 
 @mark.least_squares
+@dataclass(frozen=True)
+class Flosp2(BenchmarkFunction):
+    """The FLOSP2 function from the CUTEst collection."""
+
+    a: tuple[float, float, float]
+    """Coefficients of the boundary conditions."""
+
+    b: tuple[float, float, float]
+    """Coefficients of the boundary conditions."""
+
+    ra: float = 1.0e7
+    """The Rayleigh number."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _flosp2(
+            x,
+            a=np.array(self.a, dtype=np.float64),
+            b=np.array(self.b, dtype=np.float64),
+            ra=self.ra,
+        )
+
+
 @njit
-def flosp2(x, a, b, ra=1.0e7):
+def _flosp2(
+    x: NDArray[np.float64], a: NDArray[np.float64], b: NDArray[np.float64], ra: float
+) -> NDArray[np.float64]:
     n = 5
     xvec = np.ones((3, n, n), dtype=np.float64)
     xvec[0] = x[: n**2].reshape(n, n)
@@ -330,7 +437,15 @@ def flosp2(x, a, b, ra=1.0e7):
 
 
 @mark.least_squares
-def oscigrne(x):
+@dataclass(frozen=True)
+class Oscigrne(BenchmarkFunction):
+    """The OSCIGRNE function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _oscigrne(x)
+
+
+def _oscigrne(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     rho = 500
 
@@ -346,7 +461,15 @@ def oscigrne(x):
 
 
 @mark.least_squares
-def spmsqrt(x):
+@dataclass(frozen=True)
+class Spmsqrt(BenchmarkFunction):
+    """The SPMSQRT function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _spmsqrt(x)
+
+
+def _spmsqrt(x: NDArray[np.float64]) -> NDArray[np.float64]:
     m = (len(x) + 2) // 3
     xmat = np.diag(x[2:-1:3], -1) + np.diag(x[::3], 0) + np.diag(x[1:-2:3], 1)
 
@@ -421,7 +544,15 @@ def spmsqrt(x):
 
 
 @mark.least_squares
-def semicon2(x):
+@dataclass(frozen=True)
+class Semicon2(BenchmarkFunction):
+    """The SEMICON2 function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _semicon2(x)
+
+
+def _semicon2(x: NDArray[np.float64]) -> NDArray[np.float64]:
     n = len(x) // 1
     ln = 9 * n // 10
 
@@ -468,7 +599,18 @@ def semicon2(x):
 
 
 @mark.least_squares
-def qr3d(x, m=5):
+@dataclass(frozen=True)
+class Qr3d(BenchmarkFunction):
+    """The QR3D function from the CUTEst collection."""
+
+    m: int = 5
+    """The number of rows and columns of the matrices Q and R."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _qr3d(x, m=self.m)
+
+
+def _qr3d(x: NDArray[np.float64], m: int) -> NDArray[np.float64]:
     q = x[: m**2].reshape(m, m)
     r = np.zeros((m, m), dtype=np.float64)
     r[np.triu_indices_from(r)] = x[m**2 :]
@@ -510,7 +652,16 @@ def qr3d(x, m=5):
 
 
 @mark.least_squares
-def qr3dbd(x, m=5):
+@dataclass(frozen=True)
+class Qr3dbd(BenchmarkFunction):
+    """The QR3DBD function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _qr3dbd(x)
+
+
+def _qr3dbd(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    m = 5
     q = x[: m**2].reshape(m, m)
     r = np.zeros((m, m), dtype=np.float64)
     r[0, :-2] = x[m**2 : -9]
@@ -558,17 +709,37 @@ def qr3dbd(x, m=5):
 
 
 @mark.least_squares
-def eigen(x, param):
+@dataclass(frozen=True, eq=False)
+class Eigen(BenchmarkFunction):
+    """The EIGEN function from the CUTEst collection."""
+
+    matrix: NDArray[np.float64]
+    """The symmetric matrix whose eigendecomposition is searched, shape (m, m). The
+    number of parameters is m * (m + 1)."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _eigen(x, matrix=self.matrix)
+
+
+def _eigen(x: NDArray[np.float64], matrix: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = int(np.sqrt(len(x) + 0.25))
     dvec = x[:dim_in]
     qmat = x[dim_in:].reshape(dim_in, dim_in)
-    emat = qmat @ np.diag(dvec) @ qmat - param
+    emat = qmat @ np.diag(dvec) @ qmat - matrix
     omat = qmat @ qmat - np.eye(dim_in)
     return np.concatenate((emat.flatten(), omat.flatten()))
 
 
 @mark.least_squares
-def powell_singular(x):
+@dataclass(frozen=True)
+class ExtendedPowellSingular(BenchmarkFunction):
+    """The extended Powell singular function (POWELLSE in the CUTEst collection)."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _extended_powell_singular(x)
+
+
+def _extended_powell_singular(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = np.zeros(dim_in)
     fvec[::4] = x[::4] + 10 * x[1::4]
@@ -579,13 +750,25 @@ def powell_singular(x):
 
 
 @mark.least_squares
+@dataclass(frozen=True)
+class Hydcar(BenchmarkFunction):
+    """The HYDCAR function from the CUTEst collection."""
+
+    n: int
+    """The number of plates."""
+
+    m: int
+    """The number of components."""
+
+    k: int
+    """The index of the feed plate."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _hydcar(x, n=self.n, m=self.m, k=self.k)
+
+
 @njit
-def hydcar(
-    x_in,
-    n,
-    m,
-    k,
-):
+def _hydcar(x_in: NDArray[np.float64], n: int, m: int, k: int) -> NDArray[np.float64]:
     x = x_in[: (n * m)].reshape((n, m))
     t = x_in[(n * m) : 4 * n]
     v = x_in[4 * n :]
@@ -701,7 +884,15 @@ def hydcar(
 
 
 @mark.least_squares
-def methane(x):
+@dataclass(frozen=True)
+class Methane(BenchmarkFunction):
+    """Function of the METHANB8 and METHANL8 problems from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _methane(x)
+
+
+def _methane(x: NDArray[np.float64]) -> NDArray[np.float64]:
     fvec = np.zeros(31, dtype=np.float64)
     fvec[0] = 0.01 * (
         0.000826446280991736
@@ -1084,7 +1275,15 @@ def methane(x):
 
 
 @mark.least_squares
-def argtrig(x):
+@dataclass(frozen=True)
+class Argtrig(BenchmarkFunction):
+    """The ARGTRIG function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _argtrig(x)
+
+
+def _argtrig(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = (
         dim_in
@@ -1095,7 +1294,15 @@ def argtrig(x):
 
 
 @mark.least_squares
-def artif(x):
+@dataclass(frozen=True)
+class Artif(BenchmarkFunction):
+    """The ARTIF function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _artif(x)
+
+
+def _artif(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     xvec = np.zeros(dim_in + 2, dtype=np.float64)
     xvec[1:-1] = x
@@ -1108,7 +1315,15 @@ def artif(x):
 
 
 @mark.least_squares
-def arwhdne(x):
+@dataclass(frozen=True)
+class Arwhdne(BenchmarkFunction):
+    """The ARWHDNE function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _arwhdne(x)
+
+
+def _arwhdne(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = np.zeros(2 * (dim_in - 1))
     fvec[: dim_in - 1] = x[:-1] ** 2 + x[-1] ** 2
@@ -1117,8 +1332,16 @@ def arwhdne(x):
 
 
 @mark.least_squares
+@dataclass(frozen=True)
+class Bdvalues(BenchmarkFunction):
+    """The BDVALUES function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _bdvalues(x)
+
+
 @njit
-def bdvalues(x):
+def _bdvalues(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     h = 1 / (dim_in + 1)
     xvec = np.zeros(dim_in + 2, dtype=np.float64)
@@ -1136,7 +1359,18 @@ def bdvalues(x):
 
 
 @mark.least_squares
-def bratu_2d(x, alpha):
+@dataclass(frozen=True)
+class Bratu2d(BenchmarkFunction):
+    """The BRATU2D function from the CUTEst collection."""
+
+    alpha: float
+    """The parameter of the Bratu equation."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _bratu_2d(x, alpha=self.alpha)
+
+
+def _bratu_2d(x: NDArray[np.float64], alpha: float) -> NDArray[np.float64]:
     x = x.reshape((int(np.sqrt(len(x))), int(np.sqrt(len(x)))))
     p = x.shape[0] + 2
     h = 1 / (p - 1)
@@ -1158,7 +1392,18 @@ def bratu_2d(x, alpha):
 
 
 @mark.least_squares
-def bratu_3d(x, alpha):
+@dataclass(frozen=True)
+class Bratu3d(BenchmarkFunction):
+    """The BRATU3D function from the CUTEst collection."""
+
+    alpha: float
+    """The parameter of the Bratu equation."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _bratu_3d(x, alpha=self.alpha)
+
+
+def _bratu_3d(x: NDArray[np.float64], alpha: float) -> NDArray[np.float64]:
     n = int(np.cbrt(len(x)))
     x = x.reshape((n, n, n))
     p = x.shape[0] + 2
@@ -1184,7 +1429,15 @@ def bratu_3d(x, alpha):
 
 
 @mark.least_squares
-def broydn_3d(x):
+@dataclass(frozen=True)
+class Broydn3d(BenchmarkFunction):
+    """The BROYDN3D function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _broydn_3d(x)
+
+
+def _broydn_3d(x: NDArray[np.float64]) -> NDArray[np.float64]:
     kappa_1 = 2
     kappa_2 = 1
     fvec = np.zeros_like(x)
@@ -1197,7 +1450,15 @@ def broydn_3d(x):
 
 
 @mark.least_squares
-def broydn_bd(x):
+@dataclass(frozen=True)
+class BroydnBd(BenchmarkFunction):
+    """The BROYDNBD function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _broydn_bd(x)
+
+
+def _broydn_bd(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(1, 1 + dim_in):
@@ -1214,7 +1475,15 @@ def broydn_bd(x):
 
 
 @mark.least_squares
-def cbratu_2d(x):
+@dataclass(frozen=True)
+class Cbratu2d(BenchmarkFunction):
+    """The CBRATU2D function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _cbratu_2d(x)
+
+
+def _cbratu_2d(x: NDArray[np.float64]) -> NDArray[np.float64]:
     n = int(np.sqrt(len(x) / 2))
     x = x.reshape((2, n, n))
     xvec = np.zeros((x.shape[0], x.shape[1] + 2, x.shape[2] + 2), dtype=np.float64)
@@ -1247,7 +1516,15 @@ def cbratu_2d(x):
 
 
 @mark.least_squares
-def chandheq(x):
+@dataclass(frozen=True)
+class Chandheq(BenchmarkFunction):
+    """The CHANDHEQ function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _chandheq(x)
+
+
+def _chandheq(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     constant = 1
     w = np.ones(dim_in, dtype=np.int64) / dim_in
@@ -1259,8 +1536,16 @@ def chandheq(x):
 
 
 @mark.least_squares
+@dataclass(frozen=True)
+class Chemrcta(BenchmarkFunction):
+    """The CHEMRCTA function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _chemrcta(x)
+
+
 @njit
-def chemrcta(x):
+def _chemrcta(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = int(len(x) / 2)
     x = x.reshape((2, dim_in))
     fvec = np.zeros(2 * dim_in, dtype=np.float64)
@@ -1302,8 +1587,16 @@ def chemrcta(x):
 
 
 @mark.least_squares
+@dataclass(frozen=True)
+class Chemrctb(BenchmarkFunction):
+    """The CHEMRCTB function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _chemrctb(x)
+
+
 @njit
-def chemrctb(x):
+def _chemrctb(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = int(len(x))
     fvec = np.zeros(dim_in, dtype=np.float64)
 
@@ -1330,7 +1623,15 @@ def chemrctb(x):
 
 
 @mark.least_squares
-def chnrsbne(x):
+@dataclass(frozen=True)
+class Chnrsbne(BenchmarkFunction):
+    """The CHNRSBNE function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _chnrsbne(x)
+
+
+def _chnrsbne(x: NDArray[np.float64]) -> NDArray[np.float64]:
     alfa = np.array(
         [
             1.25,
@@ -1393,8 +1694,19 @@ def chnrsbne(x):
 
 
 @mark.least_squares
+@dataclass(frozen=True)
+class Drcavty(BenchmarkFunction):
+    """The DRCAVTY function from the CUTEst collection."""
+
+    r: float
+    """The Reynolds number."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _drcavty(x, r=self.r)
+
+
 @njit
-def drcavty(x, r):
+def _drcavty(x: NDArray[np.float64], r: float) -> NDArray[np.float64]:
     m = int(np.sqrt(len(x)))
     x = x.reshape((m, m))
     h = 1 / (m + 2)
@@ -1449,7 +1761,15 @@ def drcavty(x, r):
 
 
 @mark.least_squares
-def freurone(x):
+@dataclass(frozen=True)
+class Freurone(BenchmarkFunction):
+    """The FREURONE function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _freurone(x)
+
+
+def _freurone(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = np.zeros((2, dim_in - 1), dtype=np.float64)
     for i in range(dim_in - 1):
@@ -1459,7 +1779,15 @@ def freurone(x):
 
 
 @mark.least_squares
-def hatfldg(x):
+@dataclass(frozen=True)
+class Hatfldg(BenchmarkFunction):
+    """The HATFLDG function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _hatfldg(x)
+
+
+def _hatfldg(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = np.zeros(dim_in, dtype=np.float64)
     for i in range(1, dim_in - 1):
@@ -1470,7 +1798,15 @@ def hatfldg(x):
 
 
 @mark.least_squares
-def integreq(x):
+@dataclass(frozen=True)
+class Integreq(BenchmarkFunction):
+    """The INTEGREQ function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _integreq(x)
+
+
+def _integreq(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     h = 1 / (dim_in + 1)
     t = np.arange(1, dim_in + 1) * h
@@ -1500,7 +1836,15 @@ def integreq(x):
 
 
 @mark.least_squares
-def msqrta(x):
+@dataclass(frozen=True)
+class Msqrta(BenchmarkFunction):
+    """The MSQRTA function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _msqrta(x)
+
+
+def _msqrta(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = int(np.sqrt(len(x)))
     xmat = x.reshape((dim_in, dim_in))
     bmat = 5 * xmat
@@ -1518,14 +1862,38 @@ def msqrta(x):
 
 
 @mark.least_squares
-def penalty_1(x, a=1e-5):
+@dataclass(frozen=True)
+class Penalty1(BenchmarkFunction):
+    """The PENALTY1 function from the CUTEst collection."""
+
+    a: float = 1e-5
+    """Scaling factor. All residuals except the last are multiplied by its square
+    root."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _penalty_1(x, a=self.a)
+
+
+def _penalty_1(x: NDArray[np.float64], a: float) -> NDArray[np.float64]:
     fvec = np.sqrt(a) * (x - 2)
     fvec = np.concatenate([fvec, [x @ x - 1 / 4]])
     return fvec
 
 
 @mark.least_squares
-def penalty_2(x, a=1e-10):
+@dataclass(frozen=True)
+class Penalty2(BenchmarkFunction):
+    """The PENALTY2 function from the CUTEst collection."""
+
+    a: float = 1e-10
+    """Scaling factor. All residuals except the first and the last are multiplied by
+    its square root."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _penalty_2(x, a=self.a)
+
+
+def _penalty_2(x: NDArray[np.float64], a: float) -> NDArray[np.float64]:
     dim_in = len(x)
     y = np.exp(np.arange(1, 2 * dim_in + 1) / 10) + np.exp(np.arange(2 * dim_in) / 10)
     fvec = np.zeros(2 * dim_in)
@@ -1539,7 +1907,15 @@ def penalty_2(x, a=1e-10):
 
 
 @mark.least_squares
-def vardimne(x):
+@dataclass(frozen=True)
+class Vardimne(BenchmarkFunction):
+    """The VARDIMNE function from the CUTEst collection."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _vardimne(x)
+
+
+def _vardimne(x: NDArray[np.float64]) -> NDArray[np.float64]:
     dim_in = len(x)
     fvec = np.zeros(dim_in + 2)
     fvec[:-2] = x - 1
@@ -1549,7 +1925,19 @@ def vardimne(x):
 
 
 @mark.least_squares
-def yatpsq_1(x, dim_in):
+@dataclass(frozen=True)
+class Yatpsq1(BenchmarkFunction):
+    """The YATP1SQ function from the CUTEst collection."""
+
+    dim_in: int
+    """The number of rows and columns of the matrix in the parameters. The number of
+    parameters is dim_in**2 + 2 * dim_in."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _yatpsq_1(x, dim_in=self.dim_in)
+
+
+def _yatpsq_1(x: NDArray[np.float64], dim_in: int) -> NDArray[np.float64]:
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
     yvec = x[dim_in**2 : dim_in**2 + dim_in]
@@ -1572,7 +1960,19 @@ def yatpsq_1(x, dim_in):
 
 
 @mark.least_squares
-def yatpsq_2(x, dim_in):
+@dataclass(frozen=True)
+class Yatpsq2(BenchmarkFunction):
+    """The YATP2SQ function from the CUTEst collection."""
+
+    dim_in: int
+    """The number of rows and columns of the matrix in the parameters. The number of
+    parameters is dim_in**2 + 2 * dim_in."""
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _yatpsq_2(x, dim_in=self.dim_in)
+
+
+def _yatpsq_2(x: NDArray[np.float64], dim_in: int) -> NDArray[np.float64]:
     xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
     yvec = x[dim_in**2 : dim_in**2 + dim_in]
@@ -4893,490 +5293,425 @@ solution_x_methane = [
 ]
 
 
-CARTIS_ROBERTS_PROBLEMS = {
-    "arglale": {
-        # arglale is the same as linear_full_rank with specific settings
-        "fun": partial(linear_full_rank, dim_out=400),
-        "start_x": [1] * 100,
-        "solution_x": [-0.99999952] * 100,
-        "start_criterion": 700,
-        "solution_criterion": 300,
-    },
-    "arglble": {
-        # arglble is the same as linear_rank_one with specific settings
-        "fun": partial(linear_rank_one, dim_out=400),
-        "start_x": [1] * 100,
-        "solution_x": solution_x_arglble,
-        "start_criterion": 5.460944e14,
-        "solution_criterion": 99.62547,
-    },
-    "argtrig": {
-        "fun": argtrig,
-        "start_x": [1 / 100] * 100,
-        "solution_x": [0] * 100,
-        "start_criterion": 32.99641,
-        "solution_criterion": 0,
-    },
-    "artif": {
-        "fun": artif,
-        "start_x": [1] * 100,
-        "solution_x": None,
-        "start_criterion": 36.59115,
-        "solution_criterion": 0,
-    },
-    "arwhdne": {
-        "fun": arwhdne,
-        "start_x": [1] * 100,
-        "solution_x": [0.706011] * 99 + [0],
-        "start_criterion": 495,
-        "solution_criterion": 27.66203,
-    },
-    "bdvalues": {
-        "fun": bdvalues,
-        "start_x": get_start_points_bdvalues(100, 1000),
-        "solution_x": solution_x_bdvalues,
-        "start_criterion": 1.943417e7,
-        "solution_criterion": 0,
-    },
-    "bratu_2d": {
-        "fun": partial(bratu_2d, alpha=4),
-        "start_x": [0] * 64,
-        "solution_x": solution_x_bratu_2d,
-        "start_criterion": 0.1560738,
-        "solution_criterion": 0,
-    },
-    "bratu_2d_t": {
-        "fun": partial(bratu_2d, alpha=6.80812),
-        "start_x": [0] * 64,
-        "solution_x": solution_x_bratu_2d_t,
-        "start_criterion": 0.4521311,
-        "solution_criterion": 1.8534736e-05,
-    },
-    "bratu_3d": {
-        "fun": partial(bratu_3d, alpha=6.80812),
-        "start_x": [0] * 27,
-        "solution_x": solution_x_bratu_3d,
-        "start_criterion": 4.888529,
-        "solution_criterion": 0,
-    },
-    "brownale": {
-        "fun": brown_almost_linear,
-        "start_x": [0.5] * 100,
-        "solution_x": [1] * 100,
-        "start_criterion": 2.524757e5,
-        "solution_criterion": 0,
-    },
-    "broydn_3d": {
-        "fun": broydn_3d,
-        "start_x": [-1] * 100,
-        "solution_x": solution_x_broydn_3d,
-        "start_criterion": 111,
-        "solution_criterion": 0,
-    },
-    "cbratu_2d": {
-        "fun": cbratu_2d,
-        "start_x": [0] * (2 * 5 * 5),
-        "solution_x": solution_x_cbratu_2d,
-        "start_criterion": 0.4822531,
-        "solution_criterion": 0,
-    },
-    "broydn_bd": {
-        "fun": broydn_bd,
-        "start_x": [1] * 100,
-        "solution_x": solution_x_broydn_bd,
-        "start_criterion": 2404,
-        "solution_criterion": 0,
-    },
-    "chandheq": {
-        "fun": chandheq,
-        "start_x": (np.arange(1, 101) / 100).tolist(),
-        "solution_x": None,
-        "start_criterion": 6.923365,
-        "solution_criterion": 0,
-    },
-    "chemrcta": {
-        "fun": chemrcta,
-        "start_x": [1] * 100,
-        "solution_x": None,
-        "start_criterion": 3.0935,
-        "solution_criterion": 0,
-        "bounds": Bounds(lower=np.concatenate([np.zeros(50), 1e-6 * np.ones(50)])),
-    },
-    "chemrctb": {
-        "fun": chemrctb,
-        "start_x": [1] * 100,
-        "solution_x": solution_x_chemrctb,
-        "start_criterion": 1.446513,
-        "solution_criterion": 1.404424e-3,
-        "bounds": Bounds(lower=1e-6 * np.ones(100)),
-    },
-    "chnrsbne": {
-        "fun": chnrsbne,
-        "start_x": [-1] * 50,
-        "solution_x": [1] * 50,
-        "start_criterion": 7635.84,
-        "solution_criterion": 0,
-    },
-    "drcavty1": {
-        "fun": partial(drcavty, r=500),
-        "start_x": [0] * 100,
-        "solution_x": None,
-        "start_criterion": 0.4513889,
-        "solution_criterion": 0,
-    },
-    "drcavty2": {
-        "fun": partial(drcavty, r=1000),
-        "start_x": [0] * 100,
-        "solution_x": solution_x_drcavty2,
-        "start_criterion": 0.4513889,
-        "solution_criterion": 3.988378e-4,
-    },
-    "drcavty3": {
-        "fun": partial(drcavty, r=4500),
-        "start_x": [0] * 100,
-        "solution_x": solution_x_drcavty3,
-        "start_criterion": 0.4513889,
-        "solution_criterion": 0,
-    },
-    "eigena": {
-        "fun": partial(eigen, param=np.diag(np.arange(1, 11))),
-        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
-        "solution_x": [*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
-        "start_criterion": 285,
-        "solution_criterion": 0,
-        "bounds": Bounds(lower=np.zeros(110)),
-    },
-    "eigenb": {
-        "fun": partial(
-            eigen, param=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)
-        ),
-        "start_x": [1] * 10 + np.eye(10).flatten().tolist(),
-        "solution_x": solution_x_eigenb,
-        "start_criterion": 19,
-        "solution_criterion": 1.55654284,
-        # we suspect a typo in Cartis and Roberts (2019);
-        # according to table 3 in their paper, the minimum is at 0.
-    },
-    "flosp2hh": {
-        "fun": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.int64),
-            b=np.array([1, 0, -1], dtype=np.int64),
-            ra=1e7,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2hl": {
-        "fun": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.float64),
-            b=np.array([1, 0, -1], dtype=np.float64),
-            ra=1e3,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2hm": {
-        "fun": partial(
-            flosp2,
-            a=np.array([1, 0, -1], dtype=np.float64),
-            b=np.array([1, 0, -1], dtype=np.float64),
-            ra=1e5,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 519,
-        "solution_criterion": 1 / 3,
-    },
-    "flosp2th": {
-        "fun": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.float64),
-            b=np.array([0, 1, 1], dtype=np.float64),
-            ra=1e7,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
-        "solution_criterion": 0,
-    },
-    "flosp2tl": {
-        "fun": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.float64),
-            b=np.array([0, 1, 1], dtype=np.float64),
-            ra=1e3,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
-        "solution_criterion": 0,
-    },
-    "flosp2tm": {
-        "fun": partial(
-            flosp2,
-            a=np.array([0, 1, 0], dtype=np.float64),
-            b=np.array([0, 1, 1], dtype=np.float64),
-            ra=1e5,
-        ),
-        "start_x": [0] * 59,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 516,
-        "solution_criterion": 0,
-    },
-    "freurone": {
-        "fun": freurone,
-        "start_x": [0.5, -2] + [0] * 98,
-        "solution_x": solution_x_freurone,
-        "start_criterion": 9.95565e4,
-        "solution_criterion": 1.196458e4,
-    },
-    "hatfldg": {
-        "fun": hatfldg,
-        "start_x": [1] * 25,
-        "solution_x": [0] * 11 + [-1, 1] + [0] * 12,
-        "start_criterion": 27,
-        "solution_criterion": 0,
-    },
-    "hydcar20": {
-        "fun": partial(hydcar, n=20, m=3, k=9),
-        "start_x": get_start_points_hydcar20(),
-        "solution_x": solution_x_hydcar20,
-        "start_criterion": 1341.663,
-        "solution_criterion": 0,
-    },
-    "hydcar6": {
-        "fun": partial(hydcar, n=6, m=3, k=2),
-        "start_x": get_start_points_hydcar6(),
-        "solution_x": solution_x_hydcar6,
-        "start_criterion": 704.1073,
-        "solution_criterion": 0,
-    },
-    "integreq": {
-        "fun": integreq,
-        "start_x": (np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1)).tolist(),
-        "solution_x": solution_x_integreq,
-        "start_criterion": 0.5730503,
-        "solution_criterion": 0,
-    },
-    "luksan11": {
-        "fun": luksan11,
-        "start_x": [-0.8] * 100,
-        "solution_x": [1] * 100,
-        "start_criterion": 626.0640,
-        "solution_criterion": 0,
-    },
-    "luksan12": {
-        "fun": luksan12,
-        "start_x": [-1] * 98,
-        "solution_x": None,
-        "start_criterion": 3.2160e4,
-        "solution_criterion": None,
-        # we found a lower minimum than Cartis and Roberts (2019) at 1651.837;
-        # according to table 3 in their paper, the minimum is at 4292.197.
-        # We suspect, however, that the true optimum is even lower.
-        # That is why we disable this test function for the time being.
-    },
-    "luksan13": {
-        "fun": luksan13,
-        "start_x": [-1] * 98,
-        "solution_x": solution_x_luksan13,
-        "start_criterion": 6.4352e4,
-        "solution_criterion": 24949.67040503685711883,
-        # we found a lower minimum than Cartis and Roberts (2019);
-        # according to table 3 in their paper, the minimum is at 25188.86
-    },
-    "luksan14": {
-        "fun": luksan14,
-        "start_x": [-1] * 98,
-        "solution_x": solution_x_luksan14,
-        "start_criterion": 2.6880e4,
-        "solution_criterion": 123.9235,
-    },
-    "luksan15": {
-        "fun": luksan15,
-        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
-        "solution_x": solution_x_luksan15,
-        "start_criterion": 2.701585e4,
-        "solution_criterion": 3.569697,
-    },
-    "luksan16": {
-        "fun": luksan16,
-        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
-        "solution_x": solution_x_luksan16,
-        "start_criterion": 1.306848e4,
-        "solution_criterion": 3.569697,
-    },
-    "luksan17": {
-        "fun": luksan17,
-        "start_x": [-0.8, 1.2, -1.2, 0.8] * 25,
-        "solution_x": None,  # multiple argmins
-        "start_criterion": 1.687370e6,
-        "solution_criterion": 0.4931613,
-    },
-    "luksan21": {
-        "fun": luksan21,
-        "start_x": [ih * (ih - 1) for ih in np.arange(1, 101) * (1 / 101)],
-        "solution_x": solution_x_luksan21,
-        "start_criterion": 99.98751,
-        "solution_criterion": 0,
-    },
-    "luksan22": {
-        "fun": luksan22,
-        "start_x": [-1.2 if i % 2 == 0 else 1 for i in range(100)],
-        "solution_x": solution_x_luksan22,
-        "start_criterion": 2.487686e4,
-        "solution_criterion": 872.9230,
-    },
-    "methanb8": {
-        "fun": methane,
-        "start_x": get_start_points_methanb8(),
-        "solution_x": solution_x_methane,
-        "start_criterion": 1.043105,
-        "solution_criterion": 0,
-    },
-    "methanl8": {
-        "fun": methane,
-        "start_x": get_start_points_methanl8(),
-        "solution_x": solution_x_methane,
-        "start_criterion": 4345.100,
-        "solution_criterion": 0,
-    },
-    "morebvne": {
-        "fun": morebvne,
-        "start_x": [t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
-        "solution_x": solution_x_morebvne,
-        "start_criterion": 3.633100e-4,
-        "solution_criterion": 0,
-    },
-    "msqrta": {
-        "fun": msqrta,
-        "start_x": get_start_points_msqrta(10),
-        "solution_x": solution_x_msqrta,
-        "start_criterion": 212.7162,
-        "solution_criterion": 0,
-    },
-    "msqrtb": {
-        "fun": msqrta,
-        "start_x": get_start_points_msqrta(10, flag=2),
-        "solution_x": solution_x_msqrtb,
-        "start_criterion": 205.0753,
-        "solution_criterion": 0,
-    },
-    "oscigrne": {
-        "fun": oscigrne,
-        "start_x": [-2] + [1] * 99,
-        "solution_x": solution_x_oscigrne,
-        "start_criterion": 6.120720e8,
-        "solution_criterion": 0,
-    },
-    "penalty_1": {
-        "fun": penalty_1,
-        "start_x": list(range(1, 101)),
-        "solution_x": None,
-        "start_criterion": 1.144806e11,
-        "solution_criterion": 9.025000e-9,
-    },
-    "penalty_2": {
-        "fun": penalty_2,
-        "start_x": [0.5] * 100,
-        "solution_x": solution_x_penalty2,
-        "start_criterion": 1.591383e6,
-        "solution_criterion": 0.9809377,
-    },
-    "powellse": {
-        "fun": powell_singular,
-        "start_x": [3.0, -1.0, 0.0, 1] * 25,
-        "solution_x": [0] * 100,
-        "start_criterion": 41875,
-        "solution_criterion": 0,
-    },
-    "qr3d": {
-        "fun": partial(qr3d, m=5),
-        "start_x": get_start_points_qr3d(5),
-        "solution_x": solution_x_qr3d,
-        "start_criterion": 1.2,
-        "solution_criterion": 0,
-        "bounds": Bounds(
-            lower=[-np.inf] * 25
-            + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
-        ),
-    },
-    "qr3dbd": {
-        "fun": partial(qr3dbd, m=5),
-        "start_x": get_start_points_qr3dbd(5),
-        "solution_x": solution_x_qr3dbd,
-        "start_criterion": 1.2,
-        "solution_criterion": 0,
-        "bounds": Bounds(
-            lower=[-np.inf] * 25
-            + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
-        ),
-    },
-    "spmsqrt": {
-        "fun": spmsqrt,
-        "start_x": get_start_points_spmsqrt(34),
-        "solution_x": solution_x_spmsqrt,
-        "start_criterion": 74.33542,
-        "solution_criterion": 0,
-    },
-    "semicn2u": {
-        "fun": semicon2,
-        "start_x": [0] * 100,
-        "solution_x": solution_x_semicon2,
-        "start_criterion": 2.025037e4,
-        "solution_criterion": 0,
-    },
-    "semicon2": {
-        "fun": semicon2,
-        "start_x": [0] * 100,
-        "solution_x": solution_x_semicon2,
-        "start_criterion": 2.025037e4,
-        "solution_criterion": 0,
-        "bounds": Bounds(lower=-5 * np.ones(100), upper=0.2 * 700 * np.ones(100)),
-    },
-    "vardimne": {
-        "fun": vardimne,
-        "start_x": [1 - i / 100 for i in range(1, 101)],
-        "solution_x": [1] * 100,
-        "start_criterion": 1.310584e14,
-        "solution_criterion": 0,
-    },
-    "watsonne": {
-        "fun": watson,
-        "start_x": [0] * 31,
-        "solution_x": solution_x_watson,
-        "start_criterion": 30,
-        "solution_criterion": 0,
-    },
-    "yatpsq_1": {
-        "fun": partial(yatpsq_1, dim_in=10),
-        "start_x": [6] * 100 + [0] * 20,
-        "solution_x": solution_x_yatpsq_1,
-        "start_criterion": 2.073643e6,
-        "solution_criterion": 0,
-    },
-    "yatpsq_2": {
-        "fun": partial(yatpsq_2, dim_in=10),
-        "start_x": [10] * 100 + [0] * 20,
-        "solution_x": solution_x_yatpsq_2,
-        "start_criterion": 1.831687e5,
-        "solution_criterion": 0,
-    },
-}
+def _problem(
+    function: BenchmarkFunction,
+    start_x: list[float],
+    solution_x: list[float] | None,
+    solution_fun: float,
+    bounds: Bounds | None = None,
+) -> BenchmarkProblem:
+    """Create a benchmark problem from the information in the problem table.
 
-
-def get_raw_problems_cartis_roberts() -> dict[str, dict[str, Any]]:
-    """Get the specifications of the Cartis-Roberts benchmark problems.
+    Args:
+        function: The least-squares benchmark function.
+        start_x: The start parameters.
+        solution_x: The parameters at the solution or None if they are not unique.
+        solution_fun: The sum of squared residuals at the solution.
+        bounds: The bounds of the original problem. They are stored in the info of the
+            problem but, as in all previous versions, not passed to the optimizers.
 
     Returns:
-        A dictionary that maps the name of each problem to its specification, which
-        contains the criterion function, the start values and the solution.
+        The benchmark problem. The solution is marked as exact if solution_fun is zero
+        because a sum of squares cannot be smaller. All other solutions are the best
+        known values.
 
     """
-    return CARTIS_ROBERTS_PROBLEMS
+    solution_params = None
+    if solution_x is not None:
+        solution_params = np.array(solution_x, dtype=np.float64)
+
+    return BenchmarkProblem(
+        function=function,
+        start_params=np.array(start_x, dtype=np.float64),
+        solution=BenchmarkSolution(
+            fun=float(solution_fun), params=solution_params, exact=solution_fun == 0
+        ),
+        info={} if bounds is None else {"bounds": bounds},
+    )
+
+
+CARTIS_ROBERTS_PROBLEMS: dict[str, BenchmarkProblem] = {
+    "arglale": _problem(
+        # arglale is the same as linear_full_rank with specific settings
+        function=LinearFullRank(dim_out=400),
+        start_x=[1] * 100,
+        solution_x=[-0.99999952] * 100,
+        solution_fun=300,
+    ),
+    "arglble": _problem(
+        # arglble is the same as linear_rank_one with specific settings
+        function=LinearRankOne(dim_out=400),
+        start_x=[1] * 100,
+        solution_x=solution_x_arglble,
+        solution_fun=99.62547,
+    ),
+    "argtrig": _problem(
+        function=Argtrig(),
+        start_x=[1 / 100] * 100,
+        solution_x=[0] * 100,
+        solution_fun=0,
+    ),
+    "artif": _problem(
+        function=Artif(),
+        start_x=[1] * 100,
+        solution_x=None,
+        solution_fun=0,
+    ),
+    "arwhdne": _problem(
+        function=Arwhdne(),
+        start_x=[1] * 100,
+        solution_x=[0.706011] * 99 + [0],
+        solution_fun=27.66203,
+    ),
+    "bdvalues": _problem(
+        function=Bdvalues(),
+        start_x=get_start_points_bdvalues(100, 1000),
+        solution_x=solution_x_bdvalues,
+        solution_fun=0,
+    ),
+    "bratu_2d": _problem(
+        function=Bratu2d(alpha=4),
+        start_x=[0] * 64,
+        solution_x=solution_x_bratu_2d,
+        solution_fun=0,
+    ),
+    "bratu_2d_t": _problem(
+        function=Bratu2d(alpha=6.80812),
+        start_x=[0] * 64,
+        solution_x=solution_x_bratu_2d_t,
+        solution_fun=1.8534736e-05,
+    ),
+    "bratu_3d": _problem(
+        function=Bratu3d(alpha=6.80812),
+        start_x=[0] * 27,
+        solution_x=solution_x_bratu_3d,
+        solution_fun=0,
+    ),
+    "brownale": _problem(
+        function=BrownAlmostLinear(),
+        start_x=[0.5] * 100,
+        solution_x=[1] * 100,
+        solution_fun=0,
+    ),
+    "broydn_3d": _problem(
+        function=Broydn3d(),
+        start_x=[-1] * 100,
+        solution_x=solution_x_broydn_3d,
+        solution_fun=0,
+    ),
+    "cbratu_2d": _problem(
+        function=Cbratu2d(),
+        start_x=[0] * (2 * 5 * 5),
+        solution_x=solution_x_cbratu_2d,
+        solution_fun=0,
+    ),
+    "broydn_bd": _problem(
+        function=BroydnBd(),
+        start_x=[1] * 100,
+        solution_x=solution_x_broydn_bd,
+        solution_fun=0,
+    ),
+    "chandheq": _problem(
+        function=Chandheq(),
+        start_x=(np.arange(1, 101) / 100).tolist(),
+        solution_x=None,
+        solution_fun=0,
+    ),
+    "chemrcta": _problem(
+        function=Chemrcta(),
+        start_x=[1] * 100,
+        solution_x=None,
+        solution_fun=0,
+        bounds=Bounds(lower=np.concatenate([np.zeros(50), 1e-6 * np.ones(50)])),
+    ),
+    "chemrctb": _problem(
+        function=Chemrctb(),
+        start_x=[1] * 100,
+        solution_x=solution_x_chemrctb,
+        solution_fun=1.404424e-3,
+        bounds=Bounds(lower=1e-6 * np.ones(100)),
+    ),
+    "chnrsbne": _problem(
+        function=Chnrsbne(),
+        start_x=[-1] * 50,
+        solution_x=[1] * 50,
+        solution_fun=0,
+    ),
+    "drcavty1": _problem(
+        function=Drcavty(r=500),
+        start_x=[0] * 100,
+        solution_x=None,
+        solution_fun=0,
+    ),
+    "drcavty2": _problem(
+        function=Drcavty(r=1000),
+        start_x=[0] * 100,
+        solution_x=solution_x_drcavty2,
+        solution_fun=3.988378e-4,
+    ),
+    "drcavty3": _problem(
+        function=Drcavty(r=4500),
+        start_x=[0] * 100,
+        solution_x=solution_x_drcavty3,
+        solution_fun=0,
+    ),
+    "eigena": _problem(
+        function=Eigen(matrix=np.diag(np.arange(1.0, 11.0))),
+        start_x=[1] * 10 + np.eye(10).flatten().tolist(),
+        solution_x=[*np.arange(1, 11).tolist(), 1] + ([0] * 10 + [1]) * 9,
+        solution_fun=0,
+        bounds=Bounds(lower=np.zeros(110)),
+    ),
+    "eigenb": _problem(
+        function=Eigen(matrix=np.diag(2 * np.ones(10)) + np.diag(-np.ones(9), k=1)),
+        start_x=[1] * 10 + np.eye(10).flatten().tolist(),
+        solution_x=solution_x_eigenb,
+        solution_fun=1.55654284,
+        # we suspect a typo in Cartis and Roberts (2019);
+        # according to table 3 in their paper, the minimum is at 0.
+    ),
+    "flosp2hh": _problem(
+        function=Flosp2(a=(1, 0, -1), b=(1, 0, -1), ra=1e7),
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=1 / 3,
+    ),
+    "flosp2hl": _problem(
+        function=Flosp2(a=(1, 0, -1), b=(1, 0, -1), ra=1e3),
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=1 / 3,
+    ),
+    "flosp2hm": _problem(
+        function=Flosp2(a=(1, 0, -1), b=(1, 0, -1), ra=1e5),
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=1 / 3,
+    ),
+    "flosp2th": _problem(
+        function=Flosp2(a=(0, 1, 0), b=(0, 1, 1), ra=1e7),
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=0,
+    ),
+    "flosp2tl": _problem(
+        function=Flosp2(a=(0, 1, 0), b=(0, 1, 1), ra=1e3),
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=0,
+    ),
+    "flosp2tm": _problem(
+        function=Flosp2(a=(0, 1, 0), b=(0, 1, 1), ra=1e5),
+        start_x=[0] * 59,
+        solution_x=None,  # multiple argmins
+        solution_fun=0,
+    ),
+    "freurone": _problem(
+        function=Freurone(),
+        start_x=[0.5, -2] + [0] * 98,
+        solution_x=solution_x_freurone,
+        solution_fun=1.196458e4,
+    ),
+    "hatfldg": _problem(
+        function=Hatfldg(),
+        start_x=[1] * 25,
+        solution_x=[0] * 11 + [-1, 1] + [0] * 12,
+        solution_fun=0,
+    ),
+    "hydcar20": _problem(
+        function=Hydcar(n=20, m=3, k=9),
+        start_x=get_start_points_hydcar20(),
+        solution_x=solution_x_hydcar20,
+        solution_fun=0,
+    ),
+    "hydcar6": _problem(
+        function=Hydcar(n=6, m=3, k=2),
+        start_x=get_start_points_hydcar6(),
+        solution_x=solution_x_hydcar6,
+        solution_fun=0,
+    ),
+    "integreq": _problem(
+        function=Integreq(),
+        start_x=(np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1)).tolist(),
+        solution_x=solution_x_integreq,
+        solution_fun=0,
+    ),
+    "luksan11": _problem(
+        function=Luksan11(),
+        start_x=[-0.8] * 100,
+        solution_x=[1] * 100,
+        solution_fun=0,
+    ),
+    "luksan12": _problem(
+        function=Luksan12(),
+        start_x=[-1] * 98,
+        solution_x=None,
+        # we found a lower minimum than Cartis and Roberts (2019) at 1651.837;
+        # according to table 3 in their paper, the minimum is at 4292.197.
+        # We suspect, however, that the true optimum is even lower. The value is
+        # therefore only the best known value and gets replaced if an optimizer
+        # finds a lower one during a benchmark.
+        solution_fun=1651.837,
+    ),
+    "luksan13": _problem(
+        function=Luksan13(),
+        start_x=[-1] * 98,
+        solution_x=solution_x_luksan13,
+        solution_fun=24949.67040503685711883,
+        # we found a lower minimum than Cartis and Roberts (2019);
+        # according to table 3 in their paper, the minimum is at 25188.86
+    ),
+    "luksan14": _problem(
+        function=Luksan14(),
+        start_x=[-1] * 98,
+        solution_x=solution_x_luksan14,
+        solution_fun=123.9235,
+    ),
+    "luksan15": _problem(
+        function=Luksan15(),
+        start_x=[-0.8, 1.2, -1.2, 0.8] * 25,
+        solution_x=solution_x_luksan15,
+        solution_fun=3.569697,
+    ),
+    "luksan16": _problem(
+        function=Luksan16(),
+        start_x=[-0.8, 1.2, -1.2, 0.8] * 25,
+        solution_x=solution_x_luksan16,
+        solution_fun=3.569697,
+    ),
+    "luksan17": _problem(
+        function=Luksan17(),
+        start_x=[-0.8, 1.2, -1.2, 0.8] * 25,
+        solution_x=None,  # multiple argmins
+        solution_fun=0.4931613,
+    ),
+    "luksan21": _problem(
+        function=Luksan21(),
+        start_x=[ih * (ih - 1) for ih in np.arange(1, 101) * (1 / 101)],
+        solution_x=solution_x_luksan21,
+        solution_fun=0,
+    ),
+    "luksan22": _problem(
+        function=Luksan22(),
+        start_x=[-1.2 if i % 2 == 0 else 1 for i in range(100)],
+        solution_x=solution_x_luksan22,
+        solution_fun=872.9230,
+    ),
+    "methanb8": _problem(
+        function=Methane(),
+        start_x=get_start_points_methanb8(),
+        solution_x=solution_x_methane,
+        solution_fun=0,
+    ),
+    "methanl8": _problem(
+        function=Methane(),
+        start_x=get_start_points_methanl8(),
+        solution_x=solution_x_methane,
+        solution_fun=0,
+    ),
+    "morebvne": _problem(
+        function=Morebvne(),
+        start_x=[t * (t - 1) for t in np.arange(1, 101) * (1 / 101)],
+        solution_x=solution_x_morebvne,
+        solution_fun=0,
+    ),
+    "msqrta": _problem(
+        function=Msqrta(),
+        start_x=get_start_points_msqrta(10),
+        solution_x=solution_x_msqrta,
+        solution_fun=0,
+    ),
+    "msqrtb": _problem(
+        function=Msqrta(),
+        start_x=get_start_points_msqrta(10, flag=2),
+        solution_x=solution_x_msqrtb,
+        solution_fun=0,
+    ),
+    "oscigrne": _problem(
+        function=Oscigrne(),
+        start_x=[-2] + [1] * 99,
+        solution_x=solution_x_oscigrne,
+        solution_fun=0,
+    ),
+    "penalty_1": _problem(
+        function=Penalty1(),
+        start_x=list(range(1, 101)),
+        solution_x=None,
+        solution_fun=9.025000e-9,
+    ),
+    "penalty_2": _problem(
+        function=Penalty2(),
+        start_x=[0.5] * 100,
+        solution_x=solution_x_penalty2,
+        solution_fun=0.9809377,
+    ),
+    "powellse": _problem(
+        function=ExtendedPowellSingular(),
+        start_x=[3.0, -1.0, 0.0, 1] * 25,
+        solution_x=[0] * 100,
+        solution_fun=0,
+    ),
+    "qr3d": _problem(
+        function=Qr3d(m=5),
+        start_x=get_start_points_qr3d(5),
+        solution_x=solution_x_qr3d,
+        solution_fun=0,
+        bounds=Bounds(
+            lower=[-np.inf] * 25
+            + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
+        ),
+    ),
+    "qr3dbd": _problem(
+        function=Qr3dbd(),
+        start_x=get_start_points_qr3dbd(5),
+        solution_x=solution_x_qr3dbd,
+        solution_fun=0,
+        bounds=Bounds(
+            lower=[-np.inf] * 25
+            + [0 if i == j else -np.inf for i in range(5) for j in range(5)]
+        ),
+    ),
+    "spmsqrt": _problem(
+        function=Spmsqrt(),
+        start_x=get_start_points_spmsqrt(34),
+        solution_x=solution_x_spmsqrt,
+        solution_fun=0,
+    ),
+    "semicn2u": _problem(
+        function=Semicon2(),
+        start_x=[0] * 100,
+        solution_x=solution_x_semicon2,
+        solution_fun=0,
+    ),
+    "semicon2": _problem(
+        function=Semicon2(),
+        start_x=[0] * 100,
+        solution_x=solution_x_semicon2,
+        solution_fun=0,
+        bounds=Bounds(lower=-5 * np.ones(100), upper=0.2 * 700 * np.ones(100)),
+    ),
+    "vardimne": _problem(
+        function=Vardimne(),
+        start_x=[1 - i / 100 for i in range(1, 101)],
+        solution_x=[1] * 100,
+        solution_fun=0,
+    ),
+    "watsonne": _problem(
+        function=Watson(),
+        start_x=[0] * 31,
+        solution_x=solution_x_watson,
+        solution_fun=0,
+    ),
+    "yatpsq_1": _problem(
+        function=Yatpsq1(dim_in=10),
+        start_x=[6] * 100 + [0] * 20,
+        solution_x=solution_x_yatpsq_1,
+        solution_fun=0,
+    ),
+    "yatpsq_2": _problem(
+        function=Yatpsq2(dim_in=10),
+        start_x=[10] * 100 + [0] * 20,
+        solution_x=solution_x_yatpsq_2,
+        solution_fun=0,
+    ),
+}

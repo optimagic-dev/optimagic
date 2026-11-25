@@ -21,285 +21,19 @@ benchmark set:
 
 """
 
-from functools import partial
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
+from numpy.typing import NDArray
 
 from optimagic import mark
+from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkFunction,
+    BenchmarkProblem,
+    BenchmarkSolution,
+)
 
 
-@mark.least_squares
-def linear_full_rank(x, dim_out):
-    temp = 2 * x.sum() / dim_out + 1
-    out = np.full(dim_out, -temp)
-    out[: len(x)] += x
-    return out
-
-
-@mark.least_squares
-def linear_rank_one(x, dim_out):
-    dim_in = len(x)
-    sm = np.arange(1, dim_in + 1) @ x
-    fvec = np.arange(1, dim_out + 1) * sm - 1.0
-    return fvec
-
-
-@mark.least_squares
-def linear_rank_one_zero_columns_rows(x, dim_out):
-    dim_in = len(x)
-    sm = (np.arange(2, dim_in) * x[1:-1]).sum()
-    fvec = np.arange(dim_out) * sm - 1.0
-    fvec[-1] = -1.0
-    return fvec
-
-
-@mark.least_squares
-def rosenbrock(x):
-    fvec = np.zeros(2)
-    fvec[0] = 10 * (x[1] - x[0] ** 2)
-    fvec[1] = 1.0 - x[0]
-    return fvec
-
-
-@mark.least_squares
-def helical_valley(x):
-    temp = 8 * np.arctan(1.0)
-    temp1 = np.sign(x[1]) * 0.25
-    if x[0] > 0:
-        temp1 = np.arctan(x[1] / x[0]) / temp
-    elif x[0] < 0:
-        temp1 = np.arctan(x[1] / x[0]) / temp + 0.5
-    temp2 = np.sqrt(x[0] ** 2 + x[1] ** 2)
-    fvec = np.zeros(3)
-    fvec[0] = 10 * (x[2] - 10 * temp1)
-    fvec[1] = 10 * (temp2 - 1.0)
-    fvec[2] = x[2]
-    return fvec
-
-
-@mark.least_squares
-def powell_singular(x):
-    fvec = np.zeros(4)
-    fvec[0] = x[0] + 10 * x[1]
-    fvec[1] = np.sqrt(5.0) * (x[2] - x[3])
-    fvec[2] = (x[1] - 2 * x[2]) ** 2
-    fvec[3] = np.sqrt(10.0) * (x[0] - x[3]) ** 2
-    return fvec
-
-
-@mark.least_squares
-def freudenstein_roth(x):
-    fvec = np.zeros(2)
-    fvec[0] = -13 + x[0] + ((5 - x[1]) * x[1] - 2) * x[1]
-    fvec[1] = -29 + x[0] + ((1.0 + x[1]) * x[1] - 14) * x[1]
-    return fvec
-
-
-@mark.least_squares
-def bard(x, y):
-    fvec = np.zeros(len(y))
-    for i in range(1, round(len(y) / 2) + 1):
-        temp = len(y) + 1 - i
-        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * i))
-    for i in range(round(len(y) / 2) + 1, len(y) + 1):
-        temp = len(y) + 1 - i
-        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * temp))
-    return fvec
-
-
-@mark.least_squares
-def kowalik_osborne(x, y1, y2):
-    temp1 = y1 * (y1 + x[1])
-    temp2 = y1 * (y1 + x[2]) + x[3]
-    fvec = y2 - x[0] * temp1 / temp2
-    return fvec
-
-
-@mark.least_squares
-def meyer(x, y):
-    temp = 5 * np.arange(1, len(y) + 1) + 45 + x[2]
-    temp1 = x[1] / temp
-    temp2 = np.exp(temp1)
-    fvec = x[0] * temp2 - y
-    return fvec
-
-
-@mark.least_squares
-def watson(x):
-    dim_in = len(x)
-    fvec = np.zeros(31)
-    for i in range(1, 30):
-        temp = i / 29
-        sum_1 = (np.arange(1, dim_in) * temp ** np.arange(dim_in - 1) * x[1:]).sum()
-        sum_2 = (temp ** np.arange(dim_in) * x).sum()
-        fvec[i - 1] = sum_1 - sum_2**2 - 1.0
-    fvec[29] = x[0]
-    fvec[30] = x[1] - x[0] ** 2 - 1.0
-    return fvec
-
-
-@mark.least_squares
-def box_3d(x, dim_out):
-    fvec = np.zeros(dim_out)
-    for i in range(1, dim_out + 1):
-        fvec[i - 1] = (
-            np.exp(-i / 10 * x[0])
-            - np.exp(-i / 10 * x[1])
-            + (np.exp(-i) - np.exp(-i / 10)) * x[2]
-        )
-    return fvec
-
-
-@mark.least_squares
-def jennrich_sampson(x, dim_out):
-    fvec = (
-        2 * (1.0 + np.arange(1, dim_out + 1))
-        - np.exp(np.arange(1, dim_out + 1) * x[0])
-        - np.exp(np.arange(1, dim_out + 1) * x[1])
-    )
-    return fvec
-
-
-@mark.least_squares
-def brown_dennis(x, dim_out):
-    fvec = np.zeros(dim_out)
-    for i in range(1, dim_out + 1):
-        temp = i / 5
-        temp_1 = x[0] + temp * x[1] - np.exp(temp)
-        temp_2 = x[2] + np.sin(temp) * x[3] - np.cos(temp)
-        fvec[i - 1] = temp_1**2 + temp_2**2
-    return fvec
-
-
-@mark.least_squares
-def chebyquad(x, dim_out):
-    fvec = np.zeros(dim_out)
-    dim_in = len(x)
-    for i in range(1, dim_in + 1):
-        temp_1 = 1.0
-        temp_2 = 2 * x[i - 1] - 1.0
-        temp_3 = 2 * temp_2
-        for j in range(dim_out):
-            fvec[j] = fvec[j] + temp_2
-            temp_4 = temp_3 * temp_2 - temp_1
-            temp_1 = temp_2
-            temp_2 = temp_4
-    for i in range(1, dim_out + 1):
-        fvec[i - 1] = fvec[i - 1] / dim_in
-        if i % 2 == 0:
-            fvec[i - 1] = fvec[i - 1] + 1 / (i**2 - 1.0)
-    return fvec
-
-
-@mark.least_squares
-def brown_almost_linear(x):
-    dim_in = len(x)
-    sm = -(dim_in + 1) + x.sum()
-    product = x.prod()
-    fvec = x + sm
-    fvec[dim_in - 1] = product - 1.0
-    return fvec
-
-
-@mark.least_squares
-def osborne_one(x, y):
-    temp = 10 * np.arange(len(y))
-    temp_1 = np.exp(-x[3] * temp)
-    temp_2 = np.exp(-x[4] * temp)
-    fvec = y - (x[0] + x[1] * temp_1 + x[2] * temp_2)
-    return fvec
-
-
-@mark.least_squares
-def osborne_two(x, y):
-    temp_array = np.zeros((4, len(y)))
-    temp = np.arange(len(y)) / 10
-    temp_array[0] = np.exp(-x[4] * temp)
-    temp_array[1] = np.exp(-x[5] * (temp - x[8]) ** 2)
-    temp_array[2] = np.exp(-x[6] * (temp - x[9]) ** 2)
-    temp_array[3] = np.exp(-x[7] * (temp - x[10]) ** 2)
-    fvec = y - (temp_array.T * x[:4]).T.sum(axis=0)
-    return fvec
-
-
-@mark.least_squares
-def bdqrtic(x):
-    # the length of array x should be more than 5.
-    dim_in = len(x)
-    fvec = np.zeros(2 * (dim_in - 4))
-    for i in range(dim_in - 4):
-        fvec[i] = -4 * x[i] + 3
-        fvec[dim_in - 4 + i] = (
-            x[i] ** 2
-            + 2 * x[i + 1] ** 2
-            + 3 * x[i + 2] ** 2
-            + 4 * x[i + 3] ** 2
-            + 5 * x[dim_in - 1] ** 2
-        )
-    return fvec
-
-
-@mark.least_squares
-def cube(x):
-    fvec = 10 * (x - np.roll(x, 1) ** 3)
-    fvec[0] = x[0] - 1.0
-    return fvec
-
-
-@mark.least_squares
-def mancino(x):
-    dim_in = len(x)
-    fvec = np.zeros(dim_in)
-    for i in range(dim_in):
-        sm = 0
-        for j in range(dim_in):
-            temp = np.sqrt(x[i] ** 2 + (i + 1) / (j + 1))
-            sm += temp * ((np.sin(np.log(temp))) ** 5 + (np.cos(np.log(temp))) ** 5)
-        fvec[i] = 1400 * x[i] + (i + 1 - 50) ** 3 + sm
-    return fvec
-
-
-@mark.least_squares
-def heart_eight(x, y):
-    dim_y = len(y)
-    fvec = np.zeros(dim_y)
-    fvec[0] = x[0] + x[1] - y[0]
-    fvec[1] = x[2] + x[3] - y[1]
-    fvec[2] = x[4] * x[0] + x[5] * x[1] - x[6] * x[2] - x[7] * x[3] - y[2]
-    fvec[3] = x[6] * x[0] + x[7] * x[1] + x[4] * x[2] + x[5] * x[3] - y[3]
-    fvec[4] = (
-        x[0] * (x[4] ** 2 - x[6] ** 2)
-        - 2 * x[2] * x[4] * x[6]
-        + x[1] * (x[5] ** 2 - x[7] ** 2)
-        - 2 * x[3] * x[5] * x[7]
-        - y[4]
-    )
-    fvec[5] = (
-        x[2] * (x[4] ** 2 - x[6] ** 2)
-        + 2 * x[0] * x[4] * x[6]
-        + x[3] * (x[5] ** 2 - x[7] ** 2)
-        + 2 * x[1] * x[5] * x[7]
-        - y[5]
-    )
-    fvec[6] = (
-        x[0] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
-        + x[2] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
-        + x[1] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
-        + x[3] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
-        - y[6]
-    )
-    fvec[7] = (
-        x[2] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
-        - x[0] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
-        + x[3] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
-        - x[1] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
-        - y[7]
-    )
-    return fvec
-
-
-@mark.least_squares
 def get_start_points_mancino(n, a=1):
     x = np.zeros(n)
     for i in range(1, n + 1):
@@ -786,416 +520,950 @@ heart_eight_solution_x = [
 ]
 
 
-MORE_WILD_PROBLEMS = {
-    "linear_full_rank_good_start": {
-        "fun": mark.least_squares(partial(linear_full_rank, dim_out=45)),
-        "start_x": [1] * 9,
-        "solution_x": linear_full_rank_solution_x,
-        "start_criterion": 72,
-        "solution_criterion": 36,
-    },
-    "linear_full_rank_bad_start": {
-        "fun": mark.least_squares(partial(linear_full_rank, dim_out=45)),
-        "start_x": [10] * 9,
-        "solution_x": linear_full_rank_solution_x,
-        "start_criterion": 1125,
-        "solution_criterion": 36,
-    },
-    "linear_rank_one_good_start": {
-        "fun": mark.least_squares(partial(linear_rank_one, dim_out=35)),
-        "start_x": [1] * 7,
-        # no unique solution
-        "solution_x": None,
-        "start_criterion": 1.165420e7,
-        "solution_criterion": 8.380281690143324,
-    },
-    "linear_rank_one_bad_start": {
-        "fun": mark.least_squares(partial(linear_rank_one, dim_out=35)),
-        "start_x": [10] * 7,
-        # no unique solution
-        "solution_x": None,
-        "start_criterion": 1.168591e9,
-        "solution_criterion": 8.380282,
-    },
-    "linear_rank_one_zero_columns_rows_good_start": {
-        "fun": mark.least_squares(
-            partial(linear_rank_one_zero_columns_rows, dim_out=35)
-        ),
-        "start_x": [1] * 7,
-        # no unique solution
-        "solution_x": None,
-        "start_criterion": 4.989195e6,
-        "solution_criterion": 9.880597014926506,
-    },
-    "linear_rank_one_zero_columns_rows_bad_start": {
-        "fun": mark.least_squares(
-            partial(linear_rank_one_zero_columns_rows, dim_out=35)
-        ),
-        "start_x": [10] * 7,
-        # no unique solution
-        "solution_x": None,
-        "start_criterion": 5.009356e8,
-        "solution_criterion": 9.880597014926506,
-    },
-    "rosenbrock_good_start": {
-        "fun": rosenbrock,
-        "start_x": [-1.2, 1],
-        "solution_x": [1, 1],
-        "start_criterion": 24.2,
-        "solution_criterion": 0,
-    },
-    "rosenbrock_bad_start": {
-        "fun": rosenbrock,
-        "start_x": [-12, 10],
-        "solution_x": [1, 1],
-        "start_criterion": 1.795769e6,
-        "solution_criterion": 0,
-    },
-    "helical_valley_good_start": {
-        "fun": helical_valley,
-        "start_x": [-1, 0, 0],
-        "solution_x": [1, 0, 0],
-        "start_criterion": 2500,
-        "solution_criterion": 0,
-    },
-    "helical_valley_bad_start": {
-        "fun": helical_valley,
-        "start_x": [-10, 0, 0],
-        "solution_x": [1, 0, 0],
-        "start_criterion": 10600,
-        "solution_criterion": 0,
-    },
-    "powell_singular_good_start": {
-        "fun": powell_singular,
-        "start_x": [3, -1, 0, 1],
-        "solution_x": [0] * 4,
-        "start_criterion": 215,
-        "solution_criterion": 0,
-    },
-    "powell_singular_bad_start": {
-        "fun": powell_singular,
-        "start_x": [30, -10, 0, 10],
-        "solution_x": [0] * 4,
-        "start_criterion": 1.615400e6,
-        "solution_criterion": 0,
-    },
-    "freudenstein_roth_good_start": {
-        "fun": freudenstein_roth,
-        "start_x": [0.5, -2],
-        "solution_x": freudenstein_roth_solution_x,
-        "start_criterion": 400.5,
-        "solution_criterion": 48.984253679240013,
-    },
-    "freudenstein_roth_bad_start": {
-        "fun": freudenstein_roth,
-        "start_x": [5, -20],
-        "solution_x": freudenstein_roth_solution_x,
-        "start_criterion": 1.545754e8,
-        "solution_criterion": 48.984253679240013,
-    },
-    "bard_good_start": {
-        "fun": mark.least_squares(partial(bard, y=y_vec)),
-        "start_x": [1] * 3,
-        "solution_x": bard_solution_x,
-        "start_criterion": 41.68170,
-        "solution_criterion": 0.00821487730657897,
-    },
-    "bard_bad_start": {
-        "fun": mark.least_squares(partial(bard, y=y_vec)),
-        "start_x": [10] * 3,
-        "solution_x": bard_solution_x,
-        "start_criterion": 1306.234,
-        "solution_criterion": 0.00821487730657897,
-    },
-    "kowalik_osborne": {
-        "fun": mark.least_squares(partial)(
-            kowalik_osborne,
-            y1=v_vec,
-            y2=y2_vec,
-        ),
-        "start_x": [0.25, 0.39, 0.415, 0.39],
-        "solution_x": kowalik_osborne_solution_x,
-        "start_criterion": 5.313172e-3,
-        "solution_criterion": 0.00030750560384924,
-    },
-    "meyer": {
-        "fun": mark.least_squares(partial(meyer, y=y3_vec)),
-        "start_x": [0.02, 4000, 250],
-        "solution_x": meyer_solution_x,
-        "start_criterion": 1.693608e9,
-        "solution_criterion": 87.945855170395831,
-    },
-    "watson_6_good_start": {
-        "fun": watson,
-        "start_x": [0.5] * 6,
-        "solution_x": watson_6_solution_x,
-        "start_criterion": 16.43083,
-        "solution_criterion": 0.00228767005355236,
-    },
-    "watson_6_bad_start": {
-        "fun": watson,
-        "start_x": [5] * 6,
-        "solution_x": watson_6_solution_x,
-        "start_criterion": 2.323367e6,
-        "solution_criterion": 0.00228767005355236,
-    },
-    "watson_9_good_start": {
-        "fun": watson,
-        "start_x": [0.5] * 9,
-        "solution_x": watson_9_solution_x,
-        "start_criterion": 26.90417,
-        "solution_criterion": 1.399760e-6,
-    },
-    "watson_9_bad_start": {
-        "fun": watson,
-        "start_x": [5] * 9,
-        "solution_x": watson_9_solution_x,
-        "start_criterion": 8.158877e6,
-        "solution_criterion": 1.399760e-6,
-    },
-    "watson_12_good_start": {
-        "fun": watson,
-        "start_x": [0.5] * 12,
-        "solution_x": watson_12_solution_x,
-        "start_criterion": 73.67821,
-        "solution_criterion": 4.722381e-10,
-    },
-    "watson_12_bad_start": {
-        "fun": watson,
-        "start_x": [5] * 12,
-        "solution_x": watson_12_solution_x,
-        "start_criterion": 2.059384e7,
-        "solution_criterion": 4.722381e-10,
-    },
-    "box_3d": {
-        "fun": mark.least_squares(partial(box_3d, dim_out=10)),
-        "start_x": [0, 10, 20],
-        "solution_x": [1, 10, 1],
-        "start_criterion": 1031.154,
-        "solution_criterion": 0,
-    },
-    "jennrich_sampson": {
-        "fun": mark.least_squares(partial(jennrich_sampson, dim_out=10)),
-        "start_x": [0.3, 0.4],
-        "solution_x": [0.2578252135686162] * 2,
-        "start_criterion": 4171.306,
-        "solution_criterion": 124.3621823556148,
-    },
-    "brown_dennis_good_start": {
-        "fun": mark.least_squares(partial(brown_dennis, dim_out=20)),
-        "start_x": [25, 5, -5, -1],
-        "solution_x": brown_dennis_solution_x,
-        "start_criterion": 7.926693e6,
-        "solution_criterion": 85822.20162635,
-    },
-    "brown_dennis_bad_start": {
-        "fun": mark.least_squares(partial(brown_dennis, dim_out=20)),
-        "start_x": [250, 50, -50, -10],
-        "solution_x": brown_dennis_solution_x,
-        "start_criterion": 3.081064e11,
-        "solution_criterion": 85822.20162635,
-    },
-    "chebyquad_6": {
-        "fun": mark.least_squares(partial(chebyquad, dim_out=6)),
-        "start_x": [i / 7 for i in range(1, 7)],
-        "solution_x": chebyquad_6_solution_x,
-        "start_criterion": 4.642817e-2,
-        "solution_criterion": 0,
-    },
-    "chebyquad_7": {
-        "fun": mark.least_squares(partial(chebyquad, dim_out=7)),
-        "start_x": [i / 8 for i in range(1, 8)],
-        "solution_x": chebyquad_7_solution_x,
-        "start_criterion": 3.377064e-2,
-        "solution_criterion": 0,
-    },
-    "chebyquad_8": {
-        "fun": mark.least_squares(partial(chebyquad, dim_out=8)),
-        "start_x": [i / 9 for i in range(1, 9)],
-        "solution_x": chebyquad_8_solution_x,
-        "start_criterion": 3.861770e-2,
-        "solution_criterion": 0.003516873725677,
-    },
-    "chebyquad_9": {
-        "fun": mark.least_squares(partial(chebyquad, dim_out=9)),
-        "start_x": [i / 10 for i in range(1, 10)],
-        "solution_x": chebyquad_9_solution_x,
-        "start_criterion": 2.888298e-2,
-        "solution_criterion": 0,
-    },
-    "chebyquad_10": {
-        "fun": mark.least_squares(partial(chebyquad, dim_out=10)),
-        "start_x": [i / 11 for i in range(1, 11)],
-        "solution_x": chebyquad_10_solution_x,
-        "start_criterion": 3.376327e-2,
-        "solution_criterion": 0.00477271369637536,
-    },
-    "chebyquad_11": {
-        "fun": mark.least_squares(partial(chebyquad, dim_out=11)),
-        "start_x": [i / 12 for i in range(1, 12)],
-        "solution_x": chebyquad_11_solution_x,
-        "start_criterion": 2.674060e-2,
-        "solution_criterion": 0.00279976155186576,
-    },
-    "brown_almost_linear": {
-        "fun": brown_almost_linear,
-        "start_x": [0.5] * 10,
-        "solution_x": [1] * 10,
-        "start_criterion": 273.2480,
-        "solution_criterion": 0,
-    },
-    "osborne_one": {
-        "fun": mark.least_squares(partial(osborne_one, y=y4_vec)),
-        "start_x": [0.5, 1.5, 1, 0.01, 0.02],
-        "solution_x": osborne_one_solution_x,
-        "start_criterion": 16.17411,
-        "solution_criterion": 0.00005464894697483,
-    },
-    "osborne_two_good_start": {
-        "fun": mark.least_squares(partial(osborne_two, y=y5_vec)),
-        "start_x": [1.3, 0.65, 0.65, 0.7, 0.6, 3, 5, 7, 2, 4.5, 5.5],
-        "solution_x": osborne_two_solution_x,
-        "start_criterion": 2.093420,
-        "solution_criterion": 0.0401377362935477,
-    },
-    "osborne_two_bad_start": {
-        "fun": mark.least_squares(partial(osborne_two, y=y5_vec)),
-        "start_x": [13, 6.5, 6.5, 7, 6, 30, 50, 70, 20, 45, 55],
-        "solution_x": osborne_two_solution_x,
-        "start_criterion": 199.6847,
-        "solution_criterion": 0.0401377362935477,
-    },
-    "bdqrtic_8": {
-        "fun": bdqrtic,
-        "start_x": [1] * 8,
-        "solution_x": bdqrtic_8_solution_x,
-        "start_criterion": 904,
-        "solution_criterion": 10.2389734213174,
-    },
-    "bdqrtic_10": {
-        "fun": bdqrtic,
-        "start_x": [1] * 10,
-        "solution_x": bdqrtic_10_solution_x,
-        "start_criterion": 1356,
-        "solution_criterion": 18.28116175359353,
-    },
-    "bdqrtic_11": {
-        "fun": bdqrtic,
-        "start_x": [1] * 11,
-        "solution_x": bdqrtic_11_solution_x,
-        "start_criterion": 1582,
-        "solution_criterion": 22.260591734883817,
-    },
-    "bdqrtic_12": {
-        "fun": bdqrtic,
-        "start_x": [1] * 12,
-        "solution_x": bdqrtic_12_solution_x,
-        "start_criterion": 1808,
-        "solution_criterion": 26.2727663967939,
-    },
-    "cube_5": {
-        "fun": cube,
-        "start_x": [0.5] * 5,
-        "solution_x": [1] * 5,
-        "start_criterion": 56.5,
-        "solution_criterion": 0,
-    },
-    "cube_6": {
-        "fun": cube,
-        "start_x": [0.5] * 6,
-        "solution_x": [1] * 6,
-        "start_criterion": 70.5625,
-        "solution_criterion": 0,
-    },
-    "cube_8": {
-        "fun": cube,
-        "start_x": [0.5] * 8,
-        "solution_x": [1] * 8,
-        "start_criterion": 98.6875,
-        "solution_criterion": 0,
-    },
-    "mancino_5_good_start": {
-        "fun": mancino,
-        "start_x": get_start_points_mancino(5),
-        "solution_x": mancino_5_solution_x,
-        "start_criterion": 2.539084e9,
-        "solution_criterion": 0,
-    },
-    "mancino_5_bad_start": {
-        "fun": mancino,
-        "start_x": get_start_points_mancino(5, 10),
-        "solution_x": mancino_5_solution_x,
-        "start_criterion": 6.873795e12,
-        "solution_criterion": 0,
-    },
-    "mancino_8": {
-        "fun": mancino,
-        "start_x": get_start_points_mancino(8),
-        "solution_x": mancino_8_solution_x,
-        "start_criterion": 3.367961e9,
-        "solution_criterion": 0,
-    },
-    "mancino_10": {
-        "fun": mancino,
-        "start_x": get_start_points_mancino(10),
-        "solution_x": mancino_10_solution_x,
-        "start_criterion": 3.735127e9,
-        "solution_criterion": 0,
-    },
-    "mancino_12_good_start": {
-        "fun": mancino,
-        "start_x": get_start_points_mancino(12),
-        "solution_x": mancino_12_solution_x,
-        "start_criterion": 3.991072e9,
-        "solution_criterion": 0,
-    },
-    "mancino_12_bad_start": {
-        "fun": mancino,
-        "start_x": get_start_points_mancino(12, 10),
-        "solution_x": mancino_12_solution_x,
-        "start_criterion": 1.130015e13,
-        "solution_criterion": 0,
-    },
-    "heart_eight_good_start": {
-        "fun": mark.least_squares(
-            partial(
-                heart_eight,
-                y=np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48]),
-            )
-        ),
-        "start_x": [-0.3, -0.39, 0.3, -0.344, -1.2, 2.69, 1.59, -1.5],
-        "solution_x": heart_eight_solution_x,
-        "start_criterion": 9.385672,
-        "solution_criterion": 0,
-    },
-    "heart_eight_bad_start": {
-        "fun": mark.least_squares(
-            partial(
-                heart_eight,
-                y=np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48]),
-            )
-        ),
-        "start_x": [-3, -3.9, 3, -3.44, -12, 26.9, 15.9, -15],
-        "solution_x": heart_eight_solution_x,
-        "start_criterion": 3.365815e10,
-        "solution_criterion": 0,
-    },
-    "brown_almost_linear_medium": {
-        "fun": brown_almost_linear,
-        "start_x": [0.5] * 100,
-        "solution_x": [1] * 100,
-        "start_criterion": 2.524757e5,
-        "solution_criterion": 0,
-    },
-}
+heart_eight_y_vec = np.array([-0.69, -0.044, -1.57, -1.31, -2.65, 2, -12.6, 9.48])
 
 
-def get_raw_problems_more_wild() -> dict[str, dict[str, Any]]:
-    """Get the specifications of the More-Wild benchmark problems.
+# ======================================================================================
+# Benchmark functions
+# ======================================================================================
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class LinearFullRank(BenchmarkFunction):
+    """Linear function with full rank."""
+
+    dim_out: int
+    """The number of residuals. Must not be smaller than the number of parameters."""
+
+    differentiable = True
+    convex = True
+    multimodal = False
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _linear_full_rank(x, dim_out=self.dim_out)
+
+    def supports_n_params(self, n_params: int) -> bool:
+        return 1 <= n_params <= self.dim_out
+
+
+def _linear_full_rank(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    temp = 2 * x.sum() / dim_out + 1
+    out = np.full(dim_out, -temp)
+    out[: len(x)] += x
+    return out
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class LinearRankOne(BenchmarkFunction):
+    """Linear function with rank one."""
+
+    dim_out: int
+    """The number of residuals. Must not be smaller than the number of parameters."""
+
+    differentiable = True
+    convex = True
+    multimodal = False
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _linear_rank_one(x, dim_out=self.dim_out)
+
+    def supports_n_params(self, n_params: int) -> bool:
+        return 1 <= n_params <= self.dim_out
+
+
+def _linear_rank_one(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    dim_in = len(x)
+    sm = np.arange(1, dim_in + 1) @ x
+    fvec = np.arange(1, dim_out + 1) * sm - 1.0
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class LinearRankOneZeroColumnsRows(BenchmarkFunction):
+    """Linear function with rank one and zero columns and rows."""
+
+    dim_out: int
+    """The number of residuals. Must not be smaller than the number of parameters."""
+
+    differentiable = True
+    convex = True
+    multimodal = False
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _linear_rank_one_zero_columns_rows(x, dim_out=self.dim_out)
+
+    def supports_n_params(self, n_params: int) -> bool:
+        return 1 <= n_params <= self.dim_out
+
+
+def _linear_rank_one_zero_columns_rows(
+    x: NDArray[np.float64], dim_out: int
+) -> NDArray[np.float64]:
+    dim_in = len(x)
+    sm = (np.arange(2, dim_in) * x[1:-1]).sum()
+    fvec = np.arange(dim_out) * sm - 1.0
+    fvec[-1] = -1.0
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Rosenbrock(BenchmarkFunction):
+    """Rosenbrock function with two parameters."""
+
+    differentiable = True
+    convex = False
+    multimodal = False
+    min_n_params = 2
+    max_n_params = 2
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _rosenbrock(x)
+
+
+def _rosenbrock(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(2)
+    fvec[0] = 10 * (x[1] - x[0] ** 2)
+    fvec[1] = 1.0 - x[0]
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class HelicalValley(BenchmarkFunction):
+    """Helical valley function."""
+
+    # the first residual jumps where x[0] changes its sign and x[1] is negative
+    differentiable = False
+    min_n_params = 3
+    max_n_params = 3
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _helical_valley(x)
+
+
+def _helical_valley(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp = 8 * np.arctan(1.0)
+    temp1 = np.sign(x[1]) * 0.25
+    if x[0] > 0:
+        temp1 = np.arctan(x[1] / x[0]) / temp
+    elif x[0] < 0:
+        temp1 = np.arctan(x[1] / x[0]) / temp + 0.5
+    temp2 = np.sqrt(x[0] ** 2 + x[1] ** 2)
+    fvec = np.zeros(3)
+    fvec[0] = 10 * (x[2] - 10 * temp1)
+    fvec[1] = 10 * (temp2 - 1.0)
+    fvec[2] = x[2]
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class PowellSingular(BenchmarkFunction):
+    """Powell singular function."""
+
+    differentiable = True
+    convex = True
+    multimodal = False
+    min_n_params = 4
+    max_n_params = 4
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _powell_singular(x)
+
+
+def _powell_singular(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(4)
+    fvec[0] = x[0] + 10 * x[1]
+    fvec[1] = np.sqrt(5.0) * (x[2] - x[3])
+    fvec[2] = (x[1] - 2 * x[2]) ** 2
+    fvec[3] = np.sqrt(10.0) * (x[0] - x[3]) ** 2
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class FreudensteinRoth(BenchmarkFunction):
+    """Freudenstein and Roth function."""
+
+    differentiable = True
+    convex = False
+    # has a local minimum with a function value of about 48.98 and a global minimum
+    # with a function value of zero
+    multimodal = True
+    min_n_params = 2
+    max_n_params = 2
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _freudenstein_roth(x)
+
+
+def _freudenstein_roth(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(2)
+    fvec[0] = -13 + x[0] + ((5 - x[1]) * x[1] - 2) * x[1]
+    fvec[1] = -29 + x[0] + ((1.0 + x[1]) * x[1] - 14) * x[1]
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Bard(BenchmarkFunction):
+    """Bard function."""
+
+    differentiable = True
+    min_n_params = 3
+    max_n_params = 3
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _bard(x, y=y_vec)
+
+
+def _bard(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = np.zeros(len(y))
+    for i in range(1, round(len(y) / 2) + 1):
+        temp = len(y) + 1 - i
+        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * i))
+    for i in range(round(len(y) / 2) + 1, len(y) + 1):
+        temp = len(y) + 1 - i
+        fvec[i - 1] = y[i - 1] - (x[0] + i / (x[1] * temp + x[2] * temp))
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class KowalikOsborne(BenchmarkFunction):
+    """Kowalik and Osborne function."""
+
+    differentiable = True
+    min_n_params = 4
+    max_n_params = 4
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _kowalik_osborne(x, y1=v_vec, y2=y2_vec)
+
+
+def _kowalik_osborne(
+    x: NDArray[np.float64], y1: NDArray[np.float64], y2: NDArray[np.float64]
+) -> NDArray[np.float64]:
+    temp1 = y1 * (y1 + x[1])
+    temp2 = y1 * (y1 + x[2]) + x[3]
+    fvec = y2 - x[0] * temp1 / temp2
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Meyer(BenchmarkFunction):
+    """Meyer function."""
+
+    differentiable = True
+    min_n_params = 3
+    max_n_params = 3
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _meyer(x, y=y3_vec)
+
+
+def _meyer(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp = 5 * np.arange(1, len(y) + 1) + 45 + x[2]
+    temp1 = x[1] / temp
+    temp2 = np.exp(temp1)
+    fvec = x[0] * temp2 - y
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Watson(BenchmarkFunction):
+    """Watson function."""
+
+    differentiable = True
+    min_n_params = 2
+    max_n_params = 31
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _watson(x)
+
+
+def _watson(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(31)
+    for i in range(1, 30):
+        temp = i / 29
+        sum_1 = (np.arange(1, dim_in) * temp ** np.arange(dim_in - 1) * x[1:]).sum()
+        sum_2 = (temp ** np.arange(dim_in) * x).sum()
+        fvec[i - 1] = sum_1 - sum_2**2 - 1.0
+    fvec[29] = x[0]
+    fvec[30] = x[1] - x[0] ** 2 - 1.0
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Box3D(BenchmarkFunction):
+    """Box three-dimensional function."""
+
+    dim_out: int
+    """The number of residuals."""
+
+    differentiable = True
+    min_n_params = 3
+    max_n_params = 3
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _box_3d(x, dim_out=self.dim_out)
+
+
+def _box_3d(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = np.zeros(dim_out)
+    for i in range(1, dim_out + 1):
+        fvec[i - 1] = (
+            np.exp(-i / 10 * x[0])
+            - np.exp(-i / 10 * x[1])
+            + (np.exp(-i) - np.exp(-i / 10)) * x[2]
+        )
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class JennrichSampson(BenchmarkFunction):
+    """Jennrich and Sampson function."""
+
+    dim_out: int
+    """The number of residuals."""
+
+    differentiable = True
+    min_n_params = 2
+    max_n_params = 2
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _jennrich_sampson(x, dim_out=self.dim_out)
+
+
+def _jennrich_sampson(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = (
+        2 * (1.0 + np.arange(1, dim_out + 1))
+        - np.exp(np.arange(1, dim_out + 1) * x[0])
+        - np.exp(np.arange(1, dim_out + 1) * x[1])
+    )
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class BrownDennis(BenchmarkFunction):
+    """Brown and Dennis function."""
+
+    dim_out: int
+    """The number of residuals."""
+
+    differentiable = True
+    min_n_params = 4
+    max_n_params = 4
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _brown_dennis(x, dim_out=self.dim_out)
+
+
+def _brown_dennis(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = np.zeros(dim_out)
+    for i in range(1, dim_out + 1):
+        temp = i / 5
+        temp_1 = x[0] + temp * x[1] - np.exp(temp)
+        temp_2 = x[2] + np.sin(temp) * x[3] - np.cos(temp)
+        fvec[i - 1] = temp_1**2 + temp_2**2
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Chebyquad(BenchmarkFunction):
+    """Chebyquad function."""
+
+    dim_out: int
+    """The number of residuals. Must not be smaller than the number of parameters."""
+
+    differentiable = True
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _chebyquad(x, dim_out=self.dim_out)
+
+    def supports_n_params(self, n_params: int) -> bool:
+        return 1 <= n_params <= self.dim_out
+
+
+def _chebyquad(x: NDArray[np.float64], dim_out: int) -> NDArray[np.float64]:
+    fvec = np.zeros(dim_out)
+    dim_in = len(x)
+    for i in range(1, dim_in + 1):
+        temp_1 = 1.0
+        temp_2 = 2 * x[i - 1] - 1.0
+        temp_3 = 2 * temp_2
+        for j in range(dim_out):
+            fvec[j] = fvec[j] + temp_2
+            temp_4 = temp_3 * temp_2 - temp_1
+            temp_1 = temp_2
+            temp_2 = temp_4
+    for i in range(1, dim_out + 1):
+        fvec[i - 1] = fvec[i - 1] / dim_in
+        if i % 2 == 0:
+            fvec[i - 1] = fvec[i - 1] + 1 / (i**2 - 1.0)
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class BrownAlmostLinear(BenchmarkFunction):
+    """Brown almost-linear function."""
+
+    differentiable = True
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _brown_almost_linear(x)
+
+
+def _brown_almost_linear(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    sm = -(dim_in + 1) + x.sum()
+    product = x.prod()
+    fvec = x + sm
+    fvec[dim_in - 1] = product - 1.0
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class OsborneOne(BenchmarkFunction):
+    """Osborne 1 function."""
+
+    differentiable = True
+    min_n_params = 5
+    max_n_params = 5
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _osborne_one(x, y=y4_vec)
+
+
+def _osborne_one(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp = 10 * np.arange(len(y))
+    temp_1 = np.exp(-x[3] * temp)
+    temp_2 = np.exp(-x[4] * temp)
+    fvec = y - (x[0] + x[1] * temp_1 + x[2] * temp_2)
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class OsborneTwo(BenchmarkFunction):
+    """Osborne 2 function."""
+
+    differentiable = True
+    min_n_params = 11
+    max_n_params = 11
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _osborne_two(x, y=y5_vec)
+
+
+def _osborne_two(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    temp_array = np.zeros((4, len(y)))
+    temp = np.arange(len(y)) / 10
+    temp_array[0] = np.exp(-x[4] * temp)
+    temp_array[1] = np.exp(-x[5] * (temp - x[8]) ** 2)
+    temp_array[2] = np.exp(-x[6] * (temp - x[9]) ** 2)
+    temp_array[3] = np.exp(-x[7] * (temp - x[10]) ** 2)
+    fvec = y - (temp_array.T * x[:4]).T.sum(axis=0)
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Bdqrtic(BenchmarkFunction):
+    """Banded quartic function (BDQRTIC)."""
+
+    differentiable = True
+    min_n_params = 5
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _bdqrtic(x)
+
+
+def _bdqrtic(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(2 * (dim_in - 4))
+    for i in range(dim_in - 4):
+        fvec[i] = -4 * x[i] + 3
+        fvec[dim_in - 4 + i] = (
+            x[i] ** 2
+            + 2 * x[i + 1] ** 2
+            + 3 * x[i + 2] ** 2
+            + 4 * x[i + 3] ** 2
+            + 5 * x[dim_in - 1] ** 2
+        )
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Cube(BenchmarkFunction):
+    """Cube function."""
+
+    differentiable = True
+    min_n_params = 2
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _cube(x)
+
+
+def _cube(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    fvec = 10 * (x - np.roll(x, 1) ** 3)
+    fvec[0] = x[0] - 1.0
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class Mancino(BenchmarkFunction):
+    """Mancino function."""
+
+    differentiable = True
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _mancino(x)
+
+
+def _mancino(x: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_in = len(x)
+    fvec = np.zeros(dim_in)
+    for i in range(dim_in):
+        sm = 0
+        for j in range(dim_in):
+            temp = np.sqrt(x[i] ** 2 + (i + 1) / (j + 1))
+            sm += temp * ((np.sin(np.log(temp))) ** 5 + (np.cos(np.log(temp))) ** 5)
+        fvec[i] = 1400 * x[i] + (i + 1 - 50) ** 3 + sm
+    return fvec
+
+
+@mark.least_squares
+@dataclass(frozen=True)
+class HeartEight(BenchmarkFunction):
+    """Heart function with eight parameters."""
+
+    differentiable = True
+    min_n_params = 8
+    max_n_params = 8
+
+    def fun(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return _heart_eight(x, y=heart_eight_y_vec)
+
+
+def _heart_eight(x: NDArray[np.float64], y: NDArray[np.float64]) -> NDArray[np.float64]:
+    dim_y = len(y)
+    fvec = np.zeros(dim_y)
+    fvec[0] = x[0] + x[1] - y[0]
+    fvec[1] = x[2] + x[3] - y[1]
+    fvec[2] = x[4] * x[0] + x[5] * x[1] - x[6] * x[2] - x[7] * x[3] - y[2]
+    fvec[3] = x[6] * x[0] + x[7] * x[1] + x[4] * x[2] + x[5] * x[3] - y[3]
+    fvec[4] = (
+        x[0] * (x[4] ** 2 - x[6] ** 2)
+        - 2 * x[2] * x[4] * x[6]
+        + x[1] * (x[5] ** 2 - x[7] ** 2)
+        - 2 * x[3] * x[5] * x[7]
+        - y[4]
+    )
+    fvec[5] = (
+        x[2] * (x[4] ** 2 - x[6] ** 2)
+        + 2 * x[0] * x[4] * x[6]
+        + x[3] * (x[5] ** 2 - x[7] ** 2)
+        + 2 * x[1] * x[5] * x[7]
+        - y[5]
+    )
+    fvec[6] = (
+        x[0] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
+        + x[2] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
+        + x[1] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
+        + x[3] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
+        - y[6]
+    )
+    fvec[7] = (
+        x[2] * x[4] * (x[4] ** 2 - 3 * x[6] ** 2)
+        - x[0] * x[6] * (x[6] ** 2 - 3 * x[4] ** 2)
+        + x[3] * x[5] * (x[5] ** 2 - 3 * x[7] ** 2)
+        - x[1] * x[7] * (x[7] ** 2 - 3 * x[5] ** 2)
+        - y[7]
+    )
+    return fvec
+
+
+# ======================================================================================
+# Benchmark problems
+# ======================================================================================
+
+
+def _problem(
+    function: BenchmarkFunction,
+    start_x: list[float],
+    solution_x: list[float] | None,
+    solution_fun: float,
+) -> BenchmarkProblem:
+    """Create a benchmark problem from the information in the problem table.
+
+    Args:
+        function: The benchmark function.
+        start_x: The start parameters.
+        solution_x: The parameters at the solution or None if they are not unique.
+        solution_fun: The sum of squared residuals at the solution.
 
     Returns:
-        A dictionary that maps the name of each problem to its specification, which
-        contains the criterion function, the start values and the solution.
+        The benchmark problem. The solution is marked as exact if solution_fun is zero
+        because a sum of squares cannot be smaller. All other solutions are the best
+        known values.
 
     """
-    return MORE_WILD_PROBLEMS
+    solution_params = None
+    if solution_x is not None:
+        solution_params = np.array(solution_x, dtype=np.float64)
+
+    return BenchmarkProblem(
+        function=function,
+        start_params=np.array(start_x, dtype=np.float64),
+        solution=BenchmarkSolution(
+            fun=float(solution_fun), params=solution_params, exact=solution_fun == 0
+        ),
+    )
+
+
+MORE_WILD_PROBLEMS: dict[str, BenchmarkProblem] = {
+    "linear_full_rank_good_start": _problem(
+        function=LinearFullRank(dim_out=45),
+        start_x=[1] * 9,
+        solution_x=linear_full_rank_solution_x,
+        solution_fun=36,
+    ),
+    "linear_full_rank_bad_start": _problem(
+        function=LinearFullRank(dim_out=45),
+        start_x=[10] * 9,
+        solution_x=linear_full_rank_solution_x,
+        solution_fun=36,
+    ),
+    "linear_rank_one_good_start": _problem(
+        function=LinearRankOne(dim_out=35),
+        start_x=[1] * 7,
+        # no unique solution
+        solution_x=None,
+        solution_fun=8.380281690143324,
+    ),
+    "linear_rank_one_bad_start": _problem(
+        function=LinearRankOne(dim_out=35),
+        start_x=[10] * 7,
+        # no unique solution
+        solution_x=None,
+        solution_fun=8.380282,
+    ),
+    "linear_rank_one_zero_columns_rows_good_start": _problem(
+        function=LinearRankOneZeroColumnsRows(dim_out=35),
+        start_x=[1] * 7,
+        # no unique solution
+        solution_x=None,
+        solution_fun=9.880597014926506,
+    ),
+    "linear_rank_one_zero_columns_rows_bad_start": _problem(
+        function=LinearRankOneZeroColumnsRows(dim_out=35),
+        start_x=[10] * 7,
+        # no unique solution
+        solution_x=None,
+        solution_fun=9.880597014926506,
+    ),
+    "rosenbrock_good_start": _problem(
+        function=Rosenbrock(),
+        start_x=[-1.2, 1],
+        solution_x=[1, 1],
+        solution_fun=0,
+    ),
+    "rosenbrock_bad_start": _problem(
+        function=Rosenbrock(),
+        start_x=[-12, 10],
+        solution_x=[1, 1],
+        solution_fun=0,
+    ),
+    "helical_valley_good_start": _problem(
+        function=HelicalValley(),
+        start_x=[-1, 0, 0],
+        solution_x=[1, 0, 0],
+        solution_fun=0,
+    ),
+    "helical_valley_bad_start": _problem(
+        function=HelicalValley(),
+        start_x=[-10, 0, 0],
+        solution_x=[1, 0, 0],
+        solution_fun=0,
+    ),
+    "powell_singular_good_start": _problem(
+        function=PowellSingular(),
+        start_x=[3, -1, 0, 1],
+        solution_x=[0] * 4,
+        solution_fun=0,
+    ),
+    "powell_singular_bad_start": _problem(
+        function=PowellSingular(),
+        start_x=[30, -10, 0, 10],
+        solution_x=[0] * 4,
+        solution_fun=0,
+    ),
+    "freudenstein_roth_good_start": _problem(
+        function=FreudensteinRoth(),
+        start_x=[0.5, -2],
+        solution_x=freudenstein_roth_solution_x,
+        solution_fun=48.984253679240013,
+    ),
+    "freudenstein_roth_bad_start": _problem(
+        function=FreudensteinRoth(),
+        start_x=[5, -20],
+        solution_x=freudenstein_roth_solution_x,
+        solution_fun=48.984253679240013,
+    ),
+    "bard_good_start": _problem(
+        function=Bard(),
+        start_x=[1] * 3,
+        solution_x=bard_solution_x,
+        solution_fun=0.00821487730657897,
+    ),
+    "bard_bad_start": _problem(
+        function=Bard(),
+        start_x=[10] * 3,
+        solution_x=bard_solution_x,
+        solution_fun=0.00821487730657897,
+    ),
+    "kowalik_osborne": _problem(
+        function=KowalikOsborne(),
+        start_x=[0.25, 0.39, 0.415, 0.39],
+        solution_x=kowalik_osborne_solution_x,
+        solution_fun=0.00030750560384924,
+    ),
+    "meyer": _problem(
+        function=Meyer(),
+        start_x=[0.02, 4000, 250],
+        solution_x=meyer_solution_x,
+        solution_fun=87.945855170395831,
+    ),
+    "watson_6_good_start": _problem(
+        function=Watson(),
+        start_x=[0.5] * 6,
+        solution_x=watson_6_solution_x,
+        solution_fun=0.00228767005355236,
+    ),
+    "watson_6_bad_start": _problem(
+        function=Watson(),
+        start_x=[5] * 6,
+        solution_x=watson_6_solution_x,
+        solution_fun=0.00228767005355236,
+    ),
+    "watson_9_good_start": _problem(
+        function=Watson(),
+        start_x=[0.5] * 9,
+        solution_x=watson_9_solution_x,
+        solution_fun=1.399760e-6,
+    ),
+    "watson_9_bad_start": _problem(
+        function=Watson(),
+        start_x=[5] * 9,
+        solution_x=watson_9_solution_x,
+        solution_fun=1.399760e-6,
+    ),
+    "watson_12_good_start": _problem(
+        function=Watson(),
+        start_x=[0.5] * 12,
+        solution_x=watson_12_solution_x,
+        solution_fun=4.722381e-10,
+    ),
+    "watson_12_bad_start": _problem(
+        function=Watson(),
+        start_x=[5] * 12,
+        solution_x=watson_12_solution_x,
+        solution_fun=4.722381e-10,
+    ),
+    "box_3d": _problem(
+        function=Box3D(dim_out=10),
+        start_x=[0, 10, 20],
+        solution_x=[1, 10, 1],
+        solution_fun=0,
+    ),
+    "jennrich_sampson": _problem(
+        function=JennrichSampson(dim_out=10),
+        start_x=[0.3, 0.4],
+        solution_x=[0.2578252135686162] * 2,
+        solution_fun=124.3621823556148,
+    ),
+    "brown_dennis_good_start": _problem(
+        function=BrownDennis(dim_out=20),
+        start_x=[25, 5, -5, -1],
+        solution_x=brown_dennis_solution_x,
+        solution_fun=85822.20162635,
+    ),
+    "brown_dennis_bad_start": _problem(
+        function=BrownDennis(dim_out=20),
+        start_x=[250, 50, -50, -10],
+        solution_x=brown_dennis_solution_x,
+        solution_fun=85822.20162635,
+    ),
+    "chebyquad_6": _problem(
+        function=Chebyquad(dim_out=6),
+        start_x=[i / 7 for i in range(1, 7)],
+        solution_x=chebyquad_6_solution_x,
+        solution_fun=0,
+    ),
+    "chebyquad_7": _problem(
+        function=Chebyquad(dim_out=7),
+        start_x=[i / 8 for i in range(1, 8)],
+        solution_x=chebyquad_7_solution_x,
+        solution_fun=0,
+    ),
+    "chebyquad_8": _problem(
+        function=Chebyquad(dim_out=8),
+        start_x=[i / 9 for i in range(1, 9)],
+        solution_x=chebyquad_8_solution_x,
+        solution_fun=0.003516873725677,
+    ),
+    "chebyquad_9": _problem(
+        function=Chebyquad(dim_out=9),
+        start_x=[i / 10 for i in range(1, 10)],
+        solution_x=chebyquad_9_solution_x,
+        solution_fun=0,
+    ),
+    "chebyquad_10": _problem(
+        function=Chebyquad(dim_out=10),
+        start_x=[i / 11 for i in range(1, 11)],
+        solution_x=chebyquad_10_solution_x,
+        solution_fun=0.00477271369637536,
+    ),
+    "chebyquad_11": _problem(
+        function=Chebyquad(dim_out=11),
+        start_x=[i / 12 for i in range(1, 12)],
+        solution_x=chebyquad_11_solution_x,
+        solution_fun=0.00279976155186576,
+    ),
+    "brown_almost_linear": _problem(
+        function=BrownAlmostLinear(),
+        start_x=[0.5] * 10,
+        solution_x=[1] * 10,
+        solution_fun=0,
+    ),
+    "osborne_one": _problem(
+        function=OsborneOne(),
+        start_x=[0.5, 1.5, 1, 0.01, 0.02],
+        solution_x=osborne_one_solution_x,
+        solution_fun=0.00005464894697483,
+    ),
+    "osborne_two_good_start": _problem(
+        function=OsborneTwo(),
+        start_x=[1.3, 0.65, 0.65, 0.7, 0.6, 3, 5, 7, 2, 4.5, 5.5],
+        solution_x=osborne_two_solution_x,
+        solution_fun=0.0401377362935477,
+    ),
+    "osborne_two_bad_start": _problem(
+        function=OsborneTwo(),
+        start_x=[13, 6.5, 6.5, 7, 6, 30, 50, 70, 20, 45, 55],
+        solution_x=osborne_two_solution_x,
+        solution_fun=0.0401377362935477,
+    ),
+    "bdqrtic_8": _problem(
+        function=Bdqrtic(),
+        start_x=[1] * 8,
+        solution_x=bdqrtic_8_solution_x,
+        solution_fun=10.2389734213174,
+    ),
+    "bdqrtic_10": _problem(
+        function=Bdqrtic(),
+        start_x=[1] * 10,
+        solution_x=bdqrtic_10_solution_x,
+        solution_fun=18.28116175359353,
+    ),
+    "bdqrtic_11": _problem(
+        function=Bdqrtic(),
+        start_x=[1] * 11,
+        solution_x=bdqrtic_11_solution_x,
+        solution_fun=22.260591734883817,
+    ),
+    "bdqrtic_12": _problem(
+        function=Bdqrtic(),
+        start_x=[1] * 12,
+        solution_x=bdqrtic_12_solution_x,
+        solution_fun=26.2727663967939,
+    ),
+    "cube_5": _problem(
+        function=Cube(),
+        start_x=[0.5] * 5,
+        solution_x=[1] * 5,
+        solution_fun=0,
+    ),
+    "cube_6": _problem(
+        function=Cube(),
+        start_x=[0.5] * 6,
+        solution_x=[1] * 6,
+        solution_fun=0,
+    ),
+    "cube_8": _problem(
+        function=Cube(),
+        start_x=[0.5] * 8,
+        solution_x=[1] * 8,
+        solution_fun=0,
+    ),
+    "mancino_5_good_start": _problem(
+        function=Mancino(),
+        start_x=get_start_points_mancino(5),
+        solution_x=mancino_5_solution_x,
+        solution_fun=0,
+    ),
+    "mancino_5_bad_start": _problem(
+        function=Mancino(),
+        start_x=get_start_points_mancino(5, 10),
+        solution_x=mancino_5_solution_x,
+        solution_fun=0,
+    ),
+    "mancino_8": _problem(
+        function=Mancino(),
+        start_x=get_start_points_mancino(8),
+        solution_x=mancino_8_solution_x,
+        solution_fun=0,
+    ),
+    "mancino_10": _problem(
+        function=Mancino(),
+        start_x=get_start_points_mancino(10),
+        solution_x=mancino_10_solution_x,
+        solution_fun=0,
+    ),
+    "mancino_12_good_start": _problem(
+        function=Mancino(),
+        start_x=get_start_points_mancino(12),
+        solution_x=mancino_12_solution_x,
+        solution_fun=0,
+    ),
+    "mancino_12_bad_start": _problem(
+        function=Mancino(),
+        start_x=get_start_points_mancino(12, 10),
+        solution_x=mancino_12_solution_x,
+        solution_fun=0,
+    ),
+    "heart_eight_good_start": _problem(
+        function=HeartEight(),
+        start_x=[-0.3, -0.39, 0.3, -0.344, -1.2, 2.69, 1.59, -1.5],
+        solution_x=heart_eight_solution_x,
+        solution_fun=0,
+    ),
+    "heart_eight_bad_start": _problem(
+        function=HeartEight(),
+        start_x=[-3, -3.9, 3, -3.44, -12, 26.9, 15.9, -15],
+        solution_x=heart_eight_solution_x,
+        solution_fun=0,
+    ),
+    "brown_almost_linear_medium": _problem(
+        function=BrownAlmostLinear(),
+        start_x=[0.5] * 100,
+        solution_x=[1] * 100,
+        solution_fun=0,
+    ),
+}

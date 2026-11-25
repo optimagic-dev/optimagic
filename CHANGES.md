@@ -10,6 +10,14 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
+- {gh}`751` Adds typed benchmark problems as proposed in EP-02. A `BenchmarkFunction`
+  holds the objective function, its closed form derivatives and properties like
+  convexity; a `BenchmarkProblem` combines it with start parameters, an optional known
+  solution, noise and scaling. `run_benchmark` returns `BenchmarkResult` objects and
+  accepts `OptimizeOptions`. Lists of algorithms and dictionaries of `minimize`
+  arguments in `run_benchmark`, as well as the noise and scaling options of
+  `get_benchmark_problems`, are deprecated and will be removed in version 0.7.0
+  ({ghuser}`janosg`).
 - {gh}`749` Supports pandas 3 and Python 3.15 and drops Python 3.12. Following
   [SPEC 0](https://scientific-python.org/specs/spec-0000/), the minimum supported
   versions are now Python 3.13, numpy 2.2, scipy 1.15, pandas 2.3 and plotly 6.0. Fixes

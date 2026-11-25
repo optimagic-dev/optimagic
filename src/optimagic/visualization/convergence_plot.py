@@ -1,9 +1,16 @@
+from collections.abc import Mapping
 from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 
+from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkProblem,
+    BenchmarkSolution,
+)
+from optimagic.benchmarking.benchmark_result import BenchmarkResult
 from optimagic.benchmarking.process_benchmark_results import (
+    get_reference_solutions,
     process_benchmark_results,
 )
 from optimagic.config import DEFAULT_PALETTE
@@ -60,8 +67,8 @@ RUNTIME_MEASURE_TO_CONVERGENCE_PLOT_XLABEL: dict[str, str] = {
 
 
 def convergence_plot(
-    problems: dict[str, dict[str, Any]],
-    results: dict[tuple[str, str], dict[str, Any]],
+    problems: Mapping[str, BenchmarkProblem],
+    results: Mapping[tuple[str, str], BenchmarkResult],
     *,
     problem_subset: list[str] | None = None,
     algorithm_subset: list[str] | None = None,
@@ -95,12 +102,9 @@ def convergence_plot(
     solution is one.
 
     Args:
-        problems: optimagic benchmarking problems dictionary. Keys are the problem
-            names. Values contain information on the problem, including the solution
-            value.
-        results: optimagic benchmarking results dictionary. Keys are tuples of the form
-            (problem, algorithm), values are dictionaries of the collected information
-            on the benchmark run, including 'criterion_history' and 'time_history'.
+        problems: Dictionary that maps names to benchmark problems.
+        results: Dictionary with benchmark results. Keys are tuples of the form
+            (problem, algorithm).
         problem_subset: List of problem names. These must be a subset of the keys of the
             problems dictionary. If provided the convergence plot is only created for
             the problems specified in this list.
@@ -176,7 +180,7 @@ def convergence_plot(
 
     lines_list, titles = _extract_convergence_plot_lines(
         df=df,
-        problems=problems,
+        references=get_reference_solutions(problems, results),
         runtime_measure=runtime_measure,
         outcome=outcome,
         palette=palette,
@@ -243,7 +247,7 @@ def convergence_plot(
 
 def _extract_convergence_plot_lines(
     df: pd.DataFrame,
-    problems: dict[str, dict[str, Any]],
+    references: dict[str, BenchmarkSolution],
     runtime_measure: str,
     outcome: str,
     palette: list[str] | str,
@@ -285,7 +289,7 @@ def _extract_convergence_plot_lines(
             subplot_lines.append(line_data)
 
         if outcome in ("criterion", "monotone_criterion"):
-            f_opt = problems[prob_name]["solution"]["value"]
+            f_opt = references[prob_name].fun
             line_data = LineData(
                 x=to_plot[runtime_measure].to_numpy(),
                 y=np.full(to_plot[runtime_measure].shape, f_opt),

@@ -20,17 +20,29 @@ FuncT = TypeVar("FuncT", bound=Callable[..., Any])
 
 
 def scalar(func: ScalarFuncT) -> ScalarFuncT:
-    """Mark a function as a scalar function."""
+    """Mark a function as a scalar function.
+
+    Can also be applied to a subclass of ``om.BenchmarkFunction``.
+
+    """
     return _mark_problem_type(func, AggregationLevel.SCALAR)
 
 
 def least_squares(func: VectorFuncT) -> VectorFuncT:
-    """Mark a function as a least squares function."""
+    """Mark a function as a least squares function.
+
+    Can also be applied to a subclass of ``om.BenchmarkFunction``.
+
+    """
     return _mark_problem_type(func, AggregationLevel.LEAST_SQUARES)
 
 
 def likelihood(func: VectorFuncT) -> VectorFuncT:
-    """Mark a function as a likelihood function."""
+    """Mark a function as a likelihood function.
+
+    Can also be applied to a subclass of ``om.BenchmarkFunction``.
+
+    """
     return _mark_problem_type(func, AggregationLevel.LIKELIHOOD)
 
 

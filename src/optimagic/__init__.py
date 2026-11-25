@@ -2,13 +2,25 @@ from __future__ import annotations
 
 from optimagic import constraints, mark, sandbox, timing, utilities
 from optimagic.algorithms import algos
+from optimagic.benchmarking.benchmark_problem import (
+    BenchmarkFunction,
+    BenchmarkProblem,
+    BenchmarkSolution,
+)
 from optimagic.benchmarking.benchmark_reports import (
     convergence_report,
     rank_report,
     traceback_report,
 )
+from optimagic.benchmarking.benchmark_result import BenchmarkResult
 from optimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
+from optimagic.benchmarking.noise import (
+    AdditiveBenchmarkNoise,
+    BenchmarkNoise,
+    MultiplicativeBenchmarkNoise,
+)
 from optimagic.benchmarking.run_benchmark import run_benchmark
+from optimagic.benchmarking.scaling import BenchmarkScaler, LinspaceBenchmarkScaler
 from optimagic.constraints import (
     DecreasingConstraint,
     EqualityConstraint,
@@ -42,6 +54,7 @@ from optimagic.optimization.fun_value import (
 from optimagic.optimization.history import History
 from optimagic.optimization.multistart_options import MultistartOptions
 from optimagic.optimization.optimize import maximize, minimize
+from optimagic.optimization.optimize_options import OptimizeOptions
 from optimagic.optimization.optimize_result import OptimizeResult
 from optimagic.optimizers import pygad
 from optimagic.parameters.bounds import Bounds
@@ -68,6 +81,16 @@ __all__ = [
     "second_derivative",
     "run_benchmark",
     "get_benchmark_problems",
+    "BenchmarkFunction",
+    "BenchmarkProblem",
+    "BenchmarkSolution",
+    "BenchmarkResult",
+    "BenchmarkNoise",
+    "AdditiveBenchmarkNoise",
+    "MultiplicativeBenchmarkNoise",
+    "BenchmarkScaler",
+    "LinspaceBenchmarkScaler",
+    "OptimizeOptions",
     "profile_plot",
     "convergence_plot",
     "convergence_report",

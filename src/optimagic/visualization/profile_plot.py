@@ -1,10 +1,13 @@
 import itertools
+from collections.abc import Mapping
 from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from optimagic.benchmarking.benchmark_problem import BenchmarkProblem
+from optimagic.benchmarking.benchmark_result import BenchmarkResult
 from optimagic.benchmarking.process_benchmark_results import (
     process_benchmark_results,
 )
@@ -35,8 +38,8 @@ BACKEND_TO_PROFILE_PLOT_MARGIN_PROPERTIES: dict[str, dict[str, Any]] = {
 
 
 def profile_plot(
-    problems: dict[str, dict[str, Any]],
-    results: dict[tuple[str, str], dict[str, Any]],
+    problems: Mapping[str, BenchmarkProblem],
+    results: Mapping[tuple[str, str], BenchmarkResult],
     *,
     runtime_measure: Literal[
         "walltime", "n_evaluations", "n_batches"
@@ -69,11 +72,9 @@ def profile_plot(
     Moré and Wild (2009).
 
     Args:
-        problems: A dictionary where keys are the problem names. Values contain
-            information on the problem, including the solution value.
-        results: A dictionary where keys are tuples of the form (problem, algorithm),
-            values are dictionaries of the collected information on the benchmark
-            run, including 'criterion_history' and 'time_history'.
+        problems: Dictionary that maps names to benchmark problems.
+        results: Dictionary with benchmark results. Keys are tuples of the form
+            (problem, algorithm).
         runtime_measure: This is the runtime until the desired convergence was reached
             by an algorithm. This is called performance measure by Moré and Wild (2009).
         normalize_runtime: If True the runtime each algorithm needed for each problem is
