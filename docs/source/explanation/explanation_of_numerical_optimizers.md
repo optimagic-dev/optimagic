@@ -49,12 +49,12 @@ length is accepted.
 
 ### Stylized implementation
 
-```{image} ../../_static/images/stylized_line_search.gif
+```{image} ../_static/images/stylized_line_search.gif
 ```
 
 ### Convergence of a real algorithm
 
-```{image} ../../_static/images/history_l-bfgs-b.gif
+```{image} ../_static/images/history_l-bfgs-b.gif
 ```
 
 ## Derivative based trust-region algorithms
@@ -84,12 +84,12 @@ right direction.
 
 ### Stylized implementation
 
-```{image} ../../_static/images/stylized_gradient_based_trust_region.gif
+```{image} ../_static/images/stylized_gradient_based_trust_region.gif
 ```
 
 ### Convergence of a real algorithm
 
-```{image} ../../_static/images/history_trust-ncg.gif
+```{image} ../_static/images/history_trust-ncg.gif
 ```
 
 ## Derivative free trust region algorithms
@@ -114,12 +114,12 @@ criterion function than the numerical derivatives.
 
 ### Stylized implementation
 
-```{image} ../../_static/images/stylized_gradient_free_trust_region.gif
+```{image} ../_static/images/stylized_gradient_free_trust_region.gif
 ```
 
 ### Convergence of a real algorithm
 
-```{image} ../../_static/images/history_cobyla.gif
+```{image} ../_static/images/history_cobyla.gif
 ```
 
 ## Derivative free direct search algorithms
@@ -138,10 +138,10 @@ algorithms.
 
 ### Stylized implementation
 
-```{image} ../../_static/images/stylized_direct_search.gif
+```{image} ../_static/images/stylized_direct_search.gif
 ```
 
 ### Convergence of a real algorithm
 
-```{image} ../../_static/images/history_nelder-mead.gif
+```{image} ../_static/images/history_nelder-mead.gif
 ```

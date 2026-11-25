@@ -1,12 +1,19 @@
 """Test optimization helper functions."""
 
+import warnings
+
 import numpy as np
 import pytest
 
+from optimagic.algorithms import ALL_ALGORITHMS
+from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.pygmo_optimizers import (
     _convert_str_to_int,
     get_population_size,
 )
+from optimagic.parameters.bounds import Bounds
+
+pytestmark = pytest.mark.pygmo
 
 test_cases = [
     # popsize, x, lower_bound, expected
@@ -30,3 +37,24 @@ def test_convert_str_to_int():
         _convert_str_to_int(d, 5)
     with pytest.raises(ValueError):
         _convert_str_to_int(d, "hello")
+
+
+PYGMO_ALGORITHMS = sorted(name for name in ALL_ALGORITHMS if name.startswith("pygmo_"))
+
+
+@pytest.mark.parametrize("algorithm", PYGMO_ALGORITHMS)
+def test_seed_makes_runs_reproducible(algorithm):
+    algo = ALL_ALGORITHMS[algorithm]().with_option(seed=0)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        algo = algo.with_option_if_applicable(stopping_maxiter=10)
+
+    def run():
+        return minimize(
+            fun=lambda x: x @ x,
+            params=np.array([1.0, 2.0]),
+            algorithm=algo,
+            bounds=Bounds(lower=np.full(2, -5.0), upper=np.full(2, 5.0)),
+        ).params
+
+    np.testing.assert_array_equal(run(), run())

@@ -4,6 +4,8 @@ import pytest
 from optimagic.exceptions import NotInstalledError
 from optimagic.optimizers.tranquilo import Tranquilo, TranquiloLS
 
+pytestmark = pytest.mark.tranquilo
+
 
 @pytest.fixture()
 def mock_problem():

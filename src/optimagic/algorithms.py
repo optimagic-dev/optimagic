@@ -8,7 +8,7 @@ https://optimagic.readthedocs.io/en/latest/development/ep-02-typing.html#algorit
 
 """
 
-from dataclasses import dataclass
+from dataclasses import FrozenInstanceError
 from typing import Type, cast
 
 from optimagic.optimization.algorithm import Algorithm
@@ -116,10 +116,30 @@ from optimagic.optimizers.tao_optimizers import TAOPounders
 from optimagic.optimizers.tranquilo import Tranquilo, TranquiloLS
 
 
-@dataclass(frozen=True)
 class AlgoSelection:
+    """Base class for selections of algorithms.
+
+    The algorithms of a selection are its annotated class attributes.
+
+    """
+
+    def __setattr__(self, name: str, value: object) -> None:
+        raise FrozenInstanceError(f"cannot assign to field {name!r}")
+
+    def __delattr__(self, name: str) -> None:
+        raise FrozenInstanceError(f"cannot delete field {name!r}")
+
+    def __eq__(self, other: object) -> bool:
+        return type(self) is type(other)
+
+    def __hash__(self) -> int:
+        return hash(type(self))
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({', '.join(self.AllNames)})"
+
     def _all(self) -> list[Type[Algorithm]]:
-        raw = [field.default for field in self.__dataclass_fields__.values()]
+        raw = [getattr(self, name) for name in type(self).__annotations__]
         return cast(list[Type[Algorithm]], raw)
 
     def _available(self) -> list[Type[Algorithm]]:
@@ -151,7 +171,6 @@ class AlgoSelection:
         return {str(a.name): a for a in self._available()}
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(
     AlgoSelection
 ):
@@ -160,12 +179,10 @@ class BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(
     )
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -174,7 +191,6 @@ class BoundedGradientBasedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelectio
     scipy_trust_constr: Type[ScipyTrustConstr] = ScipyTrustConstr
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -188,7 +204,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelectio
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -201,7 +216,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelect
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -234,7 +248,6 @@ class BoundedGlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -247,23 +260,19 @@ class GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelecti
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalParallelScalarAlgorithms(AlgoSelection):
     tranquilo: Type[Tranquilo] = Tranquilo
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -276,7 +285,6 @@ class BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelect
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -289,7 +297,6 @@ class BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
 
@@ -298,7 +305,6 @@ class BoundedGlobalGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedGlobalGradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientBasedScalarAlgorithms(AlgoSelection):
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
@@ -311,7 +317,6 @@ class BoundedGlobalGradientBasedScalarAlgorithms(AlgoSelection):
         return BoundedGlobalGradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
 
@@ -320,7 +325,6 @@ class GlobalGradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGlobalGradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -333,7 +337,6 @@ class BoundedGradientBasedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedGradientBasedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -356,13 +359,11 @@ class BoundedGradientBasedLocalScalarAlgorithms(AlgoSelection):
         return BoundedGradientBasedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedLeastSquaresLocalAlgorithms(AlgoSelection):
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
 
 
-@dataclass(frozen=True)
 class GradientBasedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -375,7 +376,6 @@ class GradientBasedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGradientBasedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -393,7 +393,6 @@ class BoundedGradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGradientBasedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -411,7 +410,6 @@ class BoundedGlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -484,7 +482,6 @@ class BoundedGlobalGradientFreeScalarAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -521,7 +518,6 @@ class BoundedGlobalGradientFreeParallelAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -539,7 +535,6 @@ class GlobalGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -556,7 +551,6 @@ class GlobalGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -593,7 +587,6 @@ class GlobalGradientFreeParallelScalarAlgorithms(AlgoSelection):
         return GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
 
@@ -602,13 +595,13 @@ class BoundedGradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     nlopt_bobyqa: Type[NloptBOBYQA] = NloptBOBYQA
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
     scipy_powell: Type[ScipyPowell] = ScipyPowell
@@ -625,7 +618,6 @@ class BoundedGradientFreeLocalScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -637,7 +629,6 @@ class BoundedGradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
@@ -652,7 +643,6 @@ class BoundedGradientFreeLocalParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -662,7 +652,6 @@ class GradientFreeLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLocalParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     tranquilo: Type[Tranquilo] = Tranquilo
@@ -672,7 +661,6 @@ class GradientFreeLocalParallelScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -682,7 +670,6 @@ class GradientFreeLeastSquaresLocalParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -705,7 +692,6 @@ class BoundedGradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -720,7 +706,6 @@ class BoundedGradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -762,7 +747,6 @@ class BoundedGradientFreeParallelScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -772,7 +756,6 @@ class BoundedGradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -789,7 +772,6 @@ class GradientFreeNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         return GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -814,7 +796,6 @@ class BoundedGlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -831,7 +812,6 @@ class BoundedGlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -868,7 +848,6 @@ class BoundedGlobalParallelScalarAlgorithms(AlgoSelection):
         return BoundedGlobalNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -885,7 +864,6 @@ class GlobalNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         return GlobalGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -907,7 +885,6 @@ class BoundedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLocalParallelScalarAlgorithms(AlgoSelection):
     tranquilo: Type[Tranquilo] = Tranquilo
 
@@ -916,7 +893,6 @@ class BoundedLocalParallelScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLeastSquaresLocalParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -926,7 +902,6 @@ class BoundedLeastSquaresLocalParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -943,7 +918,6 @@ class BoundedNonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientBasedAlgorithms(AlgoSelection):
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
@@ -960,7 +934,6 @@ class BoundedGlobalGradientBasedAlgorithms(AlgoSelection):
         return BoundedGlobalGradientBasedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
     scipy_shgo: Type[ScipySHGO] = ScipySHGO
 
@@ -973,7 +946,6 @@ class GlobalGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
         return GlobalGradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientBasedScalarAlgorithms(AlgoSelection):
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
@@ -990,7 +962,6 @@ class GlobalGradientBasedScalarAlgorithms(AlgoSelection):
         return GlobalGradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -1023,7 +994,6 @@ class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
         return BoundedGradientBasedLocalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -1040,7 +1010,6 @@ class GradientBasedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
         return GradientBasedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -1070,7 +1039,6 @@ class GradientBasedLocalScalarAlgorithms(AlgoSelection):
         return GradientBasedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedLeastSquaresLocalAlgorithms(AlgoSelection):
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_lm: Type[ScipyLSLM] = ScipyLSLM
@@ -1081,12 +1049,10 @@ class GradientBasedLeastSquaresLocalAlgorithms(AlgoSelection):
         return BoundedGradientBasedLeastSquaresLocalAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedLikelihoodLocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -1108,7 +1074,6 @@ class BoundedGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedGradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -1142,7 +1107,6 @@ class BoundedGradientBasedScalarAlgorithms(AlgoSelection):
         return BoundedGradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedLeastSquaresAlgorithms(AlgoSelection):
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
@@ -1152,7 +1116,6 @@ class BoundedGradientBasedLeastSquaresAlgorithms(AlgoSelection):
         return BoundedGradientBasedLeastSquaresLocalAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -1174,7 +1137,6 @@ class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return GradientBasedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -1251,7 +1213,6 @@ class BoundedGlobalGradientFreeAlgorithms(AlgoSelection):
         return BoundedGlobalGradientFreeScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1271,7 +1232,6 @@ class GlobalGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
         return GlobalGradientFreeNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -1348,7 +1308,6 @@ class GlobalGradientFreeScalarAlgorithms(AlgoSelection):
         return GlobalGradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1389,7 +1348,6 @@ class GlobalGradientFreeParallelAlgorithms(AlgoSelection):
         return GlobalGradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -1397,6 +1355,7 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
     scipy_neldermead: Type[ScipyNelderMead] = ScipyNelderMead
@@ -1424,7 +1383,6 @@ class BoundedGradientFreeLocalAlgorithms(AlgoSelection):
         return BoundedGradientFreeLocalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     scipy_cobyla: Type[ScipyCOBYLA] = ScipyCOBYLA
@@ -1438,7 +1396,6 @@ class GradientFreeLocalNonlinearConstrainedAlgorithms(AlgoSelection):
         return GradientFreeLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLocalScalarAlgorithms(AlgoSelection):
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
@@ -1468,7 +1425,6 @@ class GradientFreeLocalScalarAlgorithms(AlgoSelection):
         return GradientFreeLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -1484,7 +1440,6 @@ class GradientFreeLeastSquaresLocalAlgorithms(AlgoSelection):
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLocalParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     pounders: Type[Pounders] = Pounders
@@ -1504,7 +1459,6 @@ class GradientFreeLocalParallelAlgorithms(AlgoSelection):
         return GradientFreeLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -1529,7 +1483,6 @@ class BoundedGradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedGradientFreeNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -1570,6 +1523,7 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pygad: Type[Pygad] = Pygad
     pygmo_bee_colony: Type[PygmoBeeColony] = PygmoBeeColony
@@ -1619,7 +1573,6 @@ class BoundedGradientFreeScalarAlgorithms(AlgoSelection):
         return BoundedGradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeLeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -1635,7 +1588,6 @@ class BoundedGradientFreeLeastSquaresAlgorithms(AlgoSelection):
         return BoundedGradientFreeLeastSquaresParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1687,7 +1639,6 @@ class BoundedGradientFreeParallelAlgorithms(AlgoSelection):
         return BoundedGradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -1713,7 +1664,6 @@ class GradientFreeNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return GradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1732,7 +1682,6 @@ class GradientFreeNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return GradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -1779,7 +1728,6 @@ class GradientFreeParallelScalarAlgorithms(AlgoSelection):
         return GradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -1793,7 +1741,6 @@ class GradientFreeLeastSquaresParallelAlgorithms(AlgoSelection):
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1818,7 +1765,6 @@ class BoundedGlobalNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedGlobalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -1900,7 +1846,6 @@ class BoundedGlobalScalarAlgorithms(AlgoSelection):
         return BoundedGlobalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalParallelAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -1941,7 +1886,6 @@ class BoundedGlobalParallelAlgorithms(AlgoSelection):
         return BoundedGlobalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -1966,7 +1910,6 @@ class GlobalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return GlobalNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -1985,7 +1928,6 @@ class GlobalNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return GlobalNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalParallelScalarAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -2026,7 +1968,6 @@ class GlobalParallelScalarAlgorithms(AlgoSelection):
         return GlobalNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -2048,7 +1989,6 @@ class BoundedLocalNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -2061,6 +2001,7 @@ class BoundedLocalScalarAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
@@ -2090,7 +2031,6 @@ class BoundedLocalScalarAlgorithms(AlgoSelection):
         return BoundedLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -2112,7 +2052,6 @@ class BoundedLeastSquaresLocalAlgorithms(AlgoSelection):
         return BoundedLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLocalParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
@@ -2131,7 +2070,6 @@ class BoundedLocalParallelAlgorithms(AlgoSelection):
         return BoundedLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -2154,7 +2092,6 @@ class LocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return GradientFreeLocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LocalParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     tranquilo: Type[Tranquilo] = Tranquilo
@@ -2168,7 +2105,6 @@ class LocalParallelScalarAlgorithms(AlgoSelection):
         return GradientFreeLocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -2182,7 +2118,6 @@ class LeastSquaresLocalParallelAlgorithms(AlgoSelection):
         return GradientFreeLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -2217,7 +2152,6 @@ class BoundedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return BoundedNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2236,7 +2170,6 @@ class BoundedNonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return BoundedNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedParallelScalarAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -2282,7 +2215,6 @@ class BoundedParallelScalarAlgorithms(AlgoSelection):
         return BoundedNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLeastSquaresParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -2296,7 +2228,6 @@ class BoundedLeastSquaresParallelAlgorithms(AlgoSelection):
         return BoundedLeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class NonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -2315,7 +2246,6 @@ class NonlinearConstrainedParallelScalarAlgorithms(AlgoSelection):
         return GradientFreeNonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientBasedAlgorithms(AlgoSelection):
     scipy_basinhopping: Type[ScipyBasinhopping] = ScipyBasinhopping
     scipy_dual_annealing: Type[ScipyDualAnnealing] = ScipyDualAnnealing
@@ -2334,7 +2264,6 @@ class GlobalGradientBasedAlgorithms(AlgoSelection):
         return GlobalGradientBasedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedLocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
@@ -2378,7 +2307,6 @@ class GradientBasedLocalAlgorithms(AlgoSelection):
         return GradientBasedLocalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientBasedAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -2422,7 +2350,6 @@ class BoundedGradientBasedAlgorithms(AlgoSelection):
         return BoundedGradientBasedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -2448,7 +2375,6 @@ class GradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
         return GradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -2487,7 +2413,6 @@ class GradientBasedScalarAlgorithms(AlgoSelection):
         return GradientBasedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedLeastSquaresAlgorithms(AlgoSelection):
     scipy_ls_dogbox: Type[ScipyLSDogbox] = ScipyLSDogbox
     scipy_ls_lm: Type[ScipyLSLM] = ScipyLSLM
@@ -2502,7 +2427,6 @@ class GradientBasedLeastSquaresAlgorithms(AlgoSelection):
         return GradientBasedLeastSquaresLocalAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedLikelihoodAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
 
@@ -2511,7 +2435,6 @@ class GradientBasedLikelihoodAlgorithms(AlgoSelection):
         return GradientBasedLikelihoodLocalAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -2590,7 +2513,6 @@ class GlobalGradientFreeAlgorithms(AlgoSelection):
         return GlobalGradientFreeScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     nag_pybobyqa: Type[NagPyBOBYQA] = NagPyBOBYQA
@@ -2630,7 +2552,6 @@ class GradientFreeLocalAlgorithms(AlgoSelection):
         return GradientFreeLocalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -2672,6 +2593,7 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     pounders: Type[Pounders] = Pounders
     pygad: Type[Pygad] = Pygad
@@ -2730,7 +2652,6 @@ class BoundedGradientFreeAlgorithms(AlgoSelection):
         return BoundedGradientFreeScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
     nlopt_isres: Type[NloptISRES] = NloptISRES
@@ -2760,7 +2681,6 @@ class GradientFreeNonlinearConstrainedAlgorithms(AlgoSelection):
         return GradientFreeNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -2855,7 +2775,6 @@ class GradientFreeScalarAlgorithms(AlgoSelection):
         return GradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeLeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -2875,7 +2794,6 @@ class GradientFreeLeastSquaresAlgorithms(AlgoSelection):
         return GradientFreeLeastSquaresParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -2932,7 +2850,6 @@ class GradientFreeParallelAlgorithms(AlgoSelection):
         return GradientFreeParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedGlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -3018,7 +2935,6 @@ class BoundedGlobalAlgorithms(AlgoSelection):
         return BoundedGlobalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
     nlopt_isres: Type[NloptISRES] = NloptISRES
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
@@ -3047,7 +2963,6 @@ class GlobalNonlinearConstrainedAlgorithms(AlgoSelection):
         return GlobalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -3133,7 +3048,6 @@ class GlobalScalarAlgorithms(AlgoSelection):
         return GlobalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalParallelAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -3176,7 +3090,6 @@ class GlobalParallelAlgorithms(AlgoSelection):
         return GlobalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLocalAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -3190,6 +3103,7 @@ class BoundedLocalAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
@@ -3232,7 +3146,6 @@ class BoundedLocalAlgorithms(AlgoSelection):
         return BoundedLocalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -3259,7 +3172,6 @@ class LocalNonlinearConstrainedAlgorithms(AlgoSelection):
         return LocalNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LocalScalarAlgorithms(AlgoSelection):
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
@@ -3311,7 +3223,6 @@ class LocalScalarAlgorithms(AlgoSelection):
         return LocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LeastSquaresLocalAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -3338,7 +3249,6 @@ class LeastSquaresLocalAlgorithms(AlgoSelection):
         return LeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class LikelihoodLocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
 
@@ -3347,7 +3257,6 @@ class LikelihoodLocalAlgorithms(AlgoSelection):
         return GradientBasedLikelihoodLocalAlgorithms()
 
 
-@dataclass(frozen=True)
 class LocalParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     pounders: Type[Pounders] = Pounders
@@ -3371,7 +3280,6 @@ class LocalParallelAlgorithms(AlgoSelection):
         return LocalParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -3410,7 +3318,6 @@ class BoundedNonlinearConstrainedAlgorithms(AlgoSelection):
         return BoundedNonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
@@ -3457,6 +3364,7 @@ class BoundedScalarAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
@@ -3522,7 +3430,6 @@ class BoundedScalarAlgorithms(AlgoSelection):
         return BoundedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedLeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -3548,7 +3455,6 @@ class BoundedLeastSquaresAlgorithms(AlgoSelection):
         return BoundedLeastSquaresParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedParallelAlgorithms(AlgoSelection):
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
     nevergrad_cga: Type[NevergradCGA] = NevergradCGA
@@ -3602,7 +3508,6 @@ class BoundedParallelAlgorithms(AlgoSelection):
         return BoundedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -3642,7 +3547,6 @@ class NonlinearConstrainedScalarAlgorithms(AlgoSelection):
         return NonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class NonlinearConstrainedParallelAlgorithms(AlgoSelection):
     scipy_differential_evolution: Type[ScipyDifferentialEvolution] = (
         ScipyDifferentialEvolution
@@ -3665,7 +3569,6 @@ class NonlinearConstrainedParallelAlgorithms(AlgoSelection):
         return NonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class ParallelScalarAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -3714,7 +3617,6 @@ class ParallelScalarAlgorithms(AlgoSelection):
         return NonlinearConstrainedParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LeastSquaresParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo_ls: Type[TranquiloLS] = TranquiloLS
@@ -3732,7 +3634,6 @@ class LeastSquaresParallelAlgorithms(AlgoSelection):
         return LeastSquaresLocalParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientBasedAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
@@ -3787,7 +3688,6 @@ class GradientBasedAlgorithms(AlgoSelection):
         return GradientBasedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GradientFreeAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -3894,7 +3794,6 @@ class GradientFreeAlgorithms(AlgoSelection):
         return GradientFreeScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class GlobalAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
@@ -3984,7 +3883,6 @@ class GlobalAlgorithms(AlgoSelection):
         return GlobalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
@@ -4056,7 +3954,6 @@ class LocalAlgorithms(AlgoSelection):
         return LocalScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class BoundedAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
@@ -4104,6 +4001,7 @@ class BoundedAlgorithms(AlgoSelection):
     nlopt_mma: Type[NloptMMA] = NloptMMA
     nlopt_newuoa: Type[NloptNEWUOA] = NloptNEWUOA
     nlopt_neldermead: Type[NloptNelderMead] = NloptNelderMead
+    nlopt_praxis: Type[NloptPRAXIS] = NloptPRAXIS
     nlopt_slsqp: Type[NloptSLSQP] = NloptSLSQP
     nlopt_sbplx: Type[NloptSbplx] = NloptSbplx
     nlopt_tnewton: Type[NloptTNewton] = NloptTNewton
@@ -4182,7 +4080,6 @@ class BoundedAlgorithms(AlgoSelection):
         return BoundedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class NonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_cobyla: Type[NloptCOBYLA] = NloptCOBYLA
@@ -4226,7 +4123,6 @@ class NonlinearConstrainedAlgorithms(AlgoSelection):
         return NonlinearConstrainedScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class ScalarAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     fides: Type[Fides] = Fides
@@ -4348,7 +4244,6 @@ class ScalarAlgorithms(AlgoSelection):
         return ParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class LeastSquaresAlgorithms(AlgoSelection):
     nag_dfols: Type[NagDFOLS] = NagDFOLS
     pounders: Type[Pounders] = Pounders
@@ -4379,7 +4274,6 @@ class LeastSquaresAlgorithms(AlgoSelection):
         return LeastSquaresParallelAlgorithms()
 
 
-@dataclass(frozen=True)
 class LikelihoodAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
 
@@ -4392,7 +4286,6 @@ class LikelihoodAlgorithms(AlgoSelection):
         return LikelihoodLocalAlgorithms()
 
 
-@dataclass(frozen=True)
 class ParallelAlgorithms(AlgoSelection):
     neldermead_parallel: Type[NelderMeadParallel] = NelderMeadParallel
     nevergrad_bo: Type[NevergradBayesOptim] = NevergradBayesOptim
@@ -4451,7 +4344,6 @@ class ParallelAlgorithms(AlgoSelection):
         return ParallelScalarAlgorithms()
 
 
-@dataclass(frozen=True)
 class Algorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
     bhhh: Type[BHHH] = BHHH

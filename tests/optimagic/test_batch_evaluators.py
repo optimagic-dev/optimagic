@@ -1,9 +1,13 @@
 import itertools
+import sys
 import warnings
 
 import pytest
 
-from optimagic.batch_evaluators import process_batch_evaluator
+from optimagic.batch_evaluators import (
+    pathos_mp_batch_evaluator,
+    process_batch_evaluator,
+)
 
 batch_evaluators = ["joblib", "threading"]
 
@@ -97,6 +101,13 @@ def test_batch_evaluator_with_dict_unpacking(batch_evaluator, n_cores):
     )
     expected = [3, 7]
     assert calculated == expected
+
+
+def test_pathos_batch_evaluator_raises_if_pathos_is_not_installed(monkeypatch):
+    # A None entry in sys.modules makes the import fail, as if pathos was missing.
+    monkeypatch.setitem(sys.modules, "pathos.pools", None)
+    with pytest.raises(NotImplementedError, match="install pathos"):
+        pathos_mp_batch_evaluator(double, arguments=[1, 2], n_cores=1)
 
 
 def test_get_batch_evaluator_invalid_value():

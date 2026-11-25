@@ -112,3 +112,22 @@ def test_minimize_with_invalid_fun_and_jac(invalid_jac_value, params):
             algorithm="scipy_lbfgsb",
             fun_and_jac=get_invalid_fun_and_jac(invalid_jac_value),
         )
+
+
+# ======================================================================================
+# Test Invalid Jacobian raises proper error with numerical derivatives
+# ======================================================================================
+
+
+def test_minimize_with_invalid_numerical_derivative(params):
+    def fun(params):
+        return sphere(params) if params["a"] == 1 else np.inf
+
+    with pytest.raises(
+        UserFunctionRuntimeError,
+        match=(
+            "The optimization failed because the numerical derivative "
+            r"\(computed using fun\) contains infinite or NaN values."
+        ),
+    ):
+        minimize(fun=fun, params=params, algorithm="scipy_lbfgsb")

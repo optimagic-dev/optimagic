@@ -10,6 +10,8 @@ build:
       - asdf install pixi latest
       - asdf global pixi latest
     post_build:
-      - pixi run -e docs build-docs
+      - pixi run --locked -e docs build-docs
+      # The exporter can log a failed Markdown subprocess without failing Sphinx.
+      - test -s docs/build/html/llms.txt
       - mkdir --parents $READTHEDOCS_OUTPUT/html/
       - cp -a docs/build/html/. "$READTHEDOCS_OUTPUT/html" && rm -r docs/build
