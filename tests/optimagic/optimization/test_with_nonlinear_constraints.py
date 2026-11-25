@@ -8,7 +8,6 @@ from numpy.testing import assert_array_almost_equal as aaae
 import optimagic as om
 from optimagic import maximize, minimize
 from optimagic.algorithms import NonlinearConstrainedAlgorithms
-from optimagic.config import IS_CYIPOPT_INSTALLED
 from optimagic.parameters.bounds import Bounds
 
 NLC_ALGORITHMS = NonlinearConstrainedAlgorithms()._available_algorithms_dict
@@ -95,11 +94,14 @@ def nlc_2d_example():
     return solution_x, kwargs
 
 
-TEST_CASES = list(
-    itertools.product(
+TEST_CASES = [
+    (algorithm, constr_type)
+    for algorithm, constr_type in itertools.product(
         NLC_ALGORITHMS, ["flat", "long", "equality", "equality_and_inequality"]
     )
-)
+    # nlopt_mma is very slow and has a low accuracy with equality constraints.
+    if not ("equality" in constr_type and algorithm == "nlopt_mma")
+]
 
 
 @pytest.mark.parametrize("algorithm, constr_type", TEST_CASES)
@@ -110,9 +112,6 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
     constraints.
 
     """
-    if "equality" in constr_type and algorithm == "nlopt_mma":
-        pytest.skip(reason="Very slow and low accuracy.")
-
     solution_x, kwargs = nlc_2d_example
     if algorithm == "scipy_cobyla":
         del kwargs[constr_type]["bounds"]
@@ -140,11 +139,11 @@ def criterion(params):
     return x @ x
 
 
-@pytest.mark.parametrize("algorithm", NLC_ALGORITHMS)
+# nlopt_mma and ipopt are slow on this example.
+@pytest.mark.parametrize(
+    "algorithm", [a for a in NLC_ALGORITHMS if a not in ("nlopt_mma", "ipopt")]
+)
 def test_documentation_example(algorithm):
-    if algorithm in ("nlopt_mma", "ipopt"):
-        pytest.skip(reason="Slow.")
-
     kwargs = {
         "bounds": Bounds(lower=np.zeros(6), upper=2 * np.ones(6)),
     }
@@ -221,7 +220,6 @@ def general_example():
 TEST_CASES = list(itertools.product(["ipopt"], [True, False]))
 
 
-@pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="Needs ipopt")
 @pytest.mark.parametrize("algorithm, skip_checks", TEST_CASES)
 def test_general_example(general_example, algorithm, skip_checks):
     kwargs = general_example

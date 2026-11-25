@@ -16,14 +16,18 @@ repos:
         name: update algo selection code
         entry: python .tools/update_algo_selection_hook.py
         language: python
-        # optimagic requires Python >= 3.12; without the pin the hook venv is built
-        # with whatever Python prek finds first and the editable install fails.
-        language_version: '3.12'
+        # The hook installs optimagic, which needs a recent Python; without the pin the
+        # hook venv is built with whatever Python prek finds first and the install can
+        # fail.
+        language_version: '3.14'
         files: ^(src/optimagic/optimizers/|src/optimagic/algorithms\.py|\.tools/)
         require_serial: true
         additional_dependencies:
           - hatchling
           - ruff
+          # The hook script runs uv; installing it here keeps commits working when
+          # uv is not on PATH.
+          - uv
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -62,7 +66,7 @@ repos:
       - id: yamllint
         exclude: tests/optimagic/optimizers/_pounders/fixtures
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.10
+    rev: v0.17.3
     hooks:
       # Run the linter.
       - id: ruff

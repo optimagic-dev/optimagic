@@ -10,6 +10,39 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
 **optree** for pytree handling and uses **pydantic** to validate algorithm options.
 
+- {gh}`749` Supports pandas 3 and Python 3.15 and drops Python 3.12. Following
+  [SPEC 0](https://scientific-python.org/specs/spec-0000/), the minimum supported
+  versions are now Python 3.13, numpy 2.2, scipy 1.15, pandas 2.3 and plotly 6.0. Fixes
+  `traceback_report(return_type="dataframe")` and the LaTeX output of
+  `estimation_table` with confidence intervals under pandas 3. `pygad` no longer
+  ignores `stopping_maxiter`: it runs the smaller of `num_generations` and
+  `stopping_maxiter` generations. `nevergrad_bo` is now available if bayes-optim is
+  installed; before, optimagic did not detect bayes-optim. The nevergrad optimizers
+  return the best evaluated point if nevergrad's recommendation is worse. Before,
+  `nevergrad_cmaes` could return a much worse point than it had found, because nevergrad
+  restarts CMA-ES whenever one of its stopping criteria is met and only recommends the
+  best point of the last restart. `stopping_maxtime` of `nevergrad_cmaes` now ends the
+  optimization instead of restarting CMA-ES ({ghuser}`janosg`).
+- {gh}`747` Reduces the time it takes to import optimagic from about 2 seconds to about
+  0.6 seconds. Dependencies that are only needed for some features (scipy, numba,
+  sqlalchemy, plotly.express and joblib) are imported when they are used, the
+  validators of algorithm options are built when an algorithm is instantiated for the
+  first time and the classes behind `om.algos` are no longer dataclasses. The minimum
+  supported version of pydantic is now 2.10 ({ghuser}`janosg`).
+- {gh}`739` Fixes `tao_pounders` ignoring `convergence_gtol_abs`,
+  `convergence_gtol_rel` and `convergence_gtol_scaled`. Reaching `stopping_maxiter` is
+  now reported as unsuccessful with the message "maxits reached" instead of as
+  successful with "user defined" ({ghuser}`janosg`).
+- {gh}`727` Raises an `InvalidFunctionError` if the objective function or a user
+  provided derivative is not finite at the start params. The error message lists the
+  paths of the non-finite entries ({ghuser}`janosg`).
+- {gh}`727` Derivative-free algorithms no longer evaluate `jac` and `fun_and_jac` at the
+  start params. `fun_and_jac` is only evaluated once at the start params if `fun` is
+  derived from it ({ghuser}`janosg`).
+- {gh}`727` Fixes keyword arguments that were not passed to both the objective and the
+  derivative if `fun` is derived from `fun_and_jac`, i.e. if only `fun_and_jac` is
+  provided or `jac=True`. It is now enough to provide either `fun_kwargs` or
+  `fun_and_jac_kwargs` ({ghuser}`janosg`).
 - {gh}`723` Fixes 23 More-Wild and Cartis-Roberts benchmark problems that were not
   marked as least-squares problems, and the noise-free criterion of scaled benchmark
   problems ({ghuser}`janosg`).

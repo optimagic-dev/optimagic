@@ -15,44 +15,46 @@ from optimagic.utilities import to_pickle
 
 @dataclass
 class OptimizeResult:
-    """Optimization result object.
-
-    **Attributes**
-
-    Attributes:
-        params: The optimal parameters.
-        fun: The optimal criterion value.
-        start_fun: The criterion value at the start parameters.
-        start_params: The start parameters.
-        algorithm: The algorithm used for the optimization.
-        direction: Maximize or minimize.
-        n_free: Number of free parameters.
-        message: Message returned by the underlying algorithm.
-        success: Whether the optimization was successful.
-        n_fun_evals: Number of criterion evaluations.
-        n_jac_evals: Number of derivative evaluations.
-        n_iterations: Number of iterations until termination.
-        history: Optimization history.
-        convergence_report: The convergence report.
-        multistart_info: Multistart information.
-        algorithm_output: Additional algorithm specific information.
-
-    """
+    """Optimization result object."""
 
     params: Any
+    """The optimal parameters."""
+
     fun: float
+    """The optimal criterion value."""
+
     start_fun: float
+    """The criterion value at the start parameters."""
+
     start_params: Any
+    """The start parameters."""
+
     algorithm: str
+    """The algorithm used for the optimization."""
+
     direction: str
+    """Maximize or minimize."""
+
     n_free: int
+    """Number of free parameters."""
 
     message: str | None = None
+    """Message returned by the underlying algorithm."""
+
     success: bool | None = None
+    """Whether the optimization was successful."""
+
     n_fun_evals: int | None = None
+    """Number of criterion evaluations."""
+
     n_jac_evals: int | None = None
+    """Number of derivative evaluations."""
+
     n_hess_evals: int | None = None
+
     n_iterations: int | None = None
+    """Number of iterations until termination."""
+
     status: int | None = None
     jac: PyTree | None = None
     hess: PyTree | None = None
@@ -60,11 +62,17 @@ class OptimizeResult:
     max_constraint_violation: float | None = None
 
     history: History | None = None
+    """Optimization history."""
 
     convergence_report: dict[str, Any] | None = None
+    """The convergence report."""
 
     multistart_info: Optional["MultistartInfo"] = None
+    """Multistart information."""
+
     algorithm_output: dict[str, Any] | None = None
+    """Additional algorithm specific information."""
+
     logger: LogReader | None = None
 
     # ==================================================================================
@@ -230,7 +238,7 @@ class MultistartInfo:
 
 
 def _format_convergence_report(report, algorithm):
-    report = pd.DataFrame.from_dict(report)
+    report = pd.DataFrame(report)
     columns = ["one_step", "five_steps"]
 
     table = pd_df_map(report[columns], _format_float).astype(str)

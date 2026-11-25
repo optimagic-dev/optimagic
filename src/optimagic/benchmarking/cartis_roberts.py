@@ -16,6 +16,7 @@ Implementation is based on
 """
 
 from functools import partial
+from typing import Any
 
 import numpy as np
 
@@ -5380,3 +5381,14 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
 }
+
+
+def get_raw_problems_cartis_roberts() -> dict[str, dict[str, Any]]:
+    """Get the specifications of the Cartis-Roberts benchmark problems.
+
+    Returns:
+        A dictionary that maps the name of each problem to its specification, which
+        contains the criterion function, the start values and the solution.
+
+    """
+    return CARTIS_ROBERTS_PROBLEMS

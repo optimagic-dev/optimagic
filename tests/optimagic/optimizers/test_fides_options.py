@@ -8,6 +8,8 @@ from optimagic.config import IS_FIDES_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
+pytestmark = pytest.mark.fides
+
 if IS_FIDES_INSTALLED:
     from fides.hessian_approximation import FX, SR1, Broyden
 
@@ -48,7 +50,6 @@ def criterion(x):
     return (x**2).sum()
 
 
-@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
 @pytest.mark.parametrize("algo_options", test_cases_no_contribs_needed)
 def test_fides_correct_algo_options(algo_options):
     res = minimize(
@@ -72,7 +73,6 @@ test_cases_needing_contribs = [
 ]
 
 
-@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
 @pytest.mark.parametrize("algo_options", test_cases_needing_contribs)
 def test_fides_unimplemented_algo_options(algo_options):
     with pytest.raises(NotImplementedError):
@@ -88,7 +88,6 @@ def test_fides_unimplemented_algo_options(algo_options):
         )
 
 
-@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
 def test_fides_stop_after_one_iteration():
     res = minimize(
         fun_and_jac=criterion_and_derivative,

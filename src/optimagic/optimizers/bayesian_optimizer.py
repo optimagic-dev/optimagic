@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Literal, Type
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import NonlinearConstraint
 
 from optimagic import mark
 from optimagic.config import IS_BAYESOPT_INSTALLED_AND_VERSION_NEWER_THAN_2
@@ -30,6 +29,7 @@ from optimagic.typing import (
 if TYPE_CHECKING:
     from bayes_opt import BayesianOptimization
     from bayes_opt.acquisition import AcquisitionFunction
+    from scipy.optimize import NonlinearConstraint
 else:
     # AcquisitionFunction is used in field annotations, which pydantic resolves at
     # runtime, so it needs a fallback that works without bayes_opt and avoids

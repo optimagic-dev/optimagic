@@ -33,10 +33,13 @@ def test_history_collection_with_parallelization(algorithm, tmp_path):
 
     path = tmp_path / "log.db"
 
+    # Keep the runs short. Many algorithms only have one of the two options, and an
+    # option an algorithm does not have would be ignored.
+    algo = AVAILABLE_ALGORITHMS[algorithm]
     algo_options = {"n_cores": 2}
-    if algorithm == "nevergrad_pso":
+    if hasattr(algo, "stopping_maxfun"):
         algo_options["stopping_maxfun"] = 15
-    else:
+    if hasattr(algo, "stopping_maxiter"):
         algo_options["stopping_maxiter"] = 3
 
     collected_hist = minimize(

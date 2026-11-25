@@ -13,6 +13,8 @@ on:
     branches:
       - '*'
 jobs:
+  # Job names are required status checks on main. Jobs that run with one Python
+  # version leave it out of their name, so that a version update does not change them.
   run-tests-linux:
     name: Run tests on ubuntu-latest py${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -20,14 +22,14 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - '312'
           - '313'
           - '314'
+          - '315'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514  # v0.11.0
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
         with:
           pixi-version: v0.71.2
           cache: true
@@ -37,13 +39,88 @@ jobs:
       - name: Run pytest
         shell: bash -el {0}
         run: pixi run -e tests-linux-py${{ matrix.python-version }} tests-with-cov
-      - name: Upload coverage report.
-        if: matrix.python-version == '312'
+      # Save the coverage report even if a test fails. Otherwise codecov reports the
+      # code that only this job tests as uncovered, on top of the failing test.
+      - name: Save coverage report
+        if: ${{ !cancelled() && matrix.python-version == '313' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: coverage-main
+          path: coverage.xml
+          retention-days: 7
+  # Each optimizer library is tested in its own environment, so libraries never have
+  # to be installable together. `--library <library>` selects the tests of the
+  # library, including tests that loop over all installed algorithms. It fails if an
+  # algorithm of the library is not available or if a selected test is skipped (see
+  # tests/conftest.py).
+  run-optimizer-library-tests:
+    name: Run ${{ matrix.library }} tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        library:
+          - bayesopt
+          - fides
+          - gfo
+          - iminuit
+          - ipopt
+          - nag
+          - nevergrad
+          - nlopt
+          - pygad
+          - pygmo
+          - pyswarms
+          - tao
+          - tranquilo
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
+        with:
+          pixi-version: v0.71.2
+          cache: true
+          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+          frozen: true
+          environments: tests-${{ matrix.library }}
+      - name: Run pytest
+        shell: bash -el {0}
+        run: >-
+          pixi run -e tests-${{ matrix.library }} tests-with-cov
+          --library ${{ matrix.library }}
+      # Save the coverage report even if a test fails. Otherwise codecov reports the
+      # code that only this job tests as uncovered, on top of the failing test.
+      - name: Save coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: coverage-${{ matrix.library }}
+          path: coverage.xml
+          retention-days: 7
+  upload-coverage:
+    name: Upload combined coverage report
+    needs:
+      - run-tests-linux
+      - run-optimizer-library-tests
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # yamllint disable-line rule:line-length
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          pattern: coverage-*
+          path: coverage-reports
+      - name: Upload coverage reports in one upload
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5  # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          directory: coverage-reports
   run-tests-win-and-mac:
-    name: Run tests on ${{ matrix.os }} py${{ matrix.python-version }}
+    name: Run tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -52,14 +129,12 @@ jobs:
           - macos-latest
           - windows-latest
         python-version:
-          - '312'
-          - '313'
           - '314'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514  # v0.11.0
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
         with:
           pixi-version: v0.71.2
           cache: true
@@ -69,49 +144,23 @@ jobs:
       - name: Run pytest
         shell: bash -el {0}
         run: pixi run -e tests-py${{ matrix.python-version }} tests-fast
-  run-tests-with-old-plotly:
-    name: Run tests on ubuntu-latest with plotly < 6
+  run-tests-with-old-pandas:
+    name: Run tests on ubuntu-latest with pandas < 3
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514  # v0.11.0
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
         with:
           pixi-version: v0.71.2
           cache: true
           cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
           frozen: true
-          environments: tests-old-plotly
+          environments: tests-old-pandas
       - name: Run pytest
         shell: bash -el {0}
-        run: pixi run -e tests-old-plotly tests-fast
-  run-tests-nevergrad:
-    name: Run nevergrad tests py${{ matrix.python-version }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version:
-          - '312'
-          - '313'
-          - '314'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514  # v0.11.0
-        with:
-          pixi-version: v0.71.2
-          cache: true
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
-          frozen: true
-          environments: tests-nevergrad-py${{ matrix.python-version }}
-      - name: Run pytest
-        shell: bash -el {0}
-        run: >-
-          pixi run -e tests-nevergrad-py${{ matrix.python-version }}
-          pytest tests/optimagic/optimizers/test_nevergrad.py
+        run: pixi run -e tests-old-pandas tests-fast
   code-in-docs:
     name: Run code snippets in documentation
     runs-on: ubuntu-latest
@@ -119,7 +168,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514  # v0.11.0
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
         with:
           pixi-version: v0.71.2
           cache: true
@@ -138,7 +187,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - uses: prefix-dev/setup-pixi@9dabb60412d3d2d967a8d682f7ce01317af40514  # v0.11.0
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e  # v0.11.3
         with:
           pixi-version: v0.71.2
           cache: true
