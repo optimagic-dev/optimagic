@@ -73,9 +73,9 @@ def nlc_2d_example():
     ]
 
     _kwargs = {
-        "criterion": criterion,
+        "fun": criterion,
         "params": np.array([0, np.sqrt(2)]),
-        "derivative": derivative,
+        "jac": derivative,
         "bounds": Bounds(lower=np.zeros(2), upper=2 * np.ones(2)),
     }
 
@@ -211,8 +211,7 @@ def general_example():
         "fun": criterion,
         "params": params,
         "constraints": constraints,
-        "lower_bounds": lower_bound,
-        "upper_bounds": upper_bound,
+        "bounds": Bounds(lower=lower_bound, upper=upper_bound),
     }
     return kwargs
 

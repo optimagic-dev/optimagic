@@ -7,8 +7,9 @@ releases are available on [Anaconda.org](https://anaconda.org/optimagic-dev/opti
 
 ## Unreleased
 
-This release adds experimental support for **SciPy-style callbacks**, replaces pybaum by
-**optree** for pytree handling and uses **pydantic** to validate algorithm options.
+This release **removes all functionality that was deprecated in version `0.5.0`**, adds
+experimental support for **SciPy-style callbacks**, replaces pybaum by **optree** for
+pytree handling and uses **pydantic** to validate algorithm options.
 
 - {gh}`749` Supports pandas 3 and Python 3.15 and drops Python 3.12. Following
   [SPEC 0](https://scientific-python.org/specs/spec-0000/), the minimum supported
@@ -29,6 +30,9 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
   validators of algorithm options are built when an algorithm is instantiated for the
   first time and the classes behind `om.algos` are no longer dataclasses. The minimum
   supported version of pydantic is now 2.10 ({ghuser}`janosg`).
+- {gh}`743` Removes all code that was deprecated for removal in version `0.6.0`. The
+  removed functionality is listed under breaking changes below. The contributor guide
+  now describes the deprecation policy ({ghuser}`janosg`).
 - {gh}`739` Fixes `tao_pounders` ignoring `convergence_gtol_abs`,
   `convergence_gtol_rel` and `convergence_gtol_scaled`. Reaching `stopping_maxiter` is
   now reported as unsuccessful with the message "maxits reached" instead of as
@@ -56,6 +60,61 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
 - {gh}`679` Replaces pybaum by optree for all pytree operations. `get_registry` is
   removed; extended pytree handling is selected via a `namespace` argument instead
   ({ghuser}`abelaba`).
+
+### Breaking changes
+
+Everything that was deprecated in version `0.5.0` (or later) is removed:
+
+- The arguments `criterion`, `criterion_kwargs`, `derivative`, `derivative_kwargs`,
+  `criterion_and_derivative` and `criterion_and_derivative_kwargs` of `maximize` and
+  `minimize`. Use `fun`, `fun_kwargs`, `jac`, `jac_kwargs`, `fun_and_jac` and
+  `fun_and_jac_kwargs` instead.
+- The arguments `lower_bounds` and `upper_bounds` of `maximize`, `minimize`,
+  `first_derivative`, `second_derivative`, `estimate_ml`, `estimate_msm`, `slice_plot`,
+  `slice_plot_3d`, `count_free_params` and `check_constraints` as well as
+  `soft_lower_bounds` and `soft_upper_bounds` of `maximize` and `minimize`. Use `bounds`
+  instead.
+- The arguments `log_options`, `scaling_options` and `multistart_options` of `maximize`
+  and `minimize` as well as `log_options` of `estimate_ml` and `estimate_msm`. Pass the
+  options to `logging`, `scaling` and `multistart` instead.
+- The multistart options `share_optimization`, `convergence_relative_params_tolerance`,
+  `optimization_error_handling` and `exploration_error_handling`. Use `stopping_maxopt`,
+  `convergence_xtol_rel` and `error_handling` instead.
+- The old names of convergence and stopping criteria in `algo_options` (e.g.
+  `convergence_relative_criterion_tolerance` or `stopping_max_iterations`) are not
+  translated to the new names anymore.
+- Objective functions that return a dictionary with the special keys "value",
+  "contributions" and "root_contributions" and dictionaries of derivative functions. Use
+  the `mark.least_squares` and `mark.likelihood` decorators and `FunctionValue` objects
+  instead. A dictionary with the entry "contributions" or "root_contributions", or a
+  dictionary returned by a scalar function, raises an `InvalidFunctionError` that
+  explains the new interface. Other dictionaries returned by functions that are marked
+  with `mark.least_squares` or `mark.likelihood` are treated as pytrees.
+- Constraints that are specified as dictionaries, including the selection of parameters
+  via `loc`, `locs`, `query` and `queries`. Use the `Constraint` objects instead.
+- Richardson extrapolation and the arguments `base_steps`, `step_ratio`, `n_steps`,
+  `return_info`, `return_func_value` and `key` of `first_derivative` and
+  `second_derivative`. Use `step_size` and `unpacker` instead.
+- Dictionary style access to `NumdiffResult`, `MultistartInfo` and `History` as well as
+  the attributes `NumdiffResult.func_evals`, `NumdiffResult.derivative_candidates`
+  and `History.criterion`.
+- The attributes `criterion`, `start_criterion`, `n_criterion_evaluations` and
+  `n_derivative_evaluations` of `OptimizeResult`. Use `fun`, `start_fun`, `n_fun_evals`
+  and `n_jac_evals` instead.
+- The argument `numdiff_options` of `estimate_ml` and `estimate_msm`. Use
+  `jacobian_numdiff_options` and `hessian_numdiff_options` instead.
+- The class `OptimizeLogReader`. Use `SQLiteLogReader` instead.
+- The argument `make_subplot_kwargs` of `slice_plot`.
+- `None` as `batch_evaluator`. Use `"joblib"` instead.
+- The copies of optimagic functions in the `estimagic` namespace (e.g.
+  `estimagic.minimize`) and the modules `estimagic.utilities` and
+  `estimagic.batch_evaluators`. Import them from `optimagic` instead.
+
+### Deprecations
+
+- The attributes `time` and `runtime` of `History` are deprecated and will be removed
+  in version `0.7.0`. Use `start_time` instead. Since version `0.5.2`, they warned that
+  they would be deprecated, but without naming a version.
 
 
 ## 0.5.4

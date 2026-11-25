@@ -14,8 +14,8 @@ from optimagic.visualization.convergence_plot import (
 def benchmark_results():
     problems = get_benchmark_problems("example")
     stop_after_10 = {
-        "stopping_max_criterion_evaluations": 10,
-        "stopping_max_iterations": 10,
+        "stopping_maxfun": 10,
+        "stopping_maxiter": 10,
     }
     optimizers = {
         "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": stop_after_10},

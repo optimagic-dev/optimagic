@@ -30,13 +30,14 @@ def test_replace_pairwise_equality_by_equality():
     assert calculated == expected
 
 
-@pytest.mark.filterwarnings("ignore:Specifying constraints as a dictionary is")
 def test_empty_constraints_work():
     params = pd.DataFrame()
     params["value"] = np.arange(5)
     params["bla"] = list("abcde")
 
-    constraints = [{"query": "bla == 'blubb'", "type": "equality"}]
+    constraints = [
+        om.EqualityConstraint(selector=lambda p: p.query("bla == 'blubb'")["value"])
+    ]
 
     check_constraints(params, constraints)
 

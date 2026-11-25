@@ -24,11 +24,6 @@ def params():
     return df
 
 
-@pytest.fixture()
-def constraints():
-    return [{"type": "fixed", "loc": "c", "value": 2}]
-
-
 dim = 2
 distributions = ["uniform", "triangular"]
 rules = ["sobol", "halton", "latin_hypercube", "random"]

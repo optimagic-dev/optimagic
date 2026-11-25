@@ -116,18 +116,3 @@ def unpack(func=None, symbol=None):
         return decorator_unpack(func)
     else:
         return decorator_unpack
-
-
-def deprecated(func, msg):
-    def decorator_deprecated(func):
-        @functools.wraps(func)
-        def wrapper_deprecated(*args, **kwargs):
-            warnings.warn(msg, FutureWarning)
-            return func(*args, **kwargs)
-
-        return wrapper_deprecated
-
-    if callable(func):
-        return decorator_deprecated(func)
-    else:
-        return decorator_deprecated

@@ -1,4 +1,3 @@
-import warnings
 from copy import deepcopy
 from enum import Enum
 from functools import partial
@@ -8,10 +7,8 @@ import plotly.graph_objects as go
 from numpy.typing import NDArray
 from plotly.subplots import make_subplots
 
-from optimagic import deprecations
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.config import DEFAULT_N_CORES, PLOTLY_TEMPLATE
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.optimization.fun_value import (
     convert_fun_output_to_function_value,
     enforce_return_type,
@@ -39,8 +36,6 @@ def slice_plot_3d(
     batch_evaluator="joblib",
     n_cores: int = DEFAULT_N_CORES,
     return_dict: bool = False,
-    lower_bounds=None,
-    upper_bounds=None,
 ) -> go.Figure | dict[tuple[int, int], go.Figure]:
     """Generate interactive slice, contour or surface plots of a function.
 
@@ -87,19 +82,12 @@ def slice_plot_3d(
         return_dict (bool): If `True`, returns a dictionary of `go.Figure`
             objects keyed by `(row, col)`. If `False`, returns a single combined
             `go.Figure`.
-        lower_bounds (sequence or None): Deprecated. Use `bounds` instead.
-        upper_bounds (sequence or None): Deprecated. Use `bounds` instead.
 
     Returns:
         plotly.Figure | dict: A single combined Plotly figure or a dictionary of
         individual figures.
 
     """
-    bounds = replace_and_warn_about_deprecated_bounds(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        bounds=bounds,
-    )
     bounds = pre_process_bounds(bounds)
 
     if func_kwargs is not None:
@@ -108,27 +96,10 @@ def slice_plot_3d(
     func_eval = func(params)
 
     # ==================================================================================
-    # handle deprecated function output
-    # ==================================================================================
-    if deprecations.is_dict_output(func_eval):
-        msg = (
-            "Functions that return dictionaries are deprecated in slice_plot and will "
-            "raise an error in version 0.6.0. Please pass a function that returns a "
-            "FunctionValue object instead and use the `mark` decorators to specify "
-            "whether it is a scalar, least-squares or likelihood function."
-        )
-        warnings.warn(msg, FutureWarning)
-        func_eval = deprecations.convert_dict_to_function_value(func_eval)
-        func = deprecations.replace_dict_output(func)
-
-    # ==================================================================================
     # Infer the function type and enforce the return type
     # ==================================================================================
 
-    if deprecations.is_dict_output(func_eval):
-        problem_type = deprecations.infer_problem_type_from_dict_output(func_eval)
-    else:
-        problem_type = infer_aggregation_level(func)
+    problem_type = infer_aggregation_level(func)
 
     func_eval = convert_fun_output_to_function_value(func_eval, problem_type)
 

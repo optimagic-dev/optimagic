@@ -187,7 +187,6 @@ extend-ignore = [
 "src/optimagic/differentiation/derivatives.py" = ["ANN"]
 "src/optimagic/differentiation/finite_differences.py" = ["ANN"]
 "src/optimagic/differentiation/generate_steps.py" = ["ANN"]
-"src/optimagic/differentiation/richardson_extrapolation.py" = ["ANN"]
 
 "src/optimagic/examples/numdiff_functions.py" = ["ANN"]
 
@@ -243,7 +242,6 @@ extend-ignore = [
 "src/optimagic/exceptions.py" = ["ANN"]
 "src/optimagic/utilities.py" = ["ANN"]
 "src/optimagic/pytree.py" = ["ANN"]
-"src/optimagic/deprecations.py" = ["ANN"]
 
 "src/estimagic/__init__.py" = ["ANN"]
 "src/estimagic/examples/logit.py" = ["ANN"]
@@ -295,7 +293,6 @@ filterwarnings = [
     "ignore:Conversion of an array with ndim > 0 to a scalar is deprecated",
     "ignore:The following exception was caught when evaluating",
     "ignore:The following exception was caught when calculating",
-    "ignore:Usage of the parameter log_options",
 ]
 addopts = ["--doctest-modules", "--pdbcls=pdbp:Pdb"]
 markers = [

@@ -1,11 +1,9 @@
-import warnings
 from dataclasses import dataclass
 from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
 
-from optimagic import deprecations
 from optimagic.logging.logger import LogReader
 from optimagic.optimization.history import History
 from optimagic.shared.compat import pd_df_map
@@ -74,43 +72,6 @@ class OptimizeResult:
     """Additional algorithm specific information."""
 
     logger: LogReader | None = None
-
-    # ==================================================================================
-    # Deprecations
-    # ==================================================================================
-
-    @property
-    def criterion(self) -> float:
-        msg = "The criterion attribute is deprecated. Use the fun attribute instead."
-        warnings.warn(msg, FutureWarning)
-        return self.fun
-
-    @property
-    def start_criterion(self) -> float:
-        msg = (
-            "The start_criterion attribute is deprecated. Use the start_fun attribute "
-            "instead."
-        )
-        warnings.warn(msg, FutureWarning)
-        return self.start_fun
-
-    @property
-    def n_criterion_evaluations(self) -> int | None:
-        msg = (
-            "The n_criterion_evaluations attribute is deprecated. Use the n_fun_evals "
-            "attribute instead."
-        )
-        warnings.warn(msg, FutureWarning)
-        return self.n_fun_evals
-
-    @property
-    def n_derivative_evaluations(self) -> int | None:
-        msg = (
-            "The n_derivative_evaluations attribute is deprecated. Use the n_jac_evals "
-            "attribute instead."
-        )
-        warnings.warn(msg, FutureWarning)
-        return self.n_jac_evals
 
     # ==================================================================================
     # Scipy aliases
@@ -227,10 +188,6 @@ class MultistartInfo:
     local_optima: list[OptimizeResult]
     exploration_sample: list[PyTree]
     exploration_results: list[float]
-
-    def __getitem__(self, key):
-        deprecations.throw_dict_access_future_warning(key, obj_name=type(self).__name__)
-        return getattr(self, key)
 
     @property
     def n_optimizations(self) -> int:

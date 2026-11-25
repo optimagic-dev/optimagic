@@ -465,13 +465,13 @@ def _get_stacked_local_histories(
     for hist in local_histories:
         stacked["criterion"].extend(hist.fun)
         stacked["params"].extend(hist.params)
-        stacked["runtime"].extend(hist.time)
+        stacked["runtime"].extend(_get_elapsed_time(hist))
 
     # append additional history is necessary
     if history is not None:
         stacked["criterion"].extend(history.fun)
         stacked["params"].extend(history.params)
-        stacked["runtime"].extend(history.time)
+        stacked["runtime"].extend(_get_elapsed_time(history))
 
     return History(
         direction=direction,
@@ -485,6 +485,16 @@ def _get_stacked_local_histories(
         task=len(stacked["criterion"]) * [None],  # ty:ignore[invalid-argument-type]
         batches=list(range(len(stacked["criterion"]))),
     )
+
+
+def _get_elapsed_time(history: History | IterationHistory) -> list[float]:
+    """Get the time of each evaluation relative to the first evaluation."""
+    if isinstance(history, History):
+        start_time = np.array(history.start_time)
+        elapsed = (start_time - start_time[0]).tolist()
+    else:
+        elapsed = list(history.time)
+    return elapsed
 
 
 def _prepend_exploration(

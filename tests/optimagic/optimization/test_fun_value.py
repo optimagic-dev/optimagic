@@ -63,6 +63,50 @@ def test_invalid_values_for_likelihood_optimizers(value):
         SCALAR_VALUES[0].internal_value(AggregationLevel.LIKELIHOOD)
 
 
+REMOVED_DICT_OUTPUTS = [
+    (ScalarFunctionValue, {"value": 1.0}, "\\['value'\\]"),
+    (ScalarFunctionValue, {"contributions": np.ones(2)}, "\\['contributions'\\]"),
+    (
+        LeastSquaresFunctionValue,
+        {"value": 2.0, "root_contributions": np.ones(2)},
+        "\\['root_contributions'\\]",
+    ),
+    (
+        LikelihoodFunctionValue,
+        {"value": 2.0, "contributions": np.ones(2)},
+        "\\['contributions'\\]",
+    ),
+    (
+        LikelihoodFunctionValue,
+        {"contributions": np.ones(2), "root_contributions": np.ones(2)},
+        "\\['contributions', 'root_contributions'\\]",
+    ),
+]
+
+
+@pytest.mark.parametrize("cls, value, entries", REMOVED_DICT_OUTPUTS)
+def test_dict_with_entries_removed_in_0_6_0_raises(cls, value, entries):
+    with pytest.raises(InvalidFunctionError, match=f"entries {entries}"):
+        cls(value)
+
+
+@pytest.mark.parametrize(
+    "cls, expected", [(LeastSquaresFunctionValue, 5.0), (LikelihoodFunctionValue, 3.0)]
+)
+def test_dict_with_entry_value_is_a_valid_pytree(cls, expected):
+    got = cls({"value": 1.0, "b": 2.0}).internal_value(AggregationLevel.SCALAR)
+    assert got == expected
+
+
+def test_enforce_least_squares_with_dict_with_entries_removed_in_0_6_0_raises():
+    @enforce_return_type(AggregationLevel.LEAST_SQUARES)
+    def f(x):
+        return FunctionValue(value={"root_contributions": x})
+
+    with pytest.raises(InvalidFunctionError, match="root_contributions"):
+        f(np.ones(3))
+
+
 def test_enforce_scalar_with_scalar_return():
     @enforce_return_type(AggregationLevel.SCALAR)
     def f(x):

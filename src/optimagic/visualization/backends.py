@@ -73,7 +73,6 @@ class GridLinePlotFunction(Protocol):
         margin_properties: dict[str, Any] | None,
         plot_title: str | None,
         marker_list: list[MarkerData] | None,
-        make_subplot_kwargs: dict[str, Any] | None = None,
     ) -> Any:
         """Protocol of the grid_line_plot function used for type checking.
 
@@ -198,7 +197,6 @@ def _grid_line_plot_plotly(
     margin_properties: dict[str, Any] | None,
     plot_title: str | None,
     marker_list: list[MarkerData] | None,
-    make_subplot_kwargs: dict[str, Any] | None = None,
 ) -> go.Figure:
     """Create a grid of line plots using Plotly.
 
@@ -212,7 +210,7 @@ def _grid_line_plot_plotly(
     """
     from plotly.subplots import make_subplots
 
-    subplot_kwargs = dict(
+    fig = make_subplots(
         rows=n_rows,
         cols=n_cols,
         subplot_titles=titles,
@@ -220,8 +218,6 @@ def _grid_line_plot_plotly(
         shared_xaxes=share_x,
         horizontal_spacing=0.3 / n_cols,
     )
-    subplot_kwargs.update(make_subplot_kwargs or {})
-    fig = make_subplots(**subplot_kwargs)
 
     for i, (row, col) in enumerate(
         itertools.product(range(1, n_rows + 1), range(1, n_cols + 1))
@@ -361,7 +357,6 @@ def _grid_line_plot_matplotlib(
     margin_properties: dict[str, Any] | None,
     plot_title: str | None,
     marker_list: list[MarkerData] | None,
-    make_subplot_kwargs: dict[str, Any] | None = None,
 ) -> np.ndarray:
     """Create a grid of line plots using Matplotlib.
 
@@ -545,7 +540,6 @@ def _grid_line_plot_bokeh(
     margin_properties: dict[str, Any] | None,
     plot_title: str | None,
     marker_list: list[MarkerData] | None,
-    make_subplot_kwargs: dict[str, Any] | None = None,
 ) -> "bokeh.models.GridPlot":
     """Create a grid of line plots using Bokeh.
 
@@ -745,7 +739,6 @@ def _grid_line_plot_altair(
     margin_properties: dict[str, Any] | None,
     plot_title: str | None,
     marker_list: list[MarkerData] | None,
-    make_subplot_kwargs: dict[str, Any] | None = None,
 ) -> "alt.Chart | alt.HConcatChart | alt.VConcatChart":
     """Create a grid of line plots using Altair.
 
@@ -948,7 +941,6 @@ def grid_line_plot(
     margin_properties: dict[str, Any] | None = None,
     plot_title: str | None = None,
     marker_list: list[MarkerData] | None = None,
-    make_subplot_kwargs: dict[str, Any] | None = None,
 ) -> Any:
     """Create a grid of line plots corresponding to the specified backend.
 
@@ -1003,7 +995,6 @@ def grid_line_plot(
         margin_properties=margin_properties,
         plot_title=plot_title,
         marker_list=marker_list,
-        make_subplot_kwargs=make_subplot_kwargs,
     )
 
     return fig

@@ -21,8 +21,8 @@ def benchmark_example():
         if k in ["bard_good_start", "box_3d", "rosenbrock_good_start"]
     }
     _stop_after_10 = {
-        "stopping_max_criterion_evaluations": 10,
-        "stopping_max_iterations": 10,
+        "stopping_maxfun": 10,
+        "stopping_maxiter": 10,
     }
     optimizers = {
         "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": _stop_after_10},

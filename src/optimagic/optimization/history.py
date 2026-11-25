@@ -1,4 +1,3 @@
-import warnings
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Iterable, Literal
@@ -7,6 +6,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from optimagic import deprecations
 from optimagic.pytree import (
     leaf_names,
     tree_leaves,
@@ -355,39 +355,26 @@ class History:
     def task(self) -> list[EvalTask]:
         return self._task
 
-    # ==================================================================================
-    # Add deprecated dict access
-    # ==================================================================================
+    # Deprecated attributes
+    # ----------------------------------------------------------------------------------
 
     @property
     def time(self) -> list[float]:
-        msg = (
-            "The attribute `time` of History will be deprecated soon. Use the "
-            "`start_time` method instead."
-        )
-        warnings.warn(msg, FutureWarning)
-        arr = np.array(self._start_time)
-        return (arr - arr[0]).tolist()
+        """Start time of each evaluation, measured from the first start time.
 
-    @property
-    def criterion(self) -> list[float | None]:
-        msg = "The attribute `criterion` of History is deprecated. Use `fun` instead."
-        warnings.warn(msg, FutureWarning)
-        return self.fun
+        Deprecated. Use ``start_time`` instead.
+
+        """
+        return deprecations.get_history_time(self._start_time, attribute="time")
 
     @property
     def runtime(self) -> list[float]:
-        msg = (
-            "The attribute `runtime` of History will be deprecated soon. Use the "
-            "`start_time` method instead."
-        )
-        warnings.warn(msg, FutureWarning)
-        return self.time
+        """Start time of each evaluation, measured from the first start time.
 
-    def __getitem__(self, key: str) -> Any:
-        msg = "dict-like access to History is deprecated. Use attribute access instead."
-        warnings.warn(msg, FutureWarning)
-        return getattr(self, key)
+        Deprecated. Use ``start_time`` instead.
+
+        """
+        return deprecations.get_history_time(self._start_time, attribute="runtime")
 
 
 # ======================================================================================

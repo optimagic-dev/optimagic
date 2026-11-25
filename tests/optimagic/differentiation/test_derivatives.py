@@ -7,25 +7,17 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from pandas.testing import assert_frame_equal
-from scipy.optimize._numdiff import approx_derivative
 
 from optimagic.differentiation.derivatives import (
-    Evals,
-    NumdiffResult,
     _consolidate_one_step_derivatives,
-    _convert_evaluation_data_to_frame,
-    _convert_richardson_candidates_to_frame,
     _is_scalar_nan,
     _nan_skipping_batch_evaluator,
     _reshape_cross_step_evals,
     _reshape_one_step_evals,
     _reshape_two_step_evals,
-    _select_minimizer_along_axis,
     first_derivative,
     second_derivative,
 )
-from optimagic.differentiation.generate_steps import Steps
 from optimagic.examples.numdiff_functions import (
     logit_loglike,
     logit_loglike_gradient,
@@ -208,91 +200,6 @@ def example_function_jacobian_fixtures():
     return {"func": f, "func_prime": fprime}
 
 
-@pytest.mark.filterwarnings("ignore:The `n_steps` argument")
-def test_first_derivative_gradient_richardson(example_function_gradient_fixtures):
-    f = example_function_gradient_fixtures["func"]
-    fprime = example_function_gradient_fixtures["func_prime"]
-
-    true_fprime = fprime(np.ones(3))
-    scipy_fprime = approx_derivative(f, np.ones(3))
-
-    our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
-
-    aaae(scipy_fprime, our_fprime.derivative)
-    aaae(true_fprime, our_fprime.derivative)
-
-
-@pytest.mark.filterwarnings("ignore:The `n_steps` argument")
-def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures):
-    f = example_function_jacobian_fixtures["func"]
-    fprime = example_function_jacobian_fixtures["func_prime"]
-
-    true_fprime = fprime(np.ones(3))
-    scipy_fprime = approx_derivative(f, np.ones(3))
-
-    our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
-
-    aaae(scipy_fprime, our_fprime.derivative)
-    aaae(true_fprime, our_fprime.derivative)
-
-
-def test_convert_evaluation_data_to_frame():
-    arr = np.arange(4).reshape(2, 2)
-    arr2 = arr.reshape(2, 1, 2)
-    steps = Steps(pos=arr, neg=-arr)
-    evals = Evals(pos=arr2, neg=-arr2)  # ty:ignore[invalid-argument-type]
-    expected = [
-        [1, 0, 0, 0, 0, 0],
-        [1, 0, 1, 0, 1, 1],
-        [1, 1, 0, 0, 2, 2],
-        [1, 1, 1, 0, 3, 3],
-        [-1, 0, 0, 0, 0, 0],
-        [-1, 0, 1, 0, 1, -1],
-        [-1, 1, 0, 0, 2, -2],
-        [-1, 1, 1, 0, 3, -3],
-    ]
-    expected = pd.DataFrame(
-        expected, columns=["sign", "step_number", "dim_x", "dim_f", "step", "eval"]
-    )
-    got = _convert_evaluation_data_to_frame(steps, evals)
-    assert_frame_equal(expected, got.reset_index(), check_dtype=False)
-
-
-def test__convert_richardson_candidates_to_frame():
-    jac = {
-        "forward1": np.array([[0, 1], [2, 3]]),
-        "forward2": np.array([[0.5, 1], [2, 3]]),
-    }
-    err = {
-        "forward1": np.array([[0, 0], [0, 1]]),
-        "forward2": np.array([[1, 0], [0, 0]]),
-    }
-    expected = [
-        ["forward", 1, 0, 0, 0, 0],
-        ["forward", 1, 1, 0, 1, 0],
-        ["forward", 1, 0, 1, 2, 0],
-        ["forward", 1, 1, 1, 3, 1],
-        ["forward", 2, 0, 0, 0.5, 1],
-        ["forward", 2, 1, 0, 1, 0],
-        ["forward", 2, 0, 1, 2, 0],
-        ["forward", 2, 1, 1, 3, 0],
-    ]
-    expected = pd.DataFrame(
-        expected, columns=["method", "num_term", "dim_x", "dim_f", "der", "err"]
-    )
-    expected = expected.set_index(["method", "num_term", "dim_x", "dim_f"])
-    got = _convert_richardson_candidates_to_frame(jac, err)
-    assert_frame_equal(got, expected, check_dtype=False, check_index_type=False)
-
-
-def test__select_minimizer_along_axis():
-    der = np.array([[[0, 1], [2, 3]], [[4, 5], [6, 7]]])
-    err = np.array([[[0, 1], [1, 0]], [[1, 0], [0, 1]]])
-    expected = (np.array([[0, 5], [6, 3]]), np.array([[0, 0], [0, 0]]))
-    got = _select_minimizer_along_axis(der, err)
-    aaae(expected, got)
-
-
 def test_reshape_one_step_evals():
     n_steps, dim_f, dim_x = 2, 3, 4
     raw_evals_one_step = np.arange(2 * n_steps * dim_f * dim_x)
@@ -381,20 +288,6 @@ def test_second_derivative_with_unpacking():
 
     assert isinstance(got.func_value, MyOutput)
     aaae(got.derivative, np.eye(3) * 2, decimal=4)
-
-
-@pytest.mark.filterwarnings("ignore:The dictionary access for")
-def test_numdiff_result_getitem():
-    res = NumdiffResult(
-        derivative=1,
-        func_value=2,
-        _func_evals=pd.DataFrame([0, 1]),
-        _derivative_candidates=pd.DataFrame([2, 3]),
-    )
-    assert res["derivative"] == res.derivative
-    assert res["func_value"] == res.func_value
-    assert_frame_equal(res["_func_evals"], res._func_evals)  # ty:ignore[invalid-argument-type]
-    assert_frame_equal(res["_derivative_candidates"], res._derivative_candidates)  # ty:ignore[invalid-argument-type]
 
 
 def test_first_and_second_derivative_have_same_type_hints():

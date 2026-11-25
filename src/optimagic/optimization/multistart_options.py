@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 from functools import partial
-from typing import Callable, Literal, Sequence, TypedDict, cast
+from typing import Callable, Literal, Sequence, TypedDict
 
 import numpy as np
 from numpy.typing import NDArray
 from typing_extensions import NotRequired
 
 from optimagic.batch_evaluators import process_batch_evaluator
-from optimagic.deprecations import replace_and_warn_about_deprecated_multistart_options
 from optimagic.exceptions import InvalidMultistartError
 from optimagic.typing import BatchEvaluator, BatchEvaluatorLiteral, PyTree
 
@@ -84,12 +83,6 @@ class MultistartOptions:
     """The error handling for exploration and optimization errors. Allowed are "raise"
     and "continue"."""
 
-    # Deprecated attributes
-    share_optimization: float | None = None
-    convergence_relative_params_tolerance: float | None = None
-    optimization_error_handling: Literal["raise", "continue"] | None = None
-    exploration_error_handling: Literal["raise", "continue"] | None = None
-
     def __post_init__(self) -> None:
         _validate_attribute_types_and_values(self)
 
@@ -113,11 +106,6 @@ class MultistartOptionsDict(TypedDict):
     batch_size: NotRequired[int | None]
     seed: NotRequired[int | np.random.Generator | None]
     error_handling: NotRequired[Literal["raise", "continue"] | None]
-    # Deprecated attributes
-    share_optimization: NotRequired[float | None]
-    convergence_relative_params_tolerance: NotRequired[float | None]
-    optimization_error_handling: NotRequired[Literal["raise", "continue"] | None]
-    exploration_error_handling: NotRequired[Literal["raise", "continue"] | None]
 
 
 def pre_process_multistart(
@@ -158,12 +146,6 @@ def pre_process_multistart(
                 "options must be of type optimagic.MultistartOptions, a dictionary "
                 "with valid keys, None, or a boolean."
             ) from e
-
-    if multistart is not None:
-        multistart = replace_and_warn_about_deprecated_multistart_options(multistart)
-        # The replace and warn function cannot be typed due to circular imports, but
-        # we know that the return type is MultistartOptions
-        multistart = cast(MultistartOptions, multistart)
 
     return multistart
 
@@ -401,17 +383,11 @@ def get_internal_multistart_options_from_public(
         else:
             n_samples = 10 * options.stopping_maxopt
 
-    if options.share_optimization is None:
-        share_optimization = 0.1
-    else:
-        share_optimization = options.share_optimization
-
     if options.stopping_maxopt is None:
-        stopping_maxopt = max(1, int(share_optimization * n_samples))
+        stopping_maxopt = max(1, int(0.1 * n_samples))
     else:
         stopping_maxopt = options.stopping_maxopt
 
-    # Set defaults resulting from deprecated attributes
     if options.error_handling is not None:
         error_handling = options.error_handling
     else:

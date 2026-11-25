@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Callable, Literal
 
@@ -7,14 +6,12 @@ import pandas as pd
 from numpy.typing import NDArray
 
 import optimagic as om
-from optimagic import deprecations
 from optimagic.batch_evaluators import (
     BatchEvaluator,
     BatchEvaluatorLiteral,
     process_batch_evaluator,
 )
 from optimagic.config import DEFAULT_N_CORES, DEFAULT_PALETTE
-from optimagic.deprecations import replace_and_warn_about_deprecated_bounds
 from optimagic.optimization.fun_value import (
     SpecificFunctionValue,
     convert_fun_output_to_function_value,
@@ -49,10 +46,6 @@ def slice_plot(
     title: str | None = None,
     return_dict: bool = False,
     batch_evaluator: BatchEvaluatorLiteral | BatchEvaluator = "joblib",
-    # deprecated
-    make_subplot_kwargs: dict | None = None,
-    lower_bounds: None = None,
-    upper_bounds: None = None,
 ) -> Any:
     """Plot criterion along coordinates at given and random values.
 
@@ -107,17 +100,9 @@ def slice_plot(
     # ==================================================================================
     # Process inputs
 
-    bounds = replace_and_warn_about_deprecated_bounds(
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        bounds=bounds,
-    )
     bounds = pre_process_bounds(bounds)
 
     func, func_eval = _get_processed_func_and_func_eval(func, func_kwargs, params)
-
-    if make_subplot_kwargs is not None:
-        deprecations.throw_make_subplot_kwargs_in_slice_plot_future_warning()
 
     # ==================================================================================
     # Extract backend-agnostic plotting data from results
@@ -189,7 +174,6 @@ def slice_plot(
             height=300 * n_rows,
             width=400 * plots_per_row,
             plot_title=title,
-            make_subplot_kwargs=make_subplot_kwargs,
         )
         return fig
 
@@ -201,23 +185,8 @@ def _get_processed_func_and_func_eval(
         func = partial(func, **func_kwargs)
     func_eval = func(params)
 
-    # handle deprecated function output
-    if deprecations.is_dict_output(func_eval):
-        msg = (
-            "Functions that return dictionaries are deprecated in slice_plot and will "
-            "raise an error in version 0.6.0. Please pass a function that returns a "
-            "FunctionValue object instead and use the `mark` decorators to specify "
-            "whether it is a scalar, least-squares or likelihood function."
-        )
-        warnings.warn(msg, FutureWarning)
-        func_eval = deprecations.convert_dict_to_function_value(func_eval)
-        func = deprecations.replace_dict_output(func)
-
     # Infer the function type and enforce the return type
-    if deprecations.is_dict_output(func_eval):
-        problem_type = deprecations.infer_problem_type_from_dict_output(func_eval)
-    else:
-        problem_type = infer_aggregation_level(func)
+    problem_type = infer_aggregation_level(func)
 
     func_eval = convert_fun_output_to_function_value(func_eval, problem_type)
     func = enforce_return_type(problem_type)(func)

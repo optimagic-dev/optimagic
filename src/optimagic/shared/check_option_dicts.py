@@ -17,23 +17,18 @@ def check_optimization_options(options, usage, algorithm_mandatory=True):
                 "optimize_options or maximize_options must be a dict or None."
             )
 
-    criterion_options = {
-        "criterion",
-        "criterion_kwargs",
-        "derivative",
-        "derivative_kwargs",
-    }
+    criterion_options = {"fun", "fun_kwargs"}
 
     invalid_criterion = criterion_options.intersection(options)
     if invalid_criterion:
         msg = (
-            "Entries related to the criterion function, its derivatives or keyword "
-            "arguments of those functions are not valid entries of optimize_options "
-            f"or maximize_options for {usage}. Remove: {invalid_criterion}"
+            "Entries related to the criterion function or its keyword arguments are "
+            "not valid entries of optimize_options or maximize_options for "
+            f"{usage}. Remove: {invalid_criterion}"
         )
         raise ValueError(msg)
 
-    general_options = {"logging", "log_options", "constraints"}
+    general_options = {"logging", "constraints"}
 
     invalid_general = general_options.intersection(options)
 
