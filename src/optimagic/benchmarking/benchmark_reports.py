@@ -174,15 +174,24 @@ def traceback_report(problems, results, return_type="dataframe"):
                 report[(problem_name, algorithm_name)] = result["solution"]
 
     elif return_type == "dataframe":
-        tracebacks = {}
+        tracebacks: dict[str, dict[str, str]] = {}
         for (problem_name, algorithm_name), result in results.items():
             if isinstance(result["solution"], str):
-                tracebacks[algorithm_name] = tracebacks.setdefault(algorithm_name, {})
-                tracebacks[algorithm_name][problem_name] = result["solution"]
+                tracebacks.setdefault(algorithm_name, {})[problem_name] = result[
+                    "solution"
+                ]
 
-        report = pd.DataFrame.from_dict(tracebacks, orient="index").stack().to_frame()  # ty:ignore[call-non-callable]
-        report.index.set_names(["algorithm", "problem"], inplace=True)
-        report.columns = ["traceback"]
+        algorithms, problem_names, values = [], [], []
+        for algorithm_name, problem_to_traceback in tracebacks.items():
+            for problem_name, traceback in problem_to_traceback.items():
+                algorithms.append(algorithm_name)
+                problem_names.append(problem_name)
+                values.append(traceback)
+
+        index = pd.MultiIndex.from_arrays(
+            [algorithms, problem_names], names=["algorithm", "problem"]
+        )
+        report = pd.DataFrame({"traceback": values}, index=index)
         report["dimensionality"] = 0
 
         for problem_name, dim in _get_problem_dimensions(problems).items():

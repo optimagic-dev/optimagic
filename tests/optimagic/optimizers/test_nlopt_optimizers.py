@@ -14,7 +14,7 @@ if IS_NLOPT_INSTALLED:
     import nlopt
 
 
-pytestmark = pytest.mark.skipif(not IS_NLOPT_INSTALLED, reason="nlopt not installed")
+pytestmark = pytest.mark.nlopt
 
 
 def _run(algorithm, options, *, flat=False):

@@ -1,6 +1,7 @@
 """Test helper functions for nevergrad optimizers."""
 
-from typing import get_args
+import time
+from typing import get_args, get_type_hints
 
 import numpy as np
 import pytest
@@ -10,6 +11,8 @@ from optimagic import algorithms, mark
 from optimagic.config import IS_NEVERGRAD_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
+
+pytestmark = pytest.mark.nevergrad
 
 if IS_NEVERGRAD_INSTALLED:
     import nevergrad as ng
@@ -71,39 +74,53 @@ def sos(x):
 ###
 
 
-# test if all optimizers listed in Literal type hint are valid attributes
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
-def test_meta_optimizers_are_valid():
-    opt = algorithms.NevergradMeta
-    optimizers = get_args(opt.__annotations__["optimizer"])
-    for optimizer in optimizers:
-        try:
-            getattr(ng.optimizers, optimizer)
-        except AttributeError:
-            pytest.fail(f"Optimizer '{optimizer}' not found in Nevergrad")
+def _get_optimizer_names(algorithm):
+    """Return the values of the Literal type hint of the option ``optimizer``.
+
+    The annotations of the nevergrad module are strings, so they have to be evaluated
+    with ``get_type_hints``. ``get_args`` of the raw string would return ``()``.
+
+    """
+    return get_args(get_type_hints(algorithm)["optimizer"])
 
 
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
-def test_ngopt_optimizers_are_valid():
-    opt = algorithms.NevergradNGOpt
-    optimizers = get_args(opt.__annotations__["optimizer"])
-    for optimizer in optimizers:
-        try:
-            getattr(ng.optimizers, optimizer)
-        except AttributeError:
-            pytest.fail(f"Optimizer '{optimizer}' not found in Nevergrad")
+NEVERGRAD_META = _get_optimizer_names(algorithms.NevergradMeta)
+NEVERGRAD_NGOPT = _get_optimizer_names(algorithms.NevergradNGOpt)
 
 
-# list of available optimizers in nevergrad_meta
-NEVERGRAD_META = get_args(algorithms.NevergradMeta.__annotations__["optimizer"])
-# list of available optimizers in nevergrad_ngopt
-NEVERGRAD_NGOPT = get_args(algorithms.NevergradNGOpt.__annotations__["optimizer"])
+@pytest.mark.parametrize("optimizer", NEVERGRAD_META + NEVERGRAD_NGOPT)
+def test_optimizers_in_literal_type_hints_exist_in_nevergrad(optimizer):
+    assert hasattr(ng.optimizers, optimizer)
 
 
 # test stochastic_global_algorithm_on_sum_of_squares
+
+# NoisyBandit is built for noisy functions. It spends most evaluations on re-evaluating
+# known points to average out noise, so with 1000 evaluations it evaluates only 28
+# distinct points. See https://github.com/optimagic-dev/optimagic/issues/750.
+IMPRECISE_META_OPTIMIZERS = {"NoisyBandit"}
+
+
 @pytest.mark.slow
-@pytest.mark.parametrize("algorithm", NEVERGRAD_META)
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
+@pytest.mark.parametrize(
+    "algorithm",
+    [
+        pytest.param(
+            name,
+            marks=pytest.mark.xfail(
+                raises=AssertionError,
+                strict=True,
+                reason=(
+                    "Built for noisy functions; evaluates too few distinct points to "
+                    "reach the required precision."
+                ),
+            ),
+        )
+        if name in IMPRECISE_META_OPTIMIZERS
+        else name
+        for name in NEVERGRAD_META
+    ],
+)
 def test_meta_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algorithm):
     res = minimize(
         fun=sos,
@@ -120,7 +137,6 @@ def test_meta_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algo
 
 @pytest.mark.slow
 @pytest.mark.parametrize("algorithm", NEVERGRAD_NGOPT)
-@pytest.mark.skipif(not IS_NEVERGRAD_INSTALLED, reason="nevergrad not installed")
 def test_ngopt_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(algorithm):
     res = minimize(
         fun=sos,
@@ -133,3 +149,33 @@ def test_ngopt_optimizers_with_stochastic_global_algorithm_on_sum_of_squares(alg
     )
     assert res.success in [True, None]
     aaae(res.params, np.array([0.2, 0]), decimal=1)
+
+
+def test_cmaes_returns_best_point_of_all_restarts():
+    # stopping_maxiter=5 makes nevergrad restart CMA-ES every 5 iterations, and
+    # nevergrad only recommends the best point of the last restart.
+    res = minimize(
+        fun=lambda x: x @ x,
+        params=np.arange(3.0),
+        algorithm=algorithms.NevergradCMAES(
+            stopping_maxiter=5, stopping_maxfun=500, seed=0
+        ),
+    )
+    assert res.history is not None
+    assert res.fun == min(res.history.fun)
+
+
+def test_cmaes_stops_after_stopping_maxtime():
+    def slow_sphere(x):
+        time.sleep(0.01)
+        return x @ x
+
+    res = minimize(
+        fun=slow_sphere,
+        params=np.arange(3.0),
+        algorithm=algorithms.NevergradCMAES(
+            stopping_maxtime=0.1, stopping_maxfun=1_000, seed=0
+        ),
+    )
+    assert res.n_fun_evals is not None
+    assert res.n_fun_evals < 100
