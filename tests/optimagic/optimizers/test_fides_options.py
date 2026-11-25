@@ -1,4 +1,10 @@
-"""Test the different options of fides."""
+"""Smoke tests for fides.
+
+Detailed tests of the options are in test_fides_wrappers.py.
+
+"""
+
+from typing import Any
 
 import numpy as np
 import pytest
@@ -21,24 +27,26 @@ else:
 
 test_cases_no_contribs_needed = [
     {},
-    {"hessian_update_strategy": "bfgs"},
-    {"hessian_update_strategy": "BFGS"},
-    {"hessian_update_strategy": SR1()},
-    {"hessian_update_strategy": Broyden(phi=0.5)},
-    {"hessian_update_strategy": "sr1"},
-    {"hessian_update_strategy": "DFP"},
-    {"hessian_update_strategy": "bb"},
+    {"hessian_update": "bfgs"},
+    {"hessian_update": "BFGS"},
+    {"hessian_update": SR1()},
+    {"hessian_update": Broyden(phi=0.5)},
+    {"hessian_update": "sr1"},
+    {"hessian_update": "DFP"},
+    {"hessian_update": "bb"},
     {"convergence_ftol_rel": 1e-6},
     {"convergence_xtol_abs": 1e-6},
     {"convergence_gtol_abs": 1e-6},
     {"convergence_gtol_rel": 1e-6},
     {"stopping_maxiter": 100},
-    {"stopping_max_seconds": 200},
-    {"trustregion_initial_radius": 20, "trustregion_stepback_strategy": "truncate"},
-    {"trustregion_subspace_dimension": "full"},
-    {"trustregion_max_stepback_fraction": 0.8},
-    {"trustregion_decrease_threshold": 0.4, "trustregion_decrease_factor": 0.2},
-    {"trustregion_increase_threshold": 0.9, "trustregion_increase_factor": 4},
+    {"stopping_maxtime": 200},
+    {"trustregion_initial_radius": 20, "stepback_strategy": "truncate"},
+    {"subspace_solver": "full"},
+    {"subspace_solver": "2D", "stepback_strategy": "refine"},
+    {"subspace_solver": "scg"},
+    {"max_stepback_fraction": 0.8},
+    {"trustregion_shrinking_threshold": 0.4, "trustregion_shrinking_factor": 0.2},
+    {"trustregion_expansion_threshold": 0.9, "trustregion_expansion_factor": 4},
 ]
 
 
@@ -66,10 +74,10 @@ def test_fides_correct_algo_options(algo_options):
 
 
 test_cases_needing_contribs = [
-    {"hessian_update_strategy": FX()},
-    {"hessian_update_strategy": "ssm"},
-    {"hessian_update_strategy": "TSSM"},
-    {"hessian_update_strategy": "gnsbfgs"},
+    {"hessian_update": FX()},
+    {"hessian_update": "ssm"},
+    {"hessian_update": "TSSM"},
+    {"hessian_update": "gnsbfgs"},
 ]
 
 
@@ -101,3 +109,10 @@ def test_fides_stop_after_one_iteration():
     )
     assert not res.success
     assert res.n_iterations == 1
+
+
+def test_fides_deprecated_option_name_still_works():
+    with pytest.warns(FutureWarning, match="Use `subspace_solver='scg'` instead"):
+        deprecated: dict[str, Any] = {"trustregion_subspace_dimension": "scg"}
+        algo = Fides(**deprecated)
+    assert algo == Fides(subspace_solver="scg")

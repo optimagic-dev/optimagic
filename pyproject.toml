@@ -296,6 +296,7 @@ filterwarnings = [
     "ignore:The following exception was caught when evaluating",
     "ignore:The following exception was caught when calculating",
     "ignore:Usage of the parameter log_options",
+    "ignore:The default of the option `stepback_strategy` of the algorithm fides",
 ]
 addopts = ["--doctest-modules", "--pdbcls=pdbp:Pdb"]
 markers = [
@@ -485,7 +486,7 @@ bayesian-optimization = ">=1.4"
 # PyPI has no h5py wheels for the newest Python version yet.
 h5py = "*"
 [tool.pixi.feature.fides.pypi-dependencies]
-fides = "==0.7.4"
+fides = ">=0.8.2"
 
 [tool.pixi.feature.gfo.pypi-dependencies]
 gradient-free-optimizers = ">=1.6.0"
@@ -501,8 +502,8 @@ iminuit = ">=2.25"
 cyipopt = ">=1.4.0"
 
 [tool.pixi.feature.nag.pypi-dependencies]
-dfo-ls = ">=1.5.3"
-py-bobyqa = ">=1.3"
+dfo-ls = ">=1.6.5"
+py-bobyqa = ">=1.5.0"
 
 # nevergrad_bo needs bayes-optim, which needs torch and scikit-learn. The conda-forge
 # CPU build of torch keeps the PyPI resolver from installing the much larger CUDA build.

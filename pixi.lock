@@ -349,16 +349,16 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/54/95a2d47e8ae8ba5c871be6cd7bba6c77f6af74c6966d8fb711710f03851e/optree-0.20.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
@@ -640,15 +640,15 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
@@ -924,16 +924,16 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/dc/491b7661614ab97483abf2056be1deee4dc2490ecbf7bff9ab5cdbac86e1/pyreadline3-3.5.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
@@ -1307,17 +1307,17 @@ environments:
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/03/46/25d64bcd7821c8d6f1080e1c43d5fcdfc442a18f759a230b5ccdc891093e/sphinxcontrib_mermaid-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/54/95a2d47e8ae8ba5c871be6cd7bba6c77f6af74c6966d8fb711710f03851e/optree-0.20.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/c9/11ccfaacd8bbc0398a113d9f7ca3592b18ec15a37e77fe7f9496a6d9f5f0/intersphinx_registry-0.2602.2-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
@@ -1633,16 +1633,16 @@ environments:
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/03/46/25d64bcd7821c8d6f1080e1c43d5fcdfc442a18f759a230b5ccdc891093e/sphinxcontrib_mermaid-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/c9/11ccfaacd8bbc0398a113d9f7ca3592b18ec15a37e77fe7f9496a6d9f5f0/intersphinx_registry-0.2602.2-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
@@ -1952,17 +1952,17 @@ environments:
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/03/46/25d64bcd7821c8d6f1080e1c43d5fcdfc442a18f759a230b5ccdc891093e/sphinxcontrib_mermaid-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/dc/491b7661614ab97483abf2056be1deee4dc2490ecbf7bff9ab5cdbac86e1/pyreadline3-3.5.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b8/c9/11ccfaacd8bbc0398a113d9f7ca3592b18ec15a37e77fe7f9496a6d9f5f0/intersphinx_registry-0.2602.2-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl
@@ -3039,11 +3039,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/18/53/84099323c2ec4be98d935f63c033ac4151ee83836ca1050ede3b3aadf155/joblib-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/29/13/dbb9d0aef7de6518f0b8b2de7850d3acec5b29693267a8d7596a4b0ecdb1/sqlalchemy-2.1.9-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/7f/75/8fc9fe1c135ada492258fda71cc6c5c555bc26db461387cfb824768ff0a1/pdbp-1.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/54/95a2d47e8ae8ba5c871be6cd7bba6c77f6af74c6966d8fb711710f03851e/optree-0.20.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/9a/0b/33e6e63d23691c4561a8a60e14c458dffa350b72255350dfdd008d6d838a/kaleido-1.5.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a4/42/3b121b42b114919ffc6195a81c1c7065a465f62f46477fbdb87a07699e51/cloudpickle-3.1.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/cb/fc/8c82be70b8f96d09943360f34cfb2ecdd3035294c51bce4131eeabe56645/tabcompleter-1.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e2/01/2e202a5dda101b0bdc3cdef4e76d635e602efef8293e80c9c9b6570b56a0/simplejson-4.3.0-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/e5/7d/905a3a3d51087515719058c94cfbda2ff0fc14417c20d557ae3e82d8b250/plotly-7.1.0-py3-none-any.whl
@@ -3293,10 +3293,10 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/12/24/96b041b800d1de465758106353bedc1e682c5671b3a18142e71e67613996/choreographer-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/53/84099323c2ec4be98d935f63c033ac4151ee83836ca1050ede3b3aadf155/joblib-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/7f/75/8fc9fe1c135ada492258fda71cc6c5c555bc26db461387cfb824768ff0a1/pdbp-1.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/9a/0b/33e6e63d23691c4561a8a60e14c458dffa350b72255350dfdd008d6d838a/kaleido-1.5.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a4/42/3b121b42b114919ffc6195a81c1c7065a465f62f46477fbdb87a07699e51/cloudpickle-3.1.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/bd/35/1b5aa5ddbbb28c47a68e2d247a6eac9b0118deef6530085c0b48eb6f4c5f/simplejson-4.3.0-cp314-cp314-macosx_11_0_arm64.whl
       - pypi: https://files.pythonhosted.org/packages/cb/fc/8c82be70b8f96d09943360f34cfb2ecdd3035294c51bce4131eeabe56645/tabcompleter-1.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/7d/905a3a3d51087515719058c94cfbda2ff0fc14417c20d557ae3e82d8b250/plotly-7.1.0-py3-none-any.whl
@@ -3546,11 +3546,11 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/12/24/96b041b800d1de465758106353bedc1e682c5671b3a18142e71e67613996/choreographer-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/18/53/84099323c2ec4be98d935f63c033ac4151ee83836ca1050ede3b3aadf155/joblib-1.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/7f/75/8fc9fe1c135ada492258fda71cc6c5c555bc26db461387cfb824768ff0a1/pdbp-1.9.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/83/01/83ddf9f0187fa5648ad5b6fc9300a050f854b3c0f657e06b3b687a5fbf14/simplejson-4.3.0-cp314-cp314-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/9a/0b/33e6e63d23691c4561a8a60e14c458dffa350b72255350dfdd008d6d838a/kaleido-1.5.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/a4/42/3b121b42b114919ffc6195a81c1c7065a465f62f46477fbdb87a07699e51/cloudpickle-3.1.3-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/cb/fc/8c82be70b8f96d09943360f34cfb2ecdd3035294c51bce4131eeabe56645/tabcompleter-1.4.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e5/7d/905a3a3d51087515719058c94cfbda2ff0fc14417c20d557ae3e82d8b250/plotly-7.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/f2/23/75d736f3ece18dd459b8d123743c47d0a2e021435af8a1801f3393d5cff4/sqlalchemy-2.1.9-cp314-cp314-win_amd64.whl
@@ -14466,21 +14466,21 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/36/3c/d49cf3f4489a10e9ddefde18fd258f120754c5825d06d145d9a0aaac770b/types_openpyxl-3.1.5.20250919-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3e/54/3489432b1d9bc713c9d8aa810296b8f5b0088403662959fb63a8acdbd4fc/types_setuptools-82.0.0.20260210-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/2f/f91e4eee21585ff548e83358332d5632ee49f6b2dcd96cb5dca4e0468951/pandas_stubs-3.0.0.260204-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/54/95a2d47e8ae8ba5c871be6cd7bba6c77f6af74c6966d8fb711710f03851e/optree-0.20.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/b0/e79d84748f1d34304f13191424348a719c3febaa3493835370fe9528e1e6/types_Jinja2-2.11.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/d6/b8effb1c48539260a5eb4196afc55efac4ea1684a4991977555eb266b2ef/types_MarkupSafe-1.1.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/15/4564f173d031f64bf56964d192b6b705e679fc23c02704b84ccbcb809396/types_cffi-1.17.0.20260307-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
@@ -14760,20 +14760,20 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hbf9d68e_6.conda
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/36/3c/d49cf3f4489a10e9ddefde18fd258f120754c5825d06d145d9a0aaac770b/types_openpyxl-3.1.5.20250919-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3e/54/3489432b1d9bc713c9d8aa810296b8f5b0088403662959fb63a8acdbd4fc/types_setuptools-82.0.0.20260210-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/51/fe/53ac0cd932db5dcaf55961bc7cb7afdca8d80d8cc7406ed661f0c7dc111a/pdbp-1.8.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/2f/f91e4eee21585ff548e83358332d5632ee49f6b2dcd96cb5dca4e0468951/pandas_stubs-3.0.0.260204-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/b0/e79d84748f1d34304f13191424348a719c3febaa3493835370fe9528e1e6/types_Jinja2-2.11.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/d6/b8effb1c48539260a5eb4196afc55efac4ea1684a4991977555eb266b2ef/types_MarkupSafe-1.1.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/15/4564f173d031f64bf56964d192b6b705e679fc23c02704b84ccbcb809396/types_cffi-1.17.0.20260307-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
@@ -15047,7 +15047,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/win-64/zstd-1.5.7-h534d264_6.conda
       - pypi: ./
       - pypi: https://files.pythonhosted.org/packages/05/5b/83e1ff87eb60ca706972f7e02e15c0b33396e7bdbd080069a5d1b53cf0d8/simplejson-3.20.2-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/36/3c/d49cf3f4489a10e9ddefde18fd258f120754c5825d06d145d9a0aaac770b/types_openpyxl-3.1.5.20250919-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3e/54/3489432b1d9bc713c9d8aa810296b8f5b0088403662959fb63a8acdbd4fc/types_setuptools-82.0.0.20260210-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4b/97/f6de8d4af54d6401d6581a686cce3e3e2371a79ba459a449104e026c08bc/kaleido-1.2.0-py3-none-any.whl
@@ -15055,13 +15054,14 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/54/20/6aa79ba3570bddd1bf7e951c6123f806751e58e8cce736bad77b2cf348d7/logistro-2.0.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5a/dc/491b7661614ab97483abf2056be1deee4dc2490ecbf7bff9ab5cdbac86e1/pyreadline3-3.5.4-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
       - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7c/2f/f91e4eee21585ff548e83358332d5632ee49f6b2dcd96cb5dca4e0468951/pandas_stubs-3.0.0.260204-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
       - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/9f/d73dfb85d7a5b1a56a99adc50f2074029468168c970ff5daeade4ad819e4/choreographer-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b7/b0/e79d84748f1d34304f13191424348a719c3febaa3493835370fe9528e1e6/types_Jinja2-2.11.9-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/bc/d6/b8effb1c48539260a5eb4196afc55efac4ea1684a4991977555eb266b2ef/types_MarkupSafe-1.1.10-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/c7/a0/5ff05d1919ca249508012cad89f08fdc6cfbdaa15b41651c5fe6dffaf1d3/dfo_ls-1.6.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/15/4564f173d031f64bf56964d192b6b705e679fc23c02704b84ccbcb809396/types_cffi-1.17.0.20260307-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d1/fd/5c2baba82425b75baf7dbec5af57219cd252aa8a1ace4f5cd1d88e472276/pyswarms-1.3.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d5/2a/4a9d31c685157d9bb82e1beee51e811dddd10d83cad3368630a9c1fd9e1a/bayesian_optimization-3.2.0-py3-none-any.whl
@@ -33261,20 +33261,6 @@ packages:
   - platformdirs>=4.3.6
   - simplejson>=3.19.3
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/13/40/e412e277c43983693456d7f11f2bc72ca9209aa1342255bb446496d2fb48/dfo_ls-1.6.2-py3-none-any.whl
-  name: dfo-ls
-  version: 1.6.2
-  sha256: 961d15e7194f3868e9e48da45010cb6d24d85491007fbee4e38a9f3ab8050cef
-  requires_dist:
-  - setuptools
-  - numpy
-  - scipy>=1.11
-  - pandas
-  - pytest ; extra == 'dev'
-  - sphinx ; extra == 'dev'
-  - sphinx-rtd-theme ; extra == 'dev'
-  - trustregion>=1.1 ; extra == 'trustregion'
-  requires_python: '>=3.9'
 - pypi: https://files.pythonhosted.org/packages/18/53/84099323c2ec4be98d935f63c033ac4151ee83836ca1050ede3b3aadf155/joblib-1.6.0-py3-none-any.whl
   name: joblib
   version: 1.6.0
@@ -33634,6 +33620,17 @@ packages:
   - pytest ; extra == 'dev'
   - twine ; extra == 'dev'
   requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/5d/89/eea7d5f82d65fab90ec75782e899eda1b681cdff92462902d7950b7856d2/fides-0.8.2.tar.gz
+  name: fides
+  version: 0.8.2
+  sha256: 5ea5fa718a4425b114db9e82ad9d7e6de726e0ef7f1a2f9d01574b6165c3e6dd
+  requires_dist:
+  - numpy>=1.19.2
+  - scipy>=1.5.2
+  - h5py>=3.5.0
+  - pytest>=5.4.2 ; extra == 'test'
+  - pytest-cov>=4.0.0 ; extra == 'test'
+  requires_python: '>=3.12'
 - pypi: https://files.pythonhosted.org/packages/65/44/bb509c3d2c0b5a87e7a5af1d5917a402a32ff026f777a6d7cb6990746cbb/tabcompleter-1.4.0-py3-none-any.whl
   name: tabcompleter
   version: 1.4.0
@@ -33832,15 +33829,6 @@ packages:
   - envwrap ; extra == 'telegram'
   - ipywidgets>=6 ; extra == 'notebook'
   requires_python: '>=3.8'
-- pypi: https://files.pythonhosted.org/packages/ac/5c/f176b0a5af2a69bd2ffa04cbdd937268373cb639e02196121cfc2f691647/fides-0.7.4.tar.gz
-  name: fides
-  version: 0.7.4
-  sha256: 12f02d4c8451d9e08377162dd419f5872587c3bec043ca33a08fb990103468bb
-  requires_dist:
-  - numpy>=1.19.2
-  - scipy>=1.5.2
-  - h5py>=3.5.0
-  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/af/d0/0c2aaa6173accca6507d25a82c266af8c01d94138058e99712153d4296a6/gradient_free_optimizers-1.10.1-py3-none-any.whl
   name: gradient-free-optimizers
   version: 1.10.1
