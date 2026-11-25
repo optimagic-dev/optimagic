@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.exceptions import InvalidBoundsError
 from optimagic.pytree import (
@@ -15,6 +15,9 @@ from optimagic.pytree import (
 )
 from optimagic.typing import PyTree, PyTreeNamespace
 from optimagic.utilities import fast_numpy_full
+
+if TYPE_CHECKING:
+    from scipy.optimize import Bounds as ScipyBounds
 
 
 @dataclass(frozen=True)
@@ -44,9 +47,15 @@ def pre_process_bounds(
             the correct type.
 
     """
-    if isinstance(bounds, ScipyBounds):
-        bounds = Bounds(lower=bounds.lb, upper=bounds.ub)
-    elif isinstance(bounds, Bounds) or bounds is None:
+    # Bounds can only be scipy bounds if scipy.optimize has already been imported.
+    # Checking this first avoids the slow import of scipy.optimize.
+    if "scipy.optimize" in sys.modules:
+        from scipy.optimize import Bounds as ScipyBounds
+
+        if isinstance(bounds, ScipyBounds):
+            return Bounds(lower=bounds.lb, upper=bounds.ub)
+
+    if isinstance(bounds, Bounds) or bounds is None:
         pass
     else:
         try:

@@ -1,6 +1,6 @@
 (coc)=
 
-## Code of Conduct
+# Code of Conduct
 
 The optimagic project has a [Code of Conduct][conduct] to which all contributors must
 adhere. See details in the [written policy statement][conduct].

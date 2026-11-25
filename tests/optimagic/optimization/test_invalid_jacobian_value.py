@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 import optimagic as om
-from optimagic.exceptions import UserFunctionRuntimeError
+from optimagic.exceptions import InvalidFunctionError, UserFunctionRuntimeError
 from optimagic.optimization.optimize import minimize
 
 # ======================================================================================
@@ -117,6 +117,25 @@ def test_minimize_with_invalid_fun_and_jac(invalid_jac_value, params):
 
 
 # ======================================================================================
+# Test Invalid Jacobian raises proper error with numerical derivatives
+# ======================================================================================
+
+
+def test_minimize_with_invalid_numerical_derivative(params):
+    def fun(params):
+        return sphere(params) if params["a"] == 1 else np.inf
+
+    with pytest.raises(
+        UserFunctionRuntimeError,
+        match=(
+            "The optimization failed because the numerical derivative "
+            r"\(computed using fun\) contains infinite or NaN values."
+        ),
+    ):
+        minimize(fun=fun, params=params, algorithm="scipy_lbfgsb")
+
+
+# ======================================================================================
 # Test that invalid derivatives with respect to fixed parameters are ignored
 # ======================================================================================
 
@@ -191,7 +210,9 @@ def test_minimize_with_invalid_jac_of_free_params_and_fixed_params(
             "b": np.array([invalid_value, 2 * params["b"][1]]),
         }
 
-    with pytest.raises(UserFunctionRuntimeError, match="infinite or NaN values"):
+    # The derivative is already invalid at the start params, so the check of the start
+    # params raises.
+    with pytest.raises(InvalidFunctionError, match="via jac is not finite"):
         minimize(
             fun=sphere,
             params=params,

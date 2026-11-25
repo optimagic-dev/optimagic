@@ -112,7 +112,7 @@ def test_estimation_table():
         ,(69.50)
     """
     exp["body"] = _read_csv_string(body).fillna("")
-    exp["body"].set_index("index", inplace=True)
+    exp["body"] = exp["body"].set_index("index")
     footer_str = """
          ,target
         R$^2$,0.40
@@ -123,7 +123,7 @@ def test_estimation_table():
 
     """
     exp["footer"] = _read_csv_string(footer_str).fillna("")
-    exp["footer"].set_index(" ", inplace=True)
+    exp["footer"] = exp["footer"].set_index(" ")
     exp["footer"].index.names = [None]
     exp["footer"].index = pd.MultiIndex.from_arrays([exp["footer"].index])
     afe(exp["footer"].sort_index(), res["footer"].sort_index())
@@ -307,7 +307,7 @@ def test_process_frame_indices_index():
         tomorrow,var3,1,1,1
     """
     exp = _read_csv_string(params).fillna("")
-    exp.set_index(["period", "variable"], inplace=True)
+    exp = exp.set_index(["period", "variable"])
     afe(res, exp, check_dtype=False)
 
 
@@ -500,7 +500,7 @@ def test_manual_extra_info():
 
     """
     footer = _read_csv_string(footer_str).fillna("")
-    footer.set_index(" ", inplace=True)
+    footer = footer.set_index(" ")
     footer.index.names = [None]
     footer.index = pd.MultiIndex.from_arrays([footer.index])
     exp = footer.copy(deep=True)

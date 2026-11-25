@@ -431,12 +431,17 @@ class Pygad(Algorithm):
     """
 
     num_generations: PositiveInt | None = 50
-    """Number of generations to evolve the population."""
+    """Number of generations to evolve the population.
+
+    If None, ``stopping_maxiter`` generations are run.
+
+    """
 
     stopping_maxiter: PositiveInt = STOPPING_MAXITER
     """Maximum number of iterations (generations) to run.
 
-    This corresponds to PyGAD's num_generations parameter.
+    PyGAD runs the smaller of ``num_generations`` and ``stopping_maxiter``
+    generations.
 
     """
 
@@ -705,8 +710,13 @@ class Pygad(Algorithm):
             direction=problem.direction,
         )
 
+        if self.num_generations is None:
+            num_generations = self.stopping_maxiter
+        else:
+            num_generations = min(self.num_generations, self.stopping_maxiter)
+
         ga_instance = pygad.GA(
-            num_generations=self.num_generations,
+            num_generations=num_generations,
             num_parents_mating=num_parents_mating,
             fitness_func=fitness_function,
             fitness_batch_size=effective_batch_size,

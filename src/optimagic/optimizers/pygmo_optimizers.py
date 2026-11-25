@@ -116,10 +116,9 @@ class PygmoGaco(Algorithm):
     """Number of cores used for parallel function evaluation."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -284,10 +283,9 @@ class PygmoBeeColony(Algorithm):
     """Number of generations to evolve (the ``gen`` parameter in pygmo)."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -376,10 +374,9 @@ class PygmoDe(Algorithm):
     at least 10."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -547,10 +544,9 @@ class PygmoSea(Algorithm):
     at least 10."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -637,10 +633,9 @@ class PygmoSga(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -887,10 +882,9 @@ class PygmoSade(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -1086,10 +1080,9 @@ class PygmoCmaes(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -1273,10 +1266,9 @@ class PygmoSimulatedAnnealing(Algorithm):
     """
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -1413,10 +1405,9 @@ class PygmoPso(Algorithm):
     at least 10."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -1646,10 +1637,9 @@ class PygmoPsoGen(Algorithm):
     """Number of cores used for parallel function evaluation."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -1861,10 +1851,9 @@ class PygmoMbh(Algorithm):
     at least 250."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -1987,10 +1976,9 @@ class PygmoXnes(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -2160,10 +2148,9 @@ class PygmoGwo(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -2371,10 +2358,9 @@ class PygmoIhs(Algorithm):
     """
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -2513,10 +2499,9 @@ class PygmoDe1220(Algorithm):
     at least 64."""
 
     seed: int | None = None
-    """Seed used to sample the initial population.
+    """Seed used to sample the initial population and by the pygmo algorithm.
 
-    It is not passed to the pygmo algorithm, whose own random number generator is
-    seeded randomly, so runs are not reproducible.
+    If None, runs are not reproducible.
 
     """
 
@@ -2657,6 +2642,9 @@ class PygmoDe1220(Algorithm):
 
 # ====================================================================================
 
+# pygmo algorithms that do not use random numbers and do not accept a seed.
+_DETERMINISTIC_METHODS = frozenset({"compass_search"})
+
 
 def _minimize_pygmo(
     problem: InternalOptimizationProblem,
@@ -2683,6 +2671,8 @@ def _minimize_pygmo(
         raise ValueError(f"{method} requires finite bounds for all parameters.")
 
     pygmo_problem = _create_pygmo_problem(problem, len(x0), n_cores)
+    if seed is not None and method not in _DETERMINISTIC_METHODS:
+        specific_options = {**specific_options, "seed": seed}
     algo = _create_algorithm(method, specific_options, n_cores)
     pop = _create_population(
         problem=pygmo_problem,
