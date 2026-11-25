@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 
-from optimagic.exceptions import UserFunctionRuntimeError
+import optimagic as om
+from optimagic.exceptions import InvalidFunctionError, UserFunctionRuntimeError
 from optimagic.optimization.optimize import minimize
 
 # ======================================================================================
@@ -131,3 +133,90 @@ def test_minimize_with_invalid_numerical_derivative(params):
         ),
     ):
         minimize(fun=fun, params=params, algorithm="scipy_lbfgsb")
+
+
+# ======================================================================================
+# Test that invalid derivatives with respect to fixed parameters are ignored
+# ======================================================================================
+
+
+def _fix_a():
+    return om.FixedConstraint(selector=lambda params: params["a"])
+
+
+@pytest.mark.parametrize("invalid_value", [np.nan, np.inf, -np.inf])
+def test_minimize_ignores_invalid_jac_of_fixed_params(invalid_value, params):
+    def jac(params):
+        return {"a": invalid_value, "b": 2 * params["b"]}
+
+    res = minimize(
+        fun=sphere,
+        params=params,
+        algorithm="scipy_lbfgsb",
+        jac=jac,
+        constraints=_fix_a(),
+    )
+
+    assert res.params["a"] == 1
+    aaae(res.params["b"], np.zeros(2))
+
+
+@pytest.mark.parametrize("invalid_value", [np.nan, np.inf, -np.inf])
+def test_minimize_ignores_invalid_fun_and_jac_of_fixed_params(invalid_value, params):
+    def fun_and_jac(params):
+        return sphere(params), {"a": invalid_value, "b": 2 * params["b"]}
+
+    res = minimize(
+        params=params,
+        algorithm="scipy_lbfgsb",
+        fun_and_jac=fun_and_jac,
+        constraints=_fix_a(),
+    )
+
+    assert res.params["a"] == 1
+    aaae(res.params["b"], np.zeros(2))
+
+
+@pytest.mark.parametrize("invalid_value", [np.nan, np.inf, -np.inf])
+def test_minimize_ignores_invalid_least_squares_jac_of_fixed_params(invalid_value):
+    @om.mark.least_squares
+    def fun(x):
+        return x
+
+    @om.mark.least_squares
+    def jac(x):
+        out = np.eye(len(x))
+        out[:, 0] = invalid_value
+        return out
+
+    res = minimize(
+        fun=fun,
+        params=np.array([1.0, 2.0, 3.0]),
+        algorithm="scipy_ls_lm",
+        jac=jac,
+        constraints=om.FixedConstraint(selector=lambda x: x[0]),
+    )
+
+    aaae(res.params, np.array([1.0, 0.0, 0.0]))
+
+
+@pytest.mark.parametrize("invalid_value", [np.nan, np.inf, -np.inf])
+def test_minimize_with_invalid_jac_of_free_params_and_fixed_params(
+    invalid_value, params
+):
+    def jac(params):
+        return {
+            "a": 2 * params["a"],
+            "b": np.array([invalid_value, 2 * params["b"][1]]),
+        }
+
+    # The derivative is already invalid at the start params, so the check of the start
+    # params raises.
+    with pytest.raises(InvalidFunctionError, match="via jac is not finite"):
+        minimize(
+            fun=sphere,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            jac=jac,
+            constraints=_fix_a(),
+        )
