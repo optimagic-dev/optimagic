@@ -63,8 +63,10 @@ IS_NUMBA_INSTALLED = _is_installed("numba")
 IS_IMINUIT_INSTALLED = _is_installed("iminuit")
 IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
 # despite the similar names, the bayes_opt and bayes_optim packages are
-# completely unrelated. However, both of them are dependencies of nevergrad.
-IS_BAYESOPTIM_INSTALLED = _is_installed("bayes-optim")
+# completely unrelated. nevergrad depends on bayes_opt and needs bayes_optim (an
+# optional dependency) for nevergrad_bo. find_spec needs the module name, not the
+# package name bayes-optim.
+IS_BAYESOPTIM_INSTALLED = _is_installed("bayes_optim")
 # Note: There is a dependancy conflict with nevergrad and bayesian_optimization
 # installing nevergrad pins bayesian_optimization to 1.4.0,
 # but "bayes_opt" requires bayesian_optimization>=2.0.0 to work.

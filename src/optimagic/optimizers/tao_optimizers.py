@@ -257,7 +257,7 @@ def tao_pounders(
         tao.setVariableBounds(lower_bounds, upper_bounds)
 
     # Put the starting values into the container and pass them to the optimizer.
-    tao.setInitial(_x)
+    tao.setSolution(_x)
 
     # Obtain tolerances for the convergence criteria. Since we can not create
     # scaled_gradient_tolerance manually we manually set absolute_gradient_tolerance and

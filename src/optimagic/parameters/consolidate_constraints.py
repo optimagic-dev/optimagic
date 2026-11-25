@@ -712,7 +712,7 @@ def _drop_redundant_linear_constraints(weights, rhs):
     """
     weights["dupl_group"] = weights.groupby(list(weights.columns)).ngroup()
     rhs["dupl_group"] = weights["dupl_group"]
-    weights.set_index("dupl_group", inplace=True)
+    weights = weights.set_index("dupl_group")
 
     new_weights = weights.drop_duplicates()
 

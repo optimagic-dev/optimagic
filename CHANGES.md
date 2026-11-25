@@ -18,6 +18,19 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
   arguments in `run_benchmark`, as well as the noise and scaling options of
   `get_benchmark_problems`, are deprecated and will be removed in version 0.7.0
   ({ghuser}`janosg`).
+- {gh}`749` Supports pandas 3 and Python 3.15 and drops Python 3.12. Following
+  [SPEC 0](https://scientific-python.org/specs/spec-0000/), the minimum supported
+  versions are now Python 3.13, numpy 2.2, scipy 1.15, pandas 2.3 and plotly 6.0. Fixes
+  `traceback_report(return_type="dataframe")` and the LaTeX output of
+  `estimation_table` with confidence intervals under pandas 3. `pygad` no longer
+  ignores `stopping_maxiter`: it runs the smaller of `num_generations` and
+  `stopping_maxiter` generations. `nevergrad_bo` is now available if bayes-optim is
+  installed; before, optimagic did not detect bayes-optim. The nevergrad optimizers
+  return the best evaluated point if nevergrad's recommendation is worse. Before,
+  `nevergrad_cmaes` could return a much worse point than it had found, because nevergrad
+  restarts CMA-ES whenever one of its stopping criteria is met and only recommends the
+  best point of the last restart. `stopping_maxtime` of `nevergrad_cmaes` now ends the
+  optimization instead of restarting CMA-ES ({ghuser}`janosg`).
 - {gh}`747` Reduces the time it takes to import optimagic from about 2 seconds to about
   0.6 seconds. Dependencies that are only needed for some features (scipy, numba,
   sqlalchemy, plotly.express and joblib) are imported when they are used, the

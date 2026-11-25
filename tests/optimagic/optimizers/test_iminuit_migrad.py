@@ -4,12 +4,13 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from optimagic.config import IS_IMINUIT_INSTALLED
 from optimagic.optimization.optimize import minimize
 from optimagic.optimizers.iminuit_migrad import (
     IminuitMigrad,
     _convert_bounds_to_minuit_limits,
 )
+
+pytestmark = pytest.mark.iminuit
 
 
 def sphere(x):
@@ -76,7 +77,6 @@ def test_convert_bounds_mixed():
     assert limits[2] == (1.0, 2.0)
 
 
-@pytest.mark.skipif(not IS_IMINUIT_INSTALLED, reason="iminuit not installed.")
 def test_iminuit_migrad():
     """Test basic optimization with sphere function."""
     x0 = np.array([1.0, 2.0, 3.0])

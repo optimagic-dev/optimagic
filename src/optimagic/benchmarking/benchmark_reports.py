@@ -219,9 +219,17 @@ def traceback_report(
         for (problem_name, algorithm_name), traceback in tracebacks.items():
             nested.setdefault(algorithm_name, {})[problem_name] = traceback
 
-        report = pd.DataFrame.from_dict(nested, orient="index").stack().to_frame()  # ty:ignore[call-non-callable]
-        report.index.set_names(["algorithm", "problem"], inplace=True)
-        report.columns = ["traceback"]
+        algorithms, problem_names, values = [], [], []
+        for algorithm_name, problem_to_traceback in nested.items():
+            for problem_name, traceback in problem_to_traceback.items():
+                algorithms.append(algorithm_name)
+                problem_names.append(problem_name)
+                values.append(traceback)
+
+        index = pd.MultiIndex.from_arrays(
+            [algorithms, problem_names], names=["algorithm", "problem"]
+        )
+        report = pd.DataFrame({"traceback": values}, index=index)
         report["dimensionality"] = 0
 
         for problem_name, dim in _get_problem_dimensions(problems).items():
