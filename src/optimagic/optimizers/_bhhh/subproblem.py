@@ -10,7 +10,6 @@ the unconstrained step instead can stall at non-optimal points.
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import lsq_linear
 
 from optimagic.optimizers._bhhh.linalg import OPGFactorization, unconstrained_step
 
@@ -62,6 +61,10 @@ def _box_constrained_step(
     scaled_gradient = factorization.scaled_gradient
     a = np.sqrt(lam)[:, None] * v.T
     c = (v.T @ scaled_gradient) / np.sqrt(lam)
+
+    # imported here to keep `import optimagic` fast
+    from scipy.optimize import lsq_linear
+
     res = lsq_linear(a, -c, bounds=(lower * scale, upper * scale), method="bvls")
     scaled_step = res.x
     # Computing the decrease directly avoids cancellation between ||c||² and the

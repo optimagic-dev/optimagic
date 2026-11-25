@@ -2,13 +2,24 @@ import importlib.metadata
 import importlib.util
 from pathlib import Path
 
-import plotly.express as px
-
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 OPTIMAGIC_ROOT = Path(__file__).parent
 
 PLOTLY_TEMPLATE = "simple_white"
-PLOTLY_PALETTE = px.colors.qualitative.Set2
+
+# The rgb strings are the Plotly Set2 qualitative palette, i.e.
+# plotly.express.colors.qualitative.Set2. Hardcoded because importing plotly.express
+# is slow.
+PLOTLY_PALETTE = [
+    "rgb(102,194,165)",
+    "rgb(252,141,98)",
+    "rgb(141,160,203)",
+    "rgb(231,138,195)",
+    "rgb(166,216,84)",
+    "rgb(255,217,47)",
+    "rgb(229,196,148)",
+    "rgb(179,179,179)",
+]
 
 # The hex strings are obtained from the Plotly D3 qualitative palette.
 DEFAULT_PALETTE = [
@@ -52,8 +63,10 @@ IS_NUMBA_INSTALLED = _is_installed("numba")
 IS_IMINUIT_INSTALLED = _is_installed("iminuit")
 IS_NEVERGRAD_INSTALLED = _is_installed("nevergrad")
 # despite the similar names, the bayes_opt and bayes_optim packages are
-# completely unrelated. However, both of them are dependencies of nevergrad.
-IS_BAYESOPTIM_INSTALLED = _is_installed("bayes-optim")
+# completely unrelated. nevergrad depends on bayes_opt and needs bayes_optim (an
+# optional dependency) for nevergrad_bo. find_spec needs the module name, not the
+# package name bayes-optim.
+IS_BAYESOPTIM_INSTALLED = _is_installed("bayes_optim")
 # Note: There is a dependancy conflict with nevergrad and bayesian_optimization
 # installing nevergrad pins bayesian_optimization to 1.4.0,
 # but "bayes_opt" requires bayesian_optimization>=2.0.0 to work.

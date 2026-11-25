@@ -39,6 +39,17 @@ def test_pre_process_bounds_none_case():
     assert pre_process_bounds(None) is None
 
 
+def test_pre_process_bounds_scipy_bounds():
+    from scipy.optimize import Bounds as ScipyBounds
+
+    got = pre_process_bounds(ScipyBounds(lb=np.array([0, 1]), ub=np.array([2, 3])))
+    assert isinstance(got, Bounds)
+    assert_array_equal(got.lower, np.array([0, 1]))
+    assert_array_equal(got.upper, np.array([2, 3]))
+    assert got.soft_lower is None
+    assert got.soft_upper is None
+
+
 def test_pre_process_bounds_sequence():
     got = pre_process_bounds([(0, 1), (None, 1)])
     expected = Bounds(lower=[0, -np.inf], upper=[1, 1])
@@ -136,6 +147,40 @@ def test_get_bounds_numpy_error(array_params):
             array_params,
             bounds=bounds,
         )
+
+
+@pytest.mark.parametrize("container", [np.array, list])
+@pytest.mark.parametrize(
+    "lower, upper, expected_lower, expected_upper",
+    [
+        ([-np.inf, -np.inf], [np.inf, np.inf], None, None),
+        ([np.inf, np.inf], None, [np.inf, np.inf], None),
+        (None, [-np.inf, -np.inf], None, [-np.inf, -np.inf]),
+        ([-np.inf, np.inf], None, [-np.inf, np.inf], None),
+        (None, [-np.inf, np.inf], None, [-np.inf, np.inf]),
+    ],
+)
+def test_get_bounds_infinite_sides(
+    container, lower, upper, expected_lower, expected_upper
+):
+    bounds = Bounds(
+        lower=None if lower is None else container(lower),
+        upper=None if upper is None else container(upper),
+    )
+
+    got_lower, got_upper = get_internal_bounds(np.ones(2), bounds=bounds)
+
+    assert_array_equal(got_lower, expected_lower)
+    assert_array_equal(got_upper, expected_upper)
+
+
+@pytest.mark.parametrize("container", [np.array, list])
+@pytest.mark.parametrize("lower, upper", [(np.inf, 5), (0, -np.inf), (np.inf, -np.inf)])
+def test_get_bounds_infinite_sides_invalid(container, lower, upper):
+    bounds = Bounds(lower=container([lower, lower]), upper=container([upper, upper]))
+
+    with pytest.raises(InvalidBoundsError):
+        get_internal_bounds(np.ones(2), bounds=bounds)
 
 
 def test_get_fast_path_bounds_both_none():

@@ -4,14 +4,7 @@ import traceback
 import warnings
 from dataclasses import asdict, dataclass
 from functools import cached_property
-from typing import Any, Sequence, Type, cast
-
-import sqlalchemy as sql
-import sqlalchemy.event
-from sqlalchemy import Column, Integer, PickleType, Row, String
-from sqlalchemy.engine.base import Engine
-from sqlalchemy.sql.base import Executable
-from sqlalchemy.sql.schema import MetaData
+from typing import TYPE_CHECKING, Any, Sequence, Type, cast
 
 from optimagic.logging.base import (
     InputType,
@@ -28,6 +21,15 @@ from optimagic.logging.types import (
     StepResult,
     StepResultWithId,
 )
+
+# sqlalchemy takes about 0.15 seconds to import. To keep `import optimagic` fast, it
+# is only imported inside the functions that use it.
+if TYPE_CHECKING:
+    import sqlalchemy as sql
+    from sqlalchemy import Column, Row
+    from sqlalchemy.engine.base import Engine
+    from sqlalchemy.sql.base import Executable
+    from sqlalchemy.sql.schema import MetaData
 
 
 class SQLAlchemyConfig:
@@ -55,6 +57,8 @@ class SQLAlchemyConfig:
             The SQLAlchemy MetaData object reflecting the database schema.
 
         """
+        from sqlalchemy.sql.schema import MetaData
+
         engine = self.create_engine()
         metadata = MetaData()
         self._configure_reflect()
@@ -69,6 +73,8 @@ class SQLAlchemyConfig:
             An SQLAlchemy Engine object.
 
         """
+        import sqlalchemy as sql
+
         return sql.create_engine(self.url)
 
     @staticmethod
@@ -78,6 +84,8 @@ class SQLAlchemyConfig:
         Code ist taken from the documentation: https://tinyurl.com/y7q287jr
 
         """
+        import sqlalchemy as sql
+        import sqlalchemy.event
 
         @sql.event.listens_for(sql.Table, "column_reflect")
         def _setup_pickletype(
@@ -120,6 +128,8 @@ class TableConfig:
             The SQLAlchemy Table object representing the created or reflected table.
 
         """
+        import sqlalchemy as sql
+
         metadata.reflect(engine)
         table = sql.Table(
             self.table_name, metadata, *self.columns, extend_existing=True
@@ -234,6 +244,8 @@ class SQLAlchemySimpleStore(
         input_type: Type[InputType],
         output_type: Type[OutputType],
     ):
+        import sqlalchemy as sql
+
         super().__init__(input_type, output_type, primary_key)
         columns = [
             sql.Column(primary_key, sql.Integer, primary_key=True, autoincrement=True),
@@ -423,6 +435,8 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
         self,
         db_config: SQLAlchemyConfig,
     ):
+        from sqlalchemy import Column, Integer, String
+
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
             Column("type", String),  # e.g. optimization
@@ -433,7 +447,7 @@ class StepStore(SQLAlchemyTableStore[StepResult, StepResultWithId]):
 
         table_config = TableConfig(
             self._TABLE_NAME,
-            cast(list[Column[Any]], columns),
+            cast("list[Column[Any]]", columns),
             self._PRIMARY_KEY,
         )
 
@@ -464,6 +478,8 @@ class ProblemStore(
         self,
         db_config: SQLAlchemyConfig,
     ):
+        from sqlalchemy import Column, Integer, PickleType, String
+
         columns = [
             Column(self._PRIMARY_KEY, Integer, primary_key=True, autoincrement=True),
             Column("direction", String),
@@ -472,7 +488,7 @@ class ProblemStore(
 
         table_config = TableConfig(
             self._TABLE_NAME,
-            cast(list[Column[Any]], columns),
+            cast("list[Column[Any]]", columns),
             self._PRIMARY_KEY,
         )
 
