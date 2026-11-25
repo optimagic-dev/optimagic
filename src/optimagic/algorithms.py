@@ -364,6 +364,10 @@ class BoundedGradientBasedLeastSquaresLocalAlgorithms(AlgoSelection):
     scipy_ls_trf: Type[ScipyLSTRF] = ScipyLSTRF
 
 
+class BoundedGradientBasedLikelihoodLocalAlgorithms(AlgoSelection):
+    bhhh: Type[BHHH] = BHHH
+
+
 class GradientBasedLocalNonlinearConstrainedScalarAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
     nlopt_mma: Type[NloptMMA] = NloptMMA
@@ -963,6 +967,7 @@ class GlobalGradientBasedScalarAlgorithms(AlgoSelection):
 
 
 class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -982,6 +987,10 @@ class BoundedGradientBasedLocalAlgorithms(AlgoSelection):
     @property
     def LeastSquares(self) -> BoundedGradientBasedLeastSquaresLocalAlgorithms:
         return BoundedGradientBasedLeastSquaresLocalAlgorithms()
+
+    @property
+    def Likelihood(self) -> BoundedGradientBasedLikelihoodLocalAlgorithms:
+        return BoundedGradientBasedLikelihoodLocalAlgorithms()
 
     @property
     def NonlinearConstrained(
@@ -1052,6 +1061,10 @@ class GradientBasedLeastSquaresLocalAlgorithms(AlgoSelection):
 class GradientBasedLikelihoodLocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
 
+    @property
+    def Bounded(self) -> BoundedGradientBasedLikelihoodLocalAlgorithms:
+        return BoundedGradientBasedLikelihoodLocalAlgorithms()
+
 
 class BoundedGradientBasedNonlinearConstrainedAlgorithms(AlgoSelection):
     ipopt: Type[Ipopt] = Ipopt
@@ -1114,6 +1127,14 @@ class BoundedGradientBasedLeastSquaresAlgorithms(AlgoSelection):
     @property
     def Local(self) -> BoundedGradientBasedLeastSquaresLocalAlgorithms:
         return BoundedGradientBasedLeastSquaresLocalAlgorithms()
+
+
+class BoundedGradientBasedLikelihoodAlgorithms(AlgoSelection):
+    bhhh: Type[BHHH] = BHHH
+
+    @property
+    def Local(self) -> BoundedGradientBasedLikelihoodLocalAlgorithms:
+        return BoundedGradientBasedLikelihoodLocalAlgorithms()
 
 
 class GradientBasedNonlinearConstrainedScalarAlgorithms(AlgoSelection):
@@ -2052,6 +2073,14 @@ class BoundedLeastSquaresLocalAlgorithms(AlgoSelection):
         return BoundedLeastSquaresLocalParallelAlgorithms()
 
 
+class BoundedLikelihoodLocalAlgorithms(AlgoSelection):
+    bhhh: Type[BHHH] = BHHH
+
+    @property
+    def GradientBased(self) -> BoundedGradientBasedLikelihoodLocalAlgorithms:
+        return BoundedGradientBasedLikelihoodLocalAlgorithms()
+
+
 class BoundedLocalParallelAlgorithms(AlgoSelection):
     pounders: Type[Pounders] = Pounders
     tranquilo: Type[Tranquilo] = Tranquilo
@@ -2308,6 +2337,7 @@ class GradientBasedLocalAlgorithms(AlgoSelection):
 
 
 class BoundedGradientBasedAlgorithms(AlgoSelection):
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -2334,6 +2364,10 @@ class BoundedGradientBasedAlgorithms(AlgoSelection):
     @property
     def LeastSquares(self) -> BoundedGradientBasedLeastSquaresAlgorithms:
         return BoundedGradientBasedLeastSquaresAlgorithms()
+
+    @property
+    def Likelihood(self) -> BoundedGradientBasedLikelihoodAlgorithms:
+        return BoundedGradientBasedLikelihoodAlgorithms()
 
     @property
     def Local(self) -> BoundedGradientBasedLocalAlgorithms:
@@ -2429,6 +2463,10 @@ class GradientBasedLeastSquaresAlgorithms(AlgoSelection):
 
 class GradientBasedLikelihoodAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
+
+    @property
+    def Bounded(self) -> BoundedGradientBasedLikelihoodAlgorithms:
+        return BoundedGradientBasedLikelihoodAlgorithms()
 
     @property
     def Local(self) -> GradientBasedLikelihoodLocalAlgorithms:
@@ -3091,6 +3129,7 @@ class GlobalParallelAlgorithms(AlgoSelection):
 
 
 class BoundedLocalAlgorithms(AlgoSelection):
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
     iminuit_migrad: Type[IminuitMigrad] = IminuitMigrad
     ipopt: Type[Ipopt] = Ipopt
@@ -3132,6 +3171,10 @@ class BoundedLocalAlgorithms(AlgoSelection):
     @property
     def LeastSquares(self) -> BoundedLeastSquaresLocalAlgorithms:
         return BoundedLeastSquaresLocalAlgorithms()
+
+    @property
+    def Likelihood(self) -> BoundedLikelihoodLocalAlgorithms:
+        return BoundedLikelihoodLocalAlgorithms()
 
     @property
     def NonlinearConstrained(self) -> BoundedLocalNonlinearConstrainedAlgorithms:
@@ -3251,6 +3294,10 @@ class LeastSquaresLocalAlgorithms(AlgoSelection):
 
 class LikelihoodLocalAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
+
+    @property
+    def Bounded(self) -> BoundedLikelihoodLocalAlgorithms:
+        return BoundedLikelihoodLocalAlgorithms()
 
     @property
     def GradientBased(self) -> GradientBasedLikelihoodLocalAlgorithms:
@@ -3453,6 +3500,18 @@ class BoundedLeastSquaresAlgorithms(AlgoSelection):
     @property
     def Parallel(self) -> BoundedLeastSquaresParallelAlgorithms:
         return BoundedLeastSquaresParallelAlgorithms()
+
+
+class BoundedLikelihoodAlgorithms(AlgoSelection):
+    bhhh: Type[BHHH] = BHHH
+
+    @property
+    def GradientBased(self) -> BoundedGradientBasedLikelihoodAlgorithms:
+        return BoundedGradientBasedLikelihoodAlgorithms()
+
+    @property
+    def Local(self) -> BoundedLikelihoodLocalAlgorithms:
+        return BoundedLikelihoodLocalAlgorithms()
 
 
 class BoundedParallelAlgorithms(AlgoSelection):
@@ -3956,6 +4015,7 @@ class LocalAlgorithms(AlgoSelection):
 
 class BoundedAlgorithms(AlgoSelection):
     bayes_opt: Type[BayesOpt] = BayesOpt
+    bhhh: Type[BHHH] = BHHH
     fides: Type[Fides] = Fides
     gfo_differential_evolution: Type[GFODifferentialEvolution] = (
         GFODifferentialEvolution
@@ -4062,6 +4122,10 @@ class BoundedAlgorithms(AlgoSelection):
     @property
     def LeastSquares(self) -> BoundedLeastSquaresAlgorithms:
         return BoundedLeastSquaresAlgorithms()
+
+    @property
+    def Likelihood(self) -> BoundedLikelihoodAlgorithms:
+        return BoundedLikelihoodAlgorithms()
 
     @property
     def Local(self) -> BoundedLocalAlgorithms:
@@ -4276,6 +4340,10 @@ class LeastSquaresAlgorithms(AlgoSelection):
 
 class LikelihoodAlgorithms(AlgoSelection):
     bhhh: Type[BHHH] = BHHH
+
+    @property
+    def Bounded(self) -> BoundedLikelihoodAlgorithms:
+        return BoundedLikelihoodAlgorithms()
 
     @property
     def GradientBased(self) -> GradientBasedLikelihoodAlgorithms:

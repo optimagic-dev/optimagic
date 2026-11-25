@@ -777,46 +777,41 @@ We implement a few algorithms from scratch. They are currently considered experi
 
     .. code-block:: python
 
-        import numpy as np
         import optimagic as om
+        from optimagic.optimizers.bhhh import LineSearch
 
-
-        @om.mark.likelihood
-        def fun(x):
-            return x**2
-
-
-        om.minimize(
-            fun=fun,
-            params=np.array([1.0, 2.0, 3.0]),
-            algorithm=om.algos.bhhh(stopping_maxiter=1_000),
+        om.maximize(
+            fun=loglike_contributions,
+            params=start_params,
+            algorithm=om.algos.bhhh(
+                convergence_decrement_tol=1e-8,
+                globalization=LineSearch(expansion="none"),
+            ),
         )
 
     or using the string interface:
 
     .. code-block:: python
 
-        import numpy as np
-        import optimagic as om
-
-
-        @om.mark.likelihood
-        def fun(x):
-            return x**2
-
-
-        om.minimize(
-            fun=fun,
-            params=np.array([1.0, 2.0, 3.0]),
+        om.maximize(
+            fun=loglike_contributions,
+            params=start_params,
             algorithm="bhhh",
-            algo_options={"stopping_maxiter": 1_000},
+            algo_options={"convergence_decrement_tol": 1e-8},
         )
+
+    ``loglike_contributions`` must be decorated with ``om.mark.likelihood`` and return
+    one log-likelihood contribution per independent unit.
 
     **Description and available options:**
 
     .. autoclass:: optimagic.optimizers.bhhh.BHHH
         :members:
         :inherited-members: Algorithm, object
+
+    **Options of the line search:**
+
+    .. autoclass:: optimagic.optimizers.bhhh.LineSearch
 ```
 
 ```{eval-rst}

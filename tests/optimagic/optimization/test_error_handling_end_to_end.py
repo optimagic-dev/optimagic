@@ -33,11 +33,6 @@ OPTIMUM = np.array([np.log(2.5), np.log(1.8)])
 START_PARAMS = np.full(2, -1.0)
 FAILURE_MARGIN = 0.01
 
-BHHH_XFAIL = pytest.mark.xfail(
-    strict=True,
-    reason="bhhh steps uphill and accepts worse points; fixed in #719.",
-)
-
 
 @dataclass
 class FailureCounter:
@@ -94,10 +89,10 @@ CASES = [
     ("scalar", "maximize", "scipy_neldermead", False),
     ("likelihood", "minimize", "scipy_lbfgsb", False),
     ("likelihood", "maximize", "scipy_lbfgsb", False),
-    pytest.param("likelihood", "minimize", "bhhh", False, marks=BHHH_XFAIL),
-    pytest.param("likelihood", "maximize", "bhhh", False, marks=BHHH_XFAIL),
+    ("likelihood", "minimize", "bhhh", False),
+    ("likelihood", "maximize", "bhhh", False),
     ("least_squares", "minimize", "scipy_lbfgsb", False),
-    pytest.param("least_squares", "minimize", "bhhh", False, marks=BHHH_XFAIL),
+    ("least_squares", "minimize", "bhhh", False),
     ("least_squares", "minimize", "scipy_ls_trf", False),
     ("least_squares", "minimize", "scipy_ls_trf", True),
     ("least_squares", "minimize", "pounders", False),

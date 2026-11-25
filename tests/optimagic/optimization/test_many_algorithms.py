@@ -20,6 +20,8 @@ from optimagic.algorithms import (
 from optimagic.optimization.optimize import minimize
 from optimagic.parameters.bounds import Bounds
 
+# bhhh only converges on likelihoods, not on the zero-residual least-squares problem
+# used here; it is tested in test_bhhh.py.
 AVAILABLE_LOCAL_ALGORITHMS = [
     name
     for name, algo in AVAILABLE_ALGORITHMS.items()
@@ -29,7 +31,7 @@ AVAILABLE_LOCAL_ALGORITHMS = [
 AVAILABLE_BOUNDED_ALGORITHMS = [
     name
     for name, algo in AVAILABLE_ALGORITHMS.items()
-    if algo.algo_info.supports_bounds
+    if algo.algo_info.supports_bounds and name != "bhhh"
 ]
 
 PRECISION_LOOKUP = {

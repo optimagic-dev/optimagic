@@ -33,6 +33,10 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
   `convergence_gtol_rel` and `convergence_gtol_scaled`. Reaching `stopping_maxiter` is
   now reported as unsuccessful with the message "maxits reached" instead of as
   successful with "user defined" ({ghuser}`janosg`).
+- {gh}`728` Rewrites the `bhhh` optimizer. It now stops on the scale invariant decrement
+  `g'(J'J)^-1 g`, supports bounds, uses a line search with step doubling, rejects trial
+  points at which the objective or its derivative fails, and warns about weakly
+  identified parameters. The options of `bhhh` change ({ghuser}`janosg`).
 - {gh}`727` Raises an `InvalidFunctionError` if the objective function or a user
   provided derivative is not finite at the start params. The error message lists the
   paths of the non-finite entries ({ghuser}`janosg`).
