@@ -1,4 +1,3 @@
-import warnings
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Iterable, Literal
@@ -7,6 +6,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
+from optimagic import deprecations
 from optimagic.pytree import (
     leaf_names,
     tree_leaves,
@@ -365,8 +365,7 @@ class History:
         Deprecated. Use ``start_time`` instead.
 
         """
-        warnings.warn(_get_time_deprecation_message("time"), FutureWarning)
-        return _get_time_since_first_start(self._start_time)
+        return deprecations.get_history_time(self._start_time, attribute="time")
 
     @property
     def runtime(self) -> list[float]:
@@ -375,27 +374,12 @@ class History:
         Deprecated. Use ``start_time`` instead.
 
         """
-        warnings.warn(_get_time_deprecation_message("runtime"), FutureWarning)
-        return _get_time_since_first_start(self._start_time)
+        return deprecations.get_history_time(self._start_time, attribute="runtime")
 
 
 # ======================================================================================
 # Functions directly used in History methods
 # ======================================================================================
-
-
-def _get_time_deprecation_message(attribute: str) -> str:
-    return (
-        f"The attribute `{attribute}` of History is deprecated and will be removed in "
-        "optimagic version 0.7.0. Use the `start_time` attribute instead. "
-        f"`{attribute}` equals `start_time` minus its first entry."
-    )
-
-
-def _get_time_since_first_start(start_time: list[float]) -> list[float]:
-    """Express start times relative to the first start time."""
-    arr = np.array(start_time)
-    return (arr - arr[0]).tolist()
 
 
 def _get_flat_params(params: list[PyTree]) -> list[list[float]]:

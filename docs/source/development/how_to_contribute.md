@@ -114,6 +114,8 @@ $ pixi task list
 - For typing and public interfaces, consult [EP-02](ep-02-typing.md).
 - For documentation, follow the documentation section of the
   [style guide](styleguide.md).
+- If your change renames, removes or changes anything that users rely on, follow the
+  [deprecation policy](#contributing-deprecations).
 
 Keep the change focused on its purpose. The current tool configuration is in
 `pyproject.toml` and `.pre-commit-config.yaml`.
@@ -175,6 +177,88 @@ Changes affecting optimizer definitions, `src/optimagic/algorithms.py`, or `.too
 trigger a hook that regenerates `src/optimagic/algorithms.py` from the optimizer
 definitions. This hook requires `uv` on your path. Include the regenerated file in your
 change.
+
+(contributing-deprecations)=
+
+### Deprecations
+
+Users should be able to update optimagic without their code breaking. A change that can
+break user code goes through a deprecation: the old behavior keeps working for a while
+and warns that it will be removed. Examples are renaming or removing a function, an
+argument, an attribute or an algorithm option, changing a default value, or changing
+what a function returns.
+
+**How long deprecated behavior keeps working.** At least until the next minor release.
+Something that is deprecated in version 0.6.0 or 0.6.3 can be removed in 0.7.0 at the
+earliest. From version 1.0 on, deprecated behavior keeps working until the next major
+release: something that is deprecated in 1.2 can be removed in 2.0 at the earliest.
+
+**Warnings.** Deprecated behavior emits a `FutureWarning`, not a `DeprecationWarning`.
+Outside of test runners, Python only shows a `DeprecationWarning` if it is triggered by
+code in `__main__`, so most users would never see it. The message says what is
+deprecated, what to use instead, and in which version the old behavior will be removed,
+for example:
+
+> The attribute `time` of History is deprecated and will be removed in optimagic version
+> 0.7.0. Use the `start_time` attribute instead.
+
+Set `stacklevel` in `warnings.warn` such that the warning points to the line of the
+user's code that uses the deprecated behavior.
+
+**Where deprecated code lives.** Deprecated code is kept apart from the rest of the code
+base, so that removing it later only means deleting it:
+
+- Deprecated options of algorithms, for example renamed options, options that move into
+  an option group, or options whose default changes, are declared next to the algorithm
+  class and passed to the `mark.deprecated_options` decorator. The guide on adding
+  optimizers describes how.
+
+- Everything else is in `src/optimagic/deprecations.py`. Other modules only call
+  functions from this module. Each function emits the warning and, if needed, converts
+  the old input into the new one. The deprecated attribute `History.time`, for example,
+  is a property with one line:
+
+  ```python
+  @property
+  def time(self) -> list[float]:
+      return deprecations.get_history_time(self._start_time, attribute="time")
+  ```
+
+  A renamed public function is defined in `deprecations.py` with the
+  `warnings.deprecated` decorator, so that type checkers and editors also mark its use:
+
+  ```python
+  @warnings.deprecated(
+      "old_name is deprecated and will be removed in optimagic version 0.7.0. "
+      "Use new_name instead.",
+      category=FutureWarning,
+  )
+  def old_name(params, algorithm):
+      return new_name(params, algorithm)
+  ```
+
+In `deprecations.py`, the code is grouped under headings that name the version in which
+it was deprecated and the version in which it will be removed. In that version, delete
+the code, the lines that call it, and its tests. If the removed behavior could silently
+lead to wrong results, raise an error that explains the new interface instead. For
+example, an objective function that still returns a dictionary with the entry
+`"root_contributions"` raises an error since version 0.6.0.
+
+Add each deprecation to the section "Deprecations" of the release in the
+[release notes](changes.md), and each removal to the section "Breaking changes".
+
+**Testing deprecated code.**
+
+- Tests of deprecated behavior are in `tests/optimagic/test_deprecations.py`, under the
+  same version headings as the code. Tests of deprecated algorithm options are in the
+  wrapper tests of the library, `tests/optimagic/optimizers/test_<library>_wrappers.py`,
+  because they need the marker of the library.
+- Each test checks the warning with `pytest.warns(FutureWarning, match=...)` and checks
+  that the old way gives the same result as the new way.
+- All other tests and the documentation use only the new interface. Do not hide
+  optimagic's `FutureWarning`s in other tests, for example with
+  `warnings.simplefilter("ignore")`; uses of deprecated code that are hidden this way
+  only show up when the code is removed and the tests break.
 
 (contributing-prs)=
 
