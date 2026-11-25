@@ -5,6 +5,7 @@ import numpy as np
 
 from optimagic import mark
 from optimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
+from optimagic.parameters.bounds import Bounds
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
 from optimagic.utilities import get_rng
@@ -25,8 +26,14 @@ def get_benchmark_problems(
     """Get a dictionary of test problems for a benchmark.
 
     Args:
-        name (str): The name of the set of test problems. Currently "more_wild"
-            is the only supported one.
+        name (str): The name of the set of test problems. One of "more_wild",
+            "cartis_roberts", "example", "estimagic", "likelihood_small",
+            "likelihood_large", "likelihood_misspecified_small" and
+            "likelihood_misspecified_large". The likelihood sets contain maximum
+            likelihood problems on simulated data, framed as minimization of the
+            negative log-likelihood. Their inputs contain closed form derivatives
+            (unless noise is added) and, for some problems, bounds. See
+            optimagic.benchmarking.likelihood.problems for details.
         additive_noise (bool): Whether to add additive noise to the problem.
             Default False.
         additive_noise_options (dict or None): Specifies the amount and distribution
@@ -70,8 +77,9 @@ def get_benchmark_problems(
         dict: Nested dictionary with benchmark problems of the structure:
             {"name": {"inputs": {...}, "solution": {...}, "info": {...}}}
             where "inputs" are keyword arguments for ``minimize`` such as the criterion
-            function and start parameters. "solution" contains the entries "params" and
-            "value" and "info" might contain information about the test problem.
+            function, its derivatives, start parameters and bounds. "solution"
+            contains the entries "params" and "value" and "info" might contain
+            information about the test problem.
 
     """
     if exclude is None:
@@ -149,7 +157,15 @@ def _get_raw_problems(name):
     elif name == "estimagic":
         raw_problems = _get_raw_problems_estimagic()
     else:
-        raise NotImplementedError()
+        # Importing the likelihood problems imports scipy.
+        from optimagic.benchmarking.likelihood.problems import (
+            LIKELIHOOD_SETS,
+            get_likelihood_problems,
+        )
+
+        if name not in LIKELIHOOD_SETS:
+            raise NotImplementedError()
+        raw_problems = get_likelihood_problems(name)
     return raw_problems
 
 
@@ -267,6 +283,30 @@ def _create_problem_inputs(
     _criterion = problem_type_to_marker[problem_type](_criterion)
 
     inputs = {"fun": _criterion, "params": _x}
+
+    # Closed form derivatives would not match the noisy criterion.
+    is_noisy = additive_options is not None or multiplicative_options is not None
+    if "jac" in specification and not is_noisy:
+        _jac = partial(
+            _internal_jac_template,
+            jac=specification["jac"],
+            scaling_factor=scaling_factor,
+        )
+        _gradient = partial(
+            _internal_gradient_template,
+            jac=specification["jac"],
+            scaling_factor=scaling_factor,
+        )
+        inputs["jac"] = [mark.scalar(_gradient), mark.likelihood(_jac)]
+
+    lower = specification.get("lower_bounds")
+    upper = specification.get("upper_bounds")
+    if lower is not None or upper is not None:
+        if scaling_factor is not None:
+            lower = None if lower is None else lower * scaling_factor
+            upper = None if upper is None else upper * scaling_factor
+        inputs["bounds"] = Bounds(lower=lower, upper=upper)
+
     return inputs
 
 
@@ -311,6 +351,19 @@ def _internal_criterion_template(
     noisy_critval = critval + noise
 
     return noisy_critval
+
+
+def _internal_jac_template(params, jac, scaling_factor):
+    if scaling_factor is not None:
+        params = params / scaling_factor
+    out = jac(params)
+    if scaling_factor is not None:
+        out = out / scaling_factor
+    return out
+
+
+def _internal_gradient_template(params, jac, scaling_factor):
+    return _internal_jac_template(params, jac, scaling_factor).sum(axis=0)
 
 
 def _get_combined_noise(fval, additive_options, multiplicative_options, rng):

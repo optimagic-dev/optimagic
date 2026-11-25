@@ -43,6 +43,9 @@ This release adds experimental support for **SciPy-style callbacks**, replaces p
   derivative if `fun` is derived from `fun_and_jac`, i.e. if only `fun_and_jac` is
   provided or `jac=True`. It is now enough to provide either `fun_kwargs` or
   `fun_and_jac_kwargs` ({ghuser}`janosg`).
+- {gh}`722` Adds four likelihood benchmark sets (`likelihood_small`, `likelihood_large`,
+  `likelihood_misspecified_small`, `likelihood_misspecified_large`) with simulated data,
+  closed form derivatives and bounds ({ghuser}`janosg`).
 - {gh}`697` Adds experimental support for SciPy-style `callback(xk)` in `minimize` and
   `maximize`. The callback is called after each objective evaluation; its behavior might
   change in upcoming releases ({ghuser}`Pragati5-DEBUG`).
