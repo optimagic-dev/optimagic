@@ -23,7 +23,7 @@ def test_every_optimizer_module_has_a_library_marker():
 
 
 def test_every_library_marker_is_registered_and_has_a_pixi_environment():
-    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     registered = {
         marker.split(":")[0]
         for marker in pyproject["tool"]["pytest"]["ini_options"]["markers"]
@@ -34,7 +34,9 @@ def test_every_library_marker_is_registered_and_has_a_pixi_environment():
 
 
 def test_every_library_marker_has_a_ci_job():
-    workflow = yaml.safe_load((ROOT / ".github/workflows/main.yml").read_text())
+    workflow = yaml.safe_load(
+        (ROOT / ".github/workflows/main.yml").read_text(encoding="utf-8")
+    )
     job = workflow["jobs"]["run-optimizer-library-tests"]
     assert set(job["strategy"]["matrix"]["library"]) == LIBRARIES
 
@@ -54,7 +56,7 @@ def test_tests_do_not_skip_on_missing_optimizer_libraries_themselves():
     flags = _get_availability_flags_of_optimizer_modules()
     violations = []
     for path in sorted((ROOT / "tests").rglob("*.py")):
-        tree = ast.parse(path.read_text())
+        tree = ast.parse(path.read_text(encoding="utf-8"))
         allowed = _get_flag_nodes_that_guard_imports(tree, flags)
         violations += [
             f"{path.relative_to(ROOT)}:{node.lineno}: {node.id}"
@@ -68,7 +70,7 @@ def _get_availability_flags_of_optimizer_modules():
     """Return the names of the flags that optimizer modules import from config."""
     flags = set()
     for path in (ROOT / "src" / "optimagic" / "optimizers").rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text())):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
             if isinstance(node, ast.ImportFrom) and node.module == "optimagic.config":
                 flags |= {a.name for a in node.names if a.name.startswith("IS_")}
     return flags

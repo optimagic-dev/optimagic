@@ -1,10 +1,10 @@
 # Numerical differentiation: methods
 
 In this section we explain the mathematical background of forward, backward and central
-differences. The main ideas in this chapter are taken from {cite}`Dennis1996`. x is used
-for the pandas DataFrame with parameters. We index the entries of x as a n-dimensional
-vector, where n is the number of variables in params_sr. The forward difference for the
-gradient is given by:
+differences. The main ideas in this chapter are taken from {cite}`nd-Dennis1996`. x is
+used for the pandas DataFrame with parameters. We index the entries of x as a
+n-dimensional vector, where n is the number of variables in params_sr. The forward
+difference for the gradient is given by:
 
 $$
 \nabla f(x) = \begin{pmatrix}\frac{f(x + e_0 * h_0) - f(x)}{h_0}\\
@@ -71,5 +71,6 @@ central differences.
 
 ```{eval-rst}
 .. bibliography:: ../refs.bib
+    :keyprefix: nd-
     :filter: docname in docnames
 ```
