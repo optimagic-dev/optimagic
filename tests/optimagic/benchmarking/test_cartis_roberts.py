@@ -7,6 +7,8 @@ from optimagic.benchmarking.cartis_roberts import (
     get_start_points_bdvalues,
     get_start_points_msqrta,
 )
+from optimagic.shared.process_user_function import infer_aggregation_level
+from optimagic.typing import AggregationLevel
 
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
@@ -53,3 +55,9 @@ def test_get_start_points_msqrta():
     expected = 0.2 * matlab_mat.flatten()
     result = get_start_points_msqrta(5)
     assert_array_almost_equal(result, expected, decimal=4)
+
+
+@pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))
+def test_cartis_roberts_function_is_marked_as_least_squares(name, specification):  # noqa: ARG001
+    problem_type = infer_aggregation_level(specification["fun"])
+    assert problem_type == AggregationLevel.LEAST_SQUARES

@@ -3,6 +3,7 @@ from itertools import product
 import numpy as np
 import pytest
 
+from optimagic import minimize
 from optimagic.benchmarking.get_benchmark_problems import (
     _step_func,
     get_benchmark_problems,
@@ -48,3 +49,18 @@ def test_step_func():
     got = _step_func(p, lambda x: x @ x)
     assert np.allclose(got, 0)
     assert not np.allclose(p @ p, 0)
+
+
+@pytest.mark.parametrize("name", ["more_wild", "cartis_roberts"])
+def test_noise_free_fun_is_scaled_like_inputs(name):
+    problems = get_benchmark_problems(name, additive_noise=True, scaling=True)
+    for problem in problems.values():
+        start_x = problem["inputs"]["params"]
+        residuals = problem["noise_free_fun"](start_x)
+        assert np.allclose(residuals @ residuals, problem["start_criterion"])
+
+
+def test_minimize_problem_with_partialled_criterion():
+    problem = get_benchmark_problems("cartis_roberts")["bratu_2d"]
+    res = minimize(**problem["inputs"], algorithm="scipy_ls_trf")
+    assert np.allclose(res.fun, problem["solution"]["value"], atol=1e-8)
