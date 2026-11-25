@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-from optimagic.config import IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED
 from optimagic.optimization.internal_optimization_problem import (
     SphereExampleInternalOptimizationProblemWithConverter,
 )
@@ -14,6 +13,8 @@ from optimagic.optimizers.gfo_optimizers import (
     _value2para,
 )
 from optimagic.parameters.bounds import Bounds
+
+pytestmark = pytest.mark.gfo
 
 problem = SphereExampleInternalOptimizationProblemWithConverter()
 
@@ -62,14 +63,12 @@ def test_value2para():
     assert _value2para(np.array([0, 1, 2])) == {"x0": 0, "x1": 1, "x2": 2}
 
 
-@pytest.mark.skipif(
-    not IS_GRADIENT_FREE_OPTIMIZERS_INSTALLED, reason="gfo not installed"
-)
 def test_gfo_internal():
     from gradient_free_optimizers import DownhillSimplexOptimizer
 
     res = _gfo_internal(
-        common_options=GFOCommonOptions(),
+        # Without a limit, the run takes about a minute and ends with the same result.
+        common_options=GFOCommonOptions(stopping_maxiter=2_000),
         problem=problem,
         x0=np.full(10, 2),
         optimizer=DownhillSimplexOptimizer,

@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic import mark
 from optimagic.config import IS_CYIPOPT_INSTALLED
@@ -31,6 +30,9 @@ from optimagic.typing import (
     PositiveInt,
     YesNoBool,
 )
+
+if TYPE_CHECKING:
+    from scipy.optimize import Bounds as ScipyBounds
 
 
 @mark.minimizer(
@@ -2171,6 +2173,9 @@ class Ipopt(Algorithm):
 
 
 def _get_scipy_bounds(bounds: InternalBounds) -> ScipyBounds:
+    # imported here to keep `import optimagic` fast
+    from scipy.optimize import Bounds as ScipyBounds
+
     return ScipyBounds(lb=bounds.lower, ub=bounds.upper)
 
 

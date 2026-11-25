@@ -128,7 +128,26 @@ $ pixi run tests tests/optimagic/optimization/test_optimize.py
 
 Include relevant slow tests before opening a PR. For broader checks, use
 `pixi run tests-fast`; it excludes slow and JAX tests on every platform. For changes to
-shared code used across multiple modules, run the full suite with `pixi run tests`.
+shared code used across multiple modules, run the full suite with `pixi run tests`. The
+tasks run the tests in parallel on all CPU cores; add `-n 0` to run them in one process,
+e.g. to debug with `--pdb`.
+
+Each optimizer library has its own test environment, named after the library's pytest
+marker. For example, the nlopt tests run with:
+
+```console
+$ pixi run -e tests-nlopt tests --library nlopt
+```
+
+`--library nlopt` also selects the nlopt algorithms in tests that loop over all
+installed algorithms. It fails if an nlopt algorithm is not available or if one of the
+selected tests is skipped. The default environment contains all optimizer libraries that
+can be installed together, so `pixi run tests` covers most of them at once.
+
+To declare that a test needs an optimizer library, give it the library's marker, e.g.
+`pytestmark = pytest.mark.nlopt` for a whole module. Tests that are parametrized with an
+algorithm get the marker of its library automatically. Tests with a library marker are
+skipped if the library is not installed, so they need no `skipif`.
 
 For changes affecting typing, run:
 

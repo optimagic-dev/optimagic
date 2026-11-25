@@ -77,9 +77,9 @@ def minimizer(
 ) -> Callable[[AlgorithmSubclass], AlgorithmSubclass]:
     """Mark an algorithm as a optimagic minimizer and add AlgoInfo.
 
-    The decorated class is re-created as a pydantic dataclass, so algorithm options
-    are validated and converted according to their type annotations whenever an
-    instance is created.
+    The decorated class gets an ``__init__`` that uses pydantic to validate and convert
+    the algorithm options according to their type annotations whenever an instance is
+    created.
 
     Args:
         name: The name of the algorithm as a string. Used in error messages, warnings

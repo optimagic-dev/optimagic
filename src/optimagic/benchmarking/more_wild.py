@@ -22,6 +22,7 @@ benchmark set:
 """
 
 from functools import partial
+from typing import Any
 
 import numpy as np
 
@@ -1187,3 +1188,14 @@ MORE_WILD_PROBLEMS = {
         "solution_criterion": 0,
     },
 }
+
+
+def get_raw_problems_more_wild() -> dict[str, dict[str, Any]]:
+    """Get the specifications of the More-Wild benchmark problems.
+
+    Returns:
+        A dictionary that maps the name of each problem to its specification, which
+        contains the criterion function, the start values and the solution.
+
+    """
+    return MORE_WILD_PROBLEMS

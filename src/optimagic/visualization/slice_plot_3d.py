@@ -3,7 +3,6 @@ from enum import Enum
 from functools import partial
 
 import numpy as np
-import plotly.express as px
 import plotly.graph_objects as go
 from numpy.typing import NDArray
 from plotly.subplots import make_subplots
@@ -470,6 +469,9 @@ def plot_line(
         go.Figure: A Plotly figure object containing the line plot.
 
     """
+    # imported here because importing plotly.express is slow
+    import plotly.express as px
+
     fig = px.line(x=x, y=y, **plot_kwargs["line_plot"])
     if plot_kwargs["scatter_plot"] is not None:
         fig.add_trace(

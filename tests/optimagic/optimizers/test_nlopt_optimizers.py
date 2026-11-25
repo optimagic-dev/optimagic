@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
+import optimagic as om
 from optimagic import mark
 from optimagic.config import IS_NLOPT_INSTALLED
 from optimagic.exceptions import InvalidAlgoOptionError
@@ -13,7 +14,7 @@ if IS_NLOPT_INSTALLED:
     import nlopt
 
 
-pytestmark = pytest.mark.skipif(not IS_NLOPT_INSTALLED, reason="nlopt not installed")
+pytestmark = pytest.mark.nlopt
 
 
 def _run(algorithm, options, *, flat=False):
@@ -93,3 +94,41 @@ def test_seed_limits_are_valid(seed):
 def test_seed_outside_portable_range_is_rejected(seed):
     with pytest.raises(InvalidAlgoOptionError):
         NloptESCH(seed=seed)
+
+
+ONE_SIDED_BOUNDS_CASES = [
+    # start params, bounds, solution of min (x - 3) @ (x - 3) subject to bounds
+    (np.zeros(2), Bounds(upper=np.full(2, 1.0)), np.array([1.0, 1.0])),
+    (np.full(2, 5.0), Bounds(lower=np.full(2, 4.0)), np.array([4.0, 4.0])),
+    (
+        np.zeros(2),
+        Bounds(lower=np.array([-1.0, -np.inf]), upper=np.array([1.0, np.inf])),
+        np.array([1.0, 3.0]),
+    ),
+]
+
+
+@pytest.mark.parametrize("algorithm", ["nlopt_newuoa", "nlopt_praxis"])
+@pytest.mark.parametrize(("params", "bounds", "expected"), ONE_SIDED_BOUNDS_CASES)
+def test_one_sided_bounds_are_respected(algorithm, params, bounds, expected):
+    res = minimize(
+        fun=lambda x: (x - 3) @ (x - 3),
+        params=params,
+        algorithm=algorithm,
+        bounds=bounds,
+    )
+    assert_allclose(res.params, expected, atol=1e-4)
+
+
+def test_praxis_is_marked_as_supporting_bounds():
+    assert "nlopt_praxis" in om.algos.Bounded.AllNames
+
+
+def test_direct_random_search_without_locally_biased_raises():
+    with pytest.raises(ValueError, match="requires locally_biased=True"):
+        minimize(
+            fun=lambda x: x @ x,
+            params=np.array([0.5, 0.5]),
+            algorithm=om.algos.nlopt_direct(random_search=True),
+            bounds=Bounds(lower=np.full(2, -1.0), upper=np.full(2, 1.0)),
+        )

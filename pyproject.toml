@@ -4,17 +4,17 @@
 [project]
 name = "optimagic"
 description = "Tools to solve difficult numerical optimization problems."
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "cloudpickle>=2.2",
     "joblib>=1.1",
-    "numpy>=1.26",
-    "pandas>=2.1",
-    "plotly>=5.14",
-    "scipy>=1.11",
+    "numpy>=2.2",
+    "pandas>=2.3",
+    "plotly>=6.0",
+    "scipy>=1.15",
     "sqlalchemy>=2.0",
     "annotated-types>=0.4",
-    "pydantic>=2.6",
+    "pydantic>=2.10",
     "typing-extensions>=4.5",
     "optree>=0.19",
 ]
@@ -41,9 +41,9 @@ classifiers = [
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX",
-    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering",
 ]
 authors = [
@@ -96,7 +96,7 @@ allow-direct-references = true
 # Ruff configuration
 # ======================================================================================
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 fix = true
 
 [tool.ruff.lint]
@@ -299,6 +299,23 @@ markers = [
     "wip: Tests that are work-in-progress.",
     "slow: Tests that take a long time to run and are skipped in continuous integration.",
     "jax: Tests that require jax to be installed and are skipped on non-Linux systems.",
+    # Optimizer libraries. tests/conftest.py adds the marker to all tests that are
+    # parametrized with an algorithm of the library and skips the tests of libraries
+    # that are not installed. Each library has a pixi environment tests-<marker> and a
+    # CI job that runs `pytest --library <marker>` in it.
+    "bayesopt: Tests of optimizers from bayesian-optimization.",
+    "fides: Tests of optimizers from fides.",
+    "gfo: Tests of optimizers from gradient-free-optimizers.",
+    "iminuit: Tests of optimizers from iminuit.",
+    "ipopt: Tests of optimizers from cyipopt.",
+    "nag: Tests of optimizers from DFO-LS and Py-BOBYQA.",
+    "nevergrad: Tests of optimizers from nevergrad.",
+    "nlopt: Tests of optimizers from nlopt.",
+    "pygad: Tests of optimizers from pygad.",
+    "pygmo: Tests of optimizers from pygmo.",
+    "pyswarms: Tests of optimizers from pyswarms.",
+    "tao: Tests of optimizers from petsc4py (TAO).",
+    "tranquilo: Tests of optimizers from tranquilo.",
 ]
 norecursedirs = ["docs", ".tools"]
 
@@ -386,48 +403,36 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 
 # --- Base dependencies (all environments) -------------------------------------------
 [tool.pixi.dependencies]
-python = ">=3.12,<3.15"
+python = ">=3.13,<3.16"
 # Prefer conda-forge builds for compiled scientific packages
-numpy = ">=2.0.0"
-scipy = ">=1.11"
-pandas = ">=2.1,<3"
+numpy = ">=2.2"
+scipy = ">=1.15"
+pandas = ">=2.3"
 jupyterlab = ">=4.0"
-cyipopt = ">=1.4.0"
-pygmo = ">=2.19.0"
-nlopt = ">=2.7"
 statsmodels = ">=0.14"
 matplotlib = ">=3.8"
 bokeh = ">=3.2"
 altair = ">=5.1"
 seaborn = ">=0.13"
 pyyaml = ">=6.0.1"
-pydantic = ">=2.6"
+pydantic = ">=2.10"
 jinja2 = ">=3.1"
-tranquilo = ">=0.1.1"
-iminuit = ">=2.25"
-cma = ">=3.3"
-pygad = ">=3.2"
-pytorch-cpu = ">=2.2"
 ruff = ">=0.15.5,<0.16"
+# Needed by kaleido. PyPI has no wheels for the newest Python version yet.
+orjson = "*"
 
 [tool.pixi.pypi-dependencies]
 optimagic = { path = ".", editable = true }
 pdbp = "*"
-bayesian-optimization = ">=1.4"
-dfo-ls = ">=1.5.3"
-py-bobyqa = ">=1.3"
-fides = "==0.7.4"
 kaleido = ">=0.2.1"
-gradient-free-optimizers = ">=1.6.0"
-pyswarms = ">=1.3"
 
 # --- Python version features --------------------------------------------------------
-[tool.pixi.feature.py312.dependencies]
-python = "~=3.12.0"
 [tool.pixi.feature.py313.dependencies]
 python = "~=3.13.0"
 [tool.pixi.feature.py314.dependencies]
 python = "~=3.14.0"
+[tool.pixi.feature.py315.dependencies]
+python = "~=3.15.0"
 
 # --- Feature: tests (test infrastructure) --------------------------------------------
 [tool.pixi.feature.tests.dependencies]
@@ -436,9 +441,11 @@ pytest-cov = ">=4.0"
 pytest-xdist = ">=3.2"
 
 [tool.pixi.feature.tests.tasks]
-tests = { cmd = "pytest", description = "Run the full test suite" }
-tests-fast = { cmd = "pytest -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
-tests-with-cov = { cmd = "pytest --cov-report=xml --cov=src --cov=tests", description = "Run tests with XML coverage report for source and test code" }
+# The tasks run the tests in parallel on all CPU cores. Add `-n 0` to run them in one
+# process, e.g. for debugging with --pdb.
+tests = { cmd = "pytest -n auto", description = "Run the full test suite" }
+tests-fast = { cmd = "pytest -n auto -m 'not slow and not jax'", description = "Run tests excluding slow and jax tests" }
+tests-with-cov = { cmd = "pytest -n auto --cov-report=xml --cov=src --cov=tests", description = "Run tests with XML coverage report for source and test code" }
 
 # --- Feature: type-checking (ty + type stubs) --------------------------------------
 [tool.pixi.feature.type-checking.dependencies]
@@ -460,7 +467,81 @@ ty-fix = { cmd = "ty check --fix", description = "Run ty type checker and apply 
 platforms = ["linux-64"]
 [tool.pixi.feature.linux.dependencies]
 jax = ">=0.4.8"
+
+# --- Features: optimizer libraries -------------------------------------------------
+# One feature per optimizer library. Each library is tested in its own environment
+# (tests-<feature>), so libraries never have to be installable together. The feature
+# names equal the pytest markers of the libraries.
+[tool.pixi.feature.bayesopt.dependencies]
+# PyPI has no scikit-learn wheels for the newest Python version yet.
+scikit-learn = "*"
+[tool.pixi.feature.bayesopt.pypi-dependencies]
+bayesian-optimization = ">=1.4"
+
+[tool.pixi.feature.fides.dependencies]
+# PyPI has no h5py wheels for the newest Python version yet.
+h5py = "*"
+[tool.pixi.feature.fides.pypi-dependencies]
+fides = "==0.7.4"
+
+[tool.pixi.feature.gfo.pypi-dependencies]
+gradient-free-optimizers = ">=1.6.0"
+# gradient-free-optimizers (up to at least 1.13.0) declares pandas<3, but our tests of it
+# pass with pandas 3. Remove the override once a release without the cap is available.
+[tool.pixi.feature.gfo.pypi-options.dependency-overrides]
+pandas = ">=2.3"
+
+[tool.pixi.feature.iminuit.dependencies]
+iminuit = ">=2.25"
+
+[tool.pixi.feature.ipopt.dependencies]
+cyipopt = ">=1.4.0"
+
+[tool.pixi.feature.nag.pypi-dependencies]
+dfo-ls = ">=1.5.3"
+py-bobyqa = ">=1.3"
+
+# nevergrad_bo needs bayes-optim, which needs torch and scikit-learn. The conda-forge
+# CPU build of torch keeps the PyPI resolver from installing the much larger CUDA build.
+[tool.pixi.feature.nevergrad.dependencies]
+pytorch-cpu = "*"
+scikit-learn = "*"
+# nevergrad 1.0.12 calls float() on an array with one element, which numpy >= 2.4
+# rejects. Optimizers that use nevergrad's metamodel, e.g. NgIoh4 or Wiz, then crash and
+# leave a thread behind that keeps Python from exiting. This is fixed in nevergrad's
+# main branch (facebookresearch/nevergrad#1707); remove the cap once a nevergrad
+# release contains the fix.
+numpy = "<2.4"
+[tool.pixi.feature.nevergrad.pypi-dependencies]
+nevergrad = "*"
+bayes-optim = "*"
+# bayes-optim imports the module pyDOE, which pyDOE renamed to pydoe in version 1.0.
+pydoe = "<0.4"
+
+[tool.pixi.feature.nlopt.dependencies]
+nlopt = ">=2.7"
+
+[tool.pixi.feature.pygad.dependencies]
+pygad = ">=3.2"
+
+[tool.pixi.feature.pygmo.dependencies]
+pygmo = ">=2.19.0"
+
+[tool.pixi.feature.pyswarms.pypi-dependencies]
+pyswarms = ">=1.3"
+
+# petsc4py is only available on Linux, so tao is not part of the environments that
+# combine optimizer libraries (default, docs, type-checking). Moreover, on Python 3.15 it
+# cannot be installed together with cyipopt and pygmo: their conda-forge builds need the
+# int64 variant of libscotch, while petsc >= 3.26 (the only petsc with Python 3.15
+# support) needs the int32 one.
+[tool.pixi.feature.tao]
+platforms = ["linux-64"]
+[tool.pixi.feature.tao.dependencies]
 petsc4py = ">=3.18"
+
+[tool.pixi.feature.tranquilo.dependencies]
+tranquilo = ">=0.1.1"
 
 # --- Feature: docs -------------------------------------------------------------------
 [tool.pixi.feature.docs.dependencies]
@@ -484,35 +565,49 @@ intersphinx-registry = "*"
 build-docs = { cmd = "make html", cwd = "docs", description = "Build the HTML documentation" }
 
 # --- Compat features (version overrides for backward-compat CI) ---------------------
-[tool.pixi.feature.old-plotly.dependencies]
-plotly = "<6"
-
-[tool.pixi.feature.old-plotly.pypi-dependencies]
-kaleido = "<0.3"
-
-[tool.pixi.feature.nevergrad.pypi-dependencies]
-bayesian-optimization = "==1.4.0"
-nevergrad = "*"
+# Following SPEC 0, pandas 2.3 is supported until June 2027, two years after its release.
+[tool.pixi.feature.old-pandas.dependencies]
+pandas = "<3"
 
 # --- Environments --------------------------------------------------------------------
 [tool.pixi.environments]
-# Default dev environment (Python 3.14, everything)
-default = { features = ["tests", "py314"], solve-group = "py314" }
-# Linux CI (with JAX + PETSc)
-tests-linux-py312 = { features = ["tests", "linux", "py312"], solve-group = "linux-py312" }
-tests-linux-py313 = { features = ["tests", "linux", "py313"], solve-group = "linux-py313" }
-tests-linux-py314 = { features = ["tests", "linux", "py314"], solve-group = "linux-py314" }
-# macOS/Windows CI
-tests-py312 = { features = ["tests", "py312"], solve-group = "py312" }
-tests-py313 = { features = ["tests", "py313"], solve-group = "py313" }
-tests-py314 = { features = ["tests", "py314"], solve-group = "py314" }
-# Backward-compat CI (Python 3.12, lowest supported)
-tests-old-plotly = { features = ["tests", "old-plotly", "py312"] }
-# Nevergrad CI (bayesian-optimization==1.4.0)
-tests-nevergrad-py312 = { features = ["tests", "nevergrad", "py312"] }
-tests-nevergrad-py313 = { features = ["tests", "nevergrad", "py313"] }
-tests-nevergrad-py314 = { features = ["tests", "nevergrad", "py314"] }
-# Type checking
-type-checking = { features = ["type-checking", "py314"], solve-group = "py314" }
-# Docs
-docs = { features = ["docs", "py314"], solve-group = "py314" }
+# Development, type checking and docs: Python 3.14 with all optimizer libraries that
+# can be installed together. nevergrad is left out because it pins an old version of
+# bayesian-optimization; tao because it is Linux-only (see feature.tao).
+default = { features = [
+    "tests", "py314", "bayesopt", "fides", "gfo", "iminuit", "ipopt", "nag", "nlopt",
+    "pygad", "pygmo", "pyswarms", "tranquilo",
+], solve-group = "py314" }
+type-checking = { features = [
+    "type-checking", "py314", "bayesopt", "fides", "gfo", "iminuit", "ipopt", "nag",
+    "nlopt", "pygad", "pygmo", "pyswarms", "tranquilo",
+], solve-group = "py314" }
+docs = { features = [
+    "docs", "py314", "bayesopt", "fides", "gfo", "iminuit", "ipopt", "nag", "nlopt",
+    "pygad", "pygmo", "pyswarms", "tranquilo",
+], solve-group = "py314" }
+# Main test environments: no optimizer libraries besides scipy. Linux adds JAX.
+# Linux CI runs all supported Python versions. Every job that runs with only one Python
+# version uses the second newest (3.14), because the newest often has problems. The main
+# test environments are solved on their own, so that the optimizer libraries do not
+# restrict the versions of optimagic's own dependencies.
+tests-linux-py313 = { features = ["tests", "linux", "py313"] }
+tests-linux-py314 = { features = ["tests", "linux", "py314"] }
+tests-linux-py315 = { features = ["tests", "linux", "py315"] }
+tests-py314 = { features = ["tests", "py314"] }
+# Backward-compat CI
+tests-old-pandas = { features = ["tests", "old-pandas", "py314"] }
+# One environment per optimizer library (only run on Linux in CI)
+tests-bayesopt = { features = ["tests", "py314", "bayesopt"] }
+tests-fides = { features = ["tests", "py314", "fides"] }
+tests-gfo = { features = ["tests", "py314", "gfo"] }
+tests-iminuit = { features = ["tests", "py314", "iminuit"] }
+tests-ipopt = { features = ["tests", "py314", "ipopt"] }
+tests-nag = { features = ["tests", "py314", "nag"] }
+tests-nevergrad = { features = ["tests", "py314", "nevergrad"] }
+tests-nlopt = { features = ["tests", "py314", "nlopt"] }
+tests-pygad = { features = ["tests", "py314", "pygad"] }
+tests-pygmo = { features = ["tests", "py314", "pygmo"] }
+tests-pyswarms = { features = ["tests", "py314", "pyswarms"] }
+tests-tao = { features = ["tests", "py314", "tao"] }
+tests-tranquilo = { features = ["tests", "py314", "tranquilo"] }

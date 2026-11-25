@@ -4,8 +4,6 @@ from typing import Any
 import numpy as np
 
 from optimagic import mark
-from optimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
-from optimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from optimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 from optimagic.shared.process_user_function import infer_aggregation_level
 from optimagic.typing import AggregationLevel
@@ -133,80 +131,104 @@ def get_benchmark_problems(
 
 
 def _get_raw_problems(name):
+    # The benchmark sets are imported only when they are requested, to keep
+    # `import optimagic` fast. Importing the Cartis-Roberts problems imports numba,
+    # which takes about 0.2 seconds.
     if name == "more_wild":
-        raw_problems = MORE_WILD_PROBLEMS
+        from optimagic.benchmarking.more_wild import get_raw_problems_more_wild
+
+        raw_problems = get_raw_problems_more_wild()
     elif name == "cartis_roberts":
-        raw_problems = CARTIS_ROBERTS_PROBLEMS
+        from optimagic.benchmarking.cartis_roberts import (
+            get_raw_problems_cartis_roberts,
+        )
+
+        raw_problems = get_raw_problems_cartis_roberts()
     elif name == "example":
-        subset = {
-            "rosenbrock_good_start",
-            "helical_valley_good_start",
-            "powell_singular_good_start",
-            "freudenstein_roth_good_start",
-            "bard_good_start",
-            "box_3d",
-            "brown_dennis_good_start",
-            "chebyquad_6",
-            "bdqrtic_8",
-            "mancino_5_good_start",
-        }
-        raw_problems = {k: v for k, v in MORE_WILD_PROBLEMS.items() if k in subset}
+        raw_problems = _get_raw_problems_example()
     elif name == "estimagic":
-        subset_mw = {
-            "cube_8",
-            "chebyquad_6",
-            "bdqrtic_8",
-            "linear_full_rank_bad_start",
-            "chebyquad_7",
-            "osborne_two_bad_start",
-            "bdqrtic_10",
-            "bdqrtic_11",
-            "heart_eight_bad_start",
-            "mancino_5_bad_start",
-            "chebyquad_8",
-            "cube_6",
-            "cube_5",
-            "bdqrtic_12",
-            "chebyquad_10",
-            "chebyquad_9",
-            "chebyquad_11",
-            "mancino_8",
-            "mancino_10",
-            "mancino_12_bad_start",
-        }
-        subset_cr = {
-            "hatfldg",
-            "bratu_3d",
-            "cbratu_2d",
-            "chnrsbne",
-            "bratu_2d",
-            "vardimne",
-            "penalty_1",
-            "arglale",
-            "arglble",
-        }
-        subset_add_steps = {
-            "rosenbrock_good_start",
-            "cube_5",
-            "chebyquad_10",
-        }
-        raw_problems = {}
-        for k, v in MORE_WILD_PROBLEMS.items():
-            if k in subset_mw:
-                raw_problems[k] = v
-            if k in subset_add_steps:
-                problem = v.copy()
-                raw_func = problem["fun"]
-
-                problem["fun"] = wraps(raw_func)(partial(_step_func, raw_func=raw_func))  # ty:ignore[invalid-argument-type, invalid-assignment]
-                raw_problems[f"{k}_with_steps"] = problem
-
-        for k, v in CARTIS_ROBERTS_PROBLEMS.items():
-            if k in subset_cr:
-                raw_problems[k] = v
-
+        raw_problems = _get_raw_problems_estimagic()
     else:
         raise NotImplementedError()
+    return raw_problems
+
+
+def _get_raw_problems_example():
+    from optimagic.benchmarking.more_wild import get_raw_problems_more_wild
+
+    subset = {
+        "rosenbrock_good_start",
+        "helical_valley_good_start",
+        "powell_singular_good_start",
+        "freudenstein_roth_good_start",
+        "bard_good_start",
+        "box_3d",
+        "brown_dennis_good_start",
+        "chebyquad_6",
+        "bdqrtic_8",
+        "mancino_5_good_start",
+    }
+    return {k: v for k, v in get_raw_problems_more_wild().items() if k in subset}
+
+
+def _get_raw_problems_estimagic():
+    from optimagic.benchmarking.cartis_roberts import get_raw_problems_cartis_roberts
+    from optimagic.benchmarking.more_wild import get_raw_problems_more_wild
+
+    subset_mw = {
+        "cube_8",
+        "chebyquad_6",
+        "bdqrtic_8",
+        "linear_full_rank_bad_start",
+        "chebyquad_7",
+        "osborne_two_bad_start",
+        "bdqrtic_10",
+        "bdqrtic_11",
+        "heart_eight_bad_start",
+        "mancino_5_bad_start",
+        "chebyquad_8",
+        "cube_6",
+        "cube_5",
+        "bdqrtic_12",
+        "chebyquad_10",
+        "chebyquad_9",
+        "chebyquad_11",
+        "mancino_8",
+        "mancino_10",
+        "mancino_12_bad_start",
+    }
+    subset_cr = {
+        "hatfldg",
+        "bratu_3d",
+        "cbratu_2d",
+        "chnrsbne",
+        "bratu_2d",
+        "vardimne",
+        "penalty_1",
+        "arglale",
+        "arglble",
+    }
+    subset_add_steps = {
+        "rosenbrock_good_start",
+        "cube_5",
+        "chebyquad_10",
+    }
+
+    raw_problems = {}
+    for k, v in get_raw_problems_more_wild().items():
+        if k in subset_mw:
+            raw_problems[k] = v
+        if k in subset_add_steps:
+            problem = v.copy()
+            raw_func = problem["fun"]
+
+            problem["fun"] = wraps(raw_func)(partial(_step_func, raw_func=raw_func))
+            raw_problems[f"{k}_with_steps"] = problem
+
+    for k, v in get_raw_problems_cartis_roberts().items():
+        if k in subset_cr:
+            raw_problems[k] = v
+
     return raw_problems
 
 

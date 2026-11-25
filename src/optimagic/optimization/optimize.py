@@ -15,12 +15,11 @@ is then passed to `_optimize` which handles the optimization logic.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Literal, Sequence, Type, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, Sequence, Type, cast
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
-from scipy.optimize import Bounds as ScipyBounds
 
 from optimagic.batch_evaluators import process_batch_evaluator
 from optimagic.constraints import Constraint, NonlinearConstraint
@@ -74,6 +73,9 @@ from optimagic.typing import (
     PyTree,
     PyTreeNamespace,
 )
+
+if TYPE_CHECKING:
+    from scipy.optimize import Bounds as ScipyBounds
 
 FunType = Callable[..., float | PyTree | FunctionValue]
 AlgorithmType = str | Algorithm | Type[Algorithm]

@@ -50,7 +50,7 @@ def multivariate_normal_example():
 
     # simulate 10.000 random samples
     mn = multivariate_normal(mean=true_mean, cov=true_cov)
-    data = mn.rvs(size=10_000)
+    data = mn.rvs(size=10_000, random_state=np.random.default_rng(12345))
 
     loglike_kwargs = {"data": data}
 

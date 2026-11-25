@@ -1,8 +1,8 @@
 import functools
-import typing
 from dataclasses import dataclass, fields
 from enum import Enum, StrEnum
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -20,6 +20,10 @@ import numpy as np
 import pydantic
 from annotated_types import Ge, Gt, Le, Lt
 from numpy._typing import NDArray
+from pydantic_core import ArgsKwargs, SchemaValidator
+
+if TYPE_CHECKING:
+    from pydantic.plugin._schema_validator import PluggableSchemaValidator
 
 PyTree = Any
 Scalar = Any
@@ -171,21 +175,28 @@ def validated_dataclass(
 ) -> Callable[[type[DataclassT]], type[DataclassT]]:
     """Create a class decorator that adds pydantic validation to a frozen dataclass.
 
-    The decorated class is re-created as a pydantic dataclass, so field values are
-    validated and converted according to their type annotations on every
+    The ``__init__`` of the decorated class is replaced by one that validates and
+    converts the field values according to their type annotations on every
     instantiation (including via ``dataclasses.replace``). Annotations are resolved
     at runtime, so this also works in modules using
     ``from __future__ import annotations``.
 
+    The pydantic validator of a class is only built when the class is instantiated
+    for the first time. Building it takes about one millisecond per class, which
+    would add up to a noticeable share of the import time of optimagic if it was
+    done for all algorithm classes when they are defined.
+
     This is deliberately a layer on top of existing dataclasses rather than a
     replacement for ``pydantic.dataclasses.dataclass`` at the definition site, for
-    two reasons. First, it keeps the classes themselves plain frozen dataclasses,
+    three reasons. First, it keeps the classes themselves plain frozen dataclasses,
     which made adopting pydantic non-breaking: algorithm classes — including ones
     defined outside optimagic — are still written as regular dataclasses and gain
     validation through ``mark.minimizer`` without any change to their definition.
     Second, it raises domain-specific exceptions (built by ``make_error``) instead
     of ``pydantic.ValidationError``, which preserves optimagic's exception
     contracts; pydantic itself has no hook to customize the raised exception type.
+    Third, pydantic dataclasses collect their fields when the class is defined,
+    which is slow even if building the validator is deferred.
 
     Args:
         config: The pydantic config that controls validation behavior.
@@ -198,24 +209,49 @@ def validated_dataclass(
     """
 
     def decorator(cls: type[DataclassT]) -> type[DataclassT]:
-        out = pydantic.dataclasses.dataclass(frozen=True, config=config)(cls)
-        # pydantic re-creates the class, which loses attributes that tooling and
-        # introspection rely on.
-        out.__doc__ = cls.__doc__
-        out.__annotations__ = dict(cls.__annotations__)
-        original_init = out.__init__
+        # pydantic reads the config of a standard dataclass from this attribute.
+        cls.__pydantic_config__ = config  # ty:ignore[unresolved-attribute]
+        lazy_validator = _LazyValidator(cls)
 
-        @functools.wraps(original_init)
+        @functools.wraps(cls.__init__)
         def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
             try:
-                original_init(self, *args, **kwargs)
+                # With self_instance, the validated field values are set on self
+                # instead of on a new instance. This is how the __init__ of a
+                # pydantic dataclass works.
+                lazy_validator.validator.validate_python(
+                    ArgsKwargs(args, kwargs), self_instance=self
+                )
             except pydantic.ValidationError as e:
                 raise make_error(e) from e
 
-        out.__init__ = __init__
-        return typing.cast("type[DataclassT]", out)
+        cls.__init__ = __init__  # ty:ignore[invalid-assignment]
+        return cls
 
     return decorator
+
+
+class _LazyValidator:
+    """Build the pydantic validator of a dataclass when it is first needed."""
+
+    def __init__(self, cls: type) -> None:
+        self._cls = cls
+
+    @functools.cached_property
+    def validator(self) -> "SchemaValidator | PluggableSchemaValidator":
+        """The pydantic validator of the dataclass."""
+        return pydantic.TypeAdapter(self._cls).validator
+
+    def __getstate__(self) -> dict[str, Any]:
+        """Build the validator before pickling.
+
+        cloudpickle pickles classes that are defined in a script or notebook by value
+        and does not preserve the identity of ``dataclasses.MISSING``. pydantic cannot
+        build a validator from the fields of such an unpickled dataclass, so the
+        validator has to be part of the pickled state.
+
+        """
+        return {"_cls": self._cls, "validator": self.validator}
 
 
 @dataclass(frozen=True)
