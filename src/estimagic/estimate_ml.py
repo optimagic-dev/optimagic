@@ -1,6 +1,4 @@
-import functools
 import warnings
-from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from functools import cached_property
 from typing import Any, Dict
@@ -141,7 +139,7 @@ def estimate_ml(
     # Check and process inputs
     # ==================================================================================
 
-    loglike = mark.likelihood(_fail_for_dict_with_contributions(loglike))
+    loglike = mark.likelihood(loglike)
 
     bounds = pre_process_bounds(bounds)
     jacobian_numdiff_options = pre_process_numdiff_options(jacobian_numdiff_options)
@@ -385,36 +383,6 @@ def estimate_ml(
     )
 
     return res
-
-
-def _fail_for_dict_with_contributions(
-    loglike: Callable[..., Any],
-) -> Callable[..., Any]:
-    """Raise an error if loglike returns a dictionary with the entry "contributions".
-
-    Before version 0.6.0, likelihood functions could return a dictionary with the
-    special entries "contributions" and "value". Such a dictionary would now be
-    interpreted as a pytree of likelihood contributions and lead to wrong standard
-    errors without any error or warning.
-
-    """
-
-    @functools.wraps(loglike)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        out = loglike(*args, **kwargs)
-        if isinstance(out, dict) and "contributions" in out:
-            msg = (
-                "loglike returned a dictionary with the entry 'contributions'. "
-                "Dictionaries with the special entries 'contributions' and 'value' "
-                "are not supported anymore. Please return the likelihood contributions "
-                "directly or use an optimagic.FunctionValue object to return "
-                "additional information. For more details see the documentation: "
-                "https://optimagic.readthedocs.io/en/latest/how_to/how_to_criterion_function.html"
-            )
-            raise InvalidFunctionError(msg)
-        return out
-
-    return wrapper
 
 
 @dataclass

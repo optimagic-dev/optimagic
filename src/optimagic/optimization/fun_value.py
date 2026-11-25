@@ -32,6 +32,7 @@ class ScalarFunctionValue(SpecificFunctionValue):
     info: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
+        _fail_if_dict_with_removed_entries(self.value, _REMOVED_ENTRIES)
         if not isscalar(self.value):
             raise InvalidFunctionError(
                 f"Scalar objective values need to be scalars, not: {type(self.value)}. "
@@ -58,6 +59,7 @@ class LeastSquaresFunctionValue(SpecificFunctionValue):
     info: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
+        _fail_if_dict_with_removed_entries(self.value, _REMOVED_CONTRIBUTION_ENTRIES)
         if isscalar(self.value):
             raise InvalidFunctionError(
                 "Least squares objective values cannot be scalars. Your value has "
@@ -89,6 +91,7 @@ class LikelihoodFunctionValue(SpecificFunctionValue):
     info: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
+        _fail_if_dict_with_removed_entries(self.value, _REMOVED_CONTRIBUTION_ENTRIES)
         if isscalar(self.value):
             raise InvalidFunctionError(
                 "Likelihood objective values cannot be scalars. Your value has scalar "
@@ -114,6 +117,41 @@ class LikelihoodFunctionValue(SpecificFunctionValue):
                 "likelihood objective function."
             )
         return val
+
+
+_REMOVED_CONTRIBUTION_ENTRIES = frozenset({"contributions", "root_contributions"})
+"""Dictionary entries that were special in objective function outputs before 0.6.0
+and are meaningless in a pytree of residuals or likelihood contributions."""
+
+_REMOVED_ENTRIES = _REMOVED_CONTRIBUTION_ENTRIES | {"value"}
+"""All dictionary entries that were special in objective function outputs before
+0.6.0."""
+
+
+def _fail_if_dict_with_removed_entries(value: Any, entries: frozenset[str]) -> None:
+    """Raise an error if value is a dictionary with special entries from before 0.6.0.
+
+    Before version 0.6.0, objective functions could return a dictionary with the
+    special entries "value", "contributions" and "root_contributions". For functions
+    marked as least-squares or likelihood functions, such a dictionary would now be
+    read as a pytree of residuals or likelihood contributions and silently lead to
+    wrong results.
+
+    """
+    if isinstance(value, dict) and not entries.isdisjoint(value):
+        found = sorted(entries.intersection(value))
+        msg = (
+            f"The objective function returned a dictionary with the entries {found}. "
+            "Since optimagic 0.6.0, the special entries 'value', 'contributions' and "
+            "'root_contributions' are not supported anymore. Return the scalar value, "
+            "the likelihood contributions or the least-squares residuals directly and "
+            "mark likelihood and least-squares functions with om.mark.likelihood or "
+            "om.mark.least_squares. Use om.FunctionValue to return additional "
+            "information. For more details see the documentation: "
+            "https://optimagic.readthedocs.io/en/latest/how_to/"
+            "how_to_criterion_function.html"
+        )
+        raise InvalidFunctionError(msg)
 
 
 def _get_flat_value(value: PyTree) -> NDArray[np.float64]:

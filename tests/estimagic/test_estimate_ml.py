@@ -480,14 +480,12 @@ def test_estimate_ml_raises_for_dict_output_with_contributions(optimize_options)
         contributions = -((params - 1) ** 2)
         return {"contributions": contributions, "value": contributions.sum()}
 
-    with pytest.raises(InvalidFunctionError) as exc_info:
+    with pytest.raises(InvalidFunctionError, match="entries \\['contributions'\\]"):
         estimate_ml(
             loglike=loglike,
             params=np.ones(3),
             optimize_options=optimize_options,
         )
-
-    assert "entry 'contributions'" in str(exc_info.value.__cause__)
 
 
 def test_estimate_ml_with_pytree_of_contributions():

@@ -1,3 +1,4 @@
+import warnings
 from dataclasses import dataclass
 from functools import partial
 from typing import Any, Callable, Iterable, Literal
@@ -354,10 +355,47 @@ class History:
     def task(self) -> list[EvalTask]:
         return self._task
 
+    # Deprecated attributes
+    # ----------------------------------------------------------------------------------
+
+    @property
+    def time(self) -> list[float]:
+        """Start time of each evaluation, measured from the first start time.
+
+        Deprecated. Use ``start_time`` instead.
+
+        """
+        warnings.warn(_get_time_deprecation_message("time"), FutureWarning)
+        return _get_time_since_first_start(self._start_time)
+
+    @property
+    def runtime(self) -> list[float]:
+        """Start time of each evaluation, measured from the first start time.
+
+        Deprecated. Use ``start_time`` instead.
+
+        """
+        warnings.warn(_get_time_deprecation_message("runtime"), FutureWarning)
+        return _get_time_since_first_start(self._start_time)
+
 
 # ======================================================================================
 # Functions directly used in History methods
 # ======================================================================================
+
+
+def _get_time_deprecation_message(attribute: str) -> str:
+    return (
+        f"The attribute `{attribute}` of History is deprecated and will be removed in "
+        "optimagic version 0.7.0. Use the `start_time` attribute instead. "
+        f"`{attribute}` equals `start_time` minus its first entry."
+    )
+
+
+def _get_time_since_first_start(start_time: list[float]) -> list[float]:
+    """Express start times relative to the first start time."""
+    arr = np.array(start_time)
+    return (arr - arr[0]).tolist()
 
 
 def _get_flat_params(params: list[PyTree]) -> list[list[float]]:

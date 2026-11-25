@@ -507,6 +507,16 @@ def test_stop_time_property(history: History):
     assert history.stop_time == [1, 4, 6, 9, 11, 14]
 
 
+@pytest.mark.parametrize("attribute", ["time", "runtime"])
+def test_deprecated_time_attributes(history_data, attribute):
+    data = history_data.copy()
+    data["start_time"] = [3, 5, 8, 10, 13, 15]
+    history = History(direction=Direction.MINIMIZE, **data)
+    with pytest.warns(FutureWarning, match=f"`{attribute}` of History is deprecated"):
+        got = getattr(history, attribute)
+    assert got == [0, 2, 5, 7, 10, 12]
+
+
 # Batches
 # --------------------------------------------------------------------------------------
 

@@ -68,10 +68,11 @@ Everything that was deprecated in version `0.5.0` (or later) is removed:
   `criterion_and_derivative` and `criterion_and_derivative_kwargs` of `maximize` and
   `minimize`. Use `fun`, `fun_kwargs`, `jac`, `jac_kwargs`, `fun_and_jac` and
   `fun_and_jac_kwargs` instead.
-- The arguments `lower_bounds`, `upper_bounds`, `soft_lower_bounds` and
-  `soft_upper_bounds` of `maximize`, `minimize`, `first_derivative`,
-  `second_derivative`, `estimate_ml`, `estimate_msm`, `slice_plot`,
-  `count_free_params` and `check_constraints`. Use `bounds` instead.
+- The arguments `lower_bounds` and `upper_bounds` of `maximize`, `minimize`,
+  `first_derivative`, `second_derivative`, `estimate_ml`, `estimate_msm`, `slice_plot`,
+  `slice_plot_3d`, `count_free_params` and `check_constraints` as well as
+  `soft_lower_bounds` and `soft_upper_bounds` of `maximize` and `minimize`. Use `bounds`
+  instead.
 - The arguments `log_options`, `scaling_options` and `multistart_options` of `maximize`
   and `minimize` as well as `log_options` of `estimate_ml` and `estimate_msm`. Pass the
   options to `logging`, `scaling` and `multistart` instead.
@@ -84,17 +85,18 @@ Everything that was deprecated in version `0.5.0` (or later) is removed:
 - Objective functions that return a dictionary with the special keys "value",
   "contributions" and "root_contributions" and dictionaries of derivative functions. Use
   the `mark.least_squares` and `mark.likelihood` decorators and `FunctionValue` objects
-  instead. Dictionaries returned by decorated functions are now treated as pytrees.
-  `estimate_ml` raises an error if `loglike` returns a dictionary with the entry
-  "contributions".
+  instead. A dictionary with the entry "contributions" or "root_contributions", or a
+  dictionary returned by a scalar function, raises an `InvalidFunctionError` that
+  explains the new interface. Other dictionaries returned by functions that are marked
+  with `mark.least_squares` or `mark.likelihood` are treated as pytrees.
 - Constraints that are specified as dictionaries, including the selection of parameters
   via `loc`, `locs`, `query` and `queries`. Use the `Constraint` objects instead.
 - Richardson extrapolation and the arguments `base_steps`, `step_ratio`, `n_steps`,
   `return_info`, `return_func_value` and `key` of `first_derivative` and
   `second_derivative`. Use `step_size` and `unpacker` instead.
 - Dictionary style access to `NumdiffResult`, `MultistartInfo` and `History` as well as
-  the attributes `NumdiffResult.func_evals`, `NumdiffResult.derivative_candidates`,
-  `History.criterion`, `History.time` and `History.runtime`.
+  the attributes `NumdiffResult.func_evals`, `NumdiffResult.derivative_candidates`
+  and `History.criterion`.
 - The attributes `criterion`, `start_criterion`, `n_criterion_evaluations` and
   `n_derivative_evaluations` of `OptimizeResult`. Use `fun`, `start_fun`, `n_fun_evals`
   and `n_jac_evals` instead.
@@ -106,6 +108,12 @@ Everything that was deprecated in version `0.5.0` (or later) is removed:
 - The copies of optimagic functions in the `estimagic` namespace (e.g.
   `estimagic.minimize`) and the modules `estimagic.utilities` and
   `estimagic.batch_evaluators`. Import them from `optimagic` instead.
+
+### Deprecations
+
+- The attributes `time` and `runtime` of `History` are deprecated and will be removed
+  in version `0.7.0`. Use `start_time` instead. Since version `0.5.2`, they warned that
+  they would be deprecated, but without naming a version.
 
 
 ## 0.5.4

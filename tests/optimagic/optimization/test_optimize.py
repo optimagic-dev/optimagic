@@ -442,3 +442,22 @@ def test_start_derivative_of_unused_fun_and_jac_is_ignored():
             fun_and_jac=fun_and_jac, params=np.ones(2), algorithm="scipy_lbfgsb"
         )
     aaae(res.params, np.zeros(2))
+
+
+@pytest.mark.parametrize("direction", ["minimize", "maximize"])
+def test_marked_function_with_dict_output_removed_in_0_6_0_raises(direction):
+    @mark.likelihood
+    def fun(x):
+        return {"value": float(x @ x), "contributions": x**2}
+
+    with pytest.raises(InvalidFunctionError, match="0.6.0"):
+        getattr(om, direction)(fun, params=np.ones(2), algorithm="scipy_lbfgsb")
+
+
+def test_least_squares_function_with_dict_output_removed_in_0_6_0_raises():
+    @mark.least_squares
+    def fun(x):
+        return {"value": float(x @ x), "root_contributions": x}
+
+    with pytest.raises(InvalidFunctionError, match="0.6.0"):
+        om.minimize(fun, params=np.ones(2), algorithm="scipy_ls_lm")
