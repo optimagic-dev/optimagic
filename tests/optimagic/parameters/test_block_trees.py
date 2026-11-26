@@ -10,7 +10,7 @@ from optimagic.parameters.block_trees import (
     hessian_to_block_tree,
     matrix_to_block_tree,
 )
-from optimagic.pytree import tree_equal, tree_leaves
+from optimagic.pytree import tree_equal, tree_leaves, tree_map
 from optimagic.typing import PyTreeNamespace
 
 
@@ -147,6 +147,26 @@ def test_hessian_to_block_tree_bijection():
     hessian = block_tree_to_hessian(expected, func(params), params)
     got = hessian_to_block_tree(hessian, func(params), params)
     assert _tree_equal_up_to_dtype(expected, got)
+
+
+@pytest.mark.parametrize(
+    "func, params, expected_shapes",
+    [
+        (lambda x: x @ x, np.array([1.0]), (1, 1)),
+        (lambda x: x**2, np.array([1.0]), (1, 1, 1)),
+        (
+            lambda p: float(np.sum(p["a"] ** 2) + p["b"] ** 2),
+            {"a": np.array([1.0]), "b": 2.0},
+            {"a": {"a": (1, 1), "b": (1,)}, "b": {"a": (1,), "b": ()}},
+        ),
+    ],
+)
+def test_second_derivative_keeps_dimensions_of_length_one(
+    func, params, expected_shapes
+):
+    got = second_derivative(func, params).derivative
+    got_shapes = tree_map(np.shape, got)
+    assert got_shapes == expected_shapes
 
 
 def test_block_tree_to_matrix_valueerror():
