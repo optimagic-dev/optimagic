@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from functools import partial
 from typing import Callable, Literal, Sequence, TypedDict, cast
 
 import numpy as np
@@ -385,15 +384,14 @@ def get_internal_multistart_options_from_public(
     batch_evaluator = process_batch_evaluator(options.batch_evaluator)
 
     if callable(options.mixing_weight_method):
-        weight_func = options.mixing_weight_method
+        _weight_method = options.mixing_weight_method
     else:
         _weight_method = WEIGHT_FUNCTIONS[options.mixing_weight_method]
 
-    weight_func = partial(
-        _weight_method,
-        min_weight=options.mixing_weight_bounds[0],
-        max_weight=options.mixing_weight_bounds[1],
-    )
+    min_weight, max_weight = options.mixing_weight_bounds
+
+    def weight_func(iteration: int, n_iterations: int) -> float:
+        return _weight_method(iteration, n_iterations, min_weight, max_weight)
 
     if n_samples is None:
         if options.stopping_maxopt is None:

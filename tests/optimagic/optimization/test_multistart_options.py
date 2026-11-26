@@ -161,3 +161,20 @@ def test_get_internal_multistart_options_from_public_defaults():
     assert got.n_samples == 500
     assert got.stopping_maxopt == 50
     assert got.batch_size == 1
+
+
+def test_get_internal_multistart_options_from_public_callable_mixing_weight():
+    def weight(i, n, lower, upper):
+        return lower + upper * i / n
+
+    options = MultistartOptions(
+        mixing_weight_method=weight, mixing_weight_bounds=(0.2, 0.5)
+    )
+
+    got = get_internal_multistart_options_from_public(
+        options,
+        params=np.arange(5),
+        params_to_internal=lambda x: x,
+    )
+
+    assert np.allclose(got.weight_func(2, 10), 0.3)
