@@ -118,8 +118,7 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
             for leaf_inner, s2, block_values in zip(
                 flat_p, shapes_p, np.split(submat, block_bounds_p, axis=2), strict=False
             ):
-                _shape = [k for k in (*s0, *s1, *s2) if k != 1]
-                raw_block = block_values.reshape(_shape)
+                raw_block = block_values.reshape((*s0, *s1, *s2))
                 block = _convert_raw_block_to_pandas(raw_block, leaf_outer, leaf_inner)
                 row.append(block)
             blocks.append(row)

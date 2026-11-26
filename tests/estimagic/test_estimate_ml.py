@@ -431,6 +431,20 @@ def test_estimate_ml_general_pytree(normal_inputs):
     assert np.abs(true["sd"] - got.summary(method="jacobian")["sd"]["value"][0]) < 1e-1
 
 
+def test_estimate_ml_single_parameter(normal_inputs):
+    y = normal_inputs["y"]
+
+    def loglike(mean):
+        return -0.5 * (y - mean) ** 2
+
+    got = estimate_ml(loglike=loglike, params=5.0, optimize_options="scipy_lbfgsb")
+
+    assert np.abs(got.params - normal_inputs["true"]["mean"]) < 1e-1
+    cov = got.cov(method="hessian", return_type="array")
+    assert cov.shape == (1, 1)
+    assert np.allclose(cov, 1 / len(y))
+
+
 def test_to_pickle(normal_inputs, tmp_path):
     kwargs = {"y": normal_inputs["y"]}
 
